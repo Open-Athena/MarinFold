@@ -29,7 +29,9 @@ Frequent batch preemptions are repeatedly erasing unsaved work.
 The recovery update saves after the first update of every attempt, then every
 two minutes, and skips repeat validation at a restored production step.
 Trial identities, data, batch size, and token budgets remain fixed.
-All six trials are being moved onto this recovery code. None has finished.
+All six use the corrected recovery code, including explicit training mode on resume.
+At 21:10 UTC they are waiting through another set of batch preemptions.
+None has finished; no contact-prediction improvement has been established.
 
 ## Early evidence and limits
 

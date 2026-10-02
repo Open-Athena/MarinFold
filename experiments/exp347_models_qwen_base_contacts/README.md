@@ -164,27 +164,44 @@ mode retrieves the latest production histories from W&B. The two formats use
 different tokenizations of the contacts, so their token NLLs are not directly
 comparable. The plotted observations are intermediate training results.
 
-As of 2026-10-02 20:35 UTC, all six production trials are submitted, for 48
-requested H100s at batch priority. Both 4B arms use eight H100s and the same 1B-token
-budget: [contacts-v1 W&B](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-4b-contacts_v1-1bt)
-and [prompted Iris job](https://iris.oa.dev/#/job/%2Ftimodonnell%2Fexp347-qwen35-4b-prompted-1bt-a01).
-No production trial has finished. The first 4B raw production attempt completed
-step one and saved a checkpoint, then exhausted GPU memory on step two. Its
-short smoke had not exposed gradient accumulation memory pressure. Later NVLink
-errors were secondary to the OOM. The prompted attempt was stopped before
-continuing so both 4B arms can use the corrected memory profile. Attempt a02
-preserves [DDP gradient bucket views](https://docs.pytorch.org/docs/2.10/generated/torch.nn.parallel.DistributedDataParallel.html)
-and enables [expandable allocator segments](https://docs.pytorch.org/docs/2.10/notes/cuda.html);
-a two-process sharded-AdamW test verifies multiple updates against a single
-global reference. The documents, batch size, objective, and budget are unchanged. The 2B prompted validation NLL fell from 1.46629 initially to 1.23746 at
-step 1250. These are held-out likelihood observations, not contact accuracy.
+As of 2026-10-02 21:10 UTC, all six production trials are submitted, requesting
+48 H100s total at batch priority. The latest workers were preempted again and
+are building or waiting to resume; a W&B `running` flag alone is not evidence
+of current training. No production trial has finished.
 
-W&B high-water progress can exceed the most recent durable checkpoint; repeated
-preemptions have erased unsaved work. The original production bundles used
-15-minute checkpoints; even the first five-minute replacement interval lost
-progress when allocations ended soon after startup. All six trials are being
-updated to the two-minute cadence and first-update recovery rule above. No training objective, token budget, cluster configuration, or priority
-changed. The 0.8B raw and 2B prompted jobs have verified resumable checkpoints.
+The latest Iris roots are `/timodonnell/` followed by:
+
+| Model | contacts-v1 | Prompted |
+| --- | --- | --- |
+| 0.8B | `exp347-qwen35-0p8b-contacts_v1-1bt-a03` | `exp347-qwen35-0p8b-prompted-1bt-a04` |
+| 2B | `exp347-qwen35-2b-contacts_v1-1bt-a03` | `exp347-qwen35-2b-prompted-1bt-a03` |
+| 4B | `exp347-qwen35-4b-contacts_v1-1bt-a04` | `exp347-qwen35-4b-prompted-1bt-a04` |
+
+Both 4B W&B identities are registered:
+[contacts-v1](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-4b-contacts_v1-1bt)
+and [prompted](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-4b-prompted-1bt).
+The first 4B raw production attempt saved step one, then exhausted GPU memory
+in Liger's weight-gradient allocation on step two. Later NVLink errors were
+secondary. Preserving [DDP gradient bucket views](https://docs.pytorch.org/docs/2.10/generated/torch.nn.parallel.DistributedDataParallel.html)
+and enabling [expandable allocator segments](https://docs.pytorch.org/docs/2.10/notes/cuda.html)
+allowed attempt a02 to reach step 21 at roughly 27-34K tokens/s, before another
+preemption. A two-process sharded-AdamW test verifies multiple accumulated
+updates against a single global reference.
+
+Repeated short allocations erased work before the original 15-minute and later
+five-minute checkpoints. All current bundles save after the first update of
+EVERY attempt and every two minutes. Skipping redundant restored-step validation
+exposed an accidental dependency on validation to set training mode: the backbone
+now explicitly enters training mode at construction, retaining activation
+checkpointing. A real HF save/load regression test covers this path. The latest
+bundles contain both fixes. Trial identities, data, batch size, objective, and
+budgets remain fixed.
+
+The shorter cadence has produced new durable checkpoints for the 0.8B prompted
+and 2B raw arms, which had previously kept restarting from zero. W&B high-water
+progress can exceed the most recent durable checkpoint, so it must not be read
+as retained progress. The 2B prompted validation NLL fell from 1.46629 initially
+to about 1.2375 at step 1250; this is held-out likelihood, not contact accuracy.
 
 Read-only node inspection found that aggregate free-GPU counts included cordoned
 nodes. The launcher permits a CPU reservation of 32 (four threads per rank), but
