@@ -102,11 +102,53 @@ It processed 137,698 tokens in four optimizer steps, saved all eight optimizer
 shards and model/tokenizer artifacts, and reached 45,007 tokens/s in the last step
 with 12.53 GB peak allocated GPU memory. The [smoke W&B run](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-0p8b-contacts_v1-smoke)
 has initial/final contact-continuation validation metrics. These tiny smoke values
-are engineering checks, not contact-accuracy results. Attempt a03 verifies a
-further optimizer update after loading that saved state.
+are engineering checks, not contact-accuracy results. Attempt a03 restored that state, exactly reproduced its validation NLL,
+performed step 5 (174,050 cumulative smoke tokens), and saved another checkpoint.
 
-Eight document/cursor tests, eight capacity-helper tests, Ruff, and Pyrefly passed.
+The 2B prompted smoke also completed as
+`/timodonnell/exp347-qwen35-2b-prompted-smoke-a01`
+([W&B](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-2b-prompted-smoke)).
+It processed 109,508 tokens in ten steps, used 29.09 GB peak allocated memory,
+and saved its model, tokenizer, and eight optimizer shards at step 10.
+
+Eleven document/cursor/output-parser tests, eight capacity-helper tests, Ruff,
+and Pyrefly passed. A two-rank CPU numerical check also confirmed that the
+accumulated gradients match a single globally token-weighted reference loss.
+Measured per-input validation times are retained in [`data/timings.csv`](data/timings.csv).
 
 ## Conclusion
 
 In progress. This experiment has not yet established a contact-prediction improvement.
+
+## Production training
+
+The 0.8B contacts-v1 arm is training as
+`/timodonnell/exp347-qwen35-0p8b-contacts_v1-1bt-a01`
+([W&B](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-0p8b-contacts_v1-1bt)).
+The first 17 steps processed 2.63M tokens; steady early steps reached about
+39–53K tokens/s over eight H100s. Validation at initialization uses 64 documents
+from the held-out sequence clusters. This is a running experiment, not a final
+result. At step 250 (36.92M tokens), contact-continuation validation NLL fell
+from 0.70685 to 0.59605. This measures held-out likelihood, not contact accuracy.
+
+The 0.8B prompted and 2B prompted arms have also been launched with the same
+1B-token budget:
+[0.8B prompted W&B](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-0p8b-prompted-1bt),
+[2B prompted W&B](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-2b-prompted-1bt).
+The 4B arms await the required approval for model staging: the combined pinned
+base-model download is approximately 15.6 GB, exceeding the repository's explicit
+10 GB cross-region transfer threshold. Only the 0.8B and 2B weights have been staged.
+
+![In-progress validation likelihood curves](plots/validation_nll.png)
+
+[`collect_metrics.py`](collect_metrics.py) plots the committed
+[`data/learning_curves.csv`](data/learning_curves.csv), and its optional refresh
+mode retrieves the latest production histories from W&B. The two formats use
+different tokenizations of the contacts, so their token NLLs are not directly
+comparable. The plotted observations are intermediate training results.
+
+[`rollout_validation.py`](rollout_validation.py) provides a separate greedy
+completion diagnostic on those held-out AFDB documents, retaining each output,
+invalid/duplicate pair count, token-cap flag, precision/recall/F1, and timing. It
+is explicitly not the established FoldBench rollout-plus-resample benchmark and
+its numbers must not be compared to that benchmark's R-precision.

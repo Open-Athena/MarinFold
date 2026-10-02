@@ -20,5 +20,16 @@ Hold out sequence clusters, with no use of eval-test for model development.
 The complete corpus contains 920,611 training and 9,235 validation documents.
 5.11% of source examples exceeded 16K; both formats exclude the same rows.
 The training pool contains 4.493B contacts-v1 tokens and 1.290B prompted tokens. Equal token budgets imply different
-protein exposure. GPU training validation is in progress; no contact
-accuracy or pretrained-transfer advantage has yet been established.
+protein exposure. The 0.8B training, checkpoint, and optimizer/data/RNG
+recovery checks passed. Both 0.8B production formats have been launched;
+the 2B prompted smoke is training. No contact accuracy or pretrained-transfer
+advantage has yet been established.
+
+## Validation and interpretation
+
+Teacher-forced contact likelihood uses 64 held-out AFDB documents.
+Greedy generation diagnostics retain malformed, empty, and capped outputs.
+They are not the established FoldBench rollout-plus-resample benchmark.
+Per-input timings are saved at evaluation time, including worker metadata.
+The first raw-format run initially sustained roughly 39–53K tokens/second
+over eight H100s. These are engineering observations, not accuracy results.
