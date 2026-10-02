@@ -103,6 +103,9 @@ class ContactLM(torch.nn.Module):
     def __init__(self, model: Qwen3_5ForCausalLM) -> None:
         super().__init__()
         self.model = model
+        # from_pretrained() returns an eval-mode backbone. Training must not
+        # depend on a validation pass to enable activation checkpointing.
+        self.train()
 
     def forward(
         self, input_ids: torch.Tensor, completion_start: int = 1

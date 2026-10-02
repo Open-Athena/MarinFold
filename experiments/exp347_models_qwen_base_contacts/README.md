@@ -120,7 +120,7 @@ The 2B contacts-v1 smoke completed as
 Its step-4 checkpoint contains 137,698 training tokens; peak allocated memory
 was 28.74 GB. Both 2B checkpoint directories and all rank shards were verified.
 
-Fourteen document/cursor/output-parser/export/distributed-update tests, eight capacity-helper tests, Ruff,
+Fifteen document/cursor/output-parser/export/distributed-update tests, eight capacity-helper tests, Ruff,
 and Pyrefly passed. A two-rank CPU numerical check also confirmed that the
 accumulated gradients match a single globally token-weighted reference loss.
 Measured per-input validation times are retained in [`data/timings.csv`](data/timings.csv).

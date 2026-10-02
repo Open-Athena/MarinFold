@@ -15,6 +15,7 @@ marinfold_run:
   iris_job_ids:
   - /timodonnell/exp347-qwen35-0p8b-prompted-1bt-a01
   - /timodonnell/exp347-qwen35-0p8b-prompted-1bt-a02
+  - /timodonnell/exp347-qwen35-0p8b-prompted-1bt-a03
 ---
 # 2026-10-02 · exp347_models_qwen_base_contacts · exp347-qwen35-0p8b-prompted-1bt
 
