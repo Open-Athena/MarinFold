@@ -115,7 +115,9 @@ class ContactLM(torch.nn.Module):
         target = input_ids[:, completion_start:].reshape(-1)
         return liger_fused_linear_cross_entropy(
             hidden,
-            self.model.lm_head.weight,
+            self.model.lm_head.weight
+            if torch.is_grad_enabled()
+            else self.model.lm_head.weight.detach(),
             target,
             reduction="sum",
             accum_dtype=torch.float32,

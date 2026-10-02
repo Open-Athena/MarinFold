@@ -86,7 +86,13 @@ contact information. Training text contains 11,302,406 contacts-v1 tokens versus
 3,244,662 prompted tokens (3.48x expansion for contacts-v1). These numbers describe
 the smoke shard, not the complete corpus.
 
-Full preprocessing is running as `/timodonnell/exp347-prepare-a01`.
+Full preprocessing completed as `/timodonnell/exp347-prepare-a01`; the
+per-shard source hashes and counts are committed in [`data/manifest.json`](data/manifest.json).
+From 981,860 source rows, it excluded 50,220 over-length rows (5.11%) and 1,794
+empty-contact rows. The shared pool has **920,611 training** and **9,235 validation**
+documents, containing 151,261,429 training contacts. The native-token totals are
+**4,493,121,575 contacts-v1** and **1,289,984,389 prompted**. Each 1B-token arm can
+finish without a second corpus pass, although protein exposure differs by format.
 The pinned 0.8B and 2B checkpoints were staged successfully by
 `/timodonnell/exp347-stage-small-a02` and their tokenizers are exactly equal.
 GPU correctness testing starts with

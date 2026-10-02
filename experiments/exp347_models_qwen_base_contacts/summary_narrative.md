@@ -17,9 +17,8 @@ Hold out sequence clusters, with no use of eval-test for model development.
 
 ## Current evidence and limits
 
-The first-shard smoke preserved cyclic residue indexing and all contact pairs.
-98 of 1,887 source rows exceeded 16K; one had no contact targets.
-The 1,766 retained training documents contain 11.30M raw-format tokens
-and 3.24M prompted-format tokens. Equal token budgets imply different
+The complete corpus contains 920,611 training and 9,235 validation documents.
+5.11% of source examples exceeded 16K; both formats exclude the same rows.
+The training pool contains 4.493B contacts-v1 tokens and 1.290B prompted tokens. Equal token budgets imply different
 protein exposure. GPU training validation is in progress; no contact
 accuracy or pretrained-transfer advantage has yet been established.
