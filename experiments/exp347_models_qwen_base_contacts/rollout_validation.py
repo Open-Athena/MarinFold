@@ -191,7 +191,9 @@ def main() -> None:
             )
     for name, records in [("metrics", metrics), ("timings", timings)]:
         with fsspec.open(f"{args.out}/{name}-rank-{rank}.csv", "w") as handle:
-            writer = csv.DictWriter(handle, fieldnames=list(records[0]))
+            writer = csv.DictWriter(
+                handle, fieldnames=list(records[0]), lineterminator="\n"
+            )
             writer.writeheader()
             writer.writerows(records)
     with fsspec.open(f"{args.out}/outputs-rank-{rank}.json", "w") as handle:

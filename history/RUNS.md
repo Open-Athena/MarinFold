@@ -7,6 +7,7 @@ _See [`README.md`](README.md) for the file schema + policy._
 
 | Date | Experiment | W&B run | Kind | User | Description | Details |
 |---|---|---|---|---|---|---|
+| 2026-10-02 | `exp347_models_qwen_base_contacts` | [exp347-qwen35-2b-prompted-1bt](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-2b-prompted-1bt) | `models` | bizon | Qwen3.5 base full-weight contact fine-tuning | [md](runs/20261002_exp347_models_qwen_base_contacts_exp347_qwen35_2b_prompted_1bt.md) |
 | 2026-10-02 | `exp347_models_qwen_base_contacts` | [exp347-qwen35-2b-contacts_v1-smoke](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-2b-contacts_v1-smoke) | `models` | bizon | Qwen3.5 base full-weight contact fine-tuning | [md](runs/20261002_exp347_models_qwen_base_contacts_exp347_qwen35_2b_contacts_v1_smoke.md) |
 | 2026-10-02 | `exp347_models_qwen_base_contacts` | [exp347-qwen35-0p8b-prompted-1bt](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-0p8b-prompted-1bt) | `models` | bizon | Qwen3.5 base full-weight contact fine-tuning | [md](runs/20261002_exp347_models_qwen_base_contacts_exp347_qwen35_0p8b_prompted_1bt.md) |
 | 2026-10-02 | `exp347_models_qwen_base_contacts` | [exp347-qwen35-2b-prompted-smoke](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-2b-prompted-smoke) | `models` | bizon | Qwen3.5 base full-weight contact fine-tuning | [md](runs/20261002_exp347_models_qwen_base_contacts_exp347_qwen35_2b_prompted_smoke.md) |

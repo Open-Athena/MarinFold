@@ -59,7 +59,7 @@ def main() -> None:
     path = folder / "data/learning_curves.csv"
     if args.refresh:
         with path.open("w") as handle:
-            writer = csv.DictWriter(handle, fieldnames=FIELDS)
+            writer = csv.DictWriter(handle, fieldnames=FIELDS, lineterminator="\n")
             writer.writeheader()
             writer.writerows(rows)
     else:

@@ -264,7 +264,9 @@ def evaluate(
                 }
             )
     with fsspec.open(f"{output}/timings/step-{step}-rank-{rank}.csv", "w") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(timings[0]))
+        writer = csv.DictWriter(
+            handle, fieldnames=list(timings[0]), lineterminator="\n"
+        )
         writer.writeheader()
         writer.writerows(timings)
     dist.all_reduce(totals)

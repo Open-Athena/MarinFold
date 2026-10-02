@@ -110,6 +110,11 @@ The 2B prompted smoke also completed as
 ([W&B](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-2b-prompted-smoke)).
 It processed 109,508 tokens in ten steps, used 29.09 GB peak allocated memory,
 and saved its model, tokenizer, and eight optimizer shards at step 10.
+The 2B contacts-v1 smoke completed as
+`/timodonnell/exp347-qwen35-2b-contacts_v1-smoke-a01`
+([W&B](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-2b-contacts_v1-smoke)).
+Its step-4 checkpoint contains 137,698 training tokens; peak allocated memory
+was 28.74 GB. Both 2B checkpoint directories and all rank shards were verified.
 
 Eleven document/cursor/output-parser tests, eight capacity-helper tests, Ruff,
 and Pyrefly passed. A two-rank CPU numerical check also confirmed that the
@@ -122,7 +127,7 @@ In progress. This experiment has not yet established a contact-prediction improv
 
 ## Production training
 
-The 0.8B contacts-v1 arm is training as
+The 0.8B contacts-v1 arm was launched as
 `/timodonnell/exp347-qwen35-0p8b-contacts_v1-1bt-a01`
 ([W&B](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-0p8b-contacts_v1-1bt)).
 The first 17 steps processed 2.63M tokens; steady early steps reached about
@@ -131,9 +136,10 @@ from the held-out sequence clusters. This is a running experiment, not a final
 result. At step 250 (36.92M tokens), contact-continuation validation NLL fell
 from 0.70685 to 0.59605. This measures held-out likelihood, not contact accuracy.
 
-The 0.8B prompted and 2B prompted arms have also been launched with the same
+The 0.8B prompted and both 2B arms have also been launched with the same
 1B-token budget:
 [0.8B prompted W&B](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-0p8b-prompted-1bt),
+[2B contacts-v1 Iris job](https://iris.oa.dev/#/job/%2Ftimodonnell%2Fexp347-qwen35-2b-contacts_v1-1bt-a01),
 [2B prompted W&B](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-2b-prompted-1bt).
 The 4B arms await the required approval for model staging: the combined pinned
 base-model download is approximately 15.6 GB, exceeding the repository's explicit
@@ -147,8 +153,24 @@ mode retrieves the latest production histories from W&B. The two formats use
 different tokenizations of the contacts, so their token NLLs are not directly
 comparable. The plotted observations are intermediate training results.
 
+As of 2026-10-02 18:50 UTC, all four production jobs remain submitted but are
+waiting for Kueue admission. Three were preempted at batch priority; the first
+0.8B contacts-v1 run has a resumable step-253 checkpoint, while the two newer
+prompted runs had not yet reached their first periodic checkpoint. Iris will
+retry the same jobs and training will load the latest available state. The
+fourth production arm (2B contacts-v1) had not begun training. Aggregate fleet
+GPU availability included cordoned nodes; read-only node inspection and exact
+Kueue diagnostics established the placement constraint. No cluster configuration
+or priority was changed. The launcher now allows a CPU reservation of 32 (four
+threads per rank) for future dispatches, but this alone did not resolve the gate.
+
 [`rollout_validation.py`](rollout_validation.py) provides a separate greedy
 completion diagnostic on those held-out AFDB documents, retaining each output,
 invalid/duplicate pair count, token-cap flag, precision/recall/F1, and timing. It
 is explicitly not the established FoldBench rollout-plus-resample benchmark and
 its numbers must not be compared to that benchmark's R-precision.
+The eight-protein-per-format generation canary,
+`/timodonnell/exp347-generation-smoke-a02`, is also queued. It uses the saved 2B
+smoke checkpoints and a deliberately short 256-token cap; it has no accuracy
+results yet. This is an additional eight-H100 job while active, for 40 requested
+GPUs including the four production runs.

@@ -51,8 +51,9 @@ def main() -> None:
             ]
             result = subprocess.run(command, check=True, capture_output=True, text=True)
             state_match = re.search(r"^State: (\S+)", result.stdout, re.MULTILINE)
-            if not state_match:
-                raise ValueError("Iris describe returned no job state")
+            tasks_match = re.search(r"^Tasks: (.+)$", result.stdout, re.MULTILINE)
+            if not state_match or not tasks_match:
+                raise ValueError("Iris describe returned no job or task state")
             state = state_match[1]
             terminal = state in {
                 "succeeded",
@@ -147,6 +148,7 @@ def main() -> None:
                     {
                         "trial": row["trial_id"],
                         "iris": state,
+                        "iris_tasks": tasks_match[1],
                         "wandb": run.state if run else None,
                         "progress": progress,
                         "summary": dict(run.summary) if run else None,

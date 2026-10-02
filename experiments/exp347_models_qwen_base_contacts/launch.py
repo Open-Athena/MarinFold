@@ -23,6 +23,7 @@ def main() -> None:
         "--cluster", choices=["cw-us-east-02a", "cw-rno2a"], default="cw-us-east-02a"
     )
     parser.add_argument("--attempt", type=int, required=True)
+    parser.add_argument("--cpus", type=int, default=32)
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument("--resume-check", action="store_true")
     parser.add_argument("--tokens", type=int)
@@ -32,6 +33,8 @@ def main() -> None:
     )
     parser.add_argument("--database", type=Path, required=True)
     args = parser.parse_args()
+    if args.cpus < 32:
+        raise ValueError("Eight ranks need at least four CPU threads each")
     name = run_name(args.size, args.format, args.smoke)
     job = f"{name}-a{args.attempt:02d}"
     tokens = args.tokens or (100_000 if args.smoke else TOKEN_BUDGET)
@@ -60,7 +63,7 @@ def main() -> None:
         "--gpu",
         "H100x8",
         "--cpu",
-        "64",
+        str(args.cpus),
         "--memory",
         "512GB",
         "--disk",

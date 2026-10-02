@@ -21,9 +21,13 @@ The complete corpus contains 920,611 training and 9,235 validation documents.
 5.11% of source examples exceeded 16K; both formats exclude the same rows.
 The training pool contains 4.493B contacts-v1 tokens and 1.290B prompted tokens. Equal token budgets imply different
 protein exposure. The 0.8B training, checkpoint, and optimizer/data/RNG
-recovery checks passed. Both 0.8B production formats have been launched;
-the 2B prompted smoke is training. No contact accuracy or pretrained-transfer
-advantage has yet been established.
+recovery checks passed. Both 2B training/checkpoint smoke tests also passed.
+All four 0.8B/2B production trials are launched, requesting 32 H100s.
+At 18:50 UTC, all are waiting for batch admission after three preemptions.
+The saved 0.8B contacts-v1 checkpoint can resume at step 253.
+Idle-node totals included cordoned nodes; no cluster configuration was changed.
+The 4B trials await approval for the combined 15.6 GB model transfer.
+No contact accuracy or pretrained-transfer advantage has yet been established.
 
 ## Validation and interpretation
 
@@ -33,3 +37,4 @@ They are not the established FoldBench rollout-plus-resample benchmark.
 Per-input timings are saved at evaluation time, including worker metadata.
 The first raw-format run initially sustained roughly 39–53K tokens/second
 over eight H100s. These are engineering observations, not accuracy results.
+At 36.92M tokens, its contact-token NLL improved from 0.70685 to 0.59605.
