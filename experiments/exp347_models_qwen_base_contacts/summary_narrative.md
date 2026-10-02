@@ -30,8 +30,9 @@ The recovery update saves after the first update of every attempt, then every
 two minutes, and skips repeat validation at a restored production step.
 Trial identities, data, batch size, and token budgets remain fixed.
 All six use the corrected recovery code, including explicit training mode on resume.
-At 21:10 UTC they are waiting through another set of batch preemptions.
-None has finished; no contact-prediction improvement has been established.
+At 21:16 UTC all six report fresh progress and have verified production checkpoints.
+Repeated preemptions still slow completion. None has finished.
+No contact-prediction improvement has been established.
 
 ## Early evidence and limits
 

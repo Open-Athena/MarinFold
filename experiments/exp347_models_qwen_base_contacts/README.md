@@ -164,10 +164,13 @@ mode retrieves the latest production histories from W&B. The two formats use
 different tokenizations of the contacts, so their token NLLs are not directly
 comparable. The plotted observations are intermediate training results.
 
-As of 2026-10-02 21:10 UTC, all six production trials are submitted, requesting
-48 H100s total at batch priority. The latest workers were preempted again and
-are building or waiting to resume; a W&B `running` flag alone is not evidence
-of current training. No production trial has finished.
+As of 2026-10-02 21:16 UTC, all six production trials report fresh training
+progress, requesting 48 H100s total at batch priority. All six now have reachable
+production checkpoints with matching completion markers, model weights,
+tokenizers, and eight optimizer shards. Their verified retained token counts
+are 48.83M / 3.25M for 0.8B raw/prompted, 0.289M / 50.02M for 2B, and
+0.289M / 0.041M for 4B. Repeated preemptions still make wall-clock completion
+uncertain. No production trial has finished.
 
 The latest Iris roots are `/timodonnell/` followed by:
 
