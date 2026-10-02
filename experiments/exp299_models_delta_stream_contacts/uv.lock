@@ -2,11 +2,19 @@ version = 1
 revision = 3
 requires-python = "==3.12.*"
 resolution-markers = [
-    "sys_platform == 'linux'",
+    "platform_machine == 'x86_64' and sys_platform == 'linux' and extra != 'extra-35-exp299-models-delta-stream-contacts-gpu' and extra == 'extra-35-exp299-models-delta-stream-contacts-tpu'",
+    "platform_machine == 'aarch64' and sys_platform == 'linux' and extra != 'extra-35-exp299-models-delta-stream-contacts-gpu' and extra == 'extra-35-exp299-models-delta-stream-contacts-tpu'",
+    "platform_machine != 'aarch64' and platform_machine != 'x86_64' and sys_platform == 'linux' and extra != 'extra-35-exp299-models-delta-stream-contacts-gpu' and extra == 'extra-35-exp299-models-delta-stream-contacts-tpu'",
+    "sys_platform == 'linux' and extra == 'extra-35-exp299-models-delta-stream-contacts-gpu' and extra != 'extra-35-exp299-models-delta-stream-contacts-tpu'",
+    "sys_platform == 'linux' and extra != 'extra-35-exp299-models-delta-stream-contacts-gpu' and extra != 'extra-35-exp299-models-delta-stream-contacts-tpu'",
 ]
 supported-markers = [
     "sys_platform == 'linux'",
 ]
+conflicts = [[
+    { package = "exp299-models-delta-stream-contacts", extra = "gpu" },
+    { package = "exp299-models-delta-stream-contacts", extra = "tpu" },
+]]
 
 [options]
 prerelease-mode = "allow"
@@ -147,8 +155,10 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "absl-py" },
     { name = "flax" },
-    { name = "jax" },
-    { name = "jaxlib" },
+    { name = "jax", version = "0.10.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "jax", version = "0.11.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-tpu' or extra != 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "jaxlib", version = "0.10.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "jaxlib", version = "0.11.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-tpu' or extra != 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/85/b2/028d15474268205dc2a7382759a51eb8903bd3a218a9d261874e2ec772a4/aqtp-0.9.0.tar.gz", hash = "sha256:a42f03f0de5ed54d0d0d9437741a44f6408eaed48103a3434f0ad405ff86874a", size = 885899, upload-time = "2025-08-01T17:54:59.738Z" }
 wheels = [
@@ -261,7 +271,7 @@ name = "cffi"
 version = "2.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pycparser", marker = "implementation_name != 'PyPy'" },
+    { name = "pycparser", marker = "implementation_name != 'PyPy' or (extra == 'extra-35-exp299-models-delta-stream-contacts-gpu' and extra == 'extra-35-exp299-models-delta-stream-contacts-tpu')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/9e/ef/008a1939e372c06329a3fce4279c02f328488f3526744906eeec3da7ad5f/cffi-2.1.1.tar.gz", hash = "sha256:dd31f52ea1086513bb9df30f8fcee9b8918323ae067a3d5b78bc826a000712be", size = 530807, upload-time = "2026-08-03T21:21:18.939Z" }
 wheels = [
@@ -313,8 +323,10 @@ version = "0.1.92"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "absl-py" },
-    { name = "jax" },
-    { name = "jaxlib" },
+    { name = "jax", version = "0.10.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "jax", version = "0.11.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-tpu' or extra != 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "jaxlib", version = "0.10.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "jaxlib", version = "0.11.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-tpu' or extra != 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
     { name = "numpy" },
     { name = "toolz" },
     { name = "typing-extensions" },
@@ -377,7 +389,7 @@ name = "cryptography"
 version = "50.0.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cffi", marker = "platform_python_implementation != 'PyPy'" },
+    { name = "cffi", marker = "platform_python_implementation != 'PyPy' or (extra == 'extra-35-exp299-models-delta-stream-contacts-gpu' and extra == 'extra-35-exp299-models-delta-stream-contacts-tpu')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/bb/ad/5d6702db60b1e40b41ef513b6967ff5848f307d50f8449baf1634f5908f1/cryptography-50.0.1.tar.gz", hash = "sha256:5dd9bda1c12b4162f6ff568eeb5e0ff956c28d14406e875cfe8a63a2d414ff20", size = 880381, upload-time = "2026-08-25T19:45:45.499Z" }
 wheels = [
@@ -532,7 +544,8 @@ name = "equinox"
 version = "0.13.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "jax" },
+    { name = "jax", version = "0.10.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "jax", version = "0.11.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-tpu' or extra != 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
     { name = "jaxtyping" },
     { name = "typing-extensions" },
     { name = "wadler-lindig" },
@@ -585,9 +598,14 @@ dependencies = [
 
 [package.optional-dependencies]
 gpu = [
-    { name = "jax", extra = ["cuda13"] },
+    { name = "jax", version = "0.10.0", source = { registry = "https://pypi.org/simple" }, extra = ["cuda13"], marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
     { name = "optax" },
     { name = "wandb" },
+]
+tpu = [
+    { name = "marin-core", extra = ["tpu"], marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-tpu'" },
+    { name = "torch" },
+    { name = "torchvision" },
 ]
 
 [package.metadata]
@@ -598,6 +616,7 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.28.1,<1" },
     { name = "jax", extras = ["cuda13"], marker = "sys_platform == 'linux' and extra == 'gpu'", specifier = "==0.10.0" },
     { name = "marin-core" },
+    { name = "marin-core", extras = ["tpu"], marker = "extra == 'tpu'" },
     { name = "marin-iris" },
     { name = "marin-levanter" },
     { name = "marin-rigging" },
@@ -609,9 +628,11 @@ requires-dist = [
     { name = "pandas" },
     { name = "pyarrow" },
     { name = "s3fs" },
+    { name = "torch", marker = "extra == 'tpu'", index = "https://download.pytorch.org/whl/cpu" },
+    { name = "torchvision", marker = "sys_platform == 'linux' and extra == 'tpu'", index = "https://download.pytorch.org/whl/cpu" },
     { name = "wandb", marker = "extra == 'gpu'" },
 ]
-provides-extras = ["gpu"]
+provides-extras = ["gpu", "tpu"]
 
 [package.metadata.requires-dev]
 dev = []
@@ -639,7 +660,8 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
     { name = "pybind11" },
-    { name = "setuptools" },
+    { name = "setuptools", version = "81.0.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-tpu'" },
+    { name = "setuptools", version = "84.0.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-gpu' or extra != 'extra-35-exp299-models-delta-stream-contacts-tpu'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/c8/51/022e84b23ec435248a39f727dae94240321ebe2fdc104800de80410e1550/fasttext-wheel-0.9.2.tar.gz", hash = "sha256:056e088318ef0e0cc690c4cb18637320eaa3cdb986b62d67bb50d6a7a82e4051", size = 71384, upload-time = "2023-05-05T12:02:55.501Z" }
 wheels = [
@@ -666,7 +688,8 @@ name = "flax"
 version = "0.12.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "jax" },
+    { name = "jax", version = "0.10.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "jax", version = "0.11.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-tpu' or extra != 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
     { name = "msgpack" },
     { name = "numpy" },
     { name = "optax" },
@@ -1107,7 +1130,7 @@ dependencies = [
     { name = "click" },
     { name = "filelock" },
     { name = "fsspec" },
-    { name = "hf-xet", marker = "platform_machine == 'AMD64' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'arm64' or platform_machine == 'x86_64'" },
+    { name = "hf-xet", marker = "platform_machine == 'AMD64' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'arm64' or platform_machine == 'x86_64' or (extra == 'extra-35-exp299-models-delta-stream-contacts-gpu' and extra == 'extra-35-exp299-models-delta-stream-contacts-tpu')" },
     { name = "httpx" },
     { name = "packaging" },
     { name = "pyyaml" },
@@ -1159,12 +1182,15 @@ wheels = [
 name = "jax"
 version = "0.10.0"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "sys_platform == 'linux'",
+]
 dependencies = [
-    { name = "jaxlib" },
-    { name = "ml-dtypes" },
-    { name = "numpy" },
-    { name = "opt-einsum" },
-    { name = "scipy" },
+    { name = "jaxlib", version = "0.10.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "ml-dtypes", marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "numpy", marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "opt-einsum", marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "scipy", marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/50/f0/bcb81d28267d2054d0daed766c7fa16bcee5e481331b4d1e14f5fbe662be/jax-0.10.0.tar.gz", hash = "sha256:0119c767de1645f407df72345d28a3837dc904f1d698911c121d8f2b396fdece", size = 2663397, upload-time = "2026-04-22T13:22:28.563Z" }
 wheels = [
@@ -1173,8 +1199,30 @@ wheels = [
 
 [package.optional-dependencies]
 cuda13 = [
-    { name = "jax-cuda13-plugin", extra = ["with-cuda"] },
-    { name = "jaxlib" },
+    { name = "jax-cuda13-plugin", extra = ["with-cuda"], marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "jaxlib", version = "0.10.0", source = { registry = "https://pypi.org/simple" } },
+]
+
+[[package]]
+name = "jax"
+version = "0.11.1"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "platform_machine == 'x86_64' and sys_platform == 'linux' and extra != 'extra-35-exp299-models-delta-stream-contacts-gpu' and extra == 'extra-35-exp299-models-delta-stream-contacts-tpu'",
+    "platform_machine == 'aarch64' and sys_platform == 'linux' and extra != 'extra-35-exp299-models-delta-stream-contacts-gpu' and extra == 'extra-35-exp299-models-delta-stream-contacts-tpu'",
+    "platform_machine != 'aarch64' and platform_machine != 'x86_64' and sys_platform == 'linux' and extra != 'extra-35-exp299-models-delta-stream-contacts-gpu' and extra == 'extra-35-exp299-models-delta-stream-contacts-tpu'",
+    "sys_platform == 'linux' and extra != 'extra-35-exp299-models-delta-stream-contacts-gpu' and extra != 'extra-35-exp299-models-delta-stream-contacts-tpu'",
+]
+dependencies = [
+    { name = "jaxlib", version = "0.11.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-tpu' or extra != 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "ml-dtypes", marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-tpu' or extra != 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "numpy", marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-tpu' or extra != 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "opt-einsum", marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-tpu' or extra != 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "scipy", marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-tpu' or extra != 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/90/aa/c3b6ac3863a490661e255d2356802b54d57b533460fa221d30743d81a6c1/jax-0.11.1.tar.gz", hash = "sha256:43e0d45b1dac002eca04c2de73298395225dd0d4651e3f573a540eaa18abfd80", size = 2864119, upload-time = "2026-08-17T20:31:29.938Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8f/f4/5f9a286e1eeca9faa8b83885edccf63ab2f1b22e17f6a5ea66ac86b1afe4/jax-0.11.1-py3-none-any.whl", hash = "sha256:72ed60bf85a0b53d0f5b5cd61e37a8b25f369f6f88481feb98ab489894861a82", size = 3302513, upload-time = "2026-08-17T20:29:00.294Z" },
 ]
 
 [[package]]
@@ -1219,10 +1267,13 @@ with-cuda = [
 name = "jaxlib"
 version = "0.10.0"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "sys_platform == 'linux'",
+]
 dependencies = [
-    { name = "ml-dtypes" },
-    { name = "numpy" },
-    { name = "scipy" },
+    { name = "ml-dtypes", marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "numpy", marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "scipy", marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e3/cd/59ead5a90df739d1b8c1d1d00443558fd30adf5abb0319966ce340d49ff3/jaxlib-0.10.0-cp312-cp312-manylinux_2_27_aarch64.whl", hash = "sha256:aa1d70f1a4e27eb403654e71e2fb28d5786d3e9b77fc1847e8c5389880927ca4", size = 79398938, upload-time = "2026-04-16T12:33:34.14Z" },
@@ -1230,12 +1281,34 @@ wheels = [
 ]
 
 [[package]]
+name = "jaxlib"
+version = "0.11.1"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "platform_machine == 'x86_64' and sys_platform == 'linux' and extra != 'extra-35-exp299-models-delta-stream-contacts-gpu' and extra == 'extra-35-exp299-models-delta-stream-contacts-tpu'",
+    "platform_machine == 'aarch64' and sys_platform == 'linux' and extra != 'extra-35-exp299-models-delta-stream-contacts-gpu' and extra == 'extra-35-exp299-models-delta-stream-contacts-tpu'",
+    "platform_machine != 'aarch64' and platform_machine != 'x86_64' and sys_platform == 'linux' and extra != 'extra-35-exp299-models-delta-stream-contacts-gpu' and extra == 'extra-35-exp299-models-delta-stream-contacts-tpu'",
+    "sys_platform == 'linux' and extra != 'extra-35-exp299-models-delta-stream-contacts-gpu' and extra != 'extra-35-exp299-models-delta-stream-contacts-tpu'",
+]
+dependencies = [
+    { name = "ml-dtypes", marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-tpu' or extra != 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "numpy", marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-tpu' or extra != 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "scipy", marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-tpu' or extra != 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/77/d9/26613efbc0e219ef16b6069c38378a9b360f85926573e1995c391e48d73e/jaxlib-0.11.1-cp312-cp312-manylinux_2_27_aarch64.whl", hash = "sha256:47bab3a7da8a818f9e7ddecd4ed815429caa2840eda9e968bb6d33b9d8c52067", size = 82772925, upload-time = "2026-08-17T20:30:11.388Z" },
+    { url = "https://files.pythonhosted.org/packages/05/41/07c259ea10a5eeb100a66222507e2ce3a01474fa8f13c250bf1a3559a5bb/jaxlib-0.11.1-cp312-cp312-manylinux_2_27_x86_64.whl", hash = "sha256:c3dcec3bb33ebf5c76dc33f962c796652c077edb246464fa32cb1d8fcb6087e6", size = 87903454, upload-time = "2026-08-17T20:30:14.889Z" },
+]
+
+[[package]]
 name = "jaxopt"
 version = "0.8.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "jax" },
-    { name = "jaxlib" },
+    { name = "jax", version = "0.10.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "jax", version = "0.11.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-tpu' or extra != 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "jaxlib", version = "0.10.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "jaxlib", version = "0.11.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-tpu' or extra != 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
     { name = "numpy" },
     { name = "scipy" },
 ]
@@ -1363,6 +1436,14 @@ wheels = [
 ]
 
 [[package]]
+name = "libtpu"
+version = "0.0.46.1"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/30/70/cc5d524145cbe00b774313b6af0b2e6fb6ae0b813a4973f3043d97e337c8/libtpu-0.0.46.1-cp312-cp312-manylinux_2_31_x86_64.whl", hash = "sha256:5020f2c99881af151fd3fa57ac30036008f559f3bac50bf6d7b6c287b7246a98", size = 216541613, upload-time = "2026-09-03T22:25:45.345Z" },
+]
+
+[[package]]
 name = "marin-core"
 version = "0.2.113.dev35019671596"
 source = { registry = "https://pypi.org/simple" }
@@ -1377,7 +1458,8 @@ dependencies = [
     { name = "google-api-python-client" },
     { name = "google-cloud-storage" },
     { name = "huggingface-hub" },
-    { name = "jax" },
+    { name = "jax", version = "0.10.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "jax", version = "0.11.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-tpu' or extra != 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
     { name = "jaxopt" },
     { name = "marin-finestore" },
     { name = "marin-fray" },
@@ -1408,6 +1490,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/5e/a5/ae72f4569abfdbeecf937103b0772dd2a1209a9e688f3dc5f7ae022c805f/marin_core-0.2.113.dev35019671596.tar.gz", hash = "sha256:32a4ea21f7c744928bef65524890677d26e7c6a73d5023b1a960002f92a6b99b", size = 701115, upload-time = "2026-09-15T21:02:12.839Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/21/a6/aad64dea53df440ad43dd17d216c0b7660e23263a69dc1c223014bd02da5/marin_core-0.2.113.dev35019671596-py3-none-any.whl", hash = "sha256:1afaf8a99f2d7f9215e0b2c38a7ff8a99be4a36347e2111de72b5033715a7e11", size = 833743, upload-time = "2026-09-15T21:01:59.505Z" },
+]
+
+[package.optional-dependencies]
+tpu = [
+    { name = "jax", version = "0.11.1", source = { registry = "https://pypi.org/simple" } },
+    { name = "jaxlib", version = "0.11.1", source = { registry = "https://pypi.org/simple" } },
+    { name = "libtpu" },
+    { name = "torch" },
+    { name = "torchvision", marker = "platform_machine == 'aarch64' or platform_machine == 'x86_64'" },
 ]
 
 [[package]]
@@ -1476,7 +1567,8 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aqtp" },
     { name = "equinox" },
-    { name = "jax" },
+    { name = "jax", version = "0.10.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "jax", version = "0.11.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-tpu' or extra != 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
     { name = "jaxtyping" },
     { name = "jmp" },
     { name = "safetensors" },
@@ -1553,7 +1645,8 @@ dependencies = [
     { name = "gitpython" },
     { name = "humanfriendly" },
     { name = "immutabledict" },
-    { name = "jax" },
+    { name = "jax", version = "0.10.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "jax", version = "0.11.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-tpu' or extra != 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
     { name = "jaxtyping" },
     { name = "jinja2" },
     { name = "jmp" },
@@ -1803,6 +1896,15 @@ wheels = [
 ]
 
 [[package]]
+name = "mpmath"
+version = "1.3.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/e0/47/dd32fa426cc72114383ac549964eecb20ecfd886d1e5ccf5340b55b02f57/mpmath-1.3.0.tar.gz", hash = "sha256:7a28eb2a9774d00c7bc92411c19a89209d5da7c4c9a9e227be8330a23a25b91f", size = 508106, upload-time = "2023-03-07T16:47:11.061Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/43/e3/7d92a15f894aa0c9c4b49b8ee9ac9850d6e63b03c9c32c0367a13ae62209/mpmath-1.3.0-py3-none-any.whl", hash = "sha256:a0b2b9fe80bbcd81a6647ff13108738cfb482d481d826cc0e02f5b35e5c88d2c", size = 536198, upload-time = "2023-03-07T16:47:09.197Z" },
+]
+
+[[package]]
 name = "msgpack"
 version = "1.2.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1882,6 +1984,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/35/68/5351e34623d253423240ea7de3f8fc74fa8ab14b1ab3c0ec4ac8997413c9/narwhals-2.26.0.tar.gz", hash = "sha256:6b9cadca82f375c7e4cf584fdc86ca25da54827307a9c58f94547ee6104b82dd", size = 686970, upload-time = "2026-09-08T13:32:08.964Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/40/b5/1b84b2c784db76d69442334bc8b8748c840f13ca53be086f4f250ad4a0bc/narwhals-2.26.0-py3-none-any.whl", hash = "sha256:29326d74f107c347fd1009bd58e38d9f7c7c5b51e6de97bc93dbc325d9038b54", size = 474034, upload-time = "2026-09-08T13:32:07.159Z" },
+]
+
+[[package]]
+name = "networkx"
+version = "3.7"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/dc/76/3af777226b63a5e64a6b36b1ec5855c14e2b94a37096d4760e595fc43511/networkx-3.7.tar.gz", hash = "sha256:fd77a511bd90f39f3d016351345b52cf5319b813bdca01de3f755d3cca62e96a", size = 1866482, upload-time = "2026-09-21T16:45:16.974Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7e/cd/fe58041e9011f307c490e3e17dd48cc516448f7c698a3f2d9d9d65d7e6a8/networkx-3.7-py3-none-any.whl", hash = "sha256:e3fd2c13a7814cee3746340d8d7f8598a67f16a58bf47fb7f8793fab6efca1b0", size = 2142205, upload-time = "2026-09-21T16:45:14.609Z" },
 ]
 
 [[package]]
@@ -2200,8 +2311,10 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "absl-py" },
     { name = "chex" },
-    { name = "jax" },
-    { name = "jaxlib" },
+    { name = "jax", version = "0.10.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "jax", version = "0.11.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-tpu' or extra != 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "jaxlib", version = "0.10.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "jaxlib", version = "0.11.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-tpu' or extra != 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
     { name = "numpy" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/6d/3b/90c11f740a3538200b61cd2b7d9346959cb9e31e0bdea3d2f886b7262203/optax-0.2.6.tar.gz", hash = "sha256:ba8d1e12678eba2657484d6feeca4fb281b8066bdfd5efbfc0f41b87663109c0", size = 269660, upload-time = "2025-09-15T22:41:24.76Z" }
@@ -2218,7 +2331,8 @@ dependencies = [
     { name = "aiofiles" },
     { name = "etils", extra = ["epath", "epy"] },
     { name = "humanize" },
-    { name = "jax" },
+    { name = "jax", version = "0.10.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
+    { name = "jax", version = "0.11.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'extra-35-exp299-models-delta-stream-contacts-tpu' or extra != 'extra-35-exp299-models-delta-stream-contacts-gpu'" },
     { name = "msgpack" },
     { name = "numpy" },
     { name = "prometheus-client" },
@@ -2739,8 +2853,25 @@ wheels = [
 
 [[package]]
 name = "setuptools"
+version = "81.0.0"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "platform_machine == 'x86_64' and sys_platform == 'linux'",
+    "platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "platform_machine != 'aarch64' and platform_machine != 'x86_64' and sys_platform == 'linux'",
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0d/1c/73e719955c59b8e424d015ab450f51c0af856ae46ea2da83eba51cc88de1/setuptools-81.0.0.tar.gz", hash = "sha256:487b53915f52501f0a79ccfd0c02c165ffe06631443a886740b91af4b7a5845a", size = 1198299, upload-time = "2026-02-06T21:10:39.601Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e1/e3/c164c88b2e5ce7b24d667b9bd83589cf4f3520d97cad01534cd3c4f55fdb/setuptools-81.0.0-py3-none-any.whl", hash = "sha256:fdd925d5c5d9f62e4b74b30d6dd7828ce236fd6ed998a08d81de62ce5a6310d6", size = 1062021, upload-time = "2026-02-06T21:10:37.175Z" },
+]
+
+[[package]]
+name = "setuptools"
 version = "84.0.0"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "sys_platform == 'linux'",
+]
 sdist = { url = "https://files.pythonhosted.org/packages/6d/44/f5da03a8ef95d369145c5bb53050e7877c9f3d312e128605fd9504829143/setuptools-84.0.0.tar.gz", hash = "sha256:f4695c21257f0d9b537ec2692c941d02ee143b7cc1276941349a546573b2ef73", size = 1168449, upload-time = "2026-08-08T18:27:58.365Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/95/9c/c510029fc6ef33a6275cd2c5d3cecd6613dfd6aa401d57c54f1c18852ccf/setuptools-84.0.0-py3-none-any.whl", hash = "sha256:51a52592b3b99e102b609654876bd65f19f999935166d1352678931132b0c670", size = 818216, upload-time = "2026-08-08T18:27:56.719Z" },
@@ -2863,6 +2994,18 @@ wheels = [
 ]
 
 [[package]]
+name = "sympy"
+version = "1.14.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "mpmath" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/83/d3/803453b36afefb7c2bb238361cd4ae6125a569b4db67cd9e79846ba2d68c/sympy-1.14.0.tar.gz", hash = "sha256:d3d3fe8df1e5a0b42f0e7bdf50541697dbe7d23746e894990c030e2b05e72517", size = 7793921, upload-time = "2025-04-27T18:05:01.611Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a2/09/77d55d46fd61b4a135c444fc97158ef34a095e5681d0a6c10b75bf356191/sympy-1.14.0-py3-none-any.whl", hash = "sha256:e091cc3e99d2141a0ba2847328f5479b05d94a6635cb96148ccb3f34671bd8f5", size = 6299353, upload-time = "2025-04-27T18:04:59.103Z" },
+]
+
+[[package]]
 name = "tabulate"
 version = "0.10.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2932,6 +3075,39 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/11/d6/114b492226588d6ff54579d95847662fc69196bdeec318eb45393b24c192/toolz-1.1.0.tar.gz", hash = "sha256:27a5c770d068c110d9ed9323f24f1543e83b2f300a687b7891c1a6d56b697b5b", size = 52613, upload-time = "2025-10-17T04:03:21.661Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/fb/12/5911ae3eeec47800503a238d971e51722ccea5feb8569b735184d5fcdbc0/toolz-1.1.0-py3-none-any.whl", hash = "sha256:15ccc861ac51c53696de0a5d6d4607f99c210739caf987b5d2054f3efed429d8", size = 58093, upload-time = "2025-10-17T04:03:20.435Z" },
+]
+
+[[package]]
+name = "torch"
+version = "2.11.0+cpu"
+source = { registry = "https://download.pytorch.org/whl/cpu" }
+dependencies = [
+    { name = "filelock" },
+    { name = "fsspec" },
+    { name = "jinja2" },
+    { name = "networkx" },
+    { name = "setuptools", version = "81.0.0", source = { registry = "https://pypi.org/simple" } },
+    { name = "sympy" },
+    { name = "typing-extensions" },
+]
+wheels = [
+    { url = "https://download-r2.pytorch.org/whl/cpu/torch-2.11.0%2Bcpu-cp312-cp312-linux_s390x.whl", hash = "sha256:2db3ae5404e32cb42b5fcbd94f13607761eaec0cf1687fde95095289d1e26cfb", upload-time = "2026-04-28T00:06:06Z" },
+    { url = "https://download-r2.pytorch.org/whl/cpu/torch-2.11.0%2Bcpu-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:70ecb2659af6373b7c5336e692e665605b0201ea21ff51aaea47e1d75ea6b5aa", upload-time = "2026-04-28T00:06:14Z" },
+    { url = "https://download-r2.pytorch.org/whl/cpu/torch-2.11.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:f82e2ae20c1545bb03997d1cc3143d94e14b800038669ee1aca45808a9acc338", upload-time = "2026-04-28T00:06:24Z" },
+]
+
+[[package]]
+name = "torchvision"
+version = "0.26.0+cpu"
+source = { registry = "https://download.pytorch.org/whl/cpu" }
+dependencies = [
+    { name = "numpy" },
+    { name = "pillow" },
+    { name = "torch" },
+]
+wheels = [
+    { url = "https://download-r2.pytorch.org/whl/cpu/torchvision-0.26.0%2Bcpu-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:17f0b542331fc94230b4214c6d123f038af7330fd81019608c0d2402f3bc3079", upload-time = "2026-03-23T15:36:09Z" },
+    { url = "https://download-r2.pytorch.org/whl/cpu/torchvision-0.26.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:cf547dc0975eb40bc3249be4ccbeb736597d2c3ece305b1c4e5b7a5dd7363567", upload-time = "2026-03-23T15:36:09Z" },
 ]
 
 [[package]]
@@ -3080,7 +3256,7 @@ standard = [
     { name = "httptools" },
     { name = "python-dotenv" },
     { name = "pyyaml" },
-    { name = "uvloop", marker = "platform_python_implementation != 'PyPy'" },
+    { name = "uvloop", marker = "platform_python_implementation != 'PyPy' or (extra == 'extra-35-exp299-models-delta-stream-contacts-gpu' and extra == 'extra-35-exp299-models-delta-stream-contacts-tpu')" },
     { name = "watchfiles" },
     { name = "websockets" },
 ]

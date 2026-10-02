@@ -27,6 +27,11 @@ gpu = [
     "optax",
     "wandb",
 ]
+tpu = [
+    "marin-core[tpu]",
+    "torch",
+    "torchvision; sys_platform == 'linux'",
+]
 
 [dependency-groups]
 dev = []
@@ -34,6 +39,7 @@ dev = []
 [tool.uv]
 package = false
 fork-strategy = "fewest"
+conflicts = [[{ extra = "gpu" }, { extra = "tpu" }]]
 prerelease = "allow"
 environments = ["sys_platform == 'linux'"]
 find-links = [
@@ -59,3 +65,10 @@ url = "https://marin-community.github.io/chatnoir-resiliparse/simple"
 # ../../models path.
 marinfold-models = { git = "https://github.com/Open-Athena/MarinFold.git", rev = "8186ec08", subdirectory = "models" }
 resiliparse = { index = "marin-resiliparse" }
+torch = { index = "pytorch-cpu" }
+torchvision = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
