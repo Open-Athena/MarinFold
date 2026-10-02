@@ -373,10 +373,38 @@ seconds/update, and 14.13% MFU. The complete 16.50 GiB native checkpoint was
 written to the co-located GCS bucket. This establishes functional TPU support;
 it does not yet select the most cost-effective or fastest TPU topology.
 
+The complete GB200 step-126,294 checkpoint is also mirrored to GCS (28 objects,
+17,714,954,468 bytes). A `v6e-16` full-state restore smoke resumed from step
+126,295, completed updates 126,295–126,296, reproduced a two-batch validation
+loss of 1.06911, and wrote a complete step-126,296 checkpoint. This verifies
+model, optimizer, RNG, global-step, and finite-loader restoration across the
+GPU-to-TPU cutover. The short smoke's compressed LR schedule is not a
+scientific result.
+
+## Cooldown timing plan
+
+The unchanged CoreWeave run is the 20%-cooldown control: its linear decay begins
+near step 168,394 and training ends at step 210,492. The focused alternatives
+branch from the same full-state step-126,294 checkpoint and alter only optimizer
+`decay`: 30% begins near step 147,344; 40% begins near step 126,295. Peak LR,
+LR floor, weight decay, batch size, sequence length, cache contents, corpus
+order, serialization, masking, and all restored state remain fixed.
+
+A 50-update `v6e-16` topology benchmark reached 136,025 tokens/s, 7.709
+seconds/update, and 12.68% MFU. First-step compilation took 32.5 seconds and the
+forced 16.50 GiB final checkpoint took about 83 seconds. At that rate, one
+84,198-update continuation would take roughly 7.5 days, so larger-topology
+placement/benchmarking remains necessary before launching the scientific arms.
+The initial `v6e-32` request is capacity-queued; direct `v6e-64` placement was
+cancelled because the provisioned workers register as smaller slices that do
+not match Iris's requested `v6e-64` device variant.
+
 ## Next steps
 
-1. Continue the finite full-epoch run through step 210,492.
-2. Evaluate a retained checkpoint in the LR-decay phase and the final checkpoint
+1. Continue the unchanged finite full-epoch CoreWeave run through step 210,492.
+2. Select an affordable TPU topology and review the two proposed 30%/40%
+   cooldown continuations before launching them.
+3. Evaluate a retained checkpoint in the LR-decay phase and the final checkpoint
    with the canonical rollout protocol.
 
 ## Files
