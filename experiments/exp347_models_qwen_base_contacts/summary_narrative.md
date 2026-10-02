@@ -10,31 +10,34 @@ Six trials, approximately 1B tokens each; at most 48 H100 GPUs.
 ## Data and comparison
 
 Use exp232's existing CoreWeave copy of exp225-decontaminated AFDB documents.
-The two formats contain the same sequence and contact information.
-Keep Qwen's original tokenizer and vocabulary. No chat template.
-Exclude a protein from both formats if either complete document exceeds 16K.
-Hold out sequence clusters, with no use of eval-test for model development.
+Both formats contain the same sequence and contact information.
+Keep the original Qwen tokenizer and vocabulary. No chat template.
+The paired pool has 920,611 training and 9,235 validation proteins.
+Exclude the same 5.11% of source rows when either complete document exceeds 16K.
+The pool has 4.493B raw tokens versus 1.290B prompted tokens.
+Equal token budgets imply different protein exposure.
 
-## Current evidence and limits
+## Current execution
 
-The complete corpus contains 920,611 training and 9,235 validation documents.
-5.11% of source examples exceeded 16K; both formats exclude the same rows.
-The training pool contains 4.493B contacts-v1 tokens and 1.290B prompted tokens. Equal token budgets imply different
-protein exposure. The 0.8B training, checkpoint, and optimizer/data/RNG
-recovery checks passed. Both 2B training/checkpoint smoke tests also passed.
-All four 0.8B/2B production trials are launched, requesting 32 H100s.
-At 18:50 UTC, all are waiting for batch admission after three preemptions.
-The saved 0.8B contacts-v1 checkpoint can resume at step 253.
-Idle-node totals included cordoned nodes; no cluster configuration was changed.
-The 4B trials await approval for the combined 15.6 GB model transfer.
-No contact accuracy or pretrained-transfer advantage has yet been established.
+The 0.8B training, checkpoint, and optimizer/data/RNG recovery checks passed.
+Both 2B smoke tests and the 4B training/checkpoint smoke passed.
+The approved 4B transfer is complete, with pinned revision and file checksums.
+All six 1B-token production trials have been launched, capped at 48 H100s.
+The 4B raw run hit GPU memory exhaustion, then recovered with gradient-buffer
+reuse and allocator changes, reaching step 21 at about 27-34K tokens/second.
+Frequent batch preemptions are repeatedly erasing unsaved work.
+The recovery update saves after the first update of every attempt, then every
+two minutes, and skips repeat validation at a restored production step.
+Trial identities, data, batch size, and token budgets remain fixed.
+All six trials are being moved onto this recovery code. None has finished.
 
-## Validation and interpretation
+## Early evidence and limits
 
-Teacher-forced contact likelihood uses 64 held-out AFDB documents.
-Greedy generation diagnostics retain malformed, empty, and capped outputs.
-They are not the established FoldBench rollout-plus-resample benchmark.
-Per-input timings are saved at evaluation time, including worker metadata.
-The first raw-format run initially sustained roughly 39–53K tokens/second
-over eight H100s. These are engineering observations, not accuracy results.
-At 36.92M tokens, its contact-token NLL improved from 0.70685 to 0.59605.
+Raw 0.8B validation contact-token NLL fell from 0.70685 to 0.59605 at 36.92M tokens.
+Prompted 2B NLL fell from 1.46629 to 1.23746 by step 1250.
+NLLs across the two tokenizations are not directly comparable.
+A greedy generation canary ran on both 2B smoke checkpoints: all 16 outputs
+hit the 256-token cap, produced zero valid pairs, and scored F1 zero.
+This is not the FoldBench rollout-plus-resample benchmark.
+No contact accuracy or causal pretrained-transfer advantage is established.
+Per-input timings and worker metadata were saved at evaluation time.

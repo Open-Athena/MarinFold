@@ -61,9 +61,13 @@ decay 0.1, and gradient clipping at 1.0. Four complete documents per GPU form ea
 accumulated optimizer step, with a global token-normalized objective. The final
 step can exceed 1B by at most one global batch.
 
-Every 15 minutes and at completion, each rank saves its optimizer/RNG/data cursor
+Production attempts save after their first update, every two minutes, and at
+completion. Each rank saves its optimizer/RNG/data cursor
 and rank zero saves the model/tokenizer. A completion marker precedes movement of
 the resume pointer; only then can the previous resumable checkpoint be removed.
+Resumed production skips a duplicate validation pass at the restored step;
+validation still runs every 250 steps and at completion, and smoke recovery
+checks still validate the restored state.
 The final export also includes BF16 inference weights and tokenizer. Resume keeps
 the same run identity and currently requires eight ranks. Working artifacts are
 under `s3://marin-us-east-02a/MarinFold/exp347_qwen_base_contacts/`; durable public
@@ -116,7 +120,7 @@ The 2B contacts-v1 smoke completed as
 Its step-4 checkpoint contains 137,698 training tokens; peak allocated memory
 was 28.74 GB. Both 2B checkpoint directories and all rank shards were verified.
 
-Eleven document/cursor/output-parser tests, eight capacity-helper tests, Ruff,
+Fourteen document/cursor/output-parser/export/distributed-update tests, eight capacity-helper tests, Ruff,
 and Pyrefly passed. A two-rank CPU numerical check also confirmed that the
 accumulated gradients match a single globally token-weighted reference loss.
 Measured per-input validation times are retained in [`data/timings.csv`](data/timings.csv).
@@ -141,9 +145,16 @@ The 0.8B prompted and both 2B arms have also been launched with the same
 [0.8B prompted W&B](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-0p8b-prompted-1bt),
 [2B contacts-v1 Iris job](https://iris.oa.dev/#/job/%2Ftimodonnell%2Fexp347-qwen35-2b-contacts_v1-1bt-a01),
 [2B prompted W&B](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-2b-prompted-1bt).
-The 4B arms await the required approval for model staging: the combined pinned
-base-model download is approximately 15.6 GB, exceeding the repository's explicit
-10 GB cross-region transfer threshold. Only the 0.8B and 2B weights have been staged.
+The user approved the remaining 4B transfer on 2026-10-02. Job
+`/timodonnell/exp347-stage-4b-a01` staged 9,342,808,116 bytes and verified exact
+tokenizer equality across all three sizes. The revision and file checksums are
+retained in [`data/model_staging_4b.json`](data/model_staging_4b.json).
+The 4B training/checkpoint smoke completed as
+`/timodonnell/exp347-qwen35-4b-contacts_v1-smoke-a01`
+([W&B](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-4b-contacts_v1-smoke)).
+It processed 137,698 tokens, used 54.69 GB peak allocated GPU memory, and saved a
+step-4 checkpoint. All 29 checkpoint files were verified, including model,
+tokenizer, BF16 export, and eight optimizer shards.
 
 ![In-progress validation likelihood curves](plots/validation_nll.png)
 
@@ -153,16 +164,36 @@ mode retrieves the latest production histories from W&B. The two formats use
 different tokenizations of the contacts, so their token NLLs are not directly
 comparable. The plotted observations are intermediate training results.
 
-As of 2026-10-02 18:50 UTC, all four production jobs remain submitted but are
-waiting for Kueue admission. Three were preempted at batch priority; the first
-0.8B contacts-v1 run has a resumable step-253 checkpoint, while the two newer
-prompted runs had not yet reached their first periodic checkpoint. Iris will
-retry the same jobs and training will load the latest available state. The
-fourth production arm (2B contacts-v1) had not begun training. Aggregate fleet
-GPU availability included cordoned nodes; read-only node inspection and exact
-Kueue diagnostics established the placement constraint. No cluster configuration
-or priority was changed. The launcher now allows a CPU reservation of 32 (four
-threads per rank) for future dispatches, but this alone did not resolve the gate.
+As of 2026-10-02 20:35 UTC, all six production trials are submitted, for 48
+requested H100s at batch priority. Both 4B arms use eight H100s and the same 1B-token
+budget: [contacts-v1 W&B](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-4b-contacts_v1-1bt)
+and [prompted Iris job](https://iris.oa.dev/#/job/%2Ftimodonnell%2Fexp347-qwen35-4b-prompted-1bt-a01).
+No production trial has finished. The first 4B raw production attempt completed
+step one and saved a checkpoint, then exhausted GPU memory on step two. Its
+short smoke had not exposed gradient accumulation memory pressure. Later NVLink
+errors were secondary to the OOM. The prompted attempt was stopped before
+continuing so both 4B arms can use the corrected memory profile. Attempt a02
+preserves [DDP gradient bucket views](https://docs.pytorch.org/docs/2.10/generated/torch.nn.parallel.DistributedDataParallel.html)
+and enables [expandable allocator segments](https://docs.pytorch.org/docs/2.10/notes/cuda.html);
+a two-process sharded-AdamW test verifies multiple updates against a single
+global reference. The documents, batch size, objective, and budget are unchanged. The 2B prompted validation NLL fell from 1.46629 initially to 1.23746 at
+step 1250. These are held-out likelihood observations, not contact accuracy.
+
+W&B high-water progress can exceed the most recent durable checkpoint; repeated
+preemptions have erased unsaved work. The original production bundles used
+15-minute checkpoints; even the first five-minute replacement interval lost
+progress when allocations ended soon after startup. All six trials are being
+updated to the two-minute cadence and first-update recovery rule above. No training objective, token budget, cluster configuration, or priority
+changed. The 0.8B raw and 2B prompted jobs have verified resumable checkpoints.
+
+Read-only node inspection found that aggregate free-GPU counts included cordoned
+nodes. The launcher permits a CPU reservation of 32 (four threads per rank), but
+this does not resolve admission when no schedulable whole GPU node is available.
+
+The BF16 export now preserves tied embedding/output tensors. Save/reload tests
+cover both tied and untied Qwen configurations and exact BF16 values. The initial 0.8B/2B smoke exports predate this correction;
+any publication of those exports must re-export their FP32 model with the
+corrected exporter. Updated production bundles include the correction.
 
 [`rollout_validation.py`](rollout_validation.py) provides a separate greedy
 completion diagnostic on those held-out AFDB documents, retaining each output,
@@ -170,7 +201,11 @@ invalid/duplicate pair count, token-cap flag, precision/recall/F1, and timing. I
 is explicitly not the established FoldBench rollout-plus-resample benchmark and
 its numbers must not be compared to that benchmark's R-precision.
 The eight-protein-per-format generation canary,
-`/timodonnell/exp347-generation-smoke-a02`, is also queued. It uses the saved 2B
-smoke checkpoints and a deliberately short 256-token cap; it has no accuracy
-results yet. This is an additional eight-H100 job while active, for 40 requested
-GPUs including the four production runs.
+`/timodonnell/exp347-generation-smoke-a02`, completed using the saved 2B smoke
+checkpoints and a deliberately short 256-token cap. All 16 generations hit that
+cap and produced zero valid contact pairs (F1 zero): prompted outputs repeated
+`100 100`, while raw outputs continued position symbols. The code path runs, but
+these approximately 100K-token smoke models do not demonstrate contact prediction.
+Results are in [`data/generation_canary_metrics.csv`](data/generation_canary_metrics.csv),
+with measured inference times in the timing CSV. Full-budget models need longer
+completion evaluation before an accuracy comparison can be made.

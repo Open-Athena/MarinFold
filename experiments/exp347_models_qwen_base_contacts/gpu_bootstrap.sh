@@ -4,6 +4,7 @@ export UV_LINK_MODE=copy
 export TOKENIZERS_PARALLELISM=false
 export OMP_NUM_THREADS=4
 export MAX_JOBS=8
+export PYTORCH_ALLOC_CONF=expandable_segments:True
 export WANDB_PROJECT=MarinFold
 export WANDB_ENTITY=open-athena
 uv sync --locked --extra train

@@ -14,8 +14,8 @@ marinfold_run:
   git_sha: 3aa75220bcfd5885db293ad55f685bdbbc9005f0
   iris_job_ids:
   - /timodonnell/exp347-qwen35-0p8b-prompted-1bt-a01
+  - /timodonnell/exp347-qwen35-0p8b-prompted-1bt-a02
 ---
-
 # 2026-10-02 · exp347_models_qwen_base_contacts · exp347-qwen35-0p8b-prompted-1bt
 
 **Launched:** 2026-10-02T18:31:32Z by bizon  

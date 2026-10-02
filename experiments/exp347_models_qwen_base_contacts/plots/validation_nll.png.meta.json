@@ -1,5 +1,7 @@
 {
   "script": "collect_metrics.py",
-  "args": [],
+  "args": [
+    "--refresh"
+  ],
   "caption": "Production validation on 64 held-out AFDB documents. Lower is better within a format; token NLL across formats is not contact accuracy. In-progress observations, without error bars."
 }

@@ -137,6 +137,25 @@ def cpu_tree(value: Any) -> Any:
     return value
 
 
+def inference_state_dict(model: torch.nn.Module) -> dict[str, torch.Tensor]:
+    """Cast weights on CPU while preserving shared embedding/output tensors."""
+    converted: dict[tuple, torch.Tensor] = {}
+    result = {}
+    for name, value in model.state_dict().items():
+        key = (
+            str(value.device),
+            value.dtype,
+            value.data_ptr(),
+            tuple(value.shape),
+            tuple(value.stride()),
+        )
+        if key not in converted:
+            dtype = torch.bfloat16 if value.is_floating_point() else value.dtype
+            converted[key] = value.detach().to(device="cpu", dtype=dtype)
+        result[name] = converted[key]
+    return result
+
+
 def checkpoint(
     model: Qwen3_5ForCausalLM,
     optimizer: ZeroRedundancyOptimizer,
@@ -174,10 +193,7 @@ def checkpoint(
         tokenizer.save_pretrained(local / "model")
         copy_tree_to_remote(local / "model", uri + "/model")
         if final:
-            weights = {
-                k: v.detach().to(device="cpu", dtype=torch.bfloat16)
-                for k, v in model.state_dict().items()
-            }
+            weights = inference_state_dict(model)
             model.save_pretrained(
                 local / "hf", state_dict=weights, max_shard_size="4GB"
             )
@@ -285,10 +301,13 @@ def main() -> None:
     parser.add_argument("--tokens", type=int, default=TOKEN_BUDGET)
     parser.add_argument("--accumulation", type=int, default=4)
     parser.add_argument("--learning-rate", type=float, default=2e-5)
+    parser.add_argument("--checkpoint-seconds", type=float, default=120)
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument("--resume-check", action="store_true")
     parser.add_argument("--eval-documents", type=int, default=64)
     args = parser.parse_args()
+    if args.checkpoint_seconds <= 0:
+        raise ValueError("Checkpoint interval must be positive")
     rank, world = int(os.environ["RANK"]), int(os.environ["WORLD_SIZE"])
     torch.cuda.set_device(rank)
     dist.init_process_group("nccl", device_id=torch.device("cuda", rank))
@@ -419,15 +438,22 @@ def main() -> None:
                 },
                 handle,
             )
-    result = evaluate(
-        wrapped,
-        val_rows,
-        args.format,
-        rank,
-        step,
-        model_load_seconds,
-        name,
-        f"{ROOT}/runs/{name}",
+    # Production resumes prioritize saving new progress. Repeating validation
+    # at the restored step costs much of a short preemptible allocation; smoke
+    # recovery checks still evaluate it to verify exact restoration.
+    result = (
+        evaluate(
+            wrapped,
+            val_rows,
+            args.format,
+            rank,
+            step,
+            model_load_seconds,
+            name,
+            f"{ROOT}/runs/{name}",
+        )
+        if resume is None or args.smoke
+        else {}
     )
     if run:
         run.log(
@@ -460,7 +486,10 @@ def main() -> None:
         )
         for group in optimizer.param_groups:
             group["lr"] = args.learning_rate * lr_factor
-        optimizer.zero_grad(set_to_none=True)
+        # Preserve DDP bucket views across accumulation steps. Clearing them to
+        # None creates another full set of gradients during no_sync(), which
+        # exhausts an 80 GB H100 for the 4B model after its first update.
+        optimizer.zero_grad(set_to_none=False)
         total_loss = torch.zeros((), device="cuda")
         for i, row in enumerate(batch):
             ids = torch.tensor([row[args.format]], device="cuda")
@@ -496,7 +525,14 @@ def main() -> None:
             run.log(metrics)
         final = tokens >= args.tokens
         save = torch.tensor(
-            [int(final or time.monotonic() - last_checkpoint >= 900)], device="cuda"
+            [
+                int(
+                    final
+                    or (not args.smoke and step == resumed_step + 1)
+                    or time.monotonic() - last_checkpoint >= args.checkpoint_seconds
+                )
+            ],
+            device="cuda",
         )
         dist.broadcast(save, src=0)
         if save.item():

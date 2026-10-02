@@ -1,0 +1,17 @@
+diagnostic,stem,n_residues,true_contacts,predicted_contacts,correct_contacts,invalid_or_duplicate_pairs,precision,recall,f1,hit_token_cap,format_end_emitted,generated_tokens
+2b-prompted-smoke-step-10-cap256,AF-A0A2G5TXB3-F1,301,354,0,0,32,0.0,0.0,0.0,True,False,256
+2b-prompted-smoke-step-10-cap256,AF-F7YR68-F1,138,140,0,0,32,0.0,0.0,0.0,True,False,256
+2b-prompted-smoke-step-10-cap256,AF-A0A329P9E8-F1,336,279,0,0,32,0.0,0.0,0.0,True,False,256
+2b-prompted-smoke-step-10-cap256,AF-A0A1Q9JWD9-F1,228,21,0,0,32,0.0,0.0,0.0,True,False,256
+2b-prompted-smoke-step-10-cap256,AF-A0A7K0K2J9-F1,430,284,0,0,32,0.0,0.0,0.0,True,False,256
+2b-prompted-smoke-step-10-cap256,AF-A0A0D7KG49-F1,444,362,0,0,32,0.0,0.0,0.0,True,False,256
+2b-prompted-smoke-step-10-cap256,AF-A0A2K2UBD9-F1,214,135,0,0,32,0.0,0.0,0.0,True,False,256
+2b-prompted-smoke-step-10-cap256,AF-W6W933-F1,136,107,0,0,32,0.0,0.0,0.0,True,False,256
+2b-contacts_v1-smoke-step-4-cap256,AF-A0A2G5TXB3-F1,301,354,0,0,1,0.0,0.0,0.0,True,False,256
+2b-contacts_v1-smoke-step-4-cap256,AF-F7YR68-F1,138,140,0,0,1,0.0,0.0,0.0,True,False,256
+2b-contacts_v1-smoke-step-4-cap256,AF-A0A329P9E8-F1,336,279,0,0,1,0.0,0.0,0.0,True,False,256
+2b-contacts_v1-smoke-step-4-cap256,AF-A0A1Q9JWD9-F1,228,21,0,0,1,0.0,0.0,0.0,True,False,256
+2b-contacts_v1-smoke-step-4-cap256,AF-A0A7K0K2J9-F1,430,284,0,0,1,0.0,0.0,0.0,True,False,256
+2b-contacts_v1-smoke-step-4-cap256,AF-A0A0D7KG49-F1,444,362,0,0,1,0.0,0.0,0.0,True,False,256
+2b-contacts_v1-smoke-step-4-cap256,AF-A0A2K2UBD9-F1,214,135,0,0,1,0.0,0.0,0.0,True,False,256
+2b-contacts_v1-smoke-step-4-cap256,AF-W6W933-F1,136,107,0,0,1,0.0,0.0,0.0,True,False,256
