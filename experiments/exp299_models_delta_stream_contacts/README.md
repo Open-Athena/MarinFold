@@ -358,6 +358,21 @@ rollouts parsed without malformed generations. Notebook-ready values are in
 Large row-level outputs and timings are under
 `s3://rhoarnet-us-east-08a/protein-structure/MarinFold/exp299_contacts_delta_stream_v2_sequence_prefix/eval/exp277_full_epoch_rollout_votes/`.
 
+## TPU compatibility smoke
+
+Both exp277-scale cache formats are mirrored under
+`gs://marin-us-east5/protein-structure/MarinFold/exp299_contacts_delta_stream_v2_sequence_prefix/exp277_full_epoch_tokenized_cache/2026.09.22.1/`.
+The contacts-v1 mirror contains 32,622 objects and 351,901,003,059 bytes; the
+contacts-v2 mirror contains 32,146 objects and 159,232,199,956 bytes. Both
+object counts and aggregate byte totals match their S3 sources.
+
+A ten-update V2 smoke completed on one `v6e-8` in `us-east5-b` with global
+batch 128, sequence length 8,192, Splash attention, and blocked cross-document
+attention. Step 9 reached train loss 4.5486, 75,775 tokens/s, 13.84
+seconds/update, and 14.13% MFU. The complete 16.50 GiB native checkpoint was
+written to the co-located GCS bucket. This establishes functional TPU support;
+it does not yet select the most cost-effective or fastest TPU topology.
+
 ## Next steps
 
 1. Continue the finite full-epoch run through step 210,492.
