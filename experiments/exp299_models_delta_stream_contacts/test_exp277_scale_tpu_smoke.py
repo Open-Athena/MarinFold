@@ -23,6 +23,13 @@ def test_v5p128_smoke_uses_splash_and_two_examples_per_chip() -> None:
     assert config.train_seq_len == 8192
 
 
+def test_v6e8_smoke_uses_eight_chips() -> None:
+    resources = tpu_resources("v6e-8", "us-east5-b")
+    assert resources.cpu == 160
+    assert resources.replicas == 1
+    assert tpu_pod_config("v6e-8", "us-east5-b").train_config.trainer.per_device_parallelism == 16
+
+
 def test_tpu_shape_must_divide_global_batch() -> None:
     with pytest.raises(ValueError, match="must divide evenly"):
         tpu_pod_config("v5p-512", "us-east5-a")

@@ -18,10 +18,11 @@ DEFAULT_TPU_ZONE = "us-east5-a"
 
 def tpu_resources(tpu_type: str, zone: str) -> ResourceConfig:
     """Construct the TPU slice used by the smoke."""
+    cpu = 160 if tpu_type.startswith("v6e-") else 200
     return ResourceConfig.with_tpu(
         tpu_type,
         slice_count=1,
-        cpu=200,
+        cpu=cpu,
         ram="400GB",
         disk="50GB",
         zone=zone,
@@ -37,8 +38,13 @@ def tpu_pod_config(
         tpu_cores = int(tpu_type.rsplit("-", 1)[1])
     except (IndexError, ValueError) as error:
         raise ValueError(f"TPU type must end in its core count: {tpu_type}") from error
-    chips = tpu_cores // 2
-    if tpu_cores % 2 or GLOBAL_BATCH_SIZE % chips:
+    if tpu_type.startswith("v5p-"):
+        chips = tpu_cores // 2
+    elif tpu_type.startswith("v6e-"):
+        chips = tpu_cores
+    else:
+        raise ValueError(f"unsupported TPU family: {tpu_type}")
+    if not chips or GLOBAL_BATCH_SIZE % chips:
         raise ValueError(
             f"global batch {GLOBAL_BATCH_SIZE} must divide evenly across {chips} chips"
         )
