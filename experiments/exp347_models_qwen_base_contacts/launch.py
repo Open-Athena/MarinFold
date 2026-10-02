@@ -24,6 +24,7 @@ def main() -> None:
     )
     parser.add_argument("--attempt", type=int, required=True)
     parser.add_argument("--smoke", action="store_true")
+    parser.add_argument("--resume-check", action="store_true")
     parser.add_argument("--tokens", type=int)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument(
@@ -87,6 +88,8 @@ def main() -> None:
     ]
     if args.smoke:
         command += ["--smoke", "--eval-documents", "8", "--accumulation", "1"]
+    if args.resume_check:
+        command.append("--resume-check")
     redacted = shlex.join(command)
     print(redacted, flush=True)
     if args.dry_run:

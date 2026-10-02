@@ -72,8 +72,8 @@ publication and contact-generation evaluation follow completed training.
 [`launch.py`](launch.py) submits one explicitly chosen trial through the Marin
 controller at batch priority, pins the PyTorch container digest, forwards W&B
 credentials without recording them, and records the dispatch in sweep SQLite.
-The training environment is pinned in [`uv.lock`](uv.lock), with causal-conv1d
-1.6.0 built against the pinned torch/CUDA environment in
+The training environment is pinned in [`uv.lock`](uv.lock), with the SHA256-pinned upstream causal-conv1d
+1.7.0 CUDA 12 / torch 2.10 wheel in
 [`gpu_bootstrap.sh`](gpu_bootstrap.sh). Initial Iris submission used marin commit
 `16ed2b63cdf810fc444930138ac3a35f53260e71`.
 
@@ -95,10 +95,17 @@ documents, containing 151,261,429 training contacts. The native-token totals are
 finish without a second corpus pass, although protein exposure differs by format.
 The pinned 0.8B and 2B checkpoints were staged successfully by
 `/timodonnell/exp347-stage-small-a02` and their tokenizers are exactly equal.
-GPU correctness testing starts with
-`/timodonnell/exp347-qwen35-0p8b-contacts_v1-smoke-a01`.
-Seven document-integrity tests, eight capacity-helper tests, and static checking
-of the CPU preparation/launch code passed. No training outcome is claimed yet.
+The first GPU attempt was preempted during dependency compilation. The pinned
+upstream CUDA wheel removed that build; attempt
+`/timodonnell/exp347-qwen35-0p8b-contacts_v1-smoke-a02` then completed successfully.
+It processed 137,698 tokens in four optimizer steps, saved all eight optimizer
+shards and model/tokenizer artifacts, and reached 45,007 tokens/s in the last step
+with 12.53 GB peak allocated GPU memory. The [smoke W&B run](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-0p8b-contacts_v1-smoke)
+has initial/final contact-continuation validation metrics. These tiny smoke values
+are engineering checks, not contact-accuracy results. Attempt a03 verifies a
+further optimizer update after loading that saved state.
+
+Eight document/cursor tests, eight capacity-helper tests, Ruff, and Pyrefly passed.
 
 ## Conclusion
 

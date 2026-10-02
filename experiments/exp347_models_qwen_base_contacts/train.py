@@ -284,11 +284,12 @@ def main() -> None:
     parser.add_argument("--accumulation", type=int, default=4)
     parser.add_argument("--learning-rate", type=float, default=2e-5)
     parser.add_argument("--smoke", action="store_true")
+    parser.add_argument("--resume-check", action="store_true")
     parser.add_argument("--eval-documents", type=int, default=64)
     args = parser.parse_args()
     rank, world = int(os.environ["RANK"]), int(os.environ["WORLD_SIZE"])
     torch.cuda.set_device(rank)
-    dist.init_process_group("nccl")
+    dist.init_process_group("nccl", device_id=torch.device("cuda", rank))
     torch.set_num_threads(4)
     random.seed(SEED + rank)
     np.random.seed(SEED + rank)
@@ -327,6 +328,10 @@ def main() -> None:
             shutil.rmtree(local_model)
         copy_tree_from_remote(source, local_model)
     dist.barrier()
+    if not resume:
+        staged = json.loads((local_model / "staged.json").read_text())
+        if (staged["repo"], staged["revision"]) != MODELS[args.size]:
+            raise ValueError("Staged base model does not match its pinned revision")
     model, info = Qwen3_5ForCausalLM.from_pretrained(
         local_model,
         dtype=torch.float32,
@@ -368,6 +373,9 @@ def main() -> None:
         random.setstate(state["python_rng"])
         np.random.set_state(state["numpy_rng"])
         del state
+    if args.resume_check and (not args.smoke or resume is None):
+        raise ValueError("Resume checking requires an existing smoke checkpoint")
+    resumed_step = step
     model_load_seconds = time.perf_counter() - load_start
     val_stream = DocumentStream(args.data + "/validation", args.format, rank, world)
     val_rows = [val_stream.next() for _ in range(max(1, args.eval_documents // world))]
@@ -383,6 +391,9 @@ def main() -> None:
             config={
                 **vars(args),
                 "base_model": MODELS[args.size],
+                "trainable_parameters": sum(
+                    p.numel() for p in model.parameters() if p.requires_grad
+                ),
                 "world": world,
                 "cluster": os.environ["EXP347_CLUSTER"],
                 "gpu": "H100",
@@ -426,7 +437,7 @@ def main() -> None:
             }
         )
     last_checkpoint = time.monotonic()
-    while tokens < args.tokens:
+    while tokens < args.tokens or (args.resume_check and step == resumed_step):
         began = time.perf_counter()
         batch = [stream.next() for _ in range(args.accumulation)]
         counts = torch.tensor(
@@ -439,7 +450,7 @@ def main() -> None:
             dtype=torch.int64,
         )
         dist.all_reduce(counts)
-        ratio = tokens / args.tokens
+        ratio = min(tokens / args.tokens, 1.0)
         lr_factor = (
             max(0.01, ratio / 0.01)
             if ratio < 0.01
