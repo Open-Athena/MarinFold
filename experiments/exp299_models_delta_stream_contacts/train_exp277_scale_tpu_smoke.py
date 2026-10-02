@@ -29,21 +29,25 @@ def tpu_resources(tpu_type: str, zone: str) -> ResourceConfig:
     )
 
 
-def tpu_pod_config(
-    tpu_type: str = DEFAULT_TPU_TYPE,
-    zone: str = DEFAULT_TPU_ZONE,
-) -> TrainLmOnPodConfig:
-    """Build the smoke config with TPU attention and per-chip microbatching."""
+def tpu_chip_count(tpu_type: str) -> int:
+    """Return the number of JAX devices in one supported TPU slice."""
     try:
         tpu_cores = int(tpu_type.rsplit("-", 1)[1])
     except (IndexError, ValueError) as error:
         raise ValueError(f"TPU type must end in its core count: {tpu_type}") from error
     if tpu_type.startswith("v5p-"):
-        chips = tpu_cores // 2
-    elif tpu_type.startswith("v6e-"):
-        chips = tpu_cores
-    else:
-        raise ValueError(f"unsupported TPU family: {tpu_type}")
+        return tpu_cores // 2
+    if tpu_type.startswith("v6e-"):
+        return tpu_cores
+    raise ValueError(f"unsupported TPU family: {tpu_type}")
+
+
+def tpu_pod_config(
+    tpu_type: str = DEFAULT_TPU_TYPE,
+    zone: str = DEFAULT_TPU_ZONE,
+) -> TrainLmOnPodConfig:
+    """Build the smoke config with TPU attention and per-chip microbatching."""
+    chips = tpu_chip_count(tpu_type)
     if not chips or GLOBAL_BATCH_SIZE % chips:
         raise ValueError(
             f"global batch {GLOBAL_BATCH_SIZE} must divide evenly across {chips} chips"
