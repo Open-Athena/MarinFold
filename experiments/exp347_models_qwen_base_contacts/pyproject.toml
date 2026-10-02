@@ -1,0 +1,21 @@
+[project]
+name = "exp347-qwen-base-contacts"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "transformers==5.3.0",
+  "huggingface-hub==1.7.1",
+  "pyarrow==23.0.1",
+  "fsspec==2026.2.0",
+  "s3fs==2026.2.0",
+  "numpy==2.2.6",
+  "wandb==0.25.1",
+  "matplotlib==3.10.8",
+  "pytest==9.0.2",
+]
+
+[project.optional-dependencies]
+train = ["torch==2.10.0", "flash-linear-attention==0.4.2", "liger-kernel==0.7.0"]
+
+[tool.uv]
+package = false
