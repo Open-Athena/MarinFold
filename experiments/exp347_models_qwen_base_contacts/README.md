@@ -83,6 +83,36 @@ The training environment is pinned in [`uv.lock`](uv.lock), with the SHA256-pinn
 
 ## Results
 
+As of **2026-10-05 13:25 UTC**, five production trials have finished their
+approximately 1B-token budgets. Both Iris and W&B report successful completion.
+Their final completion markers, eight optimizer shards, model/tokenizer files,
+and BF16 inference exports were verified directly in co-located storage on
+October 5. Contacts-v1 finishes at step 6496; prompted finishes at step 22268.
+The 320 per-protein timing rows from these final validation passes are included
+in [`data/timings.csv`](data/timings.csv).
+The 2B prompted trial stopped on October 3 after a distributed communication
+timeout at step 1809 (79.61M tokens). A replacement attempt was submitted on
+October 5, restored step 1773 (78,142,147 retained tokens), and completed its
+first resumed update under the same run identity.
+
+Validation below uses the same 64 held-out AFDB documents. Lower contact-token
+negative log likelihood (NLL) is better **within each format**. The incomplete
+2B prompted result is not a matched-budget comparison.
+
+| Model | Format | Training tokens | Initial NLL | Latest NLL | Training status |
+| --- | --- | ---: | ---: | ---: | --- |
+| 0.8B | contacts-v1 | 1,000,038,409 | 0.70685 | 0.51342 | Finished |
+| 2B | contacts-v1 | 1,000,038,409 | 0.69876 | 0.50577 | Finished |
+| 4B | contacts-v1 | 1,000,038,409 | 0.69670 | 0.49301 | Finished |
+| 0.8B | prompted | 1,000,005,730 | 1.48312 | 1.15186 | Finished |
+| 2B | prompted | 79,608,805 before failure | 1.46629 | 1.22514 at 77.14M tokens | Resumed from 78.14M |
+| 4B | prompted | 1,000,005,730 | 1.44411 | 1.06211 | Finished |
+
+The completed trials favor larger models on this likelihood diagnostic. No
+full-budget contact-generation accuracy evaluation has run yet, so these results
+do not establish whether prompted documents outperform contacts-v1 or whether
+pretraining improves contact prediction relative to training from scratch.
+
 The one-shard data smoke succeeded on 2026-10-02:
 `/timodonnell/exp347-data-smoke-a01`. Of 1,887 source rows, 98 exceeded 16K and one
 had no contacts. The retained 1,766 training / 22 validation rows preserve all
@@ -127,7 +157,9 @@ Measured per-input validation times are retained in [`data/timings.csv`](data/ti
 
 ## Conclusion
 
-In progress. This experiment has not yet established a contact-prediction improvement.
+Five of six training trials have completed. Larger models have lower validation
+contact-token NLL within each format, but contact-prediction accuracy and the
+matched-budget 2B prompted result remain outstanding.
 
 ## Production training
 
@@ -162,22 +194,24 @@ tokenizer, BF16 export, and eight optimizer shards.
 [`data/learning_curves.csv`](data/learning_curves.csv), and its optional refresh
 mode retrieves the latest production histories from W&B. The two formats use
 different tokenizations of the contacts, so their token NLLs are not directly
-comparable. The plotted observations are intermediate training results.
+comparable. The refreshed October 5 plot includes final results for five trials
+and partial results for 2B prompted. Replayed steps after preemption remain in
+the recorded histories.
 
-As of 2026-10-02 21:16 UTC, all six production trials report fresh training
-progress, requesting 48 H100s total at batch priority. All six now have reachable
-production checkpoints with matching completion markers, model weights,
-tokenizers, and eight optimizer shards. Their verified retained token counts
-are 48.83M / 3.25M for 0.8B raw/prompted, 0.289M / 50.02M for 2B, and
-0.289M / 0.041M for 4B. Repeated preemptions still make wall-clock completion
-uncertain. No production trial has finished.
+The 2B prompted root a03 failed at 2026-10-03 00:13 UTC after a 600-second
+scalar ALLREDUCE timeout. Ranks 4 and 6 had not enqueued that collective; no
+preceding OOM was recorded. The underlying cause is unresolved. Since the other
+five trials completed with the same training code, a single controlled resume
+was submitted as a04 on October 5. It retains the original budget and settings,
+and requests eight H100s at batch priority. A repeated failure requires further
+diagnosis before another retry.
 
 The latest Iris roots are `/timodonnell/` followed by:
 
 | Model | contacts-v1 | Prompted |
 | --- | --- | --- |
 | 0.8B | `exp347-qwen35-0p8b-contacts_v1-1bt-a03` | `exp347-qwen35-0p8b-prompted-1bt-a04` |
-| 2B | `exp347-qwen35-2b-contacts_v1-1bt-a03` | `exp347-qwen35-2b-prompted-1bt-a03` |
+| 2B | `exp347-qwen35-2b-contacts_v1-1bt-a03` | `exp347-qwen35-2b-prompted-1bt-a04` |
 | 4B | `exp347-qwen35-4b-contacts_v1-1bt-a04` | `exp347-qwen35-4b-prompted-1bt-a04` |
 
 Both 4B W&B identities are registered:

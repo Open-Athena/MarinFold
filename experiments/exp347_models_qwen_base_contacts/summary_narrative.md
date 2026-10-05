@@ -19,25 +19,24 @@ Equal token budgets imply different protein exposure.
 
 ## Current execution
 
-The 0.8B training, checkpoint, and optimizer/data/RNG recovery checks passed.
-Both 2B smoke tests and the 4B training/checkpoint smoke passed.
-The approved 4B transfer is complete, with pinned revision and file checksums.
-All six 1B-token production trials have been launched, capped at 48 H100s.
-The 4B raw run hit GPU memory exhaustion, then recovered with gradient-buffer
-reuse and allocator changes, reaching step 21 at about 27-34K tokens/second.
-Frequent batch preemptions are repeatedly erasing unsaved work.
-The recovery update saves after the first update of every attempt, then every
-two minutes, and skips repeat validation at a restored production step.
-Trial identities, data, batch size, and token budgets remain fixed.
-All six use the corrected recovery code, including explicit training mode on resume.
-At 21:16 UTC all six report fresh progress and have verified production checkpoints.
-Repeated preemptions still slow completion. None has finished.
-No contact-prediction improvement has been established.
+At October 5, five of six production trials have finished their 1B-token budgets.
+All three contacts-v1 trials and the 0.8B/4B prompted trials completed.
+The 2B prompted trial failed October 3 at 79.61M tokens with a distributed
+communication timeout; no preceding out-of-memory error was recorded.
+A single controlled resume was submitted October 5, retaining its optimizer,
+data cursor, RNG state, run identity, and scientific settings on eight H100s.
+It restored 78.14M tokens and completed its first resumed update.
+All five final checkpoints and their model/tokenizer/HF exports are verified.
+The other five successful runs use the same training code.
+The approved 4B model transfer is complete.
+Full-budget contact-generation evaluation remains outstanding.
 
-## Early evidence and limits
+## Validation likelihood and limits
 
-Raw 0.8B validation contact-token NLL fell from 0.70685 to 0.59605 at 36.92M tokens.
-Prompted 2B NLL fell from 1.46629 to 1.23746 by step 1250.
+Contacts-v1 final NLL: 0.51342 (0.8B), 0.50577 (2B), 0.49301 (4B).
+Prompted final NLL: 1.15186 (0.8B), 1.06211 (4B).
+These use the same 64 held-out AFDB documents; larger models score better.
+The partial 2B prompted NLL is 1.22514 at 77.14M tokens.
 NLLs across the two tokenizations are not directly comparable.
 A greedy generation canary ran on both 2B smoke checkpoints: all 16 outputs
 hit the 256-token cap, produced zero valid pairs, and scored F1 zero.
