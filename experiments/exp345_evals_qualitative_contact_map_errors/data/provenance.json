@@ -1,0 +1,472 @@
+{
+  "model": "marinfold-exp277-full-epoch2-from213072-step479417",
+  "run": "contacts-v1-exp277-m2-p06-full-epoch2-from213072-1.5B",
+  "step": 479417,
+  "n_proteins": 97,
+  "canonical_rows_verified": 1940,
+  "mean_per_protein": {
+    "length": 271.4020618556701,
+    "resolved": 251.2577319587629,
+    "n_candidates": 40238.278350515466,
+    "R": 258.37113402061857,
+    "r_precision": 0.557501676947125,
+    "long_r_precision": 0.5393517725896174,
+    "p_at_l": 0.525488198814271,
+    "p_at_l5": 0.8117948663569856,
+    "n_tp": 144.8041237113402,
+    "n_fp": 113.56701030927834,
+    "n_fn": 113.56701030927834,
+    "gt_long_fraction": 0.6756178113855539,
+    "pred_long_fraction": 0.5904358767234258,
+    "gt_mean_separation": 58.26551945699757,
+    "pred_mean_separation": 47.90391424640271,
+    "true_seen_fraction": 0.9393125158739495,
+    "missed_seen_fraction": 0.8902524060862695,
+    "true_votes_median": 41.91752577319588,
+    "tp_votes_median": 62.0,
+    "fp_votes_median": 38.73711340206186,
+    "fn_votes_median": 10.314432989690722,
+    "cutoff_votes": 27.11340206185567,
+    "cutoff_tie_size": 18.257731958762886,
+    "degree_correlation": 0.7345073585133702,
+    "near_1_precision": 0.7224396528950204,
+    "near_1_random_expectation": 0.0748283764940487,
+    "fp_within_1_fraction": 0.39998944682501375,
+    "one_to_one_1_precision": 0.6052099551684488,
+    "near_2_precision": 0.8072313670293226,
+    "near_2_random_expectation": 0.1464700262217383,
+    "fp_within_2_fraction": 0.6076241009393214,
+    "one_to_one_2_precision": 0.6401467209254249,
+    "near_5_precision": 0.9313811753731032,
+    "near_5_random_expectation": 0.3547481215945876,
+    "fp_within_5_fraction": 0.8813504666089689,
+    "one_to_one_5_precision": 0.7183215301590268,
+    "true_below_1_votes_fraction": 0.060687484126050725,
+    "true_below_5_votes_fraction": 0.19900779433872212,
+    "true_below_10_votes_fraction": 0.2931816876168075,
+    "true_below_25_votes_fraction": 0.4429425227890354,
+    "true_below_50_votes_fraction": 0.5983284661674978
+  },
+  "viral": [
+    {
+      "is_viral": false,
+      "count": 91,
+      "mean": 0.5626387567365362
+    },
+    {
+      "is_viral": true,
+      "count": 6,
+      "mean": 0.47958930014105533
+    }
+  ],
+  "low_msa_depth_natural": "0 eval-val members in frozen exp260 low-depth natural set",
+  "input_bundle_sha256": "82090e25afa9f8f86ed1ba519c2bfa47119b8687d95db6171b7cf91fe9786ff9",
+  "reference_source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/results/marinfold_precision.csv",
+  "eval_val_reference_sha256": "1ad9181c6602ba30d912a8c9310cba1bd2151fb1665b58437c904327e09ac636",
+  "canonical_scorer_sha256": "6cbaa1c555763df07cb94ee81accebef25a5565590d47a32470ade78e36d824a",
+  "sampling": {
+    "contact_multiplier": 6,
+    "n_rollouts": 100,
+    "recipe": "rollout_resample",
+    "seed": 0,
+    "temperature": 1.0,
+    "tie_break": null,
+    "token_budget": "min(8192-prompt_tokens, 6*L+128)",
+    "top_k": -1,
+    "top_p": 0.95,
+    "unfinished_policy": "Nonterminating samples are excluded from contact voting. Every requested and usable rollout is counted per evaluation unit."
+  },
+  "gt_source": "hf://buckets/open-athena/MarinFold/data/contacts-v1-foldbench-monomers-exp245/gt_universe_scored.jsonl",
+  "gt_sha256": "f30c23e3d2fbab245755fc01548388b41730ddfa45da87325539698cadb153e5",
+  "eval_sets_sha256": "b13d060a091240921bc8466acecc9fa6ccbb45a56de4efda02cd903f6abf9861",
+  "source_matrices": [
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7pv5_A.npz",
+      "sha256": "dd55857736f68791b108ad876deebdb0536860f40b48d1cf5c7624c94c5bc1d1"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7qp5_A.npz",
+      "sha256": "d2a2f3c1eb2ff18d734c68820c2f75d63ccc0758fb0c82485a91c27c56ebf5d3"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7qsj_A.npz",
+      "sha256": "0f29734133274d398a0b08703f094ec37e453c653252d65bc514b20987f35fae"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7t9r_A.npz",
+      "sha256": "5c904355200d06209d723e17f68f86115e8cf419aec05835d5f32f0298b86ee6"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7tjb_A.npz",
+      "sha256": "0737a77b5b44c164e584af06faf892b6186c794189e2cc5937e327d1945739fe"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7tlh_A.npz",
+      "sha256": "4ac776bea273b00d05a1c6e8d80666328699149e1f812a8ab4eff483cf848946"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7uba_A.npz",
+      "sha256": "86fc965dba00cd39e0478e275287167209ee168153c53b309ff3a6faba0e3039"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7uk8_A.npz",
+      "sha256": "a7070da2294899d98bee835efafd0b60b7c6711487d4adfc9070ee7bf137a118"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7ur2_A.npz",
+      "sha256": "e9b7512d3065abe7540c06b14a604743219e55d832dfbe8463a4656909c219cc"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7urp_A.npz",
+      "sha256": "d85cf0cd1d98bda4dce2f650449f13b9e05ffa025d064f9beacd00f9efe7645d"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7uvg_A.npz",
+      "sha256": "20866f0f0d65cd4179d7de7a097bb30f71c522d4fce9fe5de317abfe5ccd38eb"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7uww_A.npz",
+      "sha256": "ce85f099255a5f071ce15f7e28e168be550bf6e6244294edbb50f2b05d60f815"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7v3o_A.npz",
+      "sha256": "ce090027b4a9aff5bd43232d4e63954eb8ba1688c2001d34260b87bd1055a9cd"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7w15_A.npz",
+      "sha256": "870aa28a9399947d5e5bb79e5ebe0c33a8d1e761cc6fc18f3efededcc1ed4b59"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7wz5_A.npz",
+      "sha256": "6e994c90556886b499a01d649a0d7b7cb203a62310554d7db39b4a323204e287"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7wzm_A.npz",
+      "sha256": "128f7d936228b63392957608d77758347295263de2215fdd7e0d7d060a612d83"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7x3h_A.npz",
+      "sha256": "d6b6f395ced1a537b77686a88376726a968d6052167f91219fed7b5a688c11de"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7x4p_A.npz",
+      "sha256": "4e65212309ebac415e11d51f2422b14d991e354df8f09e6c2fe32f05d3b60b3f"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7x8l_A.npz",
+      "sha256": "0627172476c7d0b46a1011d3aefed9f627da579797197894f64e643e23463f20"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7xcd_A.npz",
+      "sha256": "11f9b1361296c9e59de7be14fc56c541f0f62701b42a93b866d90541ada9d29a"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7xg9_A.npz",
+      "sha256": "d12c01ad8e21485d7158db9f405666a79cb1f3913e872f271bfab6e1d3fc05f4"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7xi5_A.npz",
+      "sha256": "7159bb545e85a603736ba00df57ad9c49b7884b6caaa5c603887967f7b1a3486"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7xjr_A.npz",
+      "sha256": "124b97de4b2d3a75936dc1e990c0ff205ddaf18393315b2d5317aa935cd3eada"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7xlz_A.npz",
+      "sha256": "40ef576ae1a9a4d6dee893d6d264c5293e141d80c18c059b1296a5990346be39"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7xp9_A.npz",
+      "sha256": "c8c1426b522b86d8ffb821d85e4fcd835c45627dfcf91f2badfbf97be096d010"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7xq4_A.npz",
+      "sha256": "79b6c9d65fb31f5ea0002b3bbce0cc409a2f4b6a898a0647533d503d32d48aca"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7xrx_A.npz",
+      "sha256": "982eb4bd98050b94307a3e351e60b2c39ba4286954fd31134ef78b9cad792b2c"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7xyr_A.npz",
+      "sha256": "7a074742a7edf7ccaf250cbd8d029836cc7d01e80fcac3fe9474d7c411021fd0"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7xz3_A.npz",
+      "sha256": "4e53cf075ea643cf44079714e12fa9a1e0603388ccf5da682aecc4af49bdcbb3"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7y3h_A.npz",
+      "sha256": "e747ebce65dc08268e8a587359e74206b942f3d5edfad2588bad9110bb603af9"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7y4h_A.npz",
+      "sha256": "5d216db5661e0ab6ad180f9e60e76858a06f3bf93510c61a56adbac8dbf114c1"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7y54_A.npz",
+      "sha256": "3114709fcc274a2fe54684af0b729823a56ff8b368bd9c5f69ba2bb0edb68d6b"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7y5j_A.npz",
+      "sha256": "3001fe4ded573f39dc93a8080a188c34697a1384cba0e10bfeedf8ffa0fecb42"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7y5m_A.npz",
+      "sha256": "025e8277c2f3c941ec3c3f4fcbd764c38acf885e4bcbce702af6fa2d39317aa0"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7y5r_A.npz",
+      "sha256": "7445835a03d5aaef455cba123f488e06b337e3eb1b84f44965421614541888d1"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7y8h_A.npz",
+      "sha256": "cf17976b963b84dc77b398ea0b9a86d002f2ab1eee2f3b8a1b9b5369154d6814"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7y8i_A.npz",
+      "sha256": "fa93d8b9680989447b7046fc9b3d157e1c7dd27621d6544020694bb537778c3f"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7yd4_A.npz",
+      "sha256": "e49952c7f6025b533728a33fa0246a19ba2ee53f63330a961bc812a732a8ef30"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7yhr_A.npz",
+      "sha256": "8653e4e4b21497b022781eee7cd29197e47d186c1e2d87b5807c3f88843e7a2f"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7ykm_A.npz",
+      "sha256": "d79e3a16ddba6c3570f249d37f1fdd0ce916af9cb9eeba91baf50fba0787325a"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7ylr_A.npz",
+      "sha256": "98a3f07504357fec68fc4e71bb6f7134f6cb29f03c0460a3453a3919b3d79f60"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7yug_A.npz",
+      "sha256": "bc2c91612393f944176e36df015d36ddcfe9ecc7ce52310fa15ab143a2bc460e"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7yyg_A.npz",
+      "sha256": "8c0bf70be158e33ad614125662e6aa2d337e615c2a033d9bc6c6a692f127f960"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7z65_A.npz",
+      "sha256": "b23656e119e5ce59381110316b9de688163485c1450185b4ff04c64732028e0d"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7znz_A.npz",
+      "sha256": "bebd0ef2a2204a0ca869be9bc6d785863d9a73dff319f3c23466dbe49d6de00b"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7zoi_A.npz",
+      "sha256": "b79321c653eb495cf3ab5f20e504a34bdc7da053687b7b429ac98a2298b60583"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7zs2_A.npz",
+      "sha256": "bfcd58a6093310e40771f2692738a791be5b67d0ac9475ef0dd3abbcc2e2525f"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7zu3_A.npz",
+      "sha256": "455c4bc5df523c041db7dfc7c07676659a6d51f12616d04aa8e61a371e5f4182"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__7zv1_A.npz",
+      "sha256": "eeea05c6b7efbf60dd5346ab1acba13892004d8d2eb238b28694edeeed8aa66d"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8adc_A.npz",
+      "sha256": "f528ef33eaf1acd8c9189157f0f175f55cdae60b6d1cafec8a38d92c2060be69"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8add_A.npz",
+      "sha256": "eac99697dd060a649f1ea79442ae726b62490d5fc3b32f9052e1ce81d98a1c11"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8ak2_A.npz",
+      "sha256": "03b4279832e14d417390be52db1924c649caca1028d60af78d8a280a4b9914e2"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8akh_A.npz",
+      "sha256": "db0a852612beef6cb8b8fefe31d3064eedbbee7de3589f5c9a99a201812b01a3"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8amo_A.npz",
+      "sha256": "17e6cf60c0830fe5a1b4e54dbce043e5c136ccb89d051310060f34cdad1a3664"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8arl_A.npz",
+      "sha256": "bc54771e0eea866d2f7a59962026d03ffc0a67ba942ec78e95ca8ae80e0bfd40"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8au6_A.npz",
+      "sha256": "387f3159b8c1f3732156f4e25d605b4da844aaf2aea9638b1875ebfefa337f75"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8axj_A.npz",
+      "sha256": "2604517b05b79d168d56f6cf4c7b1585bf28e63cab0b10af23e1df59a5f71fdc"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8azb_A.npz",
+      "sha256": "b6ea8d0e6cc584616a8099323dc0bee1e3af8bd69861b446e4bd8a376eaa3f90"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8b2e_A.npz",
+      "sha256": "5113a9156cbcb033e2fb9784f7be4914d09b761f7fa13392a860b175c5a5d978"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8b2g_A.npz",
+      "sha256": "5c540e790f9e8fa44d3eec14dabd0523b96e07d55edcb83486bea16740a9ec7b"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8b2s_A.npz",
+      "sha256": "900b3f090a394e8478abefa4eb1b478f4e6e9cbbdd2383920fbceb38c557b203"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8b4u_A.npz",
+      "sha256": "5f3bb5ea070d9c271097052deb19e107a70caab88aff30c927da2ac4e404228f"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8b5w_A.npz",
+      "sha256": "1fa9b712a7413e5d14442a0a54b0619ff31499ab498b53b5ddb5638cd606338b"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8b61_A.npz",
+      "sha256": "1c08f3f9fbcf8123297f852e3b54c5c190cb9506cbfca824097bb6e8675b4c0a"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8b6a_A.npz",
+      "sha256": "e3cb01c601f14f2e9ed91b58d82db5ab4445730c78eea4975210e8197a5dcf7a"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8b6e_A.npz",
+      "sha256": "97fabc0f59c21529215175c41a7b33a39d760a563ad7016def0a8e1bdff65ed8"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8baq_A.npz",
+      "sha256": "7d46ff3762da0f917d4adbc3fb31f33f86deda3e8dfbecc2bb958abca2b73a07"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8bau_A.npz",
+      "sha256": "275f582815d07663d916eadaa614dd5bbf2311a3db0c984f5d0636fd36ecce2e"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8bfy_A.npz",
+      "sha256": "423afc68e33491732eb9b089c821ca2032f31d49e4c9e4b5d5490673b70c67ea"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8bgb_A.npz",
+      "sha256": "c3ff97dde5df84dcec171702c3b423fc3019dd87e020451c98fe1d35731a1a0a"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8bke_A.npz",
+      "sha256": "e0e487b61bda7fbf8ed9bb0a6b74c4cabdf857a054e348ecd45938507606f1f4"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8bsb_A.npz",
+      "sha256": "85a5e4d043b2adfe66e1941ffacb6b15ff178b54b4c8683d3b9de890b4b3ef3b"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8bux_A.npz",
+      "sha256": "959d5c38eb01137967fd1684d163f10bb3b0402d430403fa685ffabbd957d822"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8c4d_A.npz",
+      "sha256": "064d2015b136a8a8873dc78bdb0769d4ad18151e314b369c9601d88995bb5ef8"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8c4y_A.npz",
+      "sha256": "bfe3249a0a27f693e8a94db5d3882f556427be6c72d1344130162e66adcd4506"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8cba_A.npz",
+      "sha256": "eeecc5bdc29371aa43d4cee8922ee6017d72ae45667b488a253023dd07a83dfd"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8ci9_A.npz",
+      "sha256": "badcb333bb11a16d9b0e0b7d711822f2494203c3b46eba2a6f86d53602f96ac6"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8cih_A.npz",
+      "sha256": "246badf7d1e794990c4f5ad4a17b6e8d3ec211d46a080fc1331b924d2151daff"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8cpk_A.npz",
+      "sha256": "45e4370c67240dd999a48b1564523550b660466cfe03adbbe1f2d8e985548ed1"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8cpn_A.npz",
+      "sha256": "1df1e6b73085ef2dd84a0d09aca5fc7af7c5c06abae0fde31490cdabb4883d96"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8d2z_A.npz",
+      "sha256": "9141f44d8858e36505d8411c300c65e65ba8ca2e250013b1c315536a2d047598"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8daj_A.npz",
+      "sha256": "80689dc307cbf48dd2b4e49739c3b7da780a8ec28f9becff3c8f6fd23754f4c1"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8dez_A.npz",
+      "sha256": "b10ab027a94dfdd3a994f6bf221b0ccc233a04d3026faebe7f3c073fa619876f"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8dge_A.npz",
+      "sha256": "8086a4678813aded87d11dd0f8583a9b341fd95ae9919af467b7e86e97098251"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8dhj_A.npz",
+      "sha256": "27b2a00394088cc8033924a134bb72ab8749be11b60a5b042f13f411c9ff83fa"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8dmu_A.npz",
+      "sha256": "13181491064ff9ea05c3077b0020cd3c47af5dc419e63cf482be9177f1da63a1"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8dp9_A.npz",
+      "sha256": "e048a60937c4f9297b903b41c925bb56cd0b906b3b5cc140b9b7edcd33d69789"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8dqd_A.npz",
+      "sha256": "3a3f3a0de0c4abfd6a18f016ea38e3f7d02ce3b2987595faf9c9986010344f7d"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8dx0_A.npz",
+      "sha256": "3cf95a9c7f9a1581c8659c46d70470af17051293cb055404506bc47aacc79139"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8e0r_A.npz",
+      "sha256": "f738fdb72ecb03fbbd85dddb675a54acdfc6eabfa9c0985ff5d17a9a8e5d33a0"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8e5h_A.npz",
+      "sha256": "0bfcc0372367018b25ca6a5c3f97f1891e7ff0f0c8b09a68b102bbf09b645b6e"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8eb9_A.npz",
+      "sha256": "e98a711ca9235c20deb03ff6ea731d70d0786145f6f7ddecdde3e58047cb2a57"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8ec3_A.npz",
+      "sha256": "0b17f265a34ef83cce3ffdd05e4f099c0d10c4e2390e5990680314d24cc201dd"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8eo5_A.npz",
+      "sha256": "ce4b3a7ba6f4c7d5628745e7d8bc3f53e05f10a3b5e2b1bf4d5088336e51a93c"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8gmy_A.npz",
+      "sha256": "89e67b0a81da6540c0ce0677ffa98aca48b02cb92b7990639321ed1586c9b760"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8q8i_A.npz",
+      "sha256": "72a199e5d27cff45ca1f89e8ebee325f204ccd05501d6e6dd6002f484a92ffd2"
+    },
+    {
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores/exp277_full_epoch2_from213072_step479417/foldbench_monomer__8ycm_A.npz",
+      "sha256": "60a99dab78120359224ab5ec3fd1edd20aeb3e6cf613b077a50c597bdcdd19fd"
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "oracle_beats_pooled": 35,
+  "pooled_beats_oracle": 62,
+  "oracle_200_minus_100": {
+    "n": 97,
+    "mean": 0.012034959756005723,
+    "ci_low": 0.009484646147733497,
+    "ci_high": 0.015014115031826201
+  },
+  "largest_oracle_gains": [
+    {
+      "stem": "7t9r_A",
+      "pooled_200": 0.2916666666666667,
+      "sample_oracle_200": 0.5263157894736842,
+      "gap": 0.2346491228070175
+    },
+    {
+      "stem": "7xp9_A",
+      "pooled_200": 0.2888888888888888,
+      "sample_oracle_200": 0.5,
+      "gap": 0.2111111111111112
+    },
+    {
+      "stem": "8ec3_A",
+      "pooled_200": 0.3492063492063492,
+      "sample_oracle_200": 0.5138339920948617,
+      "gap": 0.1646276428885125
+    },
+    {
+      "stem": "8eb9_A",
+      "pooled_200": 0.1971830985915492,
+      "sample_oracle_200": 0.3555555555555555,
+      "gap": 0.15837245696400631
+    },
+    {
+      "stem": "7tlh_A",
+      "pooled_200": 0.5,
+      "sample_oracle_200": 0.6153846153846154,
+      "gap": 0.11538461538461542
+    },
+    {
+      "stem": "7zv1_A",
+      "pooled_200": 0.5315315315315315,
+      "sample_oracle_200": 0.6439024390243903,
+      "gap": 0.11237090749285872
+    },
+    {
+      "stem": "7urp_A",
+      "pooled_200": 0.4029850746268656,
+      "sample_oracle_200": 0.4980237154150198,
+      "gap": 0.09503864078815416
+    },
+    {
+      "stem": "7yhr_A",
+      "pooled_200": 0.4878048780487805,
+      "sample_oracle_200": 0.5813953488372093,
+      "gap": 0.09359047078842886
+    },
+    {
+      "stem": "8b6e_A",
+      "pooled_200": 0.7272727272727273,
+      "sample_oracle_200": 0.813953488372093,
+      "gap": 0.08668076109936573
+    },
+    {
+      "stem": "7zu3_A",
+      "pooled_200": 0.391304347826087,
+      "sample_oracle_200": 0.4688995215311005,
+      "gap": 0.07759517370501351
+    }
+  ],
+  "cluster_coverage": {
+    "2": {
+      "n_folds": 194,
+      "at_least_two_eligible": 16,
+      "median_largest_training_cluster": 99.0,
+      "median_largest_test_cluster": 99.0
+    },
+    "4": {
+      "n_folds": 194,
+      "at_least_two_eligible": 37,
+      "median_largest_training_cluster": 96.0,
+      "median_largest_test_cluster": 97.0
+    }
+  }
+}

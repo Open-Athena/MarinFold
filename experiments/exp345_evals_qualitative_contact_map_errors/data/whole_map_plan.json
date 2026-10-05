@@ -1,0 +1,61 @@
+{
+  "source": {
+    "kind": "coreweave-s3",
+    "uri": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/runs/contacts-v1-exp277-m2-p06-full-epoch2-from213072-1.5B/hf/step-479417"
+  },
+  "checkpoint": {
+    "label": "exp277_full_epoch2_from213072_step479417",
+    "run_name": "contacts-v1-exp277-m2-p06-full-epoch2-from213072-1.5B",
+    "step": 479417
+  },
+  "files": [
+    {
+      "name": "config.json",
+      "size": 1726,
+      "digest": "09ffdb6012707caf6b8d9c07583ef014",
+      "digest_kind": "s3-etag"
+    },
+    {
+      "name": "model-00001-of-00002.safetensors",
+      "size": 4979485528,
+      "digest": "73410d564fa17fc29185e8f41eca6e7c-95",
+      "digest_kind": "s3-etag"
+    },
+    {
+      "name": "model-00002-of-00002.safetensors",
+      "size": 906042048,
+      "digest": "06da6a1d8f28a78ecdf1ef416cdaa032-18",
+      "digest_kind": "s3-etag"
+    },
+    {
+      "name": "model.safetensors.index.json",
+      "size": 20882,
+      "digest": "bc0a5fd2c9aae096abae4caf9040c79c",
+      "digest_kind": "s3-etag"
+    },
+    {
+      "name": "tokenizer.json",
+      "size": 64407,
+      "digest": "c4b3a16978e30eb150cca4fd8934b6ae",
+      "digest_kind": "s3-etag"
+    },
+    {
+      "name": "tokenizer_config.json",
+      "size": 296,
+      "digest": "5acd13b50d727187034880bd78bcb928",
+      "digest_kind": "s3-etag"
+    }
+  ],
+  "marinfold_revision": "d1bea417a64cc042ad931422200c3edeb873f2e0",
+  "reference_worker_sha256": "dd2f76dd5d34d1549e0be1197d9053d6e3aa0ef909f062ff5355d65f31cd571c",
+  "targets_sha256": "384f609d9838d776747c0ca43ddbcd9665759c2a068c157aeeed094c1d42a825",
+  "n_proteins": 97,
+  "n_rollouts": 200,
+  "n_pools": 2,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "top_k": -1,
+  "seed": 345,
+  "token_budget": "min(8192-prompt_tokens,6L+128)",
+  "output": "s3://marin-us-east-02a/MarinFold/exp345/whole-map-v1"
+}
