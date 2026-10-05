@@ -6,6 +6,7 @@ import json
 import os
 from concurrent.futures import ProcessPoolExecutor
 from functools import cache
+from pathlib import Path
 
 import fsspec
 import pyarrow as pa
@@ -32,10 +33,26 @@ def encode(prefix: str, completion: str) -> tuple[list[int], int]:
     return result["input_ids"] + [tokenizer().eos_token_id], first
 
 
-def prepare_shard(args: tuple[str, str]) -> dict:
+def prepare_shard(args: tuple[str, str, bool]) -> dict:
     """Validate and tokenize one source shard; failures abort the build."""
-    uri, out = args
+    uri, out, resume = args
     name = uri.rsplit("/", 1)[-1]
+    fs, source_path = fsspec.core.url_to_fs(uri)
+    info = fs.info(source_path)
+    source_identity = {"size": info["size"], "etag": info.get("ETag")}
+    counts_uri = f"{out}/counts/{name}.json"
+    if resume and fs.exists(counts_uri):
+        with fsspec.open(counts_uri) as handle:
+            previous = json.load(handle)
+        if previous["source"] != uri or previous["source_identity"] != source_identity:
+            raise ValueError(f"Source shard changed during preparation: {uri}")
+        for split in ["train", "validation"]:
+            if previous[split]:
+                with fsspec.open(f"{out}/{split}/{name}", "rb") as handle:
+                    rows = pq.ParquetFile(handle).metadata.num_rows
+                if rows != previous[split]:
+                    raise ValueError(f"Incomplete prepared shard: {name}/{split}")
+        return previous
     records = {"train": [], "validation": []}
     counts = {
         "source_rows": 0,
@@ -93,6 +110,7 @@ def prepare_shard(args: tuple[str, str]) -> dict:
                 pq.write_table(pa.Table.from_pylist(rows), handle, compression="zstd")
     result = {
         "source": uri,
+        "source_identity": source_identity,
         "source_document_sha256": source_hash.hexdigest(),
         **counts,
     }
@@ -107,6 +125,7 @@ def main() -> None:
     parser.add_argument("--out", default=f"{ROOT}/data/v1")
     parser.add_argument("--shards", type=int, default=512)
     parser.add_argument("--workers", type=int, default=16)
+    parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
     fs, path = fsspec.core.url_to_fs(SOURCE)
@@ -116,16 +135,43 @@ def main() -> None:
     )[: args.shards]
     if len(files) != args.shards:
         raise ValueError(f"Expected {args.shards} input shards, found {len(files)}")
+    contract = {
+        "source": SOURCE,
+        "shards": files,
+        "tokenizer": list(MODELS["0.8B"]),
+        "max_length": MAX_LENGTH,
+        "code_sha256": {
+            name: hashlib.sha256(
+                Path(__file__).with_name(name).read_bytes()
+            ).hexdigest()
+            for name in ["common.py", "prepare.py"]
+        },
+    }
+    contract_uri = args.out + "/preparation.json"
+    if fs.exists(contract_uri):
+        with fsspec.open(contract_uri) as handle:
+            previous_contract = json.load(handle)
+        if previous_contract != contract:
+            raise ValueError("Preparation contract changed; use a new output prefix")
+        if not args.resume:
+            raise ValueError(
+                "Output already initialized; pass --resume to verify and continue"
+            )
+    else:
+        with fsspec.open(contract_uri, "w") as handle:
+            json.dump(contract, handle)
     # Populate the small tokenizer cache before workers start; no model weights here.
     tokenizer()
     with ProcessPoolExecutor(max_workers=args.workers) as pool:
         results = list(
-            pool.map(prepare_shard, [(f"s3://{p}", args.out) for p in files])
+            pool.map(
+                prepare_shard, [(f"s3://{p}", args.out, args.resume) for p in files]
+            )
         )
     totals = {
         k: sum(r[k] for r in results)
         for k in results[0]
-        if k not in ("source", "source_document_sha256")
+        if k not in ("source", "source_document_sha256", "source_identity")
     }
     manifest = {
         "source": SOURCE,

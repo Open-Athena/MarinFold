@@ -43,3 +43,29 @@ hit the 256-token cap, produced zero valid pairs, and scored F1 zero.
 This is not the FoldBench rollout-plus-resample benchmark.
 No contact accuracy or causal pretrained-transfer advantage is established.
 Per-input timings and worker metadata were saved at evaluation time.
+
+## Full-scale continuation in preparation
+
+Requested: full-scale 4B training with periodic eval-val R-precision.
+Working default: both formats, 100B additional tokens each, eval every1B.
+This budget is an announced operator assumption; the existing48-H100 cap remains.
+All2,067 co-located AFDB shards prepared:3.717M train and37,256 validation proteins.
+One corpus pass contains18.17B raw or5.21B prompted tokens.
+Planned allocation:16 training +4 evaluation H100s per4B arm, plus8 for the2B pilot.
+Continue the respective1B weights with fresh optimizer and data cursor.
+Both4B single-protein100-rollout evaluation smokes passed without truncation.
+E8 reference passed: all R=.42438, long R=.36599; all554units, no truncated rollouts.
+Two-node training/export/resume gates are in progress; NCCL transport is under test.
+Full-corpus production is not yet launched.
+
+## Periodic R-precision contract
+
+Frozen97-protein eval-val only; eval-test is untouched.
+100 rollouts, T=1, top-p=.95, no top-k; unchanged exp89 resolved-pair metrics.
+Resample contacts-v1 N-terminal offsets and sequence-statement order.
+Prompted format uses independent samples of a fixed natural-language prefix.
+Translate6L+128 protein-token capacity to native Qwen token capacity.
+Require every protein and no capped rollouts before publishing an aggregate.
+Save per-protein timings, raw completions, votes, and checkpoint provenance.
+Durable periodic exports survive rolling recovery-checkpoint deletion.
+A persistent Iris driver logs all/long R-precision against checkpoint tokens.

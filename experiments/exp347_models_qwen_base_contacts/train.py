@@ -14,6 +14,7 @@ import math
 import os
 import platform
 import random
+import re
 import shutil
 import socket
 import time
@@ -26,13 +27,14 @@ import numpy as np
 import pyarrow.parquet as pq
 import torch
 import torch.distributed as dist
-import wandb
-from common import FORMATS, MAX_LENGTH, MODELS, ROOT, SEED, TOKEN_BUDGET, run_name
 from liger_kernel.transformers.functional import liger_fused_linear_cross_entropy
 from torch.distributed.optim import ZeroRedundancyOptimizer
 from torch.nn.parallel import DistributedDataParallel
 from transformers import AutoTokenizer, PreTrainedTokenizerBase, Qwen3_5ForCausalLM
 from transformers.models.qwen3_5.modeling_qwen3_5 import is_fast_path_available
+
+import wandb
+from common import FORMATS, MAX_LENGTH, MODELS, ROOT, SEED, TOKEN_BUDGET, run_name
 
 
 def copy_tree_to_remote(local: Path, uri: str) -> None:
@@ -170,6 +172,7 @@ def checkpoint(
     rank: int,
     world: int,
     final: bool,
+    evaluation_export: bool = False,
 ) -> str:
     """Commit all resume shards and an HF export, then move the resume pointer."""
     uri = f"{root}/step-{step}"
@@ -195,7 +198,7 @@ def checkpoint(
         model.save_pretrained(local / "model", max_shard_size="4GB")
         tokenizer.save_pretrained(local / "model")
         copy_tree_to_remote(local / "model", uri + "/model")
-        if final:
+        if final or evaluation_export:
             weights = inference_state_dict(model)
             model.save_pretrained(
                 local / "hf", state_dict=weights, max_shard_size="4GB"
@@ -205,7 +208,13 @@ def checkpoint(
             export_config = json.loads(config_path.read_text())
             export_config["dtype"] = "bfloat16"
             config_path.write_text(json.dumps(export_config, indent=2) + "\n")
-            copy_tree_to_remote(local / "hf", uri + "/hf")
+            if final:
+                copy_tree_to_remote(local / "hf", uri + "/hf")
+            if evaluation_export:
+                # Periodic inference exports have independent lifetimes from the
+                # rolling optimizer checkpoint. Evaluation can run asynchronously
+                # after newer training checkpoints prune their predecessor.
+                copy_tree_to_remote(local / "hf", f"{root}/hf/step-{step}")
     dist.barrier()
     if rank == 0:
         marker = {
@@ -214,6 +223,7 @@ def checkpoint(
             "world": world,
             "uri": uri,
             "final": final,
+            "evaluation_export": evaluation_export,
         }
         with fsspec.open(uri + "/complete.json", "w") as handle:
             json.dump(marker, handle)
@@ -233,6 +243,25 @@ def checkpoint(
     return uri
 
 
+def request_evaluation(
+    root: str, name: str, document_format: str, marker: dict
+) -> None:
+    """Publish an idempotent request, including after a crash following checkpoint commit."""
+    if not marker.get("evaluation_export", False):
+        return
+    request = {
+        "run_id": name,
+        "step": marker["step"],
+        "tokens": marker["tokens"],
+        "format": document_format,
+        "checkpoint": f"{root}/hf/step-{marker['step']}",
+        "final": marker["final"],
+    }
+    uri = f"{ROOT}/eval_requests/{name}/step-{marker['step']}.json"
+    with fsspec.open(uri, "w") as handle:
+        json.dump(request, handle)
+
+
 def evaluate(
     model: ContactLM,
     rows: list[dict],
@@ -247,7 +276,7 @@ def evaluate(
     model.eval()
     totals = torch.zeros(3, device="cuda", dtype=torch.float64)
     timings = []
-    props = torch.cuda.get_device_properties(rank)
+    props = torch.cuda.get_device_properties(torch.cuda.current_device())
     with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
         for row in rows:
             total_start = time.perf_counter()
@@ -308,12 +337,27 @@ def main() -> None:
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument("--resume-check", action="store_true")
     parser.add_argument("--eval-documents", type=int, default=64)
+    parser.add_argument("--run-id")
+    parser.add_argument(
+        "--initialize-from",
+        help="HF-format FP32 weights; start fresh optimizer and data cursor",
+    )
+    parser.add_argument("--eval-every-tokens", type=int, default=0)
     args = parser.parse_args()
     if args.checkpoint_seconds <= 0:
         raise ValueError("Checkpoint interval must be positive")
+    if args.run_id and not re.fullmatch(r"[a-zA-Z0-9_-]+", args.run_id):
+        raise ValueError(
+            "Run ID may contain only letters, numbers, underscores, and hyphens"
+        )
+    if args.initialize_from and not args.run_id:
+        raise ValueError("A new initialization requires its own run identity")
+    if args.eval_every_tokens < 0:
+        raise ValueError("Evaluation cadence must be nonnegative")
     rank, world = int(os.environ["RANK"]), int(os.environ["WORLD_SIZE"])
-    torch.cuda.set_device(rank)
-    dist.init_process_group("nccl", device_id=torch.device("cuda", rank))
+    local_rank = int(os.environ["LOCAL_RANK"])
+    torch.cuda.set_device(local_rank)
+    dist.init_process_group("nccl", device_id=torch.device("cuda", local_rank))
     torch.set_num_threads(4)
     random.seed(SEED + rank)
     np.random.seed(SEED + rank)
@@ -322,7 +366,7 @@ def main() -> None:
         raise RuntimeError(
             "Qwen DeltaNet fast kernels are required; install causal-conv1d and flash-linear-attention"
         )
-    name = run_name(args.size, args.format, args.smoke)
+    name = args.run_id or run_name(args.size, args.format, args.smoke)
     run_id = name
     root = f"{ROOT}/checkpoints/{name}"
     fs, root_path = fsspec.core.url_to_fs(root)
@@ -346,13 +390,17 @@ def main() -> None:
             )
     load_start = time.perf_counter()
     local_model = Path("/tmp/exp347-model")
-    source = resume["uri"] + "/model" if resume else f"{ROOT}/base/{args.size}"
-    if rank == 0:
+    source = (
+        resume["uri"] + "/model"
+        if resume
+        else (args.initialize_from or f"{ROOT}/base/{args.size}")
+    )
+    if local_rank == 0:
         if local_model.exists():
             shutil.rmtree(local_model)
         copy_tree_from_remote(source, local_model)
     dist.barrier()
-    if not resume:
+    if not resume and not args.initialize_from:
         staged = json.loads((local_model / "staged.json").read_text())
         if (staged["repo"], staged["revision"]) != MODELS[args.size]:
             raise ValueError("Staged base model does not match its pinned revision")
@@ -372,7 +420,7 @@ def main() -> None:
     tokenizer = AutoTokenizer.from_pretrained(local_model)
     wrapped = ContactLM(model)
     ddp = DistributedDataParallel(
-        wrapped, device_ids=[rank], gradient_as_bucket_view=True
+        wrapped, device_ids=[local_rank], gradient_as_bucket_view=True
     )
     optimizer = ZeroRedundancyOptimizer(
         ddp.parameters(),
@@ -421,7 +469,7 @@ def main() -> None:
                 "world": world,
                 "cluster": os.environ["EXP347_CLUSTER"],
                 "gpu": "H100",
-                "nodes": 1,
+                "nodes": world // int(os.environ["LOCAL_WORLD_SIZE"]),
                 "max_length": MAX_LENGTH,
                 "checkpoint_root": root,
                 "loss": "all next tokens, global token mean",
@@ -429,6 +477,9 @@ def main() -> None:
                 "data_manifest": data_manifest,
             },
         )
+        if args.eval_every_tokens:
+            run.define_metric("eval_val/checkpoint_tokens")
+            run.define_metric("eval_val/*", step_metric="eval_val/checkpoint_tokens")
         print(f"WANDB_RUN {run.url}", flush=True)
         with fsspec.open(f"{ROOT}/runs/{name}.json", "w") as handle:
             json.dump(
@@ -468,6 +519,14 @@ def main() -> None:
             }
         )
     last_checkpoint = time.monotonic()
+    if rank == 0 and resume is not None:
+        request_evaluation(root, name, args.format, resume)
+    next_evaluation = (
+        (tokens // args.eval_every_tokens + 1) * args.eval_every_tokens
+        if args.eval_every_tokens
+        else None
+    )
+    logged_evaluations: set[str] = set()
     while tokens < args.tokens or (args.resume_check and step == resumed_step):
         began = time.perf_counter()
         batch = [stream.next() for _ in range(args.accumulation)]
@@ -527,10 +586,14 @@ def main() -> None:
         if run:
             run.log(metrics)
         final = tokens >= args.tokens
+        evaluation_due = next_evaluation is not None and (
+            tokens >= next_evaluation or final
+        )
         save = torch.tensor(
             [
                 int(
                     final
+                    or evaluation_due
                     or (not args.smoke and step == resumed_step + 1)
                     or time.monotonic() - last_checkpoint >= args.checkpoint_seconds
                 )
@@ -550,10 +613,43 @@ def main() -> None:
                 rank,
                 world,
                 final,
+                evaluation_export=evaluation_due,
             )
             last_checkpoint = time.monotonic()
             if run:
                 run.summary["checkpoint"] = uri
+            if evaluation_due:
+                if rank == 0:
+                    request_evaluation(
+                        root,
+                        name,
+                        args.format,
+                        {
+                            "step": step,
+                            "tokens": tokens,
+                            "final": final,
+                            "evaluation_export": True,
+                        },
+                    )
+                next_evaluation = (
+                    tokens // args.eval_every_tokens + 1
+                ) * args.eval_every_tokens
+        if run and args.eval_every_tokens and step % 100 == 0:
+            for result_path in fs.glob(f"{ROOT}/eval_results/{name}/step-*.json"):
+                if result_path in logged_evaluations:
+                    continue
+                with fs.open(result_path) as handle:
+                    result = json.load(handle)
+                if result["complete"]:
+                    run.log(
+                        {
+                            "eval_val/checkpoint_tokens": result["tokens"],
+                            "eval_val/checkpoint_step": result["step"],
+                            "eval_val/r_precision_all": result["r_precision"]["all"],
+                            "eval_val/r_precision_long": result["r_precision"]["long"],
+                        }
+                    )
+                logged_evaluations.add(result_path)
         if step % 250 == 0 or final:
             metrics = evaluate(
                 wrapped,

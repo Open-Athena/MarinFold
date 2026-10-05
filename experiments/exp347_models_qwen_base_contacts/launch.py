@@ -1,4 +1,4 @@
-"""Submit exactly one explicitly selected eight-H100 training trial."""
+"""Submit exactly one explicitly selected H100 training gang."""
 
 import argparse
 import json
@@ -24,9 +24,16 @@ def main() -> None:
     )
     parser.add_argument("--attempt", type=int, required=True)
     parser.add_argument("--cpus", type=int, default=32)
+    parser.add_argument("--nodes", type=int, choices=[1, 2, 4], default=1)
+    parser.add_argument("--timeout-days", type=int, default=14)
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument("--resume-check", action="store_true")
     parser.add_argument("--tokens", type=int)
+    parser.add_argument("--accumulation", type=int)
+    parser.add_argument("--run-id")
+    parser.add_argument("--data")
+    parser.add_argument("--initialize-from")
+    parser.add_argument("--eval-every-tokens", type=int, default=0)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument(
         "--marin-checkout", type=Path, default=Path("/home/bizon/git/marin")
@@ -35,7 +42,13 @@ def main() -> None:
     args = parser.parse_args()
     if args.cpus < 32:
         raise ValueError("Eight ranks need at least four CPU threads each")
-    name = run_name(args.size, args.format, args.smoke)
+    if args.nodes != 1 and not args.run_id:
+        raise ValueError("A new multi-node profile needs its own run identity")
+    name = args.run_id or run_name(args.size, args.format, args.smoke)
+    if (
+        args.data or args.initialize_from or args.eval_every_tokens
+    ) and not args.run_id:
+        raise ValueError("Scale-up settings require a distinct run identity")
     job = f"{name}-a{args.attempt:02d}"
     tokens = args.tokens or (100_000 if args.smoke else TOKEN_BUDGET)
     command = [
@@ -70,7 +83,7 @@ def main() -> None:
         "256GB",
         "--no-sync",
         "--timeout",
-        "1209600",
+        str(args.timeout_days * 86400),
         "--task-image",
         IMAGE,
         "-e",
@@ -91,8 +104,23 @@ def main() -> None:
     ]
     if args.smoke:
         command += ["--smoke", "--eval-documents", "8", "--accumulation", "1"]
+    if args.accumulation is not None:
+        command += ["--accumulation", str(args.accumulation)]
+    if args.nodes != 1:
+        command[command.index("--task-image") : command.index("--task-image")] = [
+            "--replicas",
+            str(args.nodes),
+        ]
     if args.resume_check:
         command.append("--resume-check")
+    if args.run_id:
+        command += ["--run-id", args.run_id]
+    if args.data:
+        command += ["--data", args.data]
+    if args.initialize_from:
+        command += ["--initialize-from", args.initialize_from]
+    if args.eval_every_tokens:
+        command += ["--eval-every-tokens", str(args.eval_every_tokens)]
     redacted = shlex.join(command)
     print(redacted, flush=True)
     if args.dry_run:
@@ -102,14 +130,25 @@ def main() -> None:
             "SELECT 1 FROM dispatches WHERE trial_id=? AND active=1", (name,)
         ).fetchone():
             raise ValueError("Trial already has an active dispatch; reconcile it first")
-        config = json.dumps(
-            {
-                "size": args.size,
-                "format": args.format,
-                "tokens": tokens,
-                "smoke": args.smoke,
-            }
-        )
+        configuration = {
+            "size": args.size,
+            "format": args.format,
+            "tokens": tokens,
+            "smoke": args.smoke,
+        }
+        if args.accumulation is not None:
+            configuration["accumulation"] = args.accumulation
+        if args.run_id:
+            configuration.update(
+                {
+                    "run_id": args.run_id,
+                    "data": args.data,
+                    "initialize_from": args.initialize_from,
+                    "eval_every_tokens": args.eval_every_tokens,
+                    "nodes": args.nodes,
+                }
+            )
+        config = json.dumps(configuration)
         db.execute(
             "INSERT OR IGNORE INTO trials(trial_id,env_json,wandb_run_id,checkpoint_root) VALUES(?,?,?,?)",
             (name, config, name, f"{ROOT}/checkpoints/{name}"),
@@ -153,8 +192,8 @@ def main() -> None:
                 job_id,
                 args.cluster,
                 "H100",
-                1,
-                8,
+                args.nodes,
+                8 * args.nodes,
                 "batch",
                 redacted,
                 submitted,

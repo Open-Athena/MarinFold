@@ -69,7 +69,7 @@ Resumed production skips a duplicate validation pass at the restored step;
 validation still runs every 250 steps and at completion, and smoke recovery
 checks still validate the restored state.
 The final export also includes BF16 inference weights and tokenizer. Resume keeps
-the same run identity and currently requires eight ranks. Working artifacts are
+the same run identity and requires the original rank count (eight for pilots). Working artifacts are
 under `s3://marin-us-east-02a/MarinFold/exp347_qwen_base_contacts/`; durable public
 publication and contact-generation evaluation follow completed training.
 
@@ -80,6 +80,71 @@ The training environment is pinned in [`uv.lock`](uv.lock), with the SHA256-pinn
 1.7.0 CUDA 12 / torch 2.10 wheel in
 [`gpu_bootstrap.sh`](gpu_bootstrap.sh). Initial Iris submission used marin commit
 `16ed2b63cdf810fc444930138ac3a35f53260e71`.
+
+## Full-corpus 4B continuation and periodic evaluation
+
+On October 5 the user requested full-scale 4B training with periodic eval-val
+R-precision. The working default is both document formats, **100B additional
+native tokens each**, evaluated every **1B additional tokens**, within the existing
+48-H100 cap. This numerical budget and retaining both formats are stated operator
+assumptions, not additional user-specified requirements. Each new phase starts
+from its corresponding 1B pilot's FP32 weights, with a fresh optimizer and corpus
+cursor; the larger gang and corpus make this a distinct training phase.
+
+Full-corpus preparation uses all **2,067** co-located exp232 AFDB shards through
+`prepare.py`. Source size/ETag, preparation-code hashes, and output row counts
+protect resumed preparation. The paired complete-document transformation,
+length filter, and sequence-cluster validation split match the pilot.
+The new cache is `s3://marin-us-east-02a/MarinFold/exp347_qwen_base_contacts/data/full-v1`.
+Preparation completed as `/timodonnell/exp347-prepare-full-a01`: 3,963,003 source
+rows, 201,653 over-length exclusions, 7,047 empty-contact exclusions,
+**3,717,047 training** and **37,256 validation** proteins. One pass contains
+18,165,234,453 contacts-v1 tokens or 5,213,571,376 prompted tokens and
+611,324,110 training contacts. The committed
+[`full-corpus manifest`](data/full_corpus/manifest.json) records every source shard.
+A 100B-token phase therefore spans about5.5 raw or19.2 prompted corpus passes.
+
+`torch_launch.py` uses the Iris endpoint registry and Torch's supported rendezvous
+options for a fixed gang. Training stages weights once per node and uses local
+CUDA ranks; exact optimizer recovery requires the same world size. The planned
+allocation is 16 H100s per 4B arm plus four single-H100 evaluation workers per arm.
+Together with the continuing eight-GPU 2B pilot this is 48 GPUs. Multi-node
+training, durable periodic exports, and recovery are gated on a short real-model
+smoke test. These continuation runs have not yet been dispatched. The two-node setup passed
+Torch rendezvous and staged both models, but stalled at the first NCCL collective;
+a socket-transport validation is in progress.
+
+`eval_contract.py` freezes the **97-protein eval-val set** from exp245's pinned
+membership, sequences, and resolved-residue ground truth. It never selects
+`eval-test`. The evaluator samples **100 rollouts**, temperature 1, top-p 0.95,
+and top-k disabled, then calls the unchanged exp89 metric implementation.
+Contacts-v1 prompts resample N-terminal offset and sequence-statement order;
+only live, valid contacts vote, once per pair per rollout. Prompted models use
+100 independent samples of their fixed natural-language/ordinary-sequence prefix.
+Because native Qwen symbols split into multiple tokens, the canonical `6L+128`
+protein-token allowance is translated to native tokens with equivalent contact
+statement capacity. This vocabulary and fixed-prefix adaptation is explicit;
+it is not an identical-tokenizer or identical-resampling comparison.
+
+`eval_worker.py` saves raw completions, symmetric vote matrices, exact checkpoint
+and input provenance, and per-protein timings. A capped rollout aborts that
+measurement before its completion marker. `aggregate_eval.py` requires every
+expected unit and all 20 canonical metric rows before publishing an aggregate.
+The new runtime passed the E8 legacy554 reference gate: all R=0.42437655 and
+long R=0.36598821 against reference0.4245291 and0.3656152 (tolerance0.005).
+All554 units completed100 rollouts with no truncation. The metric and timing
+tables are committed in [`data/e8_reference`](data/e8_reference).
+
+`periodic_eval.py` runs inside a persistent Iris CPU job and executes the fixed
+checkpoint schedule on four GPU children, waiting for every child before scoring.
+Training retains periodic BF16 model/tokenizer exports under
+`checkpoints/<run>/hf/step-<N>/` independently of rolling optimizer checkpoints.
+An immutable request appears only after checkpoint completion; resume repairs a
+request interrupted between checkpoint commit and request publication. Evaluation
+results log to a dedicated W&B run against checkpoint tokens, including the final
+measurement after training exits. The trainer also imports completed all/long
+R-precision while running. Iris handles preemption; there is no scheduled agent
+that diagnoses or repairs arbitrary failures.
 
 ## Results
 
