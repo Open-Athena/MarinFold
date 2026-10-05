@@ -124,7 +124,12 @@ def main() -> None:
     uri = export_uri(arguments.step)
     entries = read_export(uri)
     spec = {
-        "label": f"exp343_complex_m2_p06_step{arguments.step}",
+        # Root AGENTS.md: "When referring to a checkpoint as a string identifier
+        # anywhere ... the `<wandb-run-name>-step-<N>` format applies." This label
+        # propagates into timing rows, metric model names, output prefixes and the
+        # run manifest, so an abbreviation there makes every downstream artifact
+        # harder to trace back to the exact run.
+        "label": f"{RUN_NAME}-step-{arguments.step}",
         "job_label": "exp343",
         "run_name": RUN_NAME,
         "step": arguments.step,

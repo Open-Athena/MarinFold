@@ -25,6 +25,7 @@ for.
 
 import argparse
 import base64
+import csv
 import importlib.util
 import json
 import math
@@ -146,6 +147,7 @@ def read_documents(uri: str, limit: int | None) -> list[dict]:
     """Read the held-out shard, keeping only what the scorer needs."""
     columns = ["document_id", "document", "source_arm", "complex_type",
                "confidence_tier", "num_tokens", "num_chains", "truncated",
+               "seq_len", "chain_lengths",
                "contacts_emitted", "contacts_emitted_inter_chain"]
     with fsspec.open(uri, "rb") as handle:
         table = pq.ParquetFile(handle).read(columns=columns)
@@ -154,6 +156,31 @@ def read_documents(uri: str, limit: int | None) -> list[dict]:
         rows = rows[:limit]
     log(f"read {len(rows)} documents from {uri}")
     return rows
+
+
+#: Residues closer than this along a chain are never candidate contacts
+#: (contacts-v1 `min_seq_separation`). Inter-chain pairs have no such floor.
+MIN_SEQ_SEPARATION = 6
+
+
+def candidate_pairs(chain_lengths: list[int]) -> int:
+    """The contacts-v1 candidate-pair universe for one complex.
+
+    Intra-chain: every pair at least `MIN_SEQ_SEPARATION` apart. Inter-chain:
+    every cross-chain pair, at any index distance. This is `n_pairs` in the
+    repo's standard predictor-timing schema, computed exactly rather than
+    approximated by L^2.
+    """
+    total = 0
+    for length in chain_lengths:
+        if length > MIN_SEQ_SEPARATION:
+            full = length * (length - 1) // 2
+            near = sum(length - sep for sep in range(1, MIN_SEQ_SEPARATION))
+            total += full - near
+    for index, length in enumerate(chain_lengths):
+        for other in chain_lengths[index + 1 :]:
+            total += length * other
+    return total
 
 
 def score_batch(model, tokenizer, rows: list[dict], chunk: list[int],
@@ -182,10 +209,18 @@ def score_batch(model, tokenizer, rows: list[dict], chunk: list[int],
         batch[row, : len(ids)] = torch.tensor(ids, dtype=torch.long)
         mask[row, : len(ids)] = 1
     batch, mask = batch.to("cuda"), mask.to("cuda")
+    # Timed around the forward pass only, then divided across the batch, so each
+    # document carries its share of the work that produced its loss. Documents
+    # are scored in batches, so this is a per-document share of a batch rather
+    # than an isolated single-document measurement -- recorded as such.
+    started = time.perf_counter()
     with torch.no_grad():
         logits = model(input_ids=batch, attention_mask=mask).logits.float()
     log_probs = torch.log_softmax(logits[:, :-1], dim=-1)
     nll = -log_probs.gather(2, batch[:, 1:].unsqueeze(-1)).squeeze(-1).cpu()
+    torch.cuda.synchronize()
+    batch_seconds = time.perf_counter() - started
+    per_document_seconds = batch_seconds / len(chunk)
     scored_rows = []
     for row, (index, section, ids) in enumerate(
         zip(chunk, labelled, encoded, strict=True)
@@ -217,6 +252,11 @@ def score_batch(model, tokenizer, rows: list[dict], chunk: list[int],
                 "num_chains": source["num_chains"],
                 "truncated": source["truncated"],
                 "num_tokens": source["num_tokens"],
+                "n_residues": source["seq_len"],
+                "n_pairs": candidate_pairs(list(source["chain_lengths"])),
+                "elapsed_seconds": per_document_seconds,
+                "batch_seconds": batch_seconds,
+                "batch_documents": len(chunk),
                 "scored_positions": scored,
                 "nll_total": total,
                 "contacts_intra": section.contacts_intra,
@@ -330,6 +370,58 @@ def aggregate(rows: list[dict], role_values: list[str]) -> dict:
     return groups
 
 
+#: The repo's standard predictor-timing schema (root `AGENTS.md`), so these rows
+#: join with exp12/exp20's on `(stem, n_residues)`.
+TIMING_COLUMNS = (
+    "stem", "n_residues", "n_pairs", "mode",
+    "elapsed_seconds", "model_load_seconds", "total_seconds",
+    "model_nickname", "runner_tag",
+    "gpu_name", "gpu_total_memory_gb", "gpu_compute_capability",
+    "hostname", "platform", "torch_version", "timestamp_utc",
+    "batch_documents", "batch_seconds", "scored_positions", "num_tokens",
+)
+
+
+def write_timings(uri: str, scored: list[dict], summary: dict, label: str) -> None:
+    """One row per scored document, written at evaluation time.
+
+    `elapsed_seconds` is that document's share of its batch's forward pass;
+    `batch_seconds` and `batch_documents` are carried so the sharing is visible
+    rather than implied. `model_load_seconds` is the run-level weight-load cost,
+    repeated per row as the schema expects.
+    """
+    worker = summary["worker"]
+    timing = summary["timing"]
+    with fsspec.open(uri, "w", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(TIMING_COLUMNS),
+                                lineterminator="\n")
+        writer.writeheader()
+        for row in scored:
+            writer.writerow({
+                "stem": row["document_id"],
+                "n_residues": row["n_residues"],
+                "n_pairs": row["n_pairs"],
+                "mode": "lm_loss",
+                "elapsed_seconds": f"{row['elapsed_seconds']:.6f}",
+                "model_load_seconds": f"{timing['model_load_seconds']:.6f}",
+                "total_seconds": f"{row['elapsed_seconds']:.6f}",
+                "model_nickname": label,
+                "runner_tag": "iris",
+                "gpu_name": worker["gpu_name"],
+                "gpu_total_memory_gb": f"{worker['gpu_total_memory_gb']:.2f}",
+                "gpu_compute_capability": worker["gpu_compute_capability"],
+                "hostname": worker["hostname"],
+                "platform": worker["platform"],
+                "torch_version": worker["torch_version"],
+                "timestamp_utc": worker["timestamp_utc"],
+                "batch_documents": row["batch_documents"],
+                "batch_seconds": f"{row['batch_seconds']:.6f}",
+                "scored_positions": row["scored_positions"],
+                "num_tokens": row["num_tokens"],
+            })
+    log(f"wrote {len(scored)} timing rows to {uri}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", required=True, help="HF export URI")
@@ -391,6 +483,7 @@ def main() -> None:
         json.dump(summary, handle, indent=2)
     with fsspec.open(f"{prefix}/{args.label}/per_document.parquet", "wb") as handle:
         pq.write_table(pa.Table.from_pylist(scored), handle, compression="zstd")
+    write_timings(f"{prefix}/{args.label}/timings.csv", scored, summary, args.label)
     print(json.dumps({"event": "done", **summary["aggregate"]["all"]}), flush=True)
     log(f"wrote {prefix}/{args.label}/")
 

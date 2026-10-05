@@ -51,3 +51,20 @@ def test_step_count_follows_the_pinned_packed_example_count() -> None:
     assert GLOBAL_BATCH_SIZE == 128
     expected = -(-EPOCH_PACKED_EXAMPLES // GLOBAL_BATCH_SIZE)
     assert EPOCH_TRAIN_STEPS == expected
+
+
+def test_a_limited_run_writes_under_its_own_label() -> None:
+    """A smoke must not share the production `parts/` prefix.
+
+    The worker's resume path reads back any part already present and checks its
+    row count, so a 32-row smoke part left in the production prefix makes the
+    next full run abort deterministically. `--name-suffix` only renames the Iris
+    job, so the isolation has to come from the output label.
+    """
+    from experiments.exp343_models_complex_corpus_training.dispatch_complex_eval_cw import (
+        output_label,
+    )
+
+    assert output_label("exp343-step280154", None) == "exp343-step280154"
+    assert output_label("exp343-step280154", 32) == "exp343-step280154-smoke32"
+    assert output_label("exp343-step280154", 32) != output_label("exp343-step280154", None)

@@ -58,18 +58,16 @@ WORK_DIR = "/tmp/exp343_complex_eval"
 #: `exp277-step266344` is the control: the current default model, which has never
 #: seen a multi-chain document.
 #:
-#: `exp343-smoke-step9` is a ten-update scratch model and its *losses are
-#: meaningless*. It is here to prove the scorer can load an export written by
-#: **this** run's own pipeline -- the rope and tokenizer assertions in particular
-#: -- while the production run is still training, rather than discovering an
-#: export-format problem three days from now. Its numbers are never reported.
+#: Only real, reported checkpoints live here. The export-format gate that ran
+#: against a training smoke is **not** a named arm: `launch.py` tags every smoke
+#: run (`-smoke-n8-rno2a`, ...), so a hardcoded smoke path silently rots into
+#: either a missing object or -- worse -- a stale checkpoint from an earlier
+#: smoke, which would pass the gate while testing nothing. Score an arbitrary
+#: export with `--model-uri` instead; see `--help`.
 ARMS = {
     "exp277-step266344": (
         "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/"
         "runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B/hf/step-266344"
-    ),
-    "exp343-smoke-step9": (
-        f"{PREFIX}/runs/contacts-v1-exp343-m2-p06-complex-1.5B-smoke/hf/step-9"
     ),
     "exp343-step280154": (
         f"{PREFIX}/runs/contacts-v1-exp343-m2-p06-complex-1.5B/hf/step-280154"
@@ -84,6 +82,16 @@ FSSPEC_VIRTUAL_ADDRESSING_EXPORT = (
 HERE = Path(__file__).resolve().parent
 WORKER_SCRIPT = HERE / "score_complex_worker.py"
 SECTIONS_SCRIPT = HERE / "complex_sections.py"
+
+
+def output_label(label: str, limit: int | None) -> str:
+    """The label a run writes under.
+
+    A limited run is a smoke and must not share the production `parts/` prefix:
+    the resume path reads back any part already present and checks its row count,
+    so a 32-row smoke part would make the next full run abort deterministically.
+    """
+    return f"{label}-smoke{limit}" if limit else label
 
 
 def build_bootstrap(*, label: str, model: str, limit: int | None) -> str:
@@ -116,7 +124,7 @@ uv pip install --python "$GPU_PY" --quiet fsspec s3fs boto3 pyarrow \
 
 exec "$GPU_PY" {WORK_DIR}/score_complex_worker.py \\
     --model {model} \\
-    --label {label} \\
+    --label {output_label(label, limit)} \\
     --shard {HELD_OUT_SHARD} \\
     --out {OUT_S3} \\
     --sections-b64 {sections_b64}{limit_arg}
@@ -174,6 +182,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--labels", default=",".join(ARMS))
     parser.add_argument(
+        "--model-uri",
+        help="score an export that is not a named arm (e.g. a training smoke's "
+        "tagged export). Requires exactly one --labels value, used as its label.",
+    )
+    parser.add_argument(
         "--limit", type=int, default=None, help="smoke: first N documents"
     )
     parser.add_argument(
@@ -184,13 +197,19 @@ def main() -> None:
     parser.add_argument("--cluster", default=os.environ.get("EVAL_CW_CLUSTER", "cw-us-east-02a"))
     arguments = parser.parse_args()
     labels = [label for label in arguments.labels.split(",") if label]
-    unknown = [label for label in labels if label not in ARMS]
-    if unknown:
-        parser.error(f"unknown label(s) {unknown}; known: {sorted(ARMS)}")
+    if arguments.model_uri:
+        if len(labels) != 1:
+            parser.error("--model-uri takes exactly one --labels value")
+        arms = {labels[0]: arguments.model_uri}
+    else:
+        arms = ARMS
+        unknown = [label for label in labels if label not in arms]
+        if unknown:
+            parser.error(f"unknown label(s) {unknown}; known: {sorted(arms)}")
     requests = [
         build_request(
             label=label,
-            model=ARMS[label],
+            model=arms[label],
             limit=arguments.limit,
             suffix=arguments.name_suffix,
         )

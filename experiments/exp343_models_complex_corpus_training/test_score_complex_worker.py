@@ -111,3 +111,22 @@ def test_a_short_part_is_rejected_rather_than_trusted(tmp_path, monkeypatch) -> 
     )
     with pytest.raises(ValueError, match="expected 10"):
         worker.score(None, None, documents, None, parts_prefix=str(parts))
+
+
+def test_candidate_pairs_applies_the_separation_floor_within_chains_only() -> None:
+    # One chain of 10: C(10,2)=45 pairs, minus those closer than 6 apart
+    # (9+8+7+6+5 = 35) -> 10.
+    assert worker.candidate_pairs([10]) == 10
+    # A chain shorter than the floor contributes nothing intra-chain.
+    assert worker.candidate_pairs([6]) == 0
+    assert worker.candidate_pairs([3]) == 0
+    # Inter-chain pairs have no separation floor: 3 x 4 = 12, and neither chain
+    # is long enough to contribute an intra-chain pair.
+    assert worker.candidate_pairs([3, 4]) == 12
+    # Both effects together, and order-independent.
+    assert worker.candidate_pairs([10, 4]) == 10 + 40
+    assert worker.candidate_pairs([4, 10]) == worker.candidate_pairs([10, 4])
+
+
+def test_candidate_pairs_counts_every_cross_chain_pair_for_three_chains() -> None:
+    assert worker.candidate_pairs([2, 3, 4]) == 2 * 3 + 2 * 4 + 3 * 4
