@@ -1,5 +1,22 @@
 # MarinFold Updates
 
+## Week of October 5, 2026
+
+### Last week
+
+* **Training: the protein/protein complex model finished training.** The run added **3.4M complex training documents** to the native + ProteinMPNN corpus. We don't yet know complex prediction accuracy because we still need to build an evaluation set. Loss on held-out complexes fell from **3.697 to 3.037 nats/token** (inter-chain contacts: **3.452 to 2.541**). Monomer eval-val R-precision fell from **0.554 to 0.527**, however. ([#343](https://github.com/Open-Athena/MarinFold/issues/343), [#349](https://github.com/Open-Athena/MarinFold/pull/349))
+* **Training: the full-corpus delta-stream run continues to improve.** At 60% of an epoch, R-precision reached **0.443 on eval-val / 0.628 on eval-denovo**, still below the finished contacts-v1 model (**0.554 / 0.696**). ([#299](https://github.com/Open-Athena/MarinFold/issues/299))
+* **Training: six NLP-pretrained Qwen3.5 fine-tuning trials launched.** The initial sweep included **0.8B, 2B and 4B** base models on contacts-v1 documents versus a natural-language prompt with the ordinary protein sequence, targeting **1B training tokens per trial**. Contact-accuracy results are pending. ([#347](https://github.com/Open-Athena/MarinFold/issues/347))
+
+### Upcoming
+
+* Tim: Develop a contact-prediction evaluation using R-precision and structural accuracy via Helico. ([#343](https://github.com/Open-Athena/MarinFold/issues/343))
+* Tim: Focusing further Qwen fine-tuning and evaluation on the **4B model pretrained on NLP**. ([#347](https://github.com/Open-Athena/MarinFold/issues/347))
+* Zack: Complete the full-corpus delta-stream run; finish the model-size sweep. ([#299](https://github.com/Open-Athena/MarinFold/issues/299), [#288](https://github.com/Open-Athena/MarinFold/issues/288))
+* Jacob: Running some probes that might help us understand how our current model works or suggest architecture changes for the next training run ([#341](https://github.com/Open-Athena/MarinFold/issues/341))
+
+---
+
 ## Week of September 28, 2026
 
 ### Last week
