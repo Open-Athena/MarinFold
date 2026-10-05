@@ -83,9 +83,16 @@ FSSPEC_VIRTUAL_ADDRESSING_EXPORT = (
     """export FSSPEC_S3_CONFIG_KWARGS='{"s3": {"addressing_style": "virtual"}}'"""
 )
 
-#: Pinned exactly as exp277's rollout eval pins them against this image.
+#: Pinned to the versions that **this** pipeline resolved and ran successfully
+#: with (`/bizon/exp343-complex-eval-a04`), read out of that job's install log --
+#: not copied from another experiment. exp277's rollout pins
+#: (`fsspec==2026.1.0`, `s3fs==2026.1.0`) are a year older here and parse
+#: `FSSPEC_S3_CONFIG_KWARGS` as a raw string, which crashes every worker with
+#: `AttributeError: 'str' object has no attribute 'copy'`. A pin is only
+#: reproducible if it reproduces a run that actually happened.
 STORAGE_PINS = (
-    "'fsspec==2026.1.0' 's3fs==2026.1.0' 'aiobotocore==2.26.0' 'pyarrow>=23,<24'"
+    "'fsspec==2026.2.0' 's3fs==2026.2.0' 'aiobotocore==3.9.0' "
+    "'botocore==1.43.56' 'pyarrow==25.0.1'"
 )
 
 HERE = Path(__file__).resolve().parent
