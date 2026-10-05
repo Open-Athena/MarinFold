@@ -83,18 +83,6 @@ FSSPEC_VIRTUAL_ADDRESSING_EXPORT = (
     """export FSSPEC_S3_CONFIG_KWARGS='{"s3": {"addressing_style": "virtual"}}'"""
 )
 
-#: Pinned to the versions that **this** pipeline resolved and ran successfully
-#: with (`/bizon/exp343-complex-eval-a04`), read out of that job's install log --
-#: not copied from another experiment. exp277's rollout pins
-#: (`fsspec==2026.1.0`, `s3fs==2026.1.0`) are a year older here and parse
-#: `FSSPEC_S3_CONFIG_KWARGS` as a raw string, which crashes every worker with
-#: `AttributeError: 'str' object has no attribute 'copy'`. A pin is only
-#: reproducible if it reproduces a run that actually happened.
-STORAGE_PINS = (
-    "'fsspec==2026.2.0' 's3fs==2026.2.0' 'aiobotocore==3.9.0' "
-    "'botocore==1.43.56' 'pyarrow==25.0.1'"
-)
-
 HERE = Path(__file__).resolve().parent
 WORKER_SCRIPT = HERE / "score_complex_worker.py"
 SECTIONS_SCRIPT = HERE / "complex_sections.py"
@@ -126,19 +114,27 @@ echo "[complex-loss] iris_FSSPEC_S3=${{FSSPEC_S3:+present}}"
 mkdir -p {WORK_DIR}
 echo {worker_b64} | base64 -d > {WORK_DIR}/score_complex_worker.py
 
-# torch and transformers are baked into the image and must stay exactly as the
-# vendor shipped them. These storage pins are the set exp277's rollout eval
-# validated against this same image; leaving them unpinned lets a newly released
-# transitive dependency replace part of a vendor-tested environment between two
-# otherwise identical runs.
+# torch and transformers are baked into the image and are never touched here --
+# no marinfold is installed, so the AGENTS.md `--no-deps` rule (which exists
+# because `pip install marinfold` repins transformers out from under vLLM) has
+# nothing to bite on.
+#
+# These four are deliberately NOT version-pinned. Pinning them was tried and
+# reverted: forcing explicit versions onto the vendor image replaces a working
+# fsspec/s3fs/boto3 set and every worker then dies in `set_session` with
+# `AttributeError: 'str' object has no attribute 'copy'` -- s3fs reading
+# `FSSPEC_S3_CONFIG_KWARGS` as a raw string. Both exp277's pins
+# (fsspec/s3fs 2026.1.0) and this pipeline's own observed versions
+# (fsspec/s3fs 2026.2.0) fail that way; the unpinned resolve is what the image
+# tolerates. See /bizon/exp343-complex-eval-a05 and -a06.
 GPU_PY=""
 for _py in /app/.venv/bin/python /usr/local/bin/python /usr/bin/python3 /opt/venv/bin/python python3 python; do
   if "$_py" -c "import torch, transformers" >/dev/null 2>&1; then GPU_PY="$_py"; break; fi
 done
 echo "[complex-loss] python: ${{GPU_PY:-NONE}}"
 if [ -z "$GPU_PY" ]; then echo "[complex-loss] FATAL: no python imports torch+transformers"; exit 3; fi
-uv pip install --python "$GPU_PY" --quiet {STORAGE_PINS} \
-  || "$GPU_PY" -m pip install --quiet {STORAGE_PINS}
+uv pip install --python "$GPU_PY" --quiet fsspec s3fs boto3 pyarrow \
+  || "$GPU_PY" -m pip install --quiet fsspec s3fs boto3 pyarrow
 "$GPU_PY" -c "import torch, transformers; print('[complex-loss] torch', torch.__version__, 'transformers', transformers.__version__)"
 
 exec "$GPU_PY" {WORK_DIR}/score_complex_worker.py \\
