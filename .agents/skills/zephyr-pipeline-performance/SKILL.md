@@ -457,6 +457,33 @@ uses `cat_file`) rather than a size-based `fsspec.open().read()`.
 If your pipeline runs in opt-in lenient mode and you instead see a
 suspiciously high *rate* of skipped rows, the same diagnosis applies.
 
+### A task pod's `/tmp` is mounted `noexec` — stage helper binaries elsewhere
+
+If your shard body shells out to a **binary you stage at runtime** (a frozen
+MMseqs2/Foldseek tarball, a vendored CLI), do not unpack it under `/tmp`. The
+task container mounts `/tmp` `noexec`, so the extracted binary unpacks fine,
+hashes fine, and then dies on first use with a misleading
+`PermissionError: [Errno 13] Permission denied: .../bin/mmseqs` — which reads
+like a file-mode bug, not a mount-option one. exp292's AFDB curation job lost a
+256-worker launch to exactly this.
+
+Two fixes, both cheap, and worth doing together:
+
+1. **Stage under the worker's working directory**, which must be executable
+   because the venv's own entry points run from it. Make the `--work` default
+   *relative* (`exp292-curate-work`) and `.resolve()` it, rather than an
+   absolute `/tmp/...`.
+2. **Prove it at staging time, not at first use.** After extracting, `chmod`
+   the binary and actually run it (`<binary> version`) inside the
+   memoized staging function, re-raising `OSError` with a message that names
+   the `noexec` hypothesis. A staging-time failure is one clear line in the
+   first worker's log; a first-use failure is buried under thousands of
+   `pull_task` lines, several frames deep in an unrelated stack.
+
+Note the asymmetry that makes this easy to miss: the *same* extraction code
+running on a plain VM (an EC2 bootstrap unpacking to `/opt` as root) works,
+so the bug appears only when the stage moves onto the cluster.
+
 ### Requester-pays buckets (AFDB)
 
 The AFDB GCS bucket is requester-pays. Local user credentials get

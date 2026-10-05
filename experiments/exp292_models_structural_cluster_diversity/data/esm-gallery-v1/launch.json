@@ -1,0 +1,52 @@
+{
+  "region": "us-west-2",
+  "source": "s3://marinfold-exp91-usw2/exp292/audits/exp292-esm-gallery-v1/source.tar.gz",
+  "results": "s3://marinfold-exp91-usw2/exp292/audits/exp292-esm-gallery-v1/results",
+  "bundle_sha256": "d58781a805d6c80e95005e8af1d96915ebc39619f2731e0bdf78e8e233998d30",
+  "bundle_bytes": 2123148,
+  "config": {
+    "ImageId": "ami-04678417fc39d7171",
+    "InstanceType": "m7i.4xlarge",
+    "MinCount": 1,
+    "MaxCount": 1,
+    "SubnetId": "subnet-00caee8a9828c5c0c",
+    "Placement": {
+      "AvailabilityZone": "us-west-2a"
+    },
+    "IamInstanceProfile": {
+      "Name": "marinfold-exp91-instance-profile"
+    },
+    "InstanceInitiatedShutdownBehavior": "terminate",
+    "MetadataOptions": {
+      "HttpTokens": "required",
+      "HttpEndpoint": "enabled"
+    },
+    "BlockDeviceMappings": [
+      {
+        "DeviceName": "/dev/sda1",
+        "Ebs": {
+          "VolumeSize": 100,
+          "VolumeType": "gp3",
+          "DeleteOnTermination": true
+        }
+      }
+    ],
+    "TagSpecifications": [
+      {
+        "ResourceType": "instance",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "exp292-esm-gallery-v1"
+          },
+          {
+            "Key": "Experiment",
+            "Value": "exp292"
+          }
+        ]
+      }
+    ],
+    "ClientToken": "e628462b0b47cadeca168c09cbe55d586ebd1433d1ec5afce57ee0b359b313d1"
+  },
+  "instance_id": "i-07272b20c6d092f48"
+}

@@ -1,0 +1,41 @@
+{
+  "candidates": 571,
+  "unique_reference_sequences": 1823,
+  "excluded": 60,
+  "positive_control_passed": true,
+  "positive_control_reference": "eval00001",
+  "elapsed_seconds": 2.6104955561459064,
+  "mmseqs_version": "4fe20e6bb0aa219a35f6190322a91ab19cb6898d",
+  "command": [
+    "/home/bizon/.cache/marinfold/mmseqs/mmseqs/bin/mmseqs",
+    "easy-search",
+    "/home/bizon/exp292_scratch/sequence-screen-initial-v2/references.fasta",
+    "/home/bizon/exp292_scratch/sequence-screen-initial-v2/candidates.fasta",
+    "experiments/exp292_models_structural_cluster_diversity/data/sequence-screen-initial/sequence_hits.tsv",
+    "/home/bizon/exp292_scratch/sequence-screen-initial-v2/tmp",
+    "-s",
+    "7.5",
+    "-e",
+    "1000",
+    "--max-seqs",
+    "100000",
+    "--threads",
+    "8",
+    "--format-output",
+    "query,target,fident,alnlen,qcov,tcov,evalue,bits"
+  ],
+  "references": [
+    {
+      "path": "experiments/exp225_data_decontaminate_training_corpora/data/reference/eval_queries.fasta",
+      "sha256": "17336c8bcfdcc024ddda5d7c1383181620658aa02c2ca78bd3d1da1509a3566a"
+    },
+    {
+      "path": "experiments/exp225_data_decontaminate_training_corpora/data/reference/foldbench_all_queries.fasta",
+      "sha256": "0e6bd31f3f9d34eec73ed83ed5e7a8942529ff68a402ea632bd7f845a132551f"
+    }
+  ],
+  "candidate_fasta_sha256": "3d86d84818a6832febd0ee95d29fcf6d3c0212405f3915cd56f41471150fb193",
+  "rule": "identity >=0.30 and coverage of shorter sequence >=0.50; no additional E-value exclusion arm",
+  "reporting_evalue_ceiling": 1000,
+  "status": "preliminary curation screen; repeat against final candidate pool and frozen reference before training"
+}

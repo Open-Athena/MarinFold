@@ -1,0 +1,33 @@
+{
+  "status": "complete",
+  "returncode": 0,
+  "error": null,
+  "elapsed_seconds": 30.03231592099999,
+  "located_plan_files": 1,
+  "shard": "00",
+  "command": [
+    "/opt/exp292-bootstrap/bin/uv",
+    "run",
+    "--frozen",
+    "--extra",
+    "esm",
+    "python",
+    "curate_esm_metadata.py",
+    "--located",
+    "/opt/exp292/inputs/located",
+    "--reference",
+    "/opt/exp292/inputs/eval_queries.fasta",
+    "--reference",
+    "/opt/exp292/inputs/foldbench_all_queries.fasta",
+    "--mmseqs",
+    "/opt/exp292/tools/mmseqs/bin/mmseqs",
+    "--mmseqs-archive",
+    "/opt/exp292/tools/mmseqs-linux-avx2.tar.gz",
+    "--work",
+    "/opt/exp292/work",
+    "--output",
+    "/opt/exp292/output",
+    "--max-clusters",
+    "100"
+  ]
+}

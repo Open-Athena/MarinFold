@@ -1,0 +1,985 @@
+{
+  "status": "launched",
+  "region": "us-west-2",
+  "source": "s3://marinfold-exp91-usw2/exp292/production-v1/esm/metadata/launches/exp292-esm-metadata-batch4/source.tar.gz",
+  "located": "s3://marinfold-exp91-usw2/exp292/production-v1/esm/locator/located",
+  "results": "s3://marinfold-exp91-usw2/exp292/production-v1/esm/metadata",
+  "bundle_sha256": "a53d04aa219933270f7ec852fe5fa78bbf3ebed4a705ad9781a07f92b0967e49",
+  "bundle_bytes": 98679,
+  "shards": [
+    "00",
+    "3f",
+    "40",
+    "41",
+    "42",
+    "43",
+    "44",
+    "45",
+    "46",
+    "47",
+    "48",
+    "49",
+    "4a",
+    "4b",
+    "4c",
+    "4d",
+    "4e",
+    "4f",
+    "50",
+    "51",
+    "52",
+    "53",
+    "54",
+    "55",
+    "56",
+    "57",
+    "58",
+    "59",
+    "5a",
+    "5b",
+    "5c",
+    "5d",
+    "5e",
+    "5f",
+    "60",
+    "61",
+    "62",
+    "63",
+    "64",
+    "65",
+    "66",
+    "67",
+    "68",
+    "69",
+    "6a",
+    "6b",
+    "6c",
+    "6d",
+    "6e",
+    "6f",
+    "70",
+    "71",
+    "72",
+    "73",
+    "74",
+    "75",
+    "76",
+    "77",
+    "78",
+    "79",
+    "7a",
+    "7b",
+    "7c",
+    "7d",
+    "7e",
+    "7f",
+    "80",
+    "81",
+    "82",
+    "83",
+    "84",
+    "85",
+    "86",
+    "87",
+    "88",
+    "89",
+    "8a",
+    "8b",
+    "8c",
+    "8d",
+    "8e",
+    "8f",
+    "90",
+    "91",
+    "92",
+    "93",
+    "94",
+    "95",
+    "96",
+    "97",
+    "98",
+    "99",
+    "9a",
+    "9b",
+    "9c",
+    "9d",
+    "9e",
+    "9f",
+    "a0",
+    "a1",
+    "a2",
+    "a3",
+    "a4",
+    "a5",
+    "a6",
+    "a7",
+    "a8",
+    "a9",
+    "aa",
+    "ab",
+    "ac",
+    "ad",
+    "ae",
+    "af",
+    "b0",
+    "b1",
+    "b2",
+    "b3",
+    "b4",
+    "b5",
+    "b6",
+    "b7",
+    "b8",
+    "b9",
+    "ba",
+    "bb",
+    "bc",
+    "bd",
+    "be",
+    "bf",
+    "c0",
+    "c1",
+    "c2",
+    "c3",
+    "c4",
+    "c5",
+    "c6",
+    "c7",
+    "c8",
+    "c9",
+    "ca",
+    "cb",
+    "cc",
+    "cd",
+    "ce",
+    "cf",
+    "d0",
+    "d1",
+    "d2",
+    "d3",
+    "d4",
+    "d5",
+    "d6",
+    "d7",
+    "d8",
+    "d9",
+    "da",
+    "db",
+    "dc",
+    "dd",
+    "de",
+    "df",
+    "e0",
+    "e1",
+    "e2",
+    "e3",
+    "e4",
+    "e5",
+    "e6",
+    "e7",
+    "e8",
+    "e9",
+    "ea",
+    "eb",
+    "ec",
+    "ed",
+    "ee",
+    "ef",
+    "f0",
+    "f1",
+    "f2",
+    "f3",
+    "f4",
+    "f5",
+    "f6",
+    "f7",
+    "f8",
+    "f9",
+    "fa",
+    "fb",
+    "fc",
+    "fd",
+    "fe",
+    "ff"
+  ],
+  "max_concurrent": 27,
+  "max_clusters": null,
+  "instances": [
+    {
+      "shard": "00",
+      "instance_id": "i-00fabd367a2ccdda9"
+    },
+    {
+      "shard": "3f",
+      "instance_id": "i-0be69642d4f22dc72"
+    },
+    {
+      "shard": "40",
+      "instance_id": "i-02100983092889e01"
+    },
+    {
+      "shard": "41",
+      "instance_id": "i-057e525b9ddee97d3"
+    },
+    {
+      "shard": "42",
+      "instance_id": "i-0adad0086af9938ba"
+    },
+    {
+      "shard": "43",
+      "instance_id": "i-0aa4faa119027b86c"
+    },
+    {
+      "shard": "44",
+      "instance_id": "i-01b2eb3145aa7d5bf"
+    },
+    {
+      "shard": "45",
+      "instance_id": "i-0dfc3256dac2de53f"
+    },
+    {
+      "shard": "46",
+      "instance_id": "i-04fe6a05edf6969aa"
+    },
+    {
+      "shard": "47",
+      "instance_id": "i-09840e20aff675463"
+    },
+    {
+      "shard": "48",
+      "instance_id": "i-0ecc2926a8ba244ad"
+    },
+    {
+      "shard": "49",
+      "instance_id": "i-0556d173915dd0ef1"
+    },
+    {
+      "shard": "4a",
+      "instance_id": "i-03e9fbaec0df4e769"
+    },
+    {
+      "shard": "4b",
+      "instance_id": "i-004eeecae39e53076"
+    },
+    {
+      "shard": "4c",
+      "instance_id": "i-0e3abf77e3649428b"
+    },
+    {
+      "shard": "4d",
+      "instance_id": "i-0588f9f06f82f889d"
+    },
+    {
+      "shard": "4e",
+      "instance_id": "i-0f33c3662d01f7a63"
+    },
+    {
+      "shard": "4f",
+      "instance_id": "i-09d400a569fc3d4db"
+    },
+    {
+      "shard": "50",
+      "instance_id": "i-013064228582db524"
+    },
+    {
+      "shard": "51",
+      "instance_id": "i-047a1aaacd3b91e2a"
+    },
+    {
+      "shard": "52",
+      "instance_id": "i-0596a7eab12f1f6d6"
+    },
+    {
+      "shard": "53",
+      "instance_id": "i-0d5d12e0cb3942553"
+    },
+    {
+      "shard": "54",
+      "instance_id": "i-01a9653bfc62b5150"
+    },
+    {
+      "shard": "55",
+      "instance_id": "i-0a216d5bf7ac40f4f"
+    },
+    {
+      "shard": "56",
+      "instance_id": "i-0f2d1a18d64156086"
+    },
+    {
+      "shard": "57",
+      "instance_id": "i-09a6d6cf36c13c704"
+    },
+    {
+      "shard": "58",
+      "instance_id": "i-05aaab9fad25bad6a"
+    },
+    {
+      "shard": "59",
+      "instance_id": "i-0e2638317b8396129"
+    },
+    {
+      "shard": "5a",
+      "instance_id": "i-0bc991d8d993ba4ef"
+    },
+    {
+      "shard": "5b",
+      "instance_id": "i-056b6285229d8321d"
+    },
+    {
+      "shard": "5c",
+      "instance_id": "i-0efcb8e7e5135d006"
+    },
+    {
+      "shard": "5d",
+      "instance_id": "i-06703584b7553e2e4"
+    },
+    {
+      "shard": "5e",
+      "instance_id": "i-05fa331022e32501f"
+    },
+    {
+      "shard": "5f",
+      "instance_id": "i-0a249f0776f5bba5e"
+    },
+    {
+      "shard": "60",
+      "instance_id": "i-0b55f51ccfd0f25bb"
+    },
+    {
+      "shard": "61",
+      "instance_id": "i-0419dde180e584f53"
+    },
+    {
+      "shard": "62",
+      "instance_id": "i-04c3f5d803a8fa2f9"
+    },
+    {
+      "shard": "63",
+      "instance_id": "i-092186dbec2ef59b2"
+    },
+    {
+      "shard": "64",
+      "instance_id": "i-0366cb2b734859f06"
+    },
+    {
+      "shard": "65",
+      "instance_id": "i-0dc348cea20af4500"
+    },
+    {
+      "shard": "66",
+      "instance_id": "i-012ff888c15bf0ec2"
+    },
+    {
+      "shard": "67",
+      "instance_id": "i-06c890b81e2c31182"
+    },
+    {
+      "shard": "68",
+      "instance_id": "i-0e4ed60c8c99411e3"
+    },
+    {
+      "shard": "69",
+      "instance_id": "i-08f0f9ea3fd68550b"
+    },
+    {
+      "shard": "6a",
+      "instance_id": "i-0e5b27130e6b91a5a"
+    },
+    {
+      "shard": "6b",
+      "instance_id": "i-08d606f7138641618"
+    },
+    {
+      "shard": "6c",
+      "instance_id": "i-0048ad5e8bb36aca1"
+    },
+    {
+      "shard": "6d",
+      "instance_id": "i-0b9d9774621ba5fd8"
+    },
+    {
+      "shard": "6e",
+      "instance_id": "i-09ad45eed09368182"
+    },
+    {
+      "shard": "6f",
+      "instance_id": "i-08f1682f3c2f8d3e5"
+    },
+    {
+      "shard": "70",
+      "instance_id": "i-0d932ecd49ce74b32"
+    },
+    {
+      "shard": "71",
+      "instance_id": "i-04899c1cf56a6f179"
+    },
+    {
+      "shard": "72",
+      "instance_id": "i-0b68c2e3fa43755b7"
+    },
+    {
+      "shard": "73",
+      "instance_id": "i-03f2099660d6a8506"
+    },
+    {
+      "shard": "74",
+      "instance_id": "i-021c52a957679d472"
+    },
+    {
+      "shard": "75",
+      "instance_id": "i-0ce9d8f8e565e82d9"
+    },
+    {
+      "shard": "76",
+      "instance_id": "i-0f114a9f42cd8787f"
+    },
+    {
+      "shard": "77",
+      "instance_id": "i-0bb7250b7ba37f7fa"
+    },
+    {
+      "shard": "78",
+      "instance_id": "i-03f8fd205d62e1299"
+    },
+    {
+      "shard": "79",
+      "instance_id": "i-0adf88eacc762ec3a"
+    },
+    {
+      "shard": "7a",
+      "instance_id": "i-0747d29e41a9fda97"
+    },
+    {
+      "shard": "7b",
+      "instance_id": "i-0de49d8600f891344"
+    },
+    {
+      "shard": "7c",
+      "instance_id": "i-01ae40bd3f9da6ce3"
+    },
+    {
+      "shard": "7d",
+      "instance_id": "i-02251a00a1f054486"
+    },
+    {
+      "shard": "7e",
+      "instance_id": "i-0bfcfc86a76eeb887"
+    },
+    {
+      "shard": "7f",
+      "instance_id": "i-0b2afd53b0b986c38"
+    },
+    {
+      "shard": "80",
+      "instance_id": "i-0df1d842314133f14"
+    },
+    {
+      "shard": "81",
+      "instance_id": "i-0b2ea7c41e6fc2913"
+    },
+    {
+      "shard": "82",
+      "instance_id": "i-06f66f96f3fce3e4d"
+    },
+    {
+      "shard": "83",
+      "instance_id": "i-012078c982fc4f2fe"
+    },
+    {
+      "shard": "84",
+      "instance_id": "i-01ac5c162227bcbd8"
+    },
+    {
+      "shard": "85",
+      "instance_id": "i-021e586953f514316"
+    },
+    {
+      "shard": "86",
+      "instance_id": "i-02668595ac682f7fc"
+    },
+    {
+      "shard": "87",
+      "instance_id": "i-0fc08a464668be3cc"
+    },
+    {
+      "shard": "88",
+      "instance_id": "i-070a36657a68b0c6e"
+    },
+    {
+      "shard": "89",
+      "instance_id": "i-07f47a3fec04caff7"
+    },
+    {
+      "shard": "8a",
+      "instance_id": "i-0cc9d180967bb551b"
+    },
+    {
+      "shard": "8b",
+      "instance_id": "i-03eff0bec11b1510d"
+    },
+    {
+      "shard": "8c",
+      "instance_id": "i-06c1c4d361f3f5784"
+    },
+    {
+      "shard": "8d",
+      "instance_id": "i-0a41cf30da6ad2cb6"
+    },
+    {
+      "shard": "8e",
+      "instance_id": "i-0c7ef85885a9295a1"
+    },
+    {
+      "shard": "8f",
+      "instance_id": "i-0731a6e64f39ae1e6"
+    },
+    {
+      "shard": "90",
+      "instance_id": "i-0a230608bedcf0e62"
+    },
+    {
+      "shard": "91",
+      "instance_id": "i-00fbe928825aa1e7f"
+    },
+    {
+      "shard": "92",
+      "instance_id": "i-07121ab96de8a5c1c"
+    },
+    {
+      "shard": "93",
+      "instance_id": "i-0db2b0df721cf9cca"
+    },
+    {
+      "shard": "94",
+      "instance_id": "i-0edc2d074ddf26e90"
+    },
+    {
+      "shard": "95",
+      "instance_id": "i-078eb94983aa047e3"
+    },
+    {
+      "shard": "96",
+      "instance_id": "i-0fdbe67235092879f"
+    },
+    {
+      "shard": "97",
+      "instance_id": "i-0d344b11d64b920f1"
+    },
+    {
+      "shard": "98",
+      "instance_id": "i-0648da724570ba6e2"
+    },
+    {
+      "shard": "99",
+      "instance_id": "i-07f954f5f74cf3a3a"
+    },
+    {
+      "shard": "9a",
+      "instance_id": "i-0498deae163f91f0b"
+    },
+    {
+      "shard": "9b",
+      "instance_id": "i-062e27f41b46eb949"
+    },
+    {
+      "shard": "9c",
+      "instance_id": "i-0afce5d4eeff89438"
+    },
+    {
+      "shard": "9d",
+      "instance_id": "i-06384f4517cc9b993"
+    },
+    {
+      "shard": "9e",
+      "instance_id": "i-08d30345c9fddaefa"
+    },
+    {
+      "shard": "9f",
+      "instance_id": "i-0900213ccef5a928d"
+    },
+    {
+      "shard": "a0",
+      "instance_id": "i-0558d1953be6e8553"
+    },
+    {
+      "shard": "a1",
+      "instance_id": "i-083ff7b326ee19e4b"
+    },
+    {
+      "shard": "a2",
+      "instance_id": "i-0e70d1c7966e9d70a"
+    },
+    {
+      "shard": "a3",
+      "instance_id": "i-0450bbd12cf97bb04"
+    },
+    {
+      "shard": "a4",
+      "instance_id": "i-06afab341c9b09896"
+    },
+    {
+      "shard": "a5",
+      "instance_id": "i-0fab4b3bbdb95a281"
+    },
+    {
+      "shard": "a6",
+      "instance_id": "i-07c63203ebc15d681"
+    },
+    {
+      "shard": "a7",
+      "instance_id": "i-0933b55f75c010ec1"
+    },
+    {
+      "shard": "a8",
+      "instance_id": "i-0ecba53a16673047a"
+    },
+    {
+      "shard": "a9",
+      "instance_id": "i-096f020f54e1838d1"
+    },
+    {
+      "shard": "aa",
+      "instance_id": "i-04d3a988fef2a9f72"
+    },
+    {
+      "shard": "ab",
+      "instance_id": "i-08eca2eb56c055548"
+    },
+    {
+      "shard": "ac",
+      "instance_id": "i-0256da90918d272e9"
+    },
+    {
+      "shard": "ad",
+      "instance_id": "i-0289f9e7ae065d99c"
+    },
+    {
+      "shard": "ae",
+      "instance_id": "i-013d99f8b746ebec9"
+    },
+    {
+      "shard": "af",
+      "instance_id": "i-0edd37a81c20c4ae0"
+    },
+    {
+      "shard": "b0",
+      "instance_id": "i-0c54febb3f77a2cf5"
+    },
+    {
+      "shard": "b1",
+      "instance_id": "i-08a6a386487b59ddf"
+    },
+    {
+      "shard": "b2",
+      "instance_id": "i-056370a25ecce8eee"
+    },
+    {
+      "shard": "b3",
+      "instance_id": "i-0a66a592d2c47a2a9"
+    },
+    {
+      "shard": "b4",
+      "instance_id": "i-05d5fd4478d9c123a"
+    },
+    {
+      "shard": "b5",
+      "instance_id": "i-0d0fb09618656e1e6"
+    },
+    {
+      "shard": "b6",
+      "instance_id": "i-08fda63e3125f3cd0"
+    },
+    {
+      "shard": "b7",
+      "instance_id": "i-0dfd0a8f37187b2b3"
+    },
+    {
+      "shard": "b8",
+      "instance_id": "i-07a65729e2204964e"
+    },
+    {
+      "shard": "b9",
+      "instance_id": "i-0a67260043bbaef3b"
+    },
+    {
+      "shard": "ba",
+      "instance_id": "i-0d9d9e033c25d32c9"
+    },
+    {
+      "shard": "bb",
+      "instance_id": "i-02d206d630dbe4c62"
+    },
+    {
+      "shard": "bc",
+      "instance_id": "i-006d12994da04ee7e"
+    },
+    {
+      "shard": "bd",
+      "instance_id": "i-011221c8894a47531"
+    },
+    {
+      "shard": "be",
+      "instance_id": "i-0d0f518545721197f"
+    },
+    {
+      "shard": "bf",
+      "instance_id": "i-04ca02d0c14b8579f"
+    },
+    {
+      "shard": "c0",
+      "instance_id": "i-040c6105c3cde72f2"
+    },
+    {
+      "shard": "c1",
+      "instance_id": "i-0b3913ec44e7673fe"
+    },
+    {
+      "shard": "c2",
+      "instance_id": "i-061163ac81aead425"
+    },
+    {
+      "shard": "c3",
+      "instance_id": "i-0878ccfe19d4b2fb5"
+    },
+    {
+      "shard": "c4",
+      "instance_id": "i-018d958c3f8339985"
+    },
+    {
+      "shard": "c5",
+      "instance_id": "i-01792d56382e7436b"
+    },
+    {
+      "shard": "c6",
+      "instance_id": "i-0c718b12fbf408189"
+    },
+    {
+      "shard": "c7",
+      "instance_id": "i-07cddf26d169c61f5"
+    },
+    {
+      "shard": "c8",
+      "instance_id": "i-05746683c4817304b"
+    },
+    {
+      "shard": "c9",
+      "instance_id": "i-07068fdc4cb7d153a"
+    },
+    {
+      "shard": "ca",
+      "instance_id": "i-0af3ad346c2c4cc1a"
+    },
+    {
+      "shard": "cb",
+      "instance_id": "i-0e79b442590cad176"
+    },
+    {
+      "shard": "cc",
+      "instance_id": "i-03a15bc7c1c6ca11b"
+    },
+    {
+      "shard": "cd",
+      "instance_id": "i-0ea11078533d65603"
+    },
+    {
+      "shard": "ce",
+      "instance_id": "i-01bbb0a465363ddd3"
+    },
+    {
+      "shard": "cf",
+      "instance_id": "i-007c6d7db6141f959"
+    },
+    {
+      "shard": "d0",
+      "instance_id": "i-0a35667e8c1eefc6d"
+    },
+    {
+      "shard": "d1",
+      "instance_id": "i-032cc32f07332d30f"
+    },
+    {
+      "shard": "d2",
+      "instance_id": "i-0c1f53c61d9f6a99d"
+    },
+    {
+      "shard": "d3",
+      "instance_id": "i-0277a1b647b94f69b"
+    },
+    {
+      "shard": "d4",
+      "instance_id": "i-0a6e2af32a8c90a67"
+    },
+    {
+      "shard": "d5",
+      "instance_id": "i-011169be54d52a99c"
+    },
+    {
+      "shard": "d6",
+      "instance_id": "i-07f8d96c464623279"
+    },
+    {
+      "shard": "d7",
+      "instance_id": "i-03fb02b99bc99499d"
+    },
+    {
+      "shard": "d8",
+      "instance_id": "i-02b3de294e343890b"
+    },
+    {
+      "shard": "d9",
+      "instance_id": "i-03c025b41692de05c"
+    },
+    {
+      "shard": "da",
+      "instance_id": "i-014f82636e782fce0"
+    },
+    {
+      "shard": "db",
+      "instance_id": "i-0c2d26b4f39b56c6f"
+    },
+    {
+      "shard": "dc",
+      "instance_id": "i-0cbb622924b946e43"
+    },
+    {
+      "shard": "dd",
+      "instance_id": "i-09eb77fed520fc3d9"
+    },
+    {
+      "shard": "de",
+      "instance_id": "i-00ffdb48a303e80f7"
+    },
+    {
+      "shard": "df",
+      "instance_id": "i-003528ea89090f7df"
+    },
+    {
+      "shard": "e0",
+      "instance_id": "i-04d6120a2f5359517"
+    },
+    {
+      "shard": "e1",
+      "instance_id": "i-0ee1ad47aa72f08fa"
+    },
+    {
+      "shard": "e2",
+      "instance_id": "i-09f6bd507c2ce257e"
+    },
+    {
+      "shard": "e3",
+      "instance_id": "i-096ef7315097aa87d"
+    },
+    {
+      "shard": "e4",
+      "instance_id": "i-05d96d2e756768b6f"
+    },
+    {
+      "shard": "e5",
+      "instance_id": "i-082b431f8964791bc"
+    },
+    {
+      "shard": "e6",
+      "instance_id": "i-07d5e0cd09275f7ea"
+    },
+    {
+      "shard": "e7",
+      "instance_id": "i-03dbb34516ed793db"
+    },
+    {
+      "shard": "e8",
+      "instance_id": "i-09e9c56480085dcd1"
+    },
+    {
+      "shard": "e9",
+      "instance_id": "i-0c2afd16a3b7a9011"
+    },
+    {
+      "shard": "ea",
+      "instance_id": "i-05db9a33b16708c94"
+    },
+    {
+      "shard": "eb",
+      "instance_id": "i-0defa1effabb5d4c5"
+    },
+    {
+      "shard": "ec",
+      "instance_id": "i-0db44de63601231ce"
+    },
+    {
+      "shard": "ed",
+      "instance_id": "i-033ddf29b2d88457e"
+    },
+    {
+      "shard": "ee",
+      "instance_id": "i-09199a94affec98b1"
+    },
+    {
+      "shard": "ef",
+      "instance_id": "i-052bffbff930747f1"
+    },
+    {
+      "shard": "f0",
+      "instance_id": "i-0c85cf70b0c46ca6a"
+    },
+    {
+      "shard": "f1",
+      "instance_id": "i-0824934b4d7057f16"
+    },
+    {
+      "shard": "f2",
+      "instance_id": "i-0049e88b7c4c0619b"
+    },
+    {
+      "shard": "f3",
+      "instance_id": "i-0b2974c807ffb99b6"
+    },
+    {
+      "shard": "f4",
+      "instance_id": "i-06775ff565389bfa7"
+    },
+    {
+      "shard": "f5",
+      "instance_id": "i-0591a5df80920eb21"
+    },
+    {
+      "shard": "f6",
+      "instance_id": "i-00836d5c87a6c787b"
+    },
+    {
+      "shard": "f7",
+      "instance_id": "i-0fd06b7ac27398223"
+    },
+    {
+      "shard": "f8",
+      "instance_id": "i-092067724dbef49c4"
+    },
+    {
+      "shard": "f9",
+      "instance_id": "i-07dd97ec7a134e080"
+    },
+    {
+      "shard": "fa",
+      "instance_id": "i-0f8c2363638c4005f"
+    },
+    {
+      "shard": "fb",
+      "instance_id": "i-04c46c8cdbd84c87e"
+    },
+    {
+      "shard": "fc",
+      "instance_id": "i-0d6b766fe57e85ce1"
+    },
+    {
+      "shard": "fd",
+      "instance_id": "i-0aca2e42b96f6b79e"
+    },
+    {
+      "shard": "fe",
+      "instance_id": "i-087d0c8da0d057c9f"
+    },
+    {
+      "shard": "ff",
+      "instance_id": "i-02549cfc3a36e8210"
+    }
+  ]
+}

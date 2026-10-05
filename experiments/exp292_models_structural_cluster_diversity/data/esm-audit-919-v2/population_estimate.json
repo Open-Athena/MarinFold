@@ -1,0 +1,13 @@
+{
+  "sampling_sha256": "52db91c0e4a93f729d06743c9718c289567780ec187331a73daf9aaa59c1552b",
+  "sampled_shards": 100,
+  "frame_shards": 3337,
+  "shard_expansion_factor": 33.37,
+  "sampled_current_anchors": 1963845,
+  "projected_eligible_clusters": 8173314.1,
+  "projected_omitted_members": 31922576.249999996,
+  "projected_capacity_three": 15719338.94,
+  "projected_inspection_capacity_32": 28682949.909999996,
+  "status": "estimated sampling frame; candidate source quality, structural selection, domain review and sequence exclusion are additional filters",
+  "limits": "Point estimates only; excludes development shard 0, anchors below pLDDT 80 or outside lengths 60-1000, and clusters larger than 100000. No cross-source deduplication is implied."
+}
