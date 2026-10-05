@@ -1,0 +1,16 @@
+{
+  "status": "complete_candidate_generation_not_final_dedup",
+  "input": "/data/exp336_dedup/current_linclust_id050_cov080_e1000p0.tsv",
+  "input_bytes": 7380195006,
+  "min_sequence_identity": 0.5,
+  "min_bidirectional_coverage": 0.8,
+  "evalue_ceiling": 1000.0,
+  "documents": 69516181,
+  "sequence_stars": 64270329,
+  "candidate_removals": 5245852,
+  "candidate_removal_fraction": 0.07546231574487672,
+  "nonsingleton_stars": 3980033,
+  "mixed_source_stars": 598913,
+  "max_star_size": 237,
+  "warning": "Linclust stars are candidate organization. Final removal requires direct representative/member sequence realignment plus structure/contact evidence."
+}

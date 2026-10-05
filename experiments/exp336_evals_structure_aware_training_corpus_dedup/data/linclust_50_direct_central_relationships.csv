@@ -1,0 +1,5 @@
+representative_source,member_source,linclust_candidates,directly_verified_candidates
+afdb,afdb,577666,552529
+afdb,esm_atlas,618589,605632
+esm_atlas,afdb,117115,112259
+esm_atlas,esm_atlas,3932482,3747536
