@@ -16,7 +16,8 @@ PRODUCTION_PEERS = {
     "cw-us-east-02a": "h100",
     "cw-us-east-08a": "gb200",
 }
-AVAILABILITY_VERSION = 2
+# Iris v3 orders held bands by priority rank; the named-band counts are unchanged.
+AVAILABILITY_VERSION = 3
 
 
 class SnapshotError(RuntimeError):

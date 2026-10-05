@@ -1,0 +1,21 @@
+{
+  "complete": true,
+  "checkpoint": "s3://marin-us-east-02a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-contacts_v1-1bt/step-6496/hf",
+  "document_format": "contacts_v1",
+  "n_units": 97,
+  "n_rollouts": 100,
+  "unfinished_rollouts": 0,
+  "r_precision": {
+    "all": 0.1401018585318727,
+    "short": 0.24114983663941336,
+    "medium": 0.1479126739783577,
+    "long": 0.10082980439424295
+  },
+  "valid_r_precision": {
+    "all": 97,
+    "short": 97,
+    "medium": 97,
+    "long": 97
+  },
+  "output": "s3://marin-us-east-02a/MarinFold/exp347_qwen_base_contacts/eval-val/exp347-qwen35-4b-contacts_v1-full-100bt/step-0"
+}

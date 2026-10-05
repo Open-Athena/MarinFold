@@ -1,0 +1,2 @@
+stem,n_residues,n_pairs,mode,elapsed_seconds,model_load_seconds,total_seconds,model_nickname,runner_tag,gpu_name,gpu_total_memory_gb,gpu_compute_capability,hostname,platform,torch_version,timestamp_utc,rank
+AF-A0A7K0K2J9-F1,430,284,contacts_v1-teacher-forced-step-0,40.32448511698749,17.91818969299493,40.32591142201272,exp347-qwen35-4b-corpus235m-smoke,iris,NVIDIA H100 80GB HBM3,85.019590656,9.0,g73b7ae,Linux-6.8.12-680-6063-coreweave-amd64-f81899c8-x86_64-with-glibc2.39,2.10.0+cu128,2026-10-05T16:09:31.164658+00:00,4

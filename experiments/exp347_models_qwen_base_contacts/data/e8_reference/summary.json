@@ -1,0 +1,22 @@
+{
+  "complete": true,
+  "checkpoint": "s3://marin-us-east-02a/MarinFold/exp163/model/step-35679",
+  "document_format": "contacts_v1",
+  "n_units": 554,
+  "n_rollouts": 100,
+  "unfinished_rollouts": 0,
+  "r_precision": {
+    "all": 0.42437654897984495,
+    "short": 0.55224180773816,
+    "medium": 0.4690119641440658,
+    "long": 0.365988205633634
+  },
+  "valid_r_precision": {
+    "all": 554,
+    "short": 554,
+    "medium": 553,
+    "long": 553
+  },
+  "output": "s3://marin-us-east-02a/MarinFold/exp347_qwen_base_contacts/eval-reference/e8-v1",
+  "reference_passed": true
+}

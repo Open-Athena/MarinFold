@@ -1,0 +1,37 @@
+{
+  "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-4b-corpus235m-smoke",
+  "history": [
+    {
+      "train/step": 0,
+      "train/tokens": 0,
+      "validation/contact_token_nll": 0.49946047745855
+    },
+    {
+      "train/step": 7,
+      "train/tokens": 580695,
+      "validation/contact_token_nll": 0.505035850716654
+    },
+    {
+      "train/step": 7,
+      "train/tokens": 580695,
+      "validation/contact_token_nll": 0.505035850716654
+    },
+    {
+      "train/step": 8,
+      "train/tokens": 666366,
+      "validation/contact_token_nll": 0.5044949850415058
+    }
+  ],
+  "checkpoint": "s3://marin-us-east-02a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-corpus235m-smoke/step-8",
+  "tokens": 666366,
+  "checkpoint_files_verified": 29,
+  "resume_loss_exact": true,
+  "source_admission": {
+    "complex": 2,
+    "mpnn-afdb": 42,
+    "mpnn-esm": 145,
+    "native-afdb": 3,
+    "native-esm": 64
+  },
+  "peak_memory_gb": 71.029609984
+}
