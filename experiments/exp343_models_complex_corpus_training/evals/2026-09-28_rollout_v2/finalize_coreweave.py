@@ -572,7 +572,10 @@ def finalize(
                 ),
                 "wandb_metric_keys": {
                     "train_loss": "train/loss",
-                    "eval_loss": "eval/loss",
+                    # The exp343 spec derives eval_loss from the monomer
+                    # validation series, not the fused `eval/loss`; naming the
+                    # wrong series sends a reader to a number they cannot match.
+                    "eval_loss": "eval/input/validation/loss",
                 },
             }
             for checkpoint in checkpoints

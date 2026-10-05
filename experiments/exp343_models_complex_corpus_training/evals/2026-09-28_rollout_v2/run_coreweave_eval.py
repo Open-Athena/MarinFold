@@ -425,6 +425,50 @@ def _submit_phase(
     return jobs
 
 
+def _bind_recipe(root: str, *, seed: int, contact_mult: int, suite: str,
+                 worker_sha256: str) -> None:
+    """Pin a run id to the recipe that produced its scores.
+
+    Completion markers let a rerun skip units that already finished, but they
+    record no sampling parameters -- so reusing a `--run-id` with a different
+    `--seed` or `--contact-mult` would keep the old scores while finalization
+    stamped the *new* parameters onto the manifest, silently misattributing the
+    result.
+
+    The guard lives here rather than in `score_rollout_worker.py`: that worker is
+    byte-identical across exp169/exp232/exp277/exp343 (`sha256 dd2f76dd...`), and
+    that identity is what makes scores comparable between those experiments.
+    Editing it to carry a fingerprint would buy a safety check at the cost of the
+    thing the comparison rests on.
+    """
+    recipe = {
+        "seed": seed,
+        "contact_mult": contact_mult,
+        "suite": suite,
+        "worker_sha256": worker_sha256,
+        "n_rollouts": NUM_ROLLOUTS,
+    }
+    marker = f"{root}/recipe.json"
+    fs, path = fsspec.core.url_to_fs(marker)
+    if fs.exists(path):
+        with fsspec.open(marker, "r") as handle:
+            existing = json.load(handle)
+        if existing != recipe:
+            differing = {
+                key: (existing.get(key), recipe.get(key))
+                for key in set(existing) | set(recipe)
+                if existing.get(key) != recipe.get(key)
+            }
+            raise ValueError(
+                f"run id already holds scores from a different recipe: {differing}. "
+                "Completed units would be reused under the new parameters. Use a "
+                "fresh --run-id."
+            )
+        return
+    with fsspec.open(marker, "w") as handle:
+        json.dump(recipe, handle, indent=2, sort_keys=True)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-id", required=True)
@@ -447,6 +491,8 @@ def main() -> None:
         raise RuntimeError(f"MARIN_PREFIX must be exactly {MARIN_PREFIX}")
 
     root = run_root(args.run_id)
+    _bind_recipe(root, seed=args.seed, contact_mult=args.contact_mult,
+                 suite=args.suite, worker_sha256=_read_worker()[1])
     started_at = datetime.now(UTC).isoformat()
     worker_b64, worker_sha256 = _read_worker()
     print(

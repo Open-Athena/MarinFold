@@ -404,6 +404,12 @@ def write_timings(uri: str, scored: list[dict], summary: dict, label: str) -> No
     """
     worker = summary["worker"]
     timing = summary["timing"]
+    # AGENTS.md defines total_seconds as "everything: setup + inference + dump".
+    # Weight loading and serialization are shared across the shard, so each row
+    # carries its share; writing total == elapsed would make the schema's
+    # sanity check vacuously true for every row.
+    overhead = max(timing["total_seconds"] - timing["elapsed_seconds"], 0.0)
+    overhead_share = overhead / max(len(scored), 1)
     with fsspec.open(uri, "w", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(TIMING_COLUMNS),
                                 lineterminator="\n")
@@ -416,7 +422,7 @@ def write_timings(uri: str, scored: list[dict], summary: dict, label: str) -> No
                 "mode": "lm_loss",
                 "elapsed_seconds": f"{row['elapsed_seconds']:.6f}",
                 "model_load_seconds": f"{timing['model_load_seconds']:.6f}",
-                "total_seconds": f"{row['elapsed_seconds']:.6f}",
+                "total_seconds": f"{row['elapsed_seconds'] + overhead_share:.6f}",
                 "model_nickname": label,
                 "runner_tag": "iris",
                 "gpu_name": worker["gpu_name"],

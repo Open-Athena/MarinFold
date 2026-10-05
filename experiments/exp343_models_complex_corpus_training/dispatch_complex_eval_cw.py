@@ -64,12 +64,16 @@ WORK_DIR = "/tmp/exp343_complex_eval"
 #: either a missing object or -- worse -- a stale checkpoint from an earlier
 #: smoke, which would pass the gate while testing nothing. Score an arbitrary
 #: export with `--model-uri` instead; see `--help`.
+#: Keys are the AGENTS.md `<wandb-run-name>-step-<N>` identifier, because the
+#: label becomes the output prefix, the `label` column of every aggregate row and
+#: `model_nickname` in the committed timing CSV. An abbreviation there detaches
+#: those artifacts from the run that produced them.
 ARMS = {
-    "exp277-step266344": (
+    "contacts-v1-exp277-m2-p06-full-epoch-1.5B-step-266344": (
         "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/"
         "runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B/hf/step-266344"
     ),
-    "exp343-step280154": (
+    "contacts-v1-exp343-m2-p06-complex-1.5B-step-280154": (
         f"{PREFIX}/runs/contacts-v1-exp343-m2-p06-complex-1.5B/hf/step-280154"
     ),
 }
@@ -77,6 +81,11 @@ ARMS = {
 #: CoreWeave object storage rejects path-style S3. Literal braces on purpose.
 FSSPEC_VIRTUAL_ADDRESSING_EXPORT = (
     """export FSSPEC_S3_CONFIG_KWARGS='{"s3": {"addressing_style": "virtual"}}'"""
+)
+
+#: Pinned exactly as exp277's rollout eval pins them against this image.
+STORAGE_PINS = (
+    "'fsspec==2026.1.0' 's3fs==2026.1.0' 'aiobotocore==2.26.0' 'pyarrow>=23,<24'"
 )
 
 HERE = Path(__file__).resolve().parent
@@ -110,16 +119,19 @@ echo "[complex-loss] iris_FSSPEC_S3=${{FSSPEC_S3:+present}}"
 mkdir -p {WORK_DIR}
 echo {worker_b64} | base64 -d > {WORK_DIR}/score_complex_worker.py
 
-# torch and transformers are baked into the image. Only storage libraries are
-# added, and with no --no-deps needed because none of them touch transformers.
+# torch and transformers are baked into the image and must stay exactly as the
+# vendor shipped them. These storage pins are the set exp277's rollout eval
+# validated against this same image; leaving them unpinned lets a newly released
+# transitive dependency replace part of a vendor-tested environment between two
+# otherwise identical runs.
 GPU_PY=""
 for _py in /app/.venv/bin/python /usr/local/bin/python /usr/bin/python3 /opt/venv/bin/python python3 python; do
   if "$_py" -c "import torch, transformers" >/dev/null 2>&1; then GPU_PY="$_py"; break; fi
 done
 echo "[complex-loss] python: ${{GPU_PY:-NONE}}"
 if [ -z "$GPU_PY" ]; then echo "[complex-loss] FATAL: no python imports torch+transformers"; exit 3; fi
-uv pip install --python "$GPU_PY" --quiet fsspec s3fs boto3 pyarrow \
-  || "$GPU_PY" -m pip install --quiet fsspec s3fs boto3 pyarrow
+uv pip install --python "$GPU_PY" --quiet {STORAGE_PINS} \
+  || "$GPU_PY" -m pip install --quiet {STORAGE_PINS}
 "$GPU_PY" -c "import torch, transformers; print('[complex-loss] torch', torch.__version__, 'transformers', transformers.__version__)"
 
 exec "$GPU_PY" {WORK_DIR}/score_complex_worker.py \\
