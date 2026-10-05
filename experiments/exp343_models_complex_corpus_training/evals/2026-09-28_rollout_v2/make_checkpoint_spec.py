@@ -12,8 +12,18 @@ Sizes and ETags are read from CoreWeave object storage; the training and
 validation losses come from the W&B run, so the recorded spec says which point in
 training was evaluated and at what loss.
 
+Writes `exp343_checkpoint.json` beside `checkpoint_specs.py`, because
+`submit_coreweave.py` ships this directory as the job workspace and nothing
+outside it reaches the pod.
+
+Reading CoreWeave object storage from a workstation needs the credentials the
+pods get injected:
+
+    export FSSPEC_S3="$(python3 -c "import configparser,json;c=configparser.ConfigParser();\
+c.read('$HOME/.aws/credentials');w=c['cw'];print(json.dumps({'key':w['aws_access_key_id'],\
+'secret':w['aws_secret_access_key'],'endpoint_url':'https://cwobject.com',\
+'config_kwargs':{'s3':{'addressing_style':'virtual'}}}))")"
     uv run python make_checkpoint_spec.py --step 280154
-    uv run python make_checkpoint_spec.py --step 280154 --no-wandb   # offline
 """
 
 import argparse

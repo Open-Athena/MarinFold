@@ -27,13 +27,18 @@ metric implementation.
 ## Order of operations
 
 The checkpoint spec is **generated, not written by hand**. The driver verifies
-the bytes each worker downloads against the digests in
-`data/exp343_checkpoint.json`, so a placeholder digest would not fail — it would
-silently turn that check into a no-op. `checkpoint_specs.suite("exp343")` raises
-until the manifest exists.
+the bytes each worker downloads against the digests in `exp343_checkpoint.json`,
+so a placeholder digest would not fail — it would silently turn that check into a
+no-op. `checkpoint_specs.suite("exp343")` raises until the manifest exists.
+
+The manifest lives **in this directory**, not under the experiment's `data/`:
+`submit_coreweave.py` ships this directory flat as the job workspace, so anything
+outside it never reaches the pod.
 
 ```bash
-# after training completes, against the finished export
+# after training completes, against the finished export.
+# Reading CoreWeave storage from the workstation needs the credentials the pods
+# get injected -- see the module docstring for the FSSPEC_S3 export.
 uv run python make_checkpoint_spec.py --step <final step>
 
 # then evaluate

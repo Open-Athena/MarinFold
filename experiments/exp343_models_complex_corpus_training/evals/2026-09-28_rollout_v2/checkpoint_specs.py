@@ -29,9 +29,12 @@ S3_ROOT = (
     f"{MARIN_PREFIX}/exp343_models_complex_corpus_training/evals/rollout-v2/2026-09-28"
 )
 #: Written by `make_checkpoint_spec.py` after training completes.
-CHECKPOINT_SPEC_PATH = (
-    Path(__file__).resolve().parents[2] / "data" / "exp343_checkpoint.json"
-)
+#:
+#: It lives **next to this module**, not under the experiment's `data/`:
+#: `submit_coreweave.py` bundles this directory flat as the job's workspace, so a
+#: path outside it does not ship and `parents[2]` does not even exist on the pod.
+#: One canonical copy, in the directory that travels.
+CHECKPOINT_SPEC_PATH = Path(__file__).resolve().parent / "exp343_checkpoint.json"
 
 # Published evaluation inputs. The driver mirrors these small immutable files
 # into the run prefix, verifies their bytes, and builds a 670-unit union without

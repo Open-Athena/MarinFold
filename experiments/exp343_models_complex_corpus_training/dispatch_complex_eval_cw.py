@@ -71,6 +71,9 @@ ARMS = {
     "exp343-smoke-step9": (
         f"{PREFIX}/runs/contacts-v1-exp343-m2-p06-complex-1.5B-smoke/hf/step-9"
     ),
+    "exp343-step280154": (
+        f"{PREFIX}/runs/contacts-v1-exp343-m2-p06-complex-1.5B/hf/step-280154"
+    ),
 }
 
 #: CoreWeave object storage rejects path-style S3. Literal braces on purpose.
