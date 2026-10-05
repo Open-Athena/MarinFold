@@ -52,172 +52,6 @@ Stages, one `launch.py` phase each:
 1. *Monomers, for comparability.* The fixed exp82 rollout-and-resample recipe at exp277's settings, on legacy 554 + eval-val + eval-denovo, paired per-protein against exp277 with 10,000-resample protein bootstrap intervals. **eval-test stays unread.**
 2. *Complexes, for the actual question.* LM loss on the held-out complex shard for this checkpoint and, as the control, for the exp277 default — same documents, same tokenizer, same packing. Reported per arm (`afcdb` / `pinder`) and split by whether a contact crosses a chain boundary, because a model can score well on a complex document by predicting its intra-chain contacts alone.
 
-### Training smoke
-
-`/bizon/exp343-train-smoke-a01` (one node, 8 H100, batch priority) ran ten
-updates over the **full production caches** and succeeded. Final train loss
-7.46915 from scratch, 17.5% MFU, 101,421 tokens/s on 8 GPUs, and the HF export
-landed at `runs/contacts-v1-exp343-m2-p06-complex-1.5B-smoke/hf/step-9`.
-
-The two things it was there to prove both hold:
-
-- **Both validation sets are wired and reported separately** —
-  `eval/input/validation/*` (monomer, 6.92887) and
-  `eval/input/validation-complex/*` (held-out complexes, 6.91106). A single
-  fused number would have made the complex half of this experiment unmeasurable.
-- **The trainer's own count of the concatenated corpus equals the pinned
-  35,859,774.** `OneEpochDataConfig` raises on any disagreement, so the smoke
-  completing at all is that assertion passing.
-
-[Smoke W&B](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp343-m2-p06-complex-1.5B-smoke).
-
-### Production
-
-Submitted 2026-09-28 21:41 UTC as
-[`/bizon/exp343-train-a01`](https://iris.oa.dev/#/job/%2Fbizon%2Fexp343-train-a01),
-16 nodes x 8 H100 on `cw-us-east-02a` at batch priority, 280,155 steps, run
-[`contacts-v1-exp343-m2-p06-complex-1.5B`](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp343-m2-p06-complex-1.5B).
-At exp277's observed 0.858 s/step this is about 67 hours of compute plus
-validation and checkpoint overhead. `cw-us-east-02a` had 22 of 256 H100 free at
-submission, so the gang queues behind interactive holds first; batch priority is
-the standing rule for CoreWeave GPU work and queue time is not a reason to break
-it.
-
-The driver dispatched its gang immediately and all 16 tasks sit
-`building / SchedulingGated` on one Kueue workload
-(`iris-pg-7ab1faf9080d0602-0`), which is what a correctly formed gang waiting on
-capacity looks like — it admits as a unit, not task by task.
-
-**The gang is deliberately not resliced smaller.** Gang size is placement, not
-configuration: global batch, step count, seeds and shuffle are fixed, so only
-`per_device_parallelism` and wall clock change. But the arithmetic does not
-favour waiting less: 8 nodes needs 64 free (still more than were available) and
-doubles the run to ~134 h, and 2 nodes would fit inside current capacity while
-taking about **22 days**. 16 nodes is both the matched configuration and the
-fastest finish once admitted, and the fleet does swing — exp277 launched into 248
-free H100 on this same cluster.
-
-**RNO2A is a live option, and the two reasons to dismiss it both turned out to be
-wrong.**
-
-*There is nothing to move.* `cw-rno2a.yaml` sets `MARIN_PREFIX` to
-`s3://marin-us-east-02a/...` itself, with the comment "everything lives in
-marin-us-east-02a; LOTA caches reads locally". CoreWeave has **one** shared
-bucket, so placing on RNO2A copies no data and triggers no cross-region rule. The
-read volume is negligible anyway: 260 GB spread over a 67-hour compute-bound run
-is about 1.1 MB/s.
-
-*8-node gangs work there.* The root `AGENTS.md` records that on RNO2A "1/2/4-node
-gangs bootstrap and train; **8-node fails** — the JAX multi-host coordination
-bootstrap aborts". That is **stale as of 2026-09-28**.
-`/bizon/exp343-train-smoke-a02` ran a full 8-node / 64-H100 gang there to
-completion: ten updates, train loss 7.61668, 86.93 examples/s, 712,117 tokens/s,
-15.4% MFU, both validation sets reported
-([W&B](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp343-m2-p06-complex-1.5B-smoke-n8-rno2a)).
-Verified against W&B rather than the job's exit status — a gRPC teardown trace in
-the logs made "succeeded" worth not taking at face value. Scaling is 88% of the
-1-node rate.
-
-The cost is wall clock, not correctness: 1.47 s/step at 8 nodes against exp277's
-0.858 s/step at 16, so **114 h against 67 h** for the same 280,155 steps. The two
-placements cannot run at once — they would write the same checkpoint path under
-the same run id — so this is a choice, not a hedge.
-
-### The scorer loads exp343's own export format
-
-`/bizon/exp343-complex-eval-smoke-a04` ran the scorer against **exp343's own**
-smoke export (`hf/step-9`), not exp277's. It loaded with
-`rope_theta=500000 rope_type=llama3 vocab=2845 params=1471374336` — identical to
-exp277's — so this run's export pipeline writes rope and tokenizer metadata the
-scorer can read, and the #163 silent-rope failure is excluded for the *production*
-checkpoint's format and not just the baseline's. Its loss (6.898 nats/token) is
-meaningless as a result: ten updates from scratch. It is a load check.
-
-It is also a cross-implementation agreement check. Levanter reported
-`eval/input/validation-complex/loss` = 6.91106 for that same checkpoint over two
-packed batches; this scorer, on 32 unpacked documents, reports 6.898. Different
-samples, independent implementations, same answer to three significant figures.
-
-### The control: exp277 on the held-out complexes
-
-`/bizon/exp343-complex-eval-a01` scored the exp277 default on all **10,738**
-held-out complex documents (34,755,777 positions) in 12.4 minutes on one H100.
-This is the number exp343 has to beat, and it is banked before exp343 exists.
-
-| group | documents | nll/token | sequence | intra-chain | inter-chain | terminus |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| **all** | 10,738 | **3.6970** | 4.5435 | **2.9573** | **3.4518** | **11.8137** |
-| `afcdb` | 9,383 | 3.6838 | 4.5441 | 2.9404 | 3.3893 | 11.8125 |
-| `pinder` | 1,355 | 3.8307 | 4.5374 | 3.1194 | 4.6512 | 11.8220 |
-| heterodimer | 1,973 | 3.8158 | 4.5391 | 3.0909 | 4.3286 | 11.7933 |
-| homodimer | 8,765 | 3.6772 | 4.5443 | 2.9343 | 3.3627 | 11.8183 |
-| tier A | 5,500 | 3.6576 | 4.5381 | 2.9448 | 3.5016 | 11.8711 |
-| tier B | 3,883 | 3.7287 | 4.5533 | 2.9316 | 3.2380 | 11.7295 |
-
-Three things stand out, and all three are hypotheses about what exp343 should
-fix:
-
-**The split was worth building.** exp277 pays **2.9573** nats on intra-chain
-contacts and **3.4518** on inter-chain — it handles the contacts that look like
-monomer contacts and is 0.50 nats worse on the ones that cross a chain boundary.
-A single fused number would have averaged that away, and the 12.5% inter-chain
-token share means the fused number is dominated by the part exp277 already knows.
-
-**The terminus loss is the format signature: 11.81 nats.** Uniform over the whole
-2,845-token vocabulary is 7.95, so exp277 is not merely uncertain here, it is
-*confidently wrong*. That is what format-blindness looks like — a monomer model
-has only ever seen one `<n-term>`/`<c-term>` pair per document, and a complex has
-*k* of them at unpredictable ring positions. Read with one caveat: this role
-bundles the marker token with the position token that follows it, and a 2,000-way
-ring position is about 7.6 nats under uniform on its own, so the 11.81 is an
-average over a cheap token and an expensive one. Splitting them would sharpen the
-claim; the direction does not depend on it.
-
-**Homodimers are much easier than heterodimers** — 3.3627 against 4.3286 on
-inter-chain contacts. A homodimer interface is between two copies of one
-sequence, so intra-chain knowledge partly transfers; a heterodimer interface has
-no such shortcut. PINDER, which is experimental crystallised fragments rather than
-predicted models, is hardest of all at 4.6512.
-
-Committed under [`data/complex_loss/`](data/complex_loss/) with its provenance and
-per-input timing.
-
-### Production run history
-
-The run spans two Iris jobs, and the break was an operator error worth recording
-rather than smoothing over.
-
-`/bizon/exp343-train-a01` was submitted 2026-09-28 21:41 UTC and sat gang-queued
-while `cw-us-east-02a` ran at 0-22 free H100. The queue drained overnight, the
-gang admitted, and it trained for **11.8 hours to step 39,475** — train loss
-2.9115, monomer validation 3.1375, and a held-out complex validation loss of
-**3.3208**, already below exp277's 3.6970 control.
-
-On 2026-09-29 at 09:33 UTC it was **cancelled by mistake**. The intent was to
-free the queue slot before placing on RNO2A; the decision was made from a monitor
-reading of `tasks=0/16` that was ten hours stale, and the job's actual progress
-was never checked before acting. Scheduler state is not evidence about whether a
-job is doing work — W&B is, and it was one query away.
-
-Cost: **108 steps, about 90 seconds of compute.** Levanter writes its rolling
-15-minute checkpoints to `temporary_base_path` — a *separate* `tmp/ttl=14d/`
-prefix — and only the `keep` snapshots to `base_path`. Listing `base_path` alone
-shows just `step-28015` and makes the loss look like 4.7 hours; `step-39367` was
-sitting in the temp path, complete at 17.66 GB, written at 13:32:19 UTC, one
-minute before the cancellation. The resumed job searched both locations and
-restored the newer one.
-
-That temp checkpoint is also *deletable*: `delete_old_temp_checkpoints: true`
-means the next run removes it once it writes its own. It was copied server-side
-(8.7 s, byte-for-byte verified) to
-`{PREFIX}/rescued/step-39367/` before the resumed job could reach that point.
-
-Nothing else was damaged; the corpus, caches and control are untouched.
-
-`/bizon/exp343-train-a02` resumed from `step-28015` at 09:35 UTC, 16 nodes on
-`cw-us-east-02a` (which by then had 248 free H100), same run id and checkpoint
-path, so the W&B run and the checkpoint trail continue unbroken.
-
 ## Success criteria
 
 - A healthy production run to the pinned step count, with a permanent native checkpoint and an HF export carrying its tokenizer.
@@ -340,6 +174,279 @@ plus one appended `<eos>` per document, so subtracting the documents gives
 11,116,716,172 + 34,755,852 = **11,151,472,024** — the published corpus's
 `corpus_stats.json` token count, to the token.
 
+### The control: exp277 on the held-out complexes
+
+`/bizon/exp343-complex-eval-a01` scored the exp277 default on all **10,738**
+held-out complex documents (34,755,777 positions) in 12.4 minutes on one H100.
+This is the number exp343 has to beat, and it is banked before exp343 exists.
+
+| group | documents | nll/token | sequence | intra-chain | inter-chain | terminus |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| **all** | 10,738 | **3.6970** | 4.5435 | **2.9573** | **3.4518** | **11.8137** |
+| `afcdb` | 9,383 | 3.6838 | 4.5441 | 2.9404 | 3.3893 | 11.8125 |
+| `pinder` | 1,355 | 3.8307 | 4.5374 | 3.1194 | 4.6512 | 11.8220 |
+| heterodimer | 1,973 | 3.8158 | 4.5391 | 3.0909 | 4.3286 | 11.7933 |
+| homodimer | 8,765 | 3.6772 | 4.5443 | 2.9343 | 3.3627 | 11.8183 |
+| tier A | 5,500 | 3.6576 | 4.5381 | 2.9448 | 3.5016 | 11.8711 |
+| tier B | 3,883 | 3.7287 | 4.5533 | 2.9316 | 3.2380 | 11.7295 |
+
+Three things stand out, and all three are hypotheses about what exp343 should
+fix:
+
+**The split was worth building.** exp277 pays **2.9573** nats on intra-chain
+contacts and **3.4518** on inter-chain — it handles the contacts that look like
+monomer contacts and is 0.50 nats worse on the ones that cross a chain boundary.
+A single fused number would have averaged that away, and the 12.5% inter-chain
+token share means the fused number is dominated by the part exp277 already knows.
+
+**The terminus loss is the format signature: 11.81 nats.** Uniform over the whole
+2,845-token vocabulary is 7.95, so exp277 is not merely uncertain here, it is
+*confidently wrong*. That is what format-blindness looks like — a monomer model
+has only ever seen one `<n-term>`/`<c-term>` pair per document, and a complex has
+*k* of them at unpredictable ring positions. Read with one caveat: this role
+bundles the marker token with the position token that follows it, and a 2,000-way
+ring position is about 7.6 nats under uniform on its own, so the 11.81 is an
+average over a cheap token and an expensive one. Splitting them would sharpen the
+claim; the direction does not depend on it.
+
+**Homodimers are much easier than heterodimers** — 3.3627 against 4.3286 on
+inter-chain contacts. A homodimer interface is between two copies of one
+sequence, so intra-chain knowledge partly transfers; a heterodimer interface has
+no such shortcut. PINDER, which is experimental crystallised fragments rather than
+predicted models, is hardest of all at 4.6512.
+
+Committed under [`data/complex_loss/`](data/complex_loss/) with its provenance and
+per-input timing.
+
+### The scorer loads exp343's own export format
+
+`/bizon/exp343-complex-eval-smoke-a04` ran the scorer against **exp343's own**
+smoke export (`hf/step-9`), not exp277's. It loaded with
+`rope_theta=500000 rope_type=llama3 vocab=2845 params=1471374336` — identical to
+exp277's — so this run's export pipeline writes rope and tokenizer metadata the
+scorer can read, and the #163 silent-rope failure is excluded for the *production*
+checkpoint's format and not just the baseline's. Its loss (6.898 nats/token) is
+meaningless as a result: ten updates from scratch. It is a load check.
+
+It is also a cross-implementation agreement check. Levanter reported
+`eval/input/validation-complex/loss` = 6.91106 for that same checkpoint over two
+packed batches; this scorer, on 32 unpacked documents, reports 6.898. Different
+samples, independent implementations, same answer to three significant figures.
+
+### Training smoke
+
+`/bizon/exp343-train-smoke-a01` (one node, 8 H100, batch priority) ran ten
+updates over the **full production caches** and succeeded. Final train loss
+7.46915 from scratch, 17.5% MFU, 101,421 tokens/s on 8 GPUs, and the HF export
+landed at `runs/contacts-v1-exp343-m2-p06-complex-1.5B-smoke/hf/step-9`.
+
+The two things it was there to prove both hold:
+
+- **Both validation sets are wired and reported separately** —
+  `eval/input/validation/*` (monomer, 6.92887) and
+  `eval/input/validation-complex/*` (held-out complexes, 6.91106). A single
+  fused number would have made the complex half of this experiment unmeasurable.
+- **The trainer's own count of the concatenated corpus equals the pinned
+  35,859,774.** `OneEpochDataConfig` raises on any disagreement, so the smoke
+  completing at all is that assertion passing.
+
+[Smoke W&B](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp343-m2-p06-complex-1.5B-smoke).
+
+### Production
+
+Submitted 2026-09-28 21:41 UTC as
+[`/bizon/exp343-train-a01`](https://iris.oa.dev/#/job/%2Fbizon%2Fexp343-train-a01),
+16 nodes x 8 H100 on `cw-us-east-02a` at batch priority, 280,155 steps, run
+[`contacts-v1-exp343-m2-p06-complex-1.5B`](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp343-m2-p06-complex-1.5B).
+At exp277's observed 0.858 s/step this is about 67 hours of compute plus
+validation and checkpoint overhead. `cw-us-east-02a` had 22 of 256 H100 free at
+submission, so the gang queues behind interactive holds first; batch priority is
+the standing rule for CoreWeave GPU work and queue time is not a reason to break
+it.
+
+The driver dispatched its gang immediately and all 16 tasks sit
+`building / SchedulingGated` on one Kueue workload
+(`iris-pg-7ab1faf9080d0602-0`), which is what a correctly formed gang waiting on
+capacity looks like — it admits as a unit, not task by task.
+
+**The gang is deliberately not resliced smaller.** Gang size is placement, not
+configuration: global batch, step count, seeds and shuffle are fixed, so only
+`per_device_parallelism` and wall clock change. But the arithmetic does not
+favour waiting less: 8 nodes needs 64 free (still more than were available) and
+doubles the run to ~134 h, and 2 nodes would fit inside current capacity while
+taking about **22 days**. 16 nodes is both the matched configuration and the
+fastest finish once admitted, and the fleet does swing — exp277 launched into 248
+free H100 on this same cluster.
+
+**RNO2A is a live option, and the two reasons to dismiss it both turned out to be
+wrong.**
+
+*There is nothing to move.* `cw-rno2a.yaml` sets `MARIN_PREFIX` to
+`s3://marin-us-east-02a/...` itself, with the comment "everything lives in
+marin-us-east-02a; LOTA caches reads locally". CoreWeave has **one** shared
+bucket, so placing on RNO2A copies no data and triggers no cross-region rule. The
+read volume is negligible anyway: 260 GB spread over a 67-hour compute-bound run
+is about 1.1 MB/s.
+
+*8-node gangs work there.* The root `AGENTS.md` records that on RNO2A "1/2/4-node
+gangs bootstrap and train; **8-node fails** — the JAX multi-host coordination
+bootstrap aborts". That is **stale as of 2026-09-28**.
+`/bizon/exp343-train-smoke-a02` ran a full 8-node / 64-H100 gang there to
+completion: ten updates, train loss 7.61668, 86.93 examples/s, 712,117 tokens/s,
+15.4% MFU, both validation sets reported
+([W&B](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp343-m2-p06-complex-1.5B-smoke-n8-rno2a)).
+Verified against W&B rather than the job's exit status — a gRPC teardown trace in
+the logs made "succeeded" worth not taking at face value. Scaling is 88% of the
+1-node rate.
+
+The cost is wall clock, not correctness: 1.47 s/step at 8 nodes against exp277's
+0.858 s/step at 16, so **114 h against 67 h** for the same 280,155 steps. The two
+placements cannot run at once — they would write the same checkpoint path under
+the same run id — so this is a choice, not a hedge.
+
+### Production run history
+
+The run spans two Iris jobs, and the break was an operator error worth recording
+rather than smoothing over.
+
+`/bizon/exp343-train-a01` was submitted 2026-09-28 21:41 UTC and sat gang-queued
+while `cw-us-east-02a` ran at 0-22 free H100. The queue drained overnight, the
+gang admitted, and it trained for **11.8 hours to step 39,475** — train loss
+2.9115, monomer validation 3.1375, and a held-out complex validation loss of
+**3.3208**, already below exp277's 3.6970 control.
+
+On 2026-09-29 at 09:33 UTC it was **cancelled by mistake**. The intent was to
+free the queue slot before placing on RNO2A; the decision was made from a monitor
+reading of `tasks=0/16` that was ten hours stale, and the job's actual progress
+was never checked before acting. Scheduler state is not evidence about whether a
+job is doing work — W&B is, and it was one query away.
+
+Cost: **108 steps, about 90 seconds of compute.** Levanter writes its rolling
+15-minute checkpoints to `temporary_base_path` — a *separate* `tmp/ttl=14d/`
+prefix — and only the `keep` snapshots to `base_path`. Listing `base_path` alone
+shows just `step-28015` and makes the loss look like 4.7 hours; `step-39367` was
+sitting in the temp path, complete at 17.66 GB, written at 13:32:19 UTC, one
+minute before the cancellation. The resumed job searched both locations and
+restored the newer one.
+
+That temp checkpoint is also *deletable*: `delete_old_temp_checkpoints: true`
+means the next run removes it once it writes its own. It was copied server-side
+(8.7 s, byte-for-byte verified) to
+`{PREFIX}/rescued/step-39367/` before the resumed job could reach that point.
+
+Nothing else was damaged; the corpus, caches and control are untouched.
+
+`/bizon/exp343-train-a02` resumed from `step-28015` at 09:35 UTC, 16 nodes on
+`cw-us-east-02a` (which by then had 248 free H100), same run id and checkpoint
+path, so the W&B run and the checkpoint trail continue unbroken.
+
+### Training completed
+
+`/bizon/exp343-train-a03` finished the epoch at **step 280,154** on 2026-10-04,
+8 nodes x 8 H100 on `cw-rno2a`. The run spans three Iris jobs (`a01` cancelled by
+mistake, `a02` killed by the `max_task_failures=0` default, `a03` to completion)
+and **lost 371 steps in total** across both recoveries — 108 and 263 — because a
+rolling checkpoint always survived in the temp path.
+
+The WSD cooldown over the final 20% is where the result was made:
+
+| | step 224,084 | **final, 280,154** | change |
+| --- | ---: | ---: | ---: |
+| monomer validation | 3.0788 | **2.9934** | −0.0855 |
+| held-out complex validation | 3.1805 | **3.0366** | −0.1439 |
+
+Both are best-at-final, so checkpoint selection is not a question. Against
+exp277's final monomer validation of 2.98274, exp343 is **0.011 nats worse** on
+monomers and **0.660 better** on complexes.
+
+### Monomer contact prediction: a real regression
+
+`/bizon/exp343-eval-v2-01-r2`, 670 units under the fixed exp82 rollout recipe,
+worker byte-identical to the PR #244 scorer. The run was clean: **67,000 of
+67,000 rollouts usable, zero unfinished, zero affected units**, 556 unique stems.
+exp277 is *not* re-scored — its committed per-protein results are the comparison
+input, so there is one exp277 number rather than two sampling draws.
+
+| subset | range | exp343 | exp277 | delta | 95% CI | n |
+| --- | --- | ---: | ---: | ---: | --- | ---: |
+| legacy 554 | all | 0.60437 | 0.62009 | **−0.01571** | [−0.02275, −0.00891] | 554 |
+| legacy 554 | long | 0.56317 | 0.57704 | −0.01386 | [−0.02276, −0.00493] | 553 |
+| **eval-val** | **all** | **0.52685** | **0.55374** | **−0.02688** | **[−0.03977, −0.01546]** | 97 |
+| eval-val | long | 0.50929 | 0.53801 | −0.02872 | [−0.04329, −0.01589] | 97 |
+| eval-denovo | all | 0.68231 | 0.69582 | −0.01350 | [−0.03905, +0.00887] | 19 |
+| eval-denovo | long | 0.64190 | 0.67603 | −0.03413 | [−0.06985, −0.00496] | 19 |
+
+**The predeclared hypothesis is falsified.** eval-val was predicted to land within
+0.005 of exp277; it is −0.0269, five times that threshold, with a paired
+protein-bootstrap interval excluding zero. Five of the six intervals exclude
+zero; only eval-denovo *all* is ambiguous, and that is the n=19 set.
+
+For scale, −0.027 is larger than the entire +0.015 gain exp277 made over exp232
+on legacy 554, and roughly twelve times #204's 0.0023 noise floor.
+
+Intervals are 10,000-resample protein bootstraps (seed 343) over per-protein
+differences; they describe variation across evaluation proteins and say nothing
+about training-seed or repeated-rollout variation. eval-test was not read.
+
+### Complexes: the corpus taught what it was built to teach
+
+`/bizon/exp343-complex-eval-a02`, all 10,738 held-out documents, 34,755,777
+scored positions, 12.4 minutes on one H100.
+
+| group | exp343 | exp277 | delta |
+| --- | ---: | ---: | ---: |
+| **all** | **3.0369** | **3.6970** | **−0.6601** |
+| `afcdb` (predicted) | 3.0397 | 3.6838 | −0.6441 |
+| `pinder` (experimental) | 3.0085 | 3.8307 | −0.8222 |
+| heterodimer | 3.1082 | 3.8158 | −0.7076 |
+| homodimer | 3.0250 | 3.6772 | −0.6522 |
+
+Split by what each token encodes — which is what the holdout and the labeller
+were built for:
+
+| role | exp343 | exp277 | delta | tokens |
+| --- | ---: | ---: | ---: | ---: |
+| sequence | 3.7663 | 4.5435 | −0.7773 | 14,912,148 |
+| **chain termini** | **3.4770** | **11.8137** | **−8.3367** | 85,904 |
+| intra-chain contacts | 2.4814 | 2.9573 | −0.4759 | 17,260,659 |
+| **inter-chain contacts** | **2.5415** | **3.4518** | **−0.9104** | 2,454,189 |
+
+**Format-blindness is gone.** exp277 paid 11.81 nats on terminus statements —
+above the 7.95 of a uniform distribution over the vocabulary, meaning it was
+confidently wrong, not merely uncertain. exp343 pays 3.48.
+
+**The interface gap essentially closed.** exp277 was 0.495 nats worse on
+inter-chain than intra-chain contacts; exp343 is **0.060** worse. It now predicts
+a contact across a chain boundary nearly as well as one within a chain, which is
+the specific capability the corpus exists to teach.
+
+![Held-out complex loss by token role](plots/complex_loss_by_role.png)
+
+Committed under [`data/eval_rollout_v2/`](data/eval_rollout_v2/) and
+[`data/complex_loss/`](data/complex_loss/) with provenance and per-input timings.
+
 ## Conclusion
 
-_(Fill in after results are in.)_
+**Adding the #294 predicted-complex corpus to exp277's mixture is a trade, not a
+free win.** At 4.3% of training tokens it bought a 0.660-nat improvement on
+held-out complexes — closing an 8.3-nat format gap on chain termini and shrinking
+the inter-chain/intra-chain penalty from 0.495 to 0.060 nats — and cost
+**0.0269 R-precision on natural monomers** (eval-val, 95% CI [−0.0398, −0.0155]).
+
+The monomer cost is the answer to the question the issue asked, and it is the
+opposite of what was predeclared. A reader deciding whether to make this the
+default mixture is choosing between monomer contact accuracy and complex
+modelling; this experiment prices that choice but does not make it.
+
+**One confound is live and limits the causal claim.** exp343 saw 11.15 B tokens
+exp277 did not, and this is one seed per arm. Nothing here separates "complex
+documents hurt monomer prediction" from "this much extra data of any kind, at
+this budget, hurts monomer prediction". A token-matched control — exp277's
+corpus subsampled to the same budget, or the complex corpus swapped for an equal
+mass of native documents — is the experiment that would settle it, and is the
+natural follow-up.
+
+A second, narrower caveat: the monomer eval sets contain no complexes, so the two
+halves of this result are measured on disjoint data and cannot be traded off
+inside a single number.
+

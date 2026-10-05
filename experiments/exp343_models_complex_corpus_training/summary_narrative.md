@@ -68,13 +68,39 @@ Homodimers are much easier than heterodimers (3.363 against 4.329 inter-chain): 
 homodimer interface is two copies of one sequence, so intra-chain knowledge partly
 transfers. PINDER's experimental crystallised fragments are hardest at 4.651.
 
+## The answer: a trade, not a free win
+
+**Monomers got worse.** eval-val R-precision 0.52685 against exp277's 0.55374 —
+**−0.0269**, with a paired protein-bootstrap interval of [−0.0398, −0.0155]. The
+predeclared hypothesis was a tie within 0.005; this is five times that. Five of
+six subset/range intervals exclude zero. For scale, the drop is larger than the
+entire gain exp277 made over exp232 on legacy 554.
+
+**Complexes got much better.** Held-out complex loss 3.0369 against 3.6970 —
+**−0.660 nats** — and the split by token role says exactly where it came from.
+
+Chain termini: 11.81 → **3.48**. exp277 was paying more than a uniform
+distribution over the vocabulary, i.e. it was confidently wrong about how many
+chains a document has. That is gone.
+
+Inter-chain contacts: 3.452 → **2.541**. exp277 was 0.495 nats worse on contacts
+crossing a chain boundary than on contacts within one; exp343 is **0.060** worse.
+The interface penalty essentially closed — which is the specific thing the #294
+corpus was built to teach, and it transferred.
+
+## What a reader should take from this
+
+Spending 4.3% of the training mixture on complex documents buys a large,
+well-localised gain on complexes and costs about 0.027 R-precision on natural
+monomer contact prediction. Anyone making this the default mixture is choosing
+between those two, and this experiment prices the choice rather than making it.
+
+One confound limits the causal claim: exp343 saw 11.15 B tokens exp277 did not,
+and this is one seed per arm. Nothing here separates "complex documents hurt
+monomers" from "this much extra data, at this budget, hurts monomers". A
+token-matched control is the follow-up that would settle it.
+
 ## Status
 
-Corpus staged, tokenized and audited. The scorer is validated on both exp277's
-and exp343's own export formats, and agrees with levanter's own complex
-validation loss to three significant figures. The monomer eval is ported with a
-byte-identical worker.
-
-Production training is submitted and waiting on a 128-H100 gang;
-`cw-us-east-02a` went to zero free GPUs shortly after submission. Results and the
-exp343 series on the figure below land here as they arrive.
+Complete. Training finished at step 280,154; both evaluations are in and
+committed. Final numbers and the figure below.

@@ -67,24 +67,38 @@ def read_headline(path: Path, model: str | None) -> dict[tuple[str, str], float]
     return result
 
 
-def read_per_protein(path: Path, model: str | None, column: str = "precision"):
-    """Per-protein R-precision keyed by (subset, range, dataset, stem).
+def read_exp343_per_protein(path: Path) -> dict[tuple[str, str, str], float]:
+    """exp343 R-precision keyed by `(dataset, stem, range)`.
 
-    exp277's committed paired CSV and a fresh run's `contact_precision_all.csv`
-    have different shapes, so the column is named by the caller.
+    `contact_precision_all.csv` carries no `subset` column -- the subset a unit
+    belongs to lives in exp277's committed paired file -- so the join key is the
+    unit itself. Each `(dataset, stem)` belongs to exactly one subset across all
+    670 units, so this is unambiguous.
+
+    A handful of rows have an empty `precision`: a unit with no long-range true
+    contacts has no long-range R-precision. Those are skipped here and drop out
+    of the pairing rather than being read as zero.
     """
-    values: dict[tuple[str, str, str, str], float] = {}
+    values: dict[tuple[str, str, str], float] = {}
     with path.open(newline="") as source:
         for row in csv.DictReader(source):
-            if row.get("cut", "R") != "R":
+            if row["cut"] != "R" or not row["precision"]:
                 continue
-            if model is not None and row.get("model") not in (None, model):
+            values[(row["dataset"], row["stem"], row["range"])] = float(row["precision"])
+    return values
+
+
+def read_exp277_per_protein(path: Path):
+    """exp277 R-precision and its subset, keyed by `(dataset, stem, range)`."""
+    values: dict[tuple[str, str, str], tuple[str, float]] = {}
+    with path.open(newline="") as source:
+        for row in csv.DictReader(source):
+            if not row["precision_exp277"]:
                 continue
-            subset = row.get("subset")
-            if subset is not None and subset not in SUBSETS:
-                continue
-            key = (subset, row["range"], row["dataset"], row["stem"])
-            values[key] = float(row[column])
+            values[(row["dataset"], row["stem"], row["range"])] = (
+                row["subset"],
+                float(row["precision_exp277"]),
+            )
     return values
 
 
@@ -114,10 +128,8 @@ def main() -> None:
     exp343 = read_headline(results / "subset_aggregate_metrics.csv", None)
     exp277 = read_headline(EXP277_RESULTS / "subset_aggregate_metrics.csv", MODEL_277)
 
-    per_343 = read_per_protein(results / "contact_precision_all.csv", None)
-    per_277 = read_per_protein(
-        EXP277_RESULTS / "paired_r_precision.csv", None, column="precision_exp277"
-    )
+    per_343 = read_exp343_per_protein(results / "contact_precision_all.csv")
+    per_277 = read_exp277_per_protein(EXP277_RESULTS / "paired_r_precision.csv")
 
     rows = []
     for subset in SUBSETS:
@@ -126,10 +138,10 @@ def main() -> None:
             delta = exp343[key] - exp277[key]
             shared = sorted(
                 k
-                for k in per_343
-                if k[0] == subset and k[1] == distance_range and k in per_277
+                for k, (unit_subset, _) in per_277.items()
+                if unit_subset == subset and k[2] == distance_range and k in per_343
             )
-            deltas = [per_343[k] - per_277[k] for k in shared]
+            deltas = [per_343[k] - per_277[k][1] for k in shared]
             low, high = bootstrap(deltas, BOOTSTRAP_SEED)
             paired_mean = sum(deltas) / len(deltas)
             rows.append(
