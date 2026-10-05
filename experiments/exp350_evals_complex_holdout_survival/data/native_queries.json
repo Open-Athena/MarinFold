@@ -1,0 +1,11 @@
+{
+  "selection": "eligibility=candidate and no 30%/50% hit in afcdb or pinder complex-training arms",
+  "complexes": 46,
+  "complexes_by_source": {
+    "foldbench": 12,
+    "pinder": 34
+  },
+  "queries": 105,
+  "source_per_complex_sha256": "68202a21af6de4c0a3e9cc106cf0b2258906ad967f978036ca731f13c544b1cf",
+  "output_sha256": "70f579c63b1d2c88aa78f40a1635ed1fc95a007601f48e486e9a0305e7be1e6d"
+}
