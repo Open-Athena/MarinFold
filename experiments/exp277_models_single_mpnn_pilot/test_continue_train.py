@@ -2,10 +2,12 @@
 
 import pytest
 from levanter.data.text.datasets import ConcatDatasetComponent
+from levanter.schedule import BatchSchedule
 from marin.execution.build_context import BuildContext, VersionCodex, build_context
 from marin.execution.lazy import StepContext
 from marin.training.training import apply_output_path
 
+from experiments.exp232_sweep_cv1_decontam.training_contract import GLOBAL_BATCH_SIZE
 from experiments.exp277_models_single_mpnn_pilot.config import (
     CORPORA,
     EPOCH_PACKED_EXAMPLES,
@@ -29,7 +31,7 @@ from experiments.exp277_models_single_mpnn_pilot.epoch_data import (
 
 def test_continuation_restores_full_state_and_adds_exactly_one_epoch() -> None:
     with build_context(BuildContext(VersionCodex(VERSION))):
-        step = build_continuation_run(smoke=False, nodes=16)
+        step = build_continuation_run(smoke=False, nodes=16, attempt=1)
         step.fingerprint()
         context = StepContext.for_run(
             output_path=step.path(PREFIX),
@@ -75,8 +77,8 @@ def test_continuation_restores_full_state_and_adds_exactly_one_epoch() -> None:
 
 def test_continuation_smoke_has_separate_output_and_ten_added_steps() -> None:
     with build_context(BuildContext(VersionCodex(VERSION))):
-        smoke = build_continuation_run(smoke=True, nodes=1)
-        production = build_continuation_run(smoke=False, nodes=16)
+        smoke = build_continuation_run(smoke=True, nodes=1, attempt=2)
+        production = build_continuation_run(smoke=False, nodes=16, attempt=1)
     assert smoke.path(PREFIX) != production.path(PREFIX)
     context = StepContext.for_run(
         output_path=smoke.path(PREFIX),
@@ -87,3 +89,45 @@ def test_continuation_smoke_has_separate_output_and_ten_added_steps() -> None:
     pod = smoke.build_config(context)
     assert pod.train_config.trainer.num_train_steps == SOURCE_RESUME_STEP + 10
     assert pod.train_config.optimizer.cycle_length == [SOURCE_RESUME_STEP, 10]
+
+
+def test_each_smoke_attempt_gets_its_own_output_and_production_does_not() -> None:
+    """A retried smoke must not be served from a previous attempt's status file."""
+    with build_context(BuildContext(VersionCodex(VERSION))):
+        first = build_continuation_run(smoke=True, nodes=1, attempt=1)
+        second = build_continuation_run(smoke=True, nodes=1, attempt=2)
+        production = build_continuation_run(smoke=False, nodes=16, attempt=1)
+        retried_production = build_continuation_run(smoke=False, nodes=16, attempt=3)
+    assert first.path(PREFIX).endswith(f"{CONTINUATION_RUN_ID}-smoke-a01")
+    assert second.path(PREFIX).endswith(f"{CONTINUATION_RUN_ID}-smoke-a02")
+    assert first.path(PREFIX) != second.path(PREFIX)
+    assert production.path(PREFIX) == retried_production.path(PREFIX)
+    assert production.path(PREFIX) == f"{PREFIX}/runs/{CONTINUATION_RUN_ID}"
+
+
+def test_continuation_loader_ends_on_the_reserved_final_checkpoint_step() -> None:
+    """Check the absolute step/offset arithmetic the restored loader will use.
+
+    Levanter reads global offset `step * batch_size` and stops once the finite
+    dataset runs out, so the continuation's reserved `step-479417` identity is a
+    consequence of where the shifted epoch ends rather than an independent
+    setting.
+    """
+    schedule = BatchSchedule(GLOBAL_BATCH_SIZE)
+    start_offset = schedule.global_data_offset_by_step(SOURCE_RESUME_STEP)
+    assert start_offset == 27_273_344
+    total = start_offset + EPOCH_PACKED_EXAMPLES
+    final_step = schedule.find_step_containing_offset(total)
+    assert final_step == 479_417
+    assert final_step - SOURCE_RESUME_STEP + 1 == EPOCH_TRAIN_STEPS == 266_345
+    with build_context(BuildContext(VersionCodex(VERSION))):
+        step = build_continuation_run(smoke=False, nodes=16, attempt=1)
+        step.fingerprint()
+        context = StepContext.for_run(
+            output_path=step.path(PREFIX),
+            prefix=PREFIX,
+            runtime_args=step.runtime_args,
+            deps=step.deps,
+        )
+        pod = step.build_config(context)
+    assert pod.train_config.trainer.num_train_steps == final_step + 1

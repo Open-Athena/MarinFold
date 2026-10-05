@@ -1,0 +1,81 @@
+predictor,range,cut,value,n
+i.i.d. consensus,all,AUC,0.9309677647491209,97
+i.i.d. consensus,all,R,0.5216780679470896,97
+i.i.d. consensus,long,AUC,0.917978622530708,97
+i.i.d. consensus,long,R,0.5041755482653535,97
+i.i.d. consensus,medium,AUC,0.9488103350643297,97
+i.i.d. consensus,medium,R,0.5250081033369948,97
+i.i.d. consensus,short,AUC,0.9482152796872689,97
+i.i.d. consensus,short,R,0.570076166072716,97
+i.i.d. oracle best-of-N,all,R,0.5198839087406366,97
+i.i.d. oracle best-of-N,long,R,0.5415417664339557,97
+i.i.d. oracle best-of-N,medium,R,0.6115933722688777,97
+i.i.d. oracle best-of-N,short,R,0.6503345950092534,97
+pairwise,all,AUC,0.943283865502204,97
+pairwise,all,R,0.4589308131214789,97
+pairwise,long,AUC,0.9353750379355589,97
+pairwise,long,R,0.44010683354148533,97
+pairwise,medium,AUC,0.9501131305421373,97
+pairwise,medium,R,0.4648906811360811,97
+pairwise,short,AUC,0.9475860946941089,97
+pairwise,short,R,0.5115528495551274,97
+seeded 1/3 per range consensus,all,AUC,0.9300869732975577,97
+seeded 1/3 per range consensus,all,R,0.5246996284428355,97
+seeded 1/3 per range consensus,long,AUC,0.9171920403714077,97
+seeded 1/3 per range consensus,long,R,0.5046145729991377,97
+seeded 1/3 per range consensus,medium,AUC,0.9470600830575303,97
+seeded 1/3 per range consensus,medium,R,0.5316012026772424,97
+seeded 1/3 per range consensus,short,AUC,0.9469608290405981,97
+seeded 1/3 per range consensus,short,R,0.5743057982929601,97
+seeded 1/3 per range consensus (seed vote removed),all,AUC,0.9300733487373634,97
+seeded 1/3 per range consensus (seed vote removed),all,R,0.5251336260702757,97
+seeded 1/3 per range consensus (seed vote removed),long,AUC,0.9171313537753418,97
+seeded 1/3 per range consensus (seed vote removed),long,R,0.504163893916536,97
+seeded 1/3 per range consensus (seed vote removed),medium,AUC,0.9470167882665484,97
+seeded 1/3 per range consensus (seed vote removed),medium,R,0.5323889412067475,97
+seeded 1/3 per range consensus (seed vote removed),short,AUC,0.9469991777808247,97
+seeded 1/3 per range consensus (seed vote removed),short,R,0.575942614188593,97
+seeded 1/3 per range oracle best-of-N,all,R,0.5231955525779585,97
+seeded 1/3 per range oracle best-of-N,long,R,0.5374526999108258,97
+seeded 1/3 per range oracle best-of-N,medium,R,0.6128272109180879,97
+seeded 1/3 per range oracle best-of-N,short,R,0.654936293441295,97
+seeded long-range consensus,all,AUC,0.9311102268426527,97
+seeded long-range consensus,all,R,0.5244449586481524,97
+seeded long-range consensus,long,AUC,0.9185072559338547,97
+seeded long-range consensus,long,R,0.5068339207614075,97
+seeded long-range consensus,medium,AUC,0.9481933333429688,97
+seeded long-range consensus,medium,R,0.5274991803980814,97
+seeded long-range consensus,short,AUC,0.9442432499693117,97
+seeded long-range consensus,short,R,0.5678109783111,97
+seeded long-range consensus (seed vote removed),all,AUC,0.9310082284204598,97
+seeded long-range consensus (seed vote removed),all,R,0.5239402921622136,97
+seeded long-range consensus (seed vote removed),long,AUC,0.9184796630470503,97
+seeded long-range consensus (seed vote removed),long,R,0.5067929675607917,97
+seeded long-range consensus (seed vote removed),medium,AUC,0.9481933333429688,97
+seeded long-range consensus (seed vote removed),medium,R,0.5274991803980814,97
+seeded long-range consensus (seed vote removed),short,AUC,0.9442432499693117,97
+seeded long-range consensus (seed vote removed),short,R,0.5678109783111,97
+seeded long-range oracle best-of-N,all,R,0.5213802074854259,97
+seeded long-range oracle best-of-N,long,R,0.5309178335222601,97
+seeded long-range oracle best-of-N,medium,R,0.6157856989598874,97
+seeded long-range oracle best-of-N,short,R,0.6484438565192445,97
+seeded top-100 consensus,all,AUC,0.9306612946947544,97
+seeded top-100 consensus,all,R,0.5234106277378348,97
+seeded top-100 consensus,long,AUC,0.9184376730991108,97
+seeded top-100 consensus,long,R,0.5081140065063169,97
+seeded top-100 consensus,medium,AUC,0.9472265652933262,97
+seeded top-100 consensus,medium,R,0.5259554239820725,97
+seeded top-100 consensus,short,AUC,0.9481004775314517,97
+seeded top-100 consensus,short,R,0.5701405211414167,97
+seeded top-100 consensus (seed vote removed),all,AUC,0.93060219424848,97
+seeded top-100 consensus (seed vote removed),all,R,0.52370055206459,97
+seeded top-100 consensus (seed vote removed),long,AUC,0.9184133107532526,97
+seeded top-100 consensus (seed vote removed),long,R,0.5086568456755151,97
+seeded top-100 consensus (seed vote removed),medium,AUC,0.9470962967028762,97
+seeded top-100 consensus (seed vote removed),medium,R,0.5255933831694957,97
+seeded top-100 consensus (seed vote removed),short,AUC,0.9481001784473226,97
+seeded top-100 consensus (seed vote removed),short,R,0.5691312430757667,97
+seeded top-100 oracle best-of-N,all,R,0.5340965100626918,97
+seeded top-100 oracle best-of-N,long,R,0.5432973745573327,97
+seeded top-100 oracle best-of-N,medium,R,0.6150536732825024,97
+seeded top-100 oracle best-of-N,short,R,0.6556579147319423,97

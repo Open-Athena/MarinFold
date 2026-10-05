@@ -1,0 +1,242 @@
+{
+  "schema_version": 1,
+  "experiment": 254,
+  "scope": "Frozen contact-prompt intervention inputs and actual worker source, eval-val only",
+  "git_revision": "7e405a12",
+  "plan_sha256": "843eb78ee9358e1451b1cf56717d382b2644aa255f77ec50d8707cb59f86aa9f",
+  "archive": {
+    "uri": "hf://buckets/open-athena/MarinFold/data/exp254/conditioning-v1/5f33b1eef9e32696/conditioning-v1-inputs-code.tar.gz",
+    "sha256": "5f33b1eef9e3269622f3e89e935e76dcfe95d728a408df22d3332ac8a790d681",
+    "bytes": 1776038
+  },
+  "files": {
+    "CONDITIONING_PROTOCOL.md": {
+      "sha256": "14c27dda1ad7eca022c299603a15bb1c07e61063566ab260a2224f929fc7bb6d",
+      "bytes": 5326
+    },
+    "analyze_conditioning.py": {
+      "sha256": "71e4b68b9961b56e04a45cddac78c1ef1f0a777bdd87db2d67cf316a1740c36f",
+      "bytes": 17806
+    },
+    "bootstrap.sh": {
+      "sha256": "7070be46a720f2f18f0730102202b36bee2de97aad1057482e5cc92b62029f17",
+      "bytes": 831
+    },
+    "bundle_manifest.json": {
+      "sha256": "7bef14cfda676ec5cd2de9c3686de8e475a7366b194e2d2ad8e351e7a6143812",
+      "bytes": 7088
+    },
+    "common.py": {
+      "sha256": "a8a4b5d6361d6c18e3f4b9c7a55bfafe9c8927208eead3c6d239cd59f2316a8a",
+      "bytes": 5367
+    },
+    "conditioning_worker.py": {
+      "sha256": "843a79f0ab7c81c90b2965ab46b90bd46fb99f64ca0c17de3a3c84ca6283831b",
+      "bytes": 14480
+    },
+    "library/marinfold/MODELS.yaml": {
+      "sha256": "d2f8c9cf5ffa5e436870cf92d3e56241043dcfa41ee52a5adcdf858aad357434",
+      "bytes": 8275
+    },
+    "library/marinfold/__init__.py": {
+      "sha256": "adb79e34e6d53f43581ee84b4811e1822dce6e0e4acfbde56334cef3b25c6cc6",
+      "bytes": 1167
+    },
+    "library/marinfold/cli.py": {
+      "sha256": "a233d114bfe192843333b76feb9f734ff1c4abea7438fc1b322b0c6eb7b1956b",
+      "bytes": 13993
+    },
+    "library/marinfold/document_structures/__init__.py": {
+      "sha256": "945740d861a40444d33d0080a5354f0c73d8b2ec3228c1e5786b0e8463902577",
+      "bytes": 1501
+    },
+    "library/marinfold/document_structures/contacts_and_coordinates_v1/README.md": {
+      "sha256": "44242b9f1dd630270d12fa8a11a5aeedeb1885727d33b7f5d670c13a28c1da18",
+      "bytes": 2543
+    },
+    "library/marinfold/document_structures/contacts_and_coordinates_v1/SPEC.md": {
+      "sha256": "4acfc32c15198b8f6b42ee8c8bd1fa8fec873acd93594ed16a9bff9e78dcfc09",
+      "bytes": 23074
+    },
+    "library/marinfold/document_structures/contacts_and_coordinates_v1/__init__.py": {
+      "sha256": "40f43bafabe085ccbadd2b85dd3a8426937d04f1473e9fd1f42c948a2814575a",
+      "bytes": 2157
+    },
+    "library/marinfold/document_structures/contacts_and_coordinates_v1/cli.py": {
+      "sha256": "74dd71d25f7126d6747dc66679de2786979cda670b0e794751e4fec959ec4984",
+      "bytes": 13315
+    },
+    "library/marinfold/document_structures/contacts_and_coordinates_v1/generate.py": {
+      "sha256": "d70bca63a505ceb179d87cfbd2fe0bb1d3c2e9134044bacf3b8fcb42132fdc08",
+      "bytes": 27545
+    },
+    "library/marinfold/document_structures/contacts_and_coordinates_v1/parse.py": {
+      "sha256": "3555bcc8605391b514e58fbeea7e8457474d3b6b706c829d5ae35f1e443cbd69",
+      "bytes": 14968
+    },
+    "library/marinfold/document_structures/contacts_and_coordinates_v1/vocab.py": {
+      "sha256": "1e283ef84aa0621926bc5409a387701e7ff26573c971d598993a3166aa770d64",
+      "bytes": 10521
+    },
+    "library/marinfold/document_structures/contacts_and_crops_v1/README.md": {
+      "sha256": "c851ca21bcc874aebb4a687d8b5300c8447570d1e4cf1a06bc28801fbc77e161",
+      "bytes": 2940
+    },
+    "library/marinfold/document_structures/contacts_and_crops_v1/SPEC.md": {
+      "sha256": "a39eca079a0915e3c3f8e7fe91a47e0b225f990e97501732f087c31df0f265a7",
+      "bytes": 14301
+    },
+    "library/marinfold/document_structures/contacts_and_crops_v1/__init__.py": {
+      "sha256": "c349e36f26f54c8ae515e50a16c1181be76f2972bb8236271829950a16356b25",
+      "bytes": 2798
+    },
+    "library/marinfold/document_structures/contacts_and_crops_v1/cli.py": {
+      "sha256": "51453b307f525f08b3c70e304f32af65343ac929b41b5ec5fc2cd6b48009ff01",
+      "bytes": 14573
+    },
+    "library/marinfold/document_structures/contacts_and_crops_v1/generate.py": {
+      "sha256": "06c720b52f99d1cb6849f447c57e6e7a72ad0b613f5c5ef0ce7a78ccc4a58026",
+      "bytes": 33003
+    },
+    "library/marinfold/document_structures/contacts_and_crops_v1/parse.py": {
+      "sha256": "5c3a7a12c5249753f69676e9486a61419e8d3e2d0cc521e6c16330eb5d327408",
+      "bytes": 15064
+    },
+    "library/marinfold/document_structures/contacts_and_crops_v1/vocab.py": {
+      "sha256": "edcc0da514b5992941ed90b727dba0c39a2ebfe2410311b0141858e45a75a57a",
+      "bytes": 10189
+    },
+    "library/marinfold/document_structures/contacts_and_distances_v1/__init__.py": {
+      "sha256": "d7fa526ba53507c23d074e5d24bffff65022c6ce8a98e4ae38dbdfeec6af294c",
+      "bytes": 1483
+    },
+    "library/marinfold/document_structures/contacts_and_distances_v1/cli.py": {
+      "sha256": "b922ada4309444fe41c8f1be3e526f394da121f334b0a4404f26b99723b9527a",
+      "bytes": 12937
+    },
+    "library/marinfold/document_structures/contacts_and_distances_v1/generate.py": {
+      "sha256": "c460100a2c5a68a9291096bad6bcf6011c2c1f7d60b0f6dfe85ead93c23dfde6",
+      "bytes": 9757
+    },
+    "library/marinfold/document_structures/contacts_and_distances_v1/inference.py": {
+      "sha256": "fa5d0cf68432899353acec24dcd47b38ca26a2924922c14635a82bbab9f85f31",
+      "bytes": 19768
+    },
+    "library/marinfold/document_structures/contacts_and_distances_v1/parse.py": {
+      "sha256": "e7c6b5068b279c058af309df2326f0abf14487c3eade93cd73ff8a0cb8c8bdac",
+      "bytes": 9316
+    },
+    "library/marinfold/document_structures/contacts_and_distances_v1/plots.py": {
+      "sha256": "08d838d1100f0cbed860300260ea4ed361661ddc13bda28d54585ab650339598",
+      "bytes": 8964
+    },
+    "library/marinfold/document_structures/contacts_and_distances_v1/vocab.py": {
+      "sha256": "4afb125288fc95e24b79c145bf16b5716a2942b39499df8cf0fbaed149108aaf",
+      "bytes": 3106
+    },
+    "library/marinfold/document_structures/contacts_v1/README.md": {
+      "sha256": "5e9132ce2150cd3e5af664fa07dcd058d18efb4fb42814fbc38b93c0bb6c4727",
+      "bytes": 7834
+    },
+    "library/marinfold/document_structures/contacts_v1/SPEC.md": {
+      "sha256": "f5349bcc12a7ee28024c672e305bc0b4ef296e06af6981cfe4234f3a3717b433",
+      "bytes": 29805
+    },
+    "library/marinfold/document_structures/contacts_v1/__init__.py": {
+      "sha256": "a3f3eb5695f47fb1072713d8f1e4a296a98fe8053a1a3864e8873cb42e58ffa4",
+      "bytes": 4162
+    },
+    "library/marinfold/document_structures/contacts_v1/cli.py": {
+      "sha256": "0812fdd3e87437e4934ac5603a5e850b90978dff667162bd02bf71bc570d78fd",
+      "bytes": 22362
+    },
+    "library/marinfold/document_structures/contacts_v1/explore_documents.ipynb": {
+      "sha256": "b41360115e8ddcd18046a7ceeebafd002bd48dfa8a41123796aaec7485bc6d52",
+      "bytes": 12445
+    },
+    "library/marinfold/document_structures/contacts_v1/generate.py": {
+      "sha256": "f797c40e31e999bf33b9920084078101829151629ed725b097558a32acf5f329",
+      "bytes": 38617
+    },
+    "library/marinfold/document_structures/contacts_v1/inference.py": {
+      "sha256": "e5862c7e106e385e3841bde108d724de063879eb2c644f22a00cd1d567c3c4ae",
+      "bytes": 32672
+    },
+    "library/marinfold/document_structures/contacts_v1/parse.py": {
+      "sha256": "fa0f6070f70c99213f7e21d614483da9e38ac06845831ca29a2d67b2b542ca14",
+      "bytes": 22707
+    },
+    "library/marinfold/document_structures/contacts_v1/plots.py": {
+      "sha256": "0ab976dcf8f397aeaf289f96a66a9545c1f22e535983bc1b4752a90d16a5a793",
+      "bytes": 7380
+    },
+    "library/marinfold/document_structures/contacts_v1/read.py": {
+      "sha256": "717d32fe14803b0266ffdb2363dfbad46d829c4847264c082a771cfd81eb534d",
+      "bytes": 8230
+    },
+    "library/marinfold/document_structures/contacts_v1/sequence_likelihood.py": {
+      "sha256": "ba5b2ecb47986e4cf488e5a068942eb195cff52bc8217cacd5f41e87e93bc28c",
+      "bytes": 16518
+    },
+    "library/marinfold/document_structures/contacts_v1/vocab.py": {
+      "sha256": "d6ada59dba68aae61157fdc89771607d3355a03f2fe629c5db51fcedd4526190",
+      "bytes": 11056
+    },
+    "library/marinfold/document_structures/core.py": {
+      "sha256": "1d8db5098df4dc7bf5def0a995c21343ab1bf31ca150bb1e2ae420a773f01e79",
+      "bytes": 3226
+    },
+    "library/marinfold/document_structures/io.py": {
+      "sha256": "8efbfaf5ae50c36cfe1242f10cd8005baee954508e606cd0480ba4261cd6bb02",
+      "bytes": 7410
+    },
+    "library/marinfold/document_structures/writers.py": {
+      "sha256": "3cd783472d8d4308e32a9c819ddebe8daa6ea1be2fe83973540bb6a0918c1475",
+      "bytes": 6195
+    },
+    "library/marinfold/inference/__init__.py": {
+      "sha256": "e09e56069fc798d6bfe6ebe79fdcf28cac4be82a09628e80568a83851bfa16c1",
+      "bytes": 922
+    },
+    "library/marinfold/inference/_config.py": {
+      "sha256": "bc087d421aa9930604bfbbc1fb04e1cc53ba3f365e418748403cd84f2a298e4b",
+      "bytes": 6088
+    },
+    "library/marinfold/inference/_mlx.py": {
+      "sha256": "dbcdee989b7861bb5d6d2554a42123603bbf3f3c112a6ffa118eb9697df8f2c1",
+      "bytes": 7737
+    },
+    "library/marinfold/inference/_tokenizer.py": {
+      "sha256": "f10cf61f41761407b6d8571e5372c4249d822da0afbca422de14b19a2c790bdc",
+      "bytes": 6175
+    },
+    "library/marinfold/inference/_transformers.py": {
+      "sha256": "9b74e5b72fba50a8bcac8f6a4d7ca88ef0fd4417a89e7614762039e16fff3130",
+      "bytes": 12607
+    },
+    "library/marinfold/inference/_vllm.py": {
+      "sha256": "0cd22f93a1241a8d285765e5093e5c00e58209a33617af10335e89fe7f880912",
+      "bytes": 7067
+    },
+    "library/marinfold/inference/core.py": {
+      "sha256": "6fa7739bde2f3d57285daba31e261f25db04cfa8d477fe90fe829df91f78d82c",
+      "bytes": 9105
+    },
+    "library/marinfold/registry.py": {
+      "sha256": "d2ea6ade3f25a575476149851d2606dc11fbe8ce4d3160aa16ae694f7bba0620",
+      "bytes": 17833
+    },
+    "plan.json": {
+      "sha256": "843eb78ee9358e1451b1cf56717d382b2644aa255f77ec50d8707cb59f86aa9f",
+      "bytes": 5451975
+    },
+    "rank_pairwise.py": {
+      "sha256": "95ff9659763a0c5731b0b5e75e875711c66bf19368bcbb77ae9ee69555cd34f5",
+      "bytes": 12829
+    },
+    "source_votes.npz": {
+      "sha256": "195d8b43413c4c166c49e4507d19a9c2d058b3f37611f2927dc72e3d8e7aa5fa",
+      "bytes": 1172929
+    }
+  }
+}

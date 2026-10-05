@@ -1,0 +1,5 @@
+{
+  "script": "plot_epochs.py",
+  "args": [],
+  "caption": "All-range R-precision for both exp277 epochs, scored together in one job over 670 units. eval-test was not read."
+}

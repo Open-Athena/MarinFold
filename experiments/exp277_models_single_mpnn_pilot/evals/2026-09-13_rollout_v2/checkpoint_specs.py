@@ -203,8 +203,74 @@ EXP277_CHECKPOINT = Checkpoint(
     eval_loss_step=266_344,
 )
 
+# The reshuffled second epoch, continued from the first run's last pre-cooldown
+# checkpoint (step-213072) and cooled down over its own final 20%. Its config and
+# tokenizer bytes are identical to the first epoch's; only the weight shards
+# differ, which is what the pinned ETags below assert.
+EXP277_EPOCH2_CHECKPOINT = Checkpoint(
+    label="exp277_full_epoch2_from213072_step479417",
+    job_label="ep2",
+    run_name="contacts-v1-exp277-m2-p06-full-epoch2-from213072-1.5B",
+    step=479_417,
+    checkpoint_files=(
+        HfFile("config.json", 1_726, "09ffdb6012707caf6b8d9c07583ef014", "s3-etag"),
+        HfFile(
+            "model-00001-of-00002.safetensors",
+            4_979_485_528,
+            "73410d564fa17fc29185e8f41eca6e7c-95",
+            "s3-etag",
+        ),
+        HfFile(
+            "model-00002-of-00002.safetensors",
+            906_042_048,
+            "06da6a1d8f28a78ecdf1ef416cdaa032-18",
+            "s3-etag",
+        ),
+        HfFile(
+            "model.safetensors.index.json",
+            20_882,
+            "bc0a5fd2c9aae096abae4caf9040c79c",
+            "s3-etag",
+        ),
+        HfFile(
+            "tokenizer.json",
+            64_407,
+            "c4b3a16978e30eb150cca4fd8934b6ae",
+            "s3-etag",
+        ),
+        HfFile(
+            "tokenizer_config.json",
+            296,
+            "5acd13b50d727187034880bd78bcb928",
+            "s3-etag",
+        ),
+    ),
+    weight_shard_digests=(
+        "73410d564fa17fc29185e8f41eca6e7c-95",
+        "06da6a1d8f28a78ecdf1ef416cdaa032-18",
+    ),
+    source_dtype="float32",
+    coreweave_uri=(
+        "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/"
+        "runs/contacts-v1-exp277-m2-p06-full-epoch2-from213072-1.5B/hf/step-479417"
+    ),
+    train_loss=3.183701753616333,
+    eval_loss=2.980989456176758,
+    eval_loss_step=479_417,
+)
+
 CHECKPOINTS = (EXP277_CHECKPOINT,)
-CHECKPOINT_SUITES = {"exp277": CHECKPOINTS}
+# Score both epochs in one job. Rollout scoring is stochastic (#204 spans 0.0023
+# across four evaluations of one checkpoint) and the expected effect here is
+# small, so the first epoch is re-scored alongside rather than compared against
+# its committed v2-01 numbers. That also re-derives the epoch-1 result on this
+# cluster, which is a tighter reproducibility check for this specific comparison
+# than re-running the E8 gate on an execution path that has not changed.
+EPOCH_COMPARISON = (EXP277_CHECKPOINT, EXP277_EPOCH2_CHECKPOINT)
+CHECKPOINT_SUITES = {
+    "exp277": CHECKPOINTS,
+    "exp277-epochs": EPOCH_COMPARISON,
+}
 
 
 def run_root(run_id: str) -> str:
