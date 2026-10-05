@@ -60,7 +60,8 @@ Both 4B single-protein 100-rollout evaluation smokes passed without truncation.
 E8 reference passed: all R=0.42438, long R=0.36599; all 554 units, no truncated rollouts.
 Two-node training/export passed, but socket networking was slower than one node.
 The pinned image lacks libibverbs; production uses the proven 8-GPU profile.
-Both corrected phases will use 8 H100s each; source-stream GPU recovery validation is in progress.
+Source-stream GPU recovery passed: restored loss exactly; new step8 checkpoint verified.
+Both corrected phases are training on 8 H100s each from the original pilot weights.
 Eval every 1B additional tokens; baseline 0 is the corresponding 1Bpilot.
 Checkpointed 90-day jobs; the 100B budget may outlast that execution window.
 

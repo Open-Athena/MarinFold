@@ -1,0 +1,24 @@
+{
+  "contacts_v1": {
+    "step": 1,
+    "tokens": 90632,
+    "world": 8,
+    "uri": "s3://marin-us-east-02a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-contacts_v1-corpus235m-100bt/step-1",
+    "final": false,
+    "evaluation_export": false,
+    "files_verified": 20,
+    "verified_at_utc": "2026-10-05T16:31:57Z",
+    "retention": "Rolling recovery checkpoint; use the run resume.json for the current retained step."
+  },
+  "prompted": {
+    "step": 1,
+    "tokens": 26189,
+    "world": 8,
+    "uri": "s3://marin-us-east-02a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-100bt/step-1",
+    "final": false,
+    "evaluation_export": false,
+    "files_verified": 20,
+    "verified_at_utc": "2026-10-05T16:31:57Z",
+    "retention": "Rolling recovery checkpoint; use the run resume.json for the current retained step."
+  }
+}

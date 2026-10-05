@@ -133,7 +133,11 @@ The **235.49M total is before experiment-specific filters**. Both formats exclud
 empty-contact documents and any pair of renderings exceeding 16,384 native tokens.
 The original 1% sequence-cluster holdout is inherited by native and MPNN sequences;
 complexes use their upstream `cluster_key` for the same hash holdout. The 64-document
-pilot AFDB likelihood diagnostic is retained. Training logs seen, accepted,
+pilot AFDB likelihood diagnostic is retained. Its lineage holdout covers the four
+monomer sources; no additional cross-corpus complex/AFDB diagnostic decontamination
+is claimed. The periodic FoldBench eval-val benchmark instead inherits the
+published corpus decontamination, including exp294's exclusions on every complex
+subunit. Training logs seen, accepted,
 validation, empty-contact and over-length counts separately for each source.
 Whole-corpus eligible counts and native-token totals are not yet measured; no
 number of complete passes is inferred from the old AFDB-only cache.
@@ -165,8 +169,26 @@ The replacement identities are
 are not folded into the corrected comparison. Phase token counts are additional
 exposure: checkpoint zero is the corresponding 1B pilot. Jobs have a 90-day
 execution timeout and retain resumable state; the 100B budget is not a guarantee
-of completion within that time. The new source stream is undergoing a real 4B
-training/checkpoint/recovery smoke before the production replacements launch.
+of completion within that time. The new source stream passed real 4B training/checkpoint/recovery validation: a01
+reached step 7 / 580,695 tokens, a02 reproduced its validation NLL exactly and
+committed step 8 / 666,366 tokens. All five sources were admitted; model, tokenizer,
+BF16 export, and all eight optimizer shards were verified. `data/corpus235m/`
+contains the audit, CPU/GPU checks, and measured validation timings. Thirty-two
+local tests passed; Ruff and Pyrefly passed for changed Python files.
+
+The corrected raw and prompted production jobs are running as
+`/timodonnell/exp347-qwen35-4b-contacts_v1-corpus235m-100bt-a01` and
+`/timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a01`. Their curves are in
+[contacts-v1 training](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-4b-contacts_v1-corpus235m-100bt)
+and [prompted training](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-4b-prompted-corpus235m-100bt).
+Both jobs completed updates and saved verified step-1 recovery checkpoints on
+October 5 (90,632 raw / 26,189 prompted additional tokens). Each checkpoint
+contains the model, tokenizer and all eight optimizer shards. Both have since
+advanced and admitted examples from all five sources. The two
+persistent evaluation drivers are running and have logged the
+reused pilot baselines under
+[contacts-v1 eval-val](https://wandb.ai/open-athena/MarinFold/runs/exp347-4b-contacts-v1-corpus235m-eval-val)
+and [prompted eval-val](https://wandb.ai/open-athena/MarinFold/runs/exp347-4b-prompted-corpus235m-eval-val).
 
 `eval_contract.py` freezes the **97-protein eval-val set** from exp245's pinned
 membership, sequences, and resolved-residue ground truth. It never selects
