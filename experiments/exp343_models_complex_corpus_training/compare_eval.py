@@ -31,7 +31,10 @@ EXP343_RESULTS = HERE / "data" / "eval_rollout_v2"
 EXP277_RESULTS = (
     HERE.parent / "exp277_models_single_mpnn_pilot" / "data" / "eval_rollout_v2"
 )
-MODEL_343_PREFIX = "marinfold-exp343"
+#: The eval's model string is derived from the checkpoint label, which follows
+#: AGENTS.md's `<wandb-run-name>-step-<N>` form -- so match on the experiment
+#: rather than a prefix that breaks every time the label convention changes.
+MODEL_343_TOKEN = "exp343"
 MODEL_277 = "marinfold-exp277-full-epoch-m2-p06-step266344"
 SUBSETS = ("legacy_554", "eval-val", "eval-denovo")
 RANGES = ("all", "long")
@@ -55,7 +58,7 @@ def read_headline(path: Path, model: str | None) -> dict[tuple[str, str], float]
         ]
     if model is None:
         models = {row["model"] for row in rows}
-        matching = {name for name in models if name.startswith(MODEL_343_PREFIX)}
+        matching = {name for name in models if MODEL_343_TOKEN in name}
         if len(matching) != 1:
             raise ValueError(f"expected one exp343 model in {path}, found {models}")
         model = matching.pop()

@@ -10,7 +10,7 @@
         "levanter_source_uri": null
       }
     ],
-    "mirror_run_id": "v2-01",
+    "mirror_run_id": "v2-02",
     "source_dtypes": [
       "float32"
     ],
@@ -21,7 +21,7 @@
       "coreweave_uri": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/runs/contacts-v1-exp343-m2-p06-complex-1.5B/hf/step-280154",
       "eval_loss": 2.9933910369873047,
       "eval_loss_step": 280154,
-      "label": "exp343_complex_m2_p06_step280154",
+      "label": "contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
       "levanter_source_uri": null,
       "run_name": "contacts-v1-exp343-m2-p06-complex-1.5B",
       "source_dtype": "float32",
@@ -38,14 +38,14 @@
       ]
     }
   ],
-  "completed_at": "2026-10-05T13:37:26.157070+00:00",
+  "completed_at": "2026-10-05T15:45:33.860760+00:00",
   "exp89_compute_metrics_sha256": "6cbaa1c555763df07cb94ee81accebef25a5565590d47a32470ade78e36d824a",
   "ground_truth_sha256": "6bfbfec602656720cf997903497677c13d5684be677bdcbf2f69b3ae279db126",
   "headline_metrics": [
     {
       "cut": "AUC",
-      "model": "marinfold-exp343-complex-m2-p06-step280154",
-      "precision": 0.9500877937581538,
+      "model": "marinfold-contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+      "precision": 0.9498862100355612,
       "range": "all",
       "subset": "legacy_554",
       "total_values": 554,
@@ -53,8 +53,8 @@
     },
     {
       "cut": "R",
-      "model": "marinfold-exp343-complex-m2-p06-step280154",
-      "precision": 0.604375731187054,
+      "model": "marinfold-contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+      "precision": 0.6042376900521413,
       "range": "all",
       "subset": "legacy_554",
       "total_values": 554,
@@ -62,8 +62,8 @@
     },
     {
       "cut": "AUC",
-      "model": "marinfold-exp343-complex-m2-p06-step280154",
-      "precision": 0.9364377619511949,
+      "model": "marinfold-contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+      "precision": 0.9363460940393015,
       "range": "long",
       "subset": "legacy_554",
       "total_values": 554,
@@ -71,8 +71,8 @@
     },
     {
       "cut": "R",
-      "model": "marinfold-exp343-complex-m2-p06-step280154",
-      "precision": 0.5631752949987601,
+      "model": "marinfold-contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+      "precision": 0.562764763080132,
       "range": "long",
       "subset": "legacy_554",
       "total_values": 554,
@@ -80,8 +80,8 @@
     },
     {
       "cut": "AUC",
-      "model": "marinfold-exp343-complex-m2-p06-step280154",
-      "precision": 0.9365448550964455,
+      "model": "marinfold-contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+      "precision": 0.9363757163618007,
       "range": "all",
       "subset": "eval-val",
       "total_values": 97,
@@ -89,8 +89,8 @@
     },
     {
       "cut": "R",
-      "model": "marinfold-exp343-complex-m2-p06-step280154",
-      "precision": 0.5268590213484183,
+      "model": "marinfold-contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+      "precision": 0.5273933136090824,
       "range": "all",
       "subset": "eval-val",
       "total_values": 97,
@@ -98,8 +98,8 @@
     },
     {
       "cut": "AUC",
-      "model": "marinfold-exp343-complex-m2-p06-step280154",
-      "precision": 0.9254419298208919,
+      "model": "marinfold-contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+      "precision": 0.9247883444789619,
       "range": "long",
       "subset": "eval-val",
       "total_values": 97,
@@ -107,8 +107,8 @@
     },
     {
       "cut": "R",
-      "model": "marinfold-exp343-complex-m2-p06-step280154",
-      "precision": 0.5092966724233311,
+      "model": "marinfold-contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+      "precision": 0.5099031896597678,
       "range": "long",
       "subset": "eval-val",
       "total_values": 97,
@@ -116,8 +116,8 @@
     },
     {
       "cut": "AUC",
-      "model": "marinfold-exp343-complex-m2-p06-step280154",
-      "precision": 0.9825441920102088,
+      "model": "marinfold-contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+      "precision": 0.9832442609670258,
       "range": "all",
       "subset": "eval-denovo",
       "total_values": 19,
@@ -125,8 +125,8 @@
     },
     {
       "cut": "R",
-      "model": "marinfold-exp343-complex-m2-p06-step280154",
-      "precision": 0.6823177980841426,
+      "model": "marinfold-contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+      "precision": 0.6852915749596271,
       "range": "all",
       "subset": "eval-denovo",
       "total_values": 19,
@@ -134,8 +134,8 @@
     },
     {
       "cut": "AUC",
-      "model": "marinfold-exp343-complex-m2-p06-step280154",
-      "precision": 0.9764311247187717,
+      "model": "marinfold-contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+      "precision": 0.9773275970327024,
       "range": "long",
       "subset": "eval-denovo",
       "total_values": 19,
@@ -143,8 +143,8 @@
     },
     {
       "cut": "R",
-      "model": "marinfold-exp343-complex-m2-p06-step280154",
-      "precision": 0.6419000665599397,
+      "model": "marinfold-contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+      "precision": 0.6440099543899908,
       "range": "long",
       "subset": "eval-denovo",
       "total_values": 19,
@@ -152,27 +152,27 @@
     }
   ],
   "job_ids": [
-    "/bizon/exp343-eval-v2-01-r2/e277-v2-01-sm-exp343-s00",
-    "/bizon/exp343-eval-v2-01-r2/e277-v2-01-fu-exp343-s00",
-    "/bizon/exp343-eval-v2-01-r2/e277-v2-01-fu-exp343-s01",
-    "/bizon/exp343-eval-v2-01-r2/e277-v2-01-fu-exp343-s02",
-    "/bizon/exp343-eval-v2-01-r2/e277-v2-01-fu-exp343-s03",
-    "/bizon/exp343-eval-v2-01-r2/e277-v2-01-fu-exp343-s04",
-    "/bizon/exp343-eval-v2-01-r2/e277-v2-01-fu-exp343-s05",
-    "/bizon/exp343-eval-v2-01-r2/e277-v2-01-fu-exp343-s06",
-    "/bizon/exp343-eval-v2-01-r2/e277-v2-01-fu-exp343-s07",
-    "/bizon/exp343-eval-v2-01-r2/e277-v2-01-fu-exp343-s08",
-    "/bizon/exp343-eval-v2-01-r2/e277-v2-01-fu-exp343-s09",
-    "/bizon/exp343-eval-v2-01-r2/e277-v2-01-fu-exp343-s10",
-    "/bizon/exp343-eval-v2-01-r2/e277-v2-01-fu-exp343-s11"
+    "/bizon/exp343-eval-v2-02/e277-v2-02-sm-exp343-s00",
+    "/bizon/exp343-eval-v2-02/e277-v2-02-fu-exp343-s00",
+    "/bizon/exp343-eval-v2-02/e277-v2-02-fu-exp343-s01",
+    "/bizon/exp343-eval-v2-02/e277-v2-02-fu-exp343-s02",
+    "/bizon/exp343-eval-v2-02/e277-v2-02-fu-exp343-s03",
+    "/bizon/exp343-eval-v2-02/e277-v2-02-fu-exp343-s04",
+    "/bizon/exp343-eval-v2-02/e277-v2-02-fu-exp343-s05",
+    "/bizon/exp343-eval-v2-02/e277-v2-02-fu-exp343-s06",
+    "/bizon/exp343-eval-v2-02/e277-v2-02-fu-exp343-s07",
+    "/bizon/exp343-eval-v2-02/e277-v2-02-fu-exp343-s08",
+    "/bizon/exp343-eval-v2-02/e277-v2-02-fu-exp343-s09",
+    "/bizon/exp343-eval-v2-02/e277-v2-02-fu-exp343-s10",
+    "/bizon/exp343-eval-v2-02/e277-v2-02-fu-exp343-s11"
   ],
   "outputs": {
-    "aggregate_metrics": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/evals/rollout-v2/2026-09-28/v2-01/results/aggregate_metrics.csv",
-    "contact_precision_all": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/evals/rollout-v2/2026-09-28/v2-01/results/contact_precision_all.csv",
-    "dense_scores": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/evals/rollout-v2/2026-09-28/v2-01/dense_scores",
-    "marinfold_precision": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/evals/rollout-v2/2026-09-28/v2-01/results/marinfold_precision.csv",
-    "subset_aggregate_metrics": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/evals/rollout-v2/2026-09-28/v2-01/results/subset_aggregate_metrics.csv",
-    "timings": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/evals/rollout-v2/2026-09-28/v2-01/results/timings.csv"
+    "aggregate_metrics": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/evals/rollout-v2/2026-09-28/v2-02/results/aggregate_metrics.csv",
+    "contact_precision_all": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/evals/rollout-v2/2026-09-28/v2-02/results/contact_precision_all.csv",
+    "dense_scores": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/evals/rollout-v2/2026-09-28/v2-02/dense_scores",
+    "marinfold_precision": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/evals/rollout-v2/2026-09-28/v2-02/results/marinfold_precision.csv",
+    "subset_aggregate_metrics": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/evals/rollout-v2/2026-09-28/v2-02/results/subset_aggregate_metrics.csv",
+    "timings": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/evals/rollout-v2/2026-09-28/v2-02/results/timings.csv"
   },
   "reference_validation": null,
   "reporting_subset_units": {
@@ -184,7 +184,7 @@
     "legacy_554": 554,
     "universe_670": 670
   },
-  "run_root": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/evals/rollout-v2/2026-09-28/v2-01",
+  "run_root": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/evals/rollout-v2/2026-09-28/v2-02",
   "sampling": {
     "contact_multiplier": 6,
     "n_rollouts": 100,
@@ -203,10 +203,10 @@
     "matches_pr244_accepted_worker": true,
     "pr244_accepted_worker_sha256": "dd2f76dd5d34d1549e0be1197d9053d6e3aa0ef909f062ff5355d65f31cd571c"
   },
-  "started_at": "2026-10-05T13:27:57.753920+00:00",
+  "started_at": "2026-10-05T15:35:51.108429+00:00",
   "suite": "exp343",
   "validation": {
-    "exp343_complex_m2_p06_step280154": {
+    "contacts-v1-exp343-m2-p06-complex-1.5B-step-280154": {
       "affected_units": 0,
       "dense_matrices": 670,
       "requested_rollouts": 67000,

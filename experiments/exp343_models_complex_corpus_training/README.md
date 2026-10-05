@@ -369,12 +369,12 @@ input, so there is one exp277 number rather than two sampling draws.
 
 | subset | range | exp343 | exp277 | delta | 95% CI | n |
 | --- | --- | ---: | ---: | ---: | --- | ---: |
-| legacy 554 | all | 0.60437 | 0.62009 | **−0.01571** | [−0.02275, −0.00891] | 554 |
-| legacy 554 | long | 0.56317 | 0.57704 | −0.01386 | [−0.02276, −0.00493] | 553 |
-| **eval-val** | **all** | **0.52685** | **0.55374** | **−0.02688** | **[−0.03977, −0.01546]** | 97 |
-| eval-val | long | 0.50929 | 0.53801 | −0.02872 | [−0.04329, −0.01589] | 97 |
-| eval-denovo | all | 0.68231 | 0.69582 | −0.01350 | [−0.03905, +0.00887] | 19 |
-| eval-denovo | long | 0.64190 | 0.67603 | −0.03413 | [−0.06985, −0.00496] | 19 |
+| legacy 554 | all | 0.60424 | 0.62009 | **−0.01585** | [−0.02289, −0.00902] | 554 |
+| legacy 554 | long | 0.56276 | 0.57704 | −0.01427 | [−0.02313, −0.00533] | 553 |
+| **eval-val** | **all** | **0.52739** | **0.55374** | **−0.02635** | **[−0.03921, −0.01477]** | 97 |
+| eval-val | long | 0.50990 | 0.53801 | −0.02811 | [−0.04283, −0.01493] | 97 |
+| eval-denovo | all | 0.68529 | 0.69582 | −0.01052 | [−0.03468, +0.01065] | 19 |
+| eval-denovo | long | 0.64400 | 0.67603 | −0.03202 | [−0.06777, −0.00303] | 19 |
 
 **The predeclared hypothesis is falsified.** eval-val was predicted to land within
 0.005 of exp277; it is −0.0269, five times that threshold, with a paired
@@ -386,7 +386,15 @@ on legacy 554, and roughly twelve times #204's 0.0023 noise floor.
 
 Intervals are 10,000-resample protein bootstraps (seed 343) over per-protein
 differences; they describe variation across evaluation proteins and say nothing
-about training-seed or repeated-rollout variation. eval-test was not read.
+about training-seed variation. eval-test was not read.
+
+**Repeated-rollout variation is measured, not assumed.** The evaluation was run
+twice end to end — `v2-01` and `v2-02`, 67,000 freshly sampled rollouts each.
+The two draws agree to **5.3e-4** on eval-val (0.526859 vs 0.527393) and
+1.4e-4 on legacy 554. The reported effect of −0.026 is about **50x** that, so
+sampling noise is not a candidate explanation. `v2-02` is the canonical run and
+the committed artifacts are its; `v2-01` differed only in the checkpoint label
+and the absence of per-document timings.
 
 ### Complexes: the corpus taught what it was built to teach
 
@@ -422,8 +430,14 @@ the specific capability the corpus exists to teach.
 
 ![Held-out complex loss by token role](plots/complex_loss_by_role.png)
 
+The complex evaluation was also run twice, and being a deterministic forward
+pass it **reproduces to 3e-11** (3.036928785 both times) — so the worker refactor
+that added per-document timing changed no measurement.
+
 Committed under [`data/eval_rollout_v2/`](data/eval_rollout_v2/) and
-[`data/complex_loss/`](data/complex_loss/) with provenance and per-input timings.
+[`data/complex_loss/`](data/complex_loss/) with provenance and **one timing row
+per scored document** (10,738 per checkpoint, carrying `n_residues` and the exact
+contacts-v1 candidate-pair count).
 
 ## Conclusion
 

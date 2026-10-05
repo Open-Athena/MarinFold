@@ -70,11 +70,16 @@ transfers. PINDER's experimental crystallised fragments are hardest at 4.651.
 
 ## The answer: a trade, not a free win
 
-**Monomers got worse.** eval-val R-precision 0.52685 against exp277's 0.55374 —
-**−0.0269**, with a paired protein-bootstrap interval of [−0.0398, −0.0155]. The
+**Monomers got worse.** eval-val R-precision 0.52739 against exp277's 0.55374 —
+**−0.0264**, with a paired protein-bootstrap interval of [−0.0392, −0.0148]. The
 predeclared hypothesis was a tie within 0.005; this is five times that. Five of
 six subset/range intervals exclude zero. For scale, the drop is larger than the
 entire gain exp277 made over exp232 on legacy 554.
+
+The evaluation was run twice end to end, 67,000 freshly sampled rollouts each
+time; the draws agree to 5.3e-4 on eval-val, so the effect is ~50x the sampling
+noise. The complex evaluation, a deterministic forward pass, reproduces to
+3e-11.
 
 **Complexes got much better.** Held-out complex loss 3.0369 against 3.6970 —
 **−0.660 nats** — and the split by token role says exactly where it came from.
