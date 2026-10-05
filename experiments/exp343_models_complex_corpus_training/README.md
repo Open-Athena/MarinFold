@@ -376,6 +376,8 @@ input, so there is one exp277 number rather than two sampling draws.
 | eval-denovo | all | 0.68529 | 0.69582 | −0.01052 | [−0.03468, +0.01065] | 19 |
 | eval-denovo | long | 0.64400 | 0.67603 | −0.03202 | [−0.06777, −0.00303] | 19 |
 
+![Monomer contact R-precision, exp343 vs exp277](plots/monomer_rprecision.png)
+
 **The predeclared hypothesis is falsified.** eval-val was predicted to land within
 0.005 of exp277; it is −0.0269, five times that threshold, with a paired
 protein-bootstrap interval excluding zero. Five of the six intervals exclude

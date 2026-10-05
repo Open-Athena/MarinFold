@@ -1,0 +1,5 @@
+{
+  "script": "plot_monomer_rprecision.py",
+  "args": [],
+  "caption": "Monomer contact R-precision under the fixed exp82 rollout recipe, 100 rollouts per unit. Bars are 95% protein-bootstrap intervals; the printed paired delta is the per-protein difference, which is the statistic that decides the comparison. n.s. = its interval covers zero."
+}
