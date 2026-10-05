@@ -1,0 +1,45 @@
+{
+  "contacts-v1-exp343-m2-p06-complex-1.5B-step-280154": {
+    "model": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/runs/contacts-v1-exp343-m2-p06-complex-1.5B/hf/step-280154",
+    "shard": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/documents/validation/shard-00170-of-00171.parquet",
+    "timing": {
+      "elapsed_seconds": 738.274070902029,
+      "model_load_seconds": 21.41837490396574,
+      "total_seconds": 760.4706719199894,
+      "documents": 10738,
+      "scored_positions": 34755777
+    },
+    "worker": {
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "gpu_total_memory_gb": 79.1806640625,
+      "gpu_compute_capability": "9.0",
+      "hostname": "g73b892",
+      "platform": "Linux-6.8.12-680-6063-coreweave-amd64-f81899c8-x86_64-with-glibc2.35",
+      "torch_version": "2.7.0+cu128",
+      "python_version": "3.12.11",
+      "timestamp_utc": "2026-10-05T16:45:01Z"
+    }
+  },
+  "contacts-v1-exp277-m2-p06-full-epoch-1.5B-step-266344": {
+    "model": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B/hf/step-266344",
+    "shard": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/documents/validation/shard-00170-of-00171.parquet",
+    "timing": {
+      "elapsed_seconds": 739.3290345399873,
+      "model_load_seconds": 21.35146028298186,
+      "total_seconds": 761.4405231959536,
+      "documents": 10738,
+      "scored_positions": 34755777
+    },
+    "worker": {
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "gpu_total_memory_gb": 79.1806640625,
+      "gpu_compute_capability": "9.0",
+      "hostname": "g73b892",
+      "platform": "Linux-6.8.12-680-6063-coreweave-amd64-f81899c8-x86_64-with-glibc2.35",
+      "torch_version": "2.7.0+cu128",
+      "python_version": "3.12.11",
+      "timestamp_utc": "2026-10-05T16:45:02Z"
+    }
+  },
+  "iris_job": "/bizon/exp343-complex-eval-a08"
+}
