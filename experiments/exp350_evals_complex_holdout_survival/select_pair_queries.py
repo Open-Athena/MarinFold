@@ -1,4 +1,4 @@
-"""Select every sequence representation for complexes clean in local complex arms."""
+"""Select every sequence representation for pair-clean candidate complexes."""
 
 import argparse
 import csv
@@ -7,33 +7,18 @@ import json
 from collections import Counter, defaultdict
 from pathlib import Path
 
+from select_survivor_queries import read_fasta
+
 HERE = Path(__file__).resolve().parent
 
 
-def read_fasta(path: Path) -> dict[str, str]:
-    """Read an unwrapped FASTA into an identifier-to-sequence mapping."""
-    records: dict[str, str] = {}
-    name = ""
-    parts: list[str] = []
-    for line in path.read_text().splitlines():
-        if line.startswith(">"):
-            if name:
-                records[name] = "".join(parts)
-            name, parts = line[1:].split()[0], []
-        else:
-            parts.append(line.strip())
-    if name:
-        records[name] = "".join(parts)
-    return records
-
-
 def main() -> None:
-    """Write the reduced query FASTA and selection provenance."""
+    """Write the pair-clean query FASTA and stable selection provenance."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--data", type=Path, default=HERE / "data")
-    ap.add_argument("--out", type=Path, default=HERE / "data/native_queries.fasta")
+    ap.add_argument("--out", type=Path, default=HERE / "data/pair_queries.fasta")
     args = ap.parse_args()
-    complexes = list(csv.DictReader((args.data / "per_complex.csv").open()))
+    complexes = list(csv.DictReader((args.data / "pair_per_complex.csv").open()))
     membership = list(csv.DictReader((args.data / "query_membership.csv").open()))
     by_complex: dict[tuple[str, str], set[str]] = defaultdict(set)
     for row in membership:
@@ -42,8 +27,7 @@ def main() -> None:
         row
         for row in complexes
         if row["eligibility"] == "candidate"
-        and row["afcdb_status"] == "no_hit"
-        and row["pinder_status"] == "no_hit"
+        and row["complex_pair_status"] == "pair_clean"
     ]
     query_ids = set().union(
         *(by_complex[row["source"], row["target"]] for row in selected)
@@ -55,21 +39,15 @@ def main() -> None:
     with args.out.open("w") as fh:
         for query in sorted(query_ids):
             fh.write(f">{query}\n{records[query]}\n")
-    selection_columns = [
+    selection_rows = [
         {
             key: row[key]
-            for key in [
-                "source",
-                "target",
-                "eligibility",
-                "afcdb_status",
-                "pinder_status",
-            ]
+            for key in ["source", "target", "eligibility", "complex_pair_status"]
         }
         for row in sorted(complexes, key=lambda row: (row["source"], row["target"]))
     ]
     provenance = {
-        "selection": "eligibility=candidate and no 30%/50% hit in afcdb or pinder complex-training arms",
+        "selection": "eligibility=candidate and no one-to-one 30%/50% chain-pair hit in one complex-training document",
         "complexes": len(selected),
         "complexes_by_source": Counter(row["source"] for row in selected),
         "queries": len(query_ids),
@@ -77,13 +55,10 @@ def main() -> None:
             "source",
             "target",
             "eligibility",
-            "afcdb_status",
-            "pinder_status",
+            "complex_pair_status",
         ],
         "selection_columns_sha256": hashlib.sha256(
-            json.dumps(
-                selection_columns, sort_keys=True, separators=(",", ":")
-            ).encode()
+            json.dumps(selection_rows, sort_keys=True, separators=(",", ":")).encode()
         ).hexdigest(),
         "query_membership_sha256": hashlib.file_digest(
             (args.data / "query_membership.csv").open("rb"), "sha256"

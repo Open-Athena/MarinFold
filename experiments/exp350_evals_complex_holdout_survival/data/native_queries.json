@@ -6,6 +6,15 @@
     "pinder": 34
   },
   "queries": 105,
-  "source_per_complex_sha256": "68202a21af6de4c0a3e9cc106cf0b2258906ad967f978036ca731f13c544b1cf",
+  "selection_columns": [
+    "source",
+    "target",
+    "eligibility",
+    "afcdb_status",
+    "pinder_status"
+  ],
+  "selection_columns_sha256": "4ac6de632a8b4e7c2c843e6a3d767a19cc535b78ad7ec7658df92129790ae758",
+  "query_membership_sha256": "36b417817a46682d46a812bf8080bdcdc88811b40a7f8abef35e37efeea4a969",
+  "queries_fasta_sha256": "83b026fa68aac90b22801d94bc93a869f81d9713b620da974a1c27832450ae7a",
   "output_sha256": "70f579c63b1d2c88aa78f40a1635ed1fc95a007601f48e486e9a0305e7be1e6d"
 }

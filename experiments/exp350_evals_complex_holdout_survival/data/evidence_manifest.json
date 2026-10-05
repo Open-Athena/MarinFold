@@ -1,0 +1,155 @@
+{
+  "public_prefix": "hf://buckets/open-athena/MarinFold/data/evals/exp350_complex_holdout_survival/evidence",
+  "scope": "complete broad and pair-survivor confirmation alignments and search logs supporting exp350 Stage A",
+  "objects": [
+    {
+      "object": "complex_query_alignments.tsv.gz",
+      "source_bytes": 329024556,
+      "source_sha256": "865a5f345adca54e297d208a8055194db24199ce74ba6955915f72acec0231f6",
+      "rows": 2180413,
+      "gzip_bytes": 53166414,
+      "gzip_sha256": "bc0613f792dd559ed621ee10ae41535d059ef02dd0f8cf31e87e10e939a6a964"
+    },
+    {
+      "object": "complex_query_search.log",
+      "bytes": 8589,
+      "sha256": "6a413b316cb7fa9e4e817e2536b093cca2cc6165d2bd5c8ded7e7d84de4ba1c1"
+    },
+    {
+      "object": "complex_target_alignments.tsv.gz",
+      "source_bytes": 241840690,
+      "source_sha256": "2cf51f920b3118bf4fde9092f92f1afc9f0bde7486f4b14da91a435a43c71f26",
+      "rows": 1596403,
+      "gzip_bytes": 40297880,
+      "gzip_sha256": "f543f7f00cc125c49c5e1e8c382fa81409cf1a789c121333807a6651d3e736a3"
+    },
+    {
+      "object": "complex_target_search.log",
+      "bytes": 8596,
+      "sha256": "a7d43d1c72f688b1331e126daef7e2e0ca40d9692b4dd8429863090ca95c3119"
+    },
+    {
+      "object": "complex_search.json",
+      "bytes": 2926,
+      "sha256": "e892154a9ae9fa13ad54aca3990f3efe90da81f02b7dce4a0547ee7dddd5da43"
+    },
+    {
+      "object": "native_query_alignments.tsv.gz",
+      "source_bytes": 493838,
+      "source_sha256": "2098f137a77e7269696806915795f1551dd4519206b4474f8fd53cebee701fb0",
+      "rows": 3557,
+      "gzip_bytes": 177996,
+      "gzip_sha256": "0a83734471503db7e1d85807f0a85a63d0ed22d2bbcb1b641811d698cc25abe1"
+    },
+    {
+      "object": "native_query_search.log",
+      "bytes": 13754,
+      "sha256": "5012e259e2d60e59305531b13c6976ecd5b83912282398c358a3e501cf243105"
+    },
+    {
+      "object": "native_target_alignments.tsv.gz",
+      "source_bytes": 1425369,
+      "source_sha256": "c44cfafc9ab3157ae9893e897e6483fbe2a5e8722d14ea36061252892adb08a0",
+      "rows": 10206,
+      "gzip_bytes": 500022,
+      "gzip_sha256": "bdb3bb94612b0b26b8dd684c912383f113215fa9872a51b31c6f4f2d5cbcaa8b"
+    },
+    {
+      "object": "native_target_search.log",
+      "bytes": 13761,
+      "sha256": "ad6f8f9dfad1d098d431fdfa66dd45ca3362ca833f7b8d65817dd33767ac6061"
+    },
+    {
+      "object": "native_search.json",
+      "bytes": 3133,
+      "sha256": "dd58d9e8203c1df56891d1c4d3970ef8a395cadebbfc645fd2a228c0fd6cd94e"
+    },
+    {
+      "object": "helico_query_alignments.tsv.gz",
+      "source_bytes": 32383287,
+      "source_sha256": "a668a82d11d5a8acf86c4ef188dfd8c60738668bca810e967fed6f8da1fc8fe0",
+      "rows": 293909,
+      "gzip_bytes": 2833950,
+      "gzip_sha256": "71e6b2bf536b09e73246a0290d31f6d917b723722bc82d9ad4539e060ea2f776"
+    },
+    {
+      "object": "helico_query_search.log",
+      "bytes": 8551,
+      "sha256": "179d836e771ef1cf304e69eb82a97977513a20077a73c16fae012bff42946819"
+    },
+    {
+      "object": "helico_target_alignments.tsv.gz",
+      "source_bytes": 29488958,
+      "source_sha256": "7c9eb6af3c6e61f6029f43c066f7b864108ca44b8f852d2fdb3d020817c36b67",
+      "rows": 267085,
+      "gzip_bytes": 2643480,
+      "gzip_sha256": "6fb8d37db494a3a96c9ba629ab1c5ef2529e7b8f3dfba13c0f55389eee9a08bf"
+    },
+    {
+      "object": "helico_target_search.log",
+      "bytes": 8560,
+      "sha256": "556921090c0bdbc9efa0996b599795054594bc07ca3b084abeccbce08b99cb83"
+    },
+    {
+      "object": "helico_search.json",
+      "bytes": 2911,
+      "sha256": "5d63f1f3b38afc4b61289e4f82526811161a905adffb13e4f1e88db8759aacc8"
+    },
+    {
+      "object": "candidate_provenance.json",
+      "bytes": 453006,
+      "sha256": "2c0f924ccf2b714296d9b14d12118080a8f05b2fc07a7251fbac6772c65b99a6"
+    },
+    {
+      "object": "complex_sequence_manifest.json",
+      "bytes": 57803,
+      "sha256": "effa34916edcf836cc12faca6c0cef2c51b8a4f7df1d83d45c60fb71ebe819e2"
+    },
+    {
+      "object": "helico_reference.json",
+      "bytes": 624,
+      "sha256": "182234b0d9ce06ee64d749132646560b2df70e9a6449cbb55bbe937bdd374675"
+    },
+    {
+      "object": "native_db_manifest.json",
+      "bytes": 331,
+      "sha256": "5b02d1ba3c8f5cd3cf2aa62f910e4a95c7f3e4c0cd4938d526572f1ec74186e1"
+    },
+    {
+      "object": "search_diagnostics.json",
+      "bytes": 7513,
+      "sha256": "17d9917db26bc555eaa201506bfcb0e1d791d1ec37b3567b29fb2c22ad2ba31b"
+    },
+    {
+      "object": "pair_confirmation_query_alignments.tsv.gz",
+      "source_bytes": 19093679,
+      "source_sha256": "7a9ad9669ffa90a61c93757e17c814a5f5e07de1f6affa96d49dd0d75fdc9a01",
+      "rows": 126617,
+      "gzip_bytes": 2715597,
+      "gzip_sha256": "ced8baabd75d815271621afc78a2da71892d410a9ea7a2e91443b258b4647665"
+    },
+    {
+      "object": "pair_confirmation_query_search.log",
+      "bytes": 8696,
+      "sha256": "121c6da1d6db27d8b18e63b4871ab7a59b9d265663c0a72f2fcc1d73046edd9e"
+    },
+    {
+      "object": "pair_confirmation_target_alignments.tsv.gz",
+      "source_bytes": 12767290,
+      "source_sha256": "4bfb4e1e3044d84346281e802fefa76f6ad3c66c5ac147e7b7c013c940366128",
+      "rows": 84454,
+      "gzip_bytes": 1772817,
+      "gzip_sha256": "5b9097cf05474e1046e55bd68e26e2ae437c6f5055e670dc633aff32cae77189"
+    },
+    {
+      "object": "pair_confirmation_target_search.log",
+      "bytes": 8701,
+      "sha256": "97e5a0b1214b8a28eba87c2e56393ac1728544f14fa8dae258c8ad163d58ae95"
+    },
+    {
+      "object": "pair_confirmation_search.json",
+      "bytes": 3064,
+      "sha256": "61be187fa8806e7e93294696ddc94c118277d77c122c88977190260085ceab9d"
+    }
+  ]
+}

@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import re
+import shutil
 import subprocess
 import time
 from pathlib import Path
@@ -24,6 +25,15 @@ def run(command: list[str | Path], log_path: Path | None = None) -> None:
         subprocess.run(
             list(map(str, command)), check=True, stdout=log, stderr=subprocess.STDOUT
         )
+
+
+def clear_mmseqs_prefix(prefix: Path) -> None:
+    """Remove this experiment's prior hash-tagged MMseqs DB or temporary tree."""
+    for path in prefix.parent.glob(f"{prefix.name}*"):
+        if path.is_dir():
+            shutil.rmtree(path)
+        else:
+            path.unlink()
 
 
 def native_database(work: Path) -> Path:
@@ -77,10 +87,24 @@ def main() -> None:
     ap.add_argument("--arm", choices=["native", "complex", "helico"], required=True)
     ap.add_argument("--queries", type=Path, default=Path("data/queries.fasta"))
     ap.add_argument("--work", type=Path, default=Path("/data/exp350"))
+    ap.add_argument(
+        "--target-db",
+        type=Path,
+        help="Reuse an existing MMseqs target database instead of building one in --work.",
+    )
+    ap.add_argument(
+        "--max-seqs",
+        type=int,
+        help="Override the arm-specific MMseqs prefilter result-list cap.",
+    )
     ap.add_argument("--threads", type=int, default=24)
     args = ap.parse_args()
     args.work.mkdir(parents=True, exist_ok=True)
-    if args.arm == "native":
+    if args.target_db is not None:
+        target = args.target_db
+        if not target.with_suffix(".dbtype").exists():
+            raise FileNotFoundError(f"Missing MMseqs target database: {target}")
+    elif args.arm == "native":
         target = native_database(args.work)
     elif args.arm == "complex":
         target = args.work / "complexDB"
@@ -105,21 +129,26 @@ def main() -> None:
     query_sha256 = hashlib.file_digest(args.queries.open("rb"), "sha256").hexdigest()
     run_tag = f"v3_{query_sha256[:12]}"
     query = args.work / f"{args.arm}_queryDB_{run_tag}"
+    clear_mmseqs_prefix(query)
     run([MMSEQS, "createdb", args.queries, query, "--shuffle", "0"])
     start = time.monotonic()
     searches = []
-    max_seqs = 500000 if args.arm == "helico" else 100000
+    max_seqs = args.max_seqs or (500000 if args.arm == "helico" else 100000)
     for coverage_name, coverage_mode in [("query", "2"), ("target", "1")]:
         result = args.work / f"{args.arm}_{coverage_name}_alnDB_{run_tag}"
         output = args.work / f"{args.arm}_{coverage_name}_alignments.tsv"
         log_path = args.work / f"{args.arm}_{coverage_name}_search.log"
+        temporary = args.work / f"{args.arm}_{coverage_name}_tmp_{run_tag}"
+        clear_mmseqs_prefix(result)
+        clear_mmseqs_prefix(temporary)
+        output.unlink(missing_ok=True)
         command = [
             MMSEQS,
             "search",
             query,
             target,
             result,
-            args.work / f"{args.arm}_{coverage_name}_tmp_{run_tag}",
+            temporary,
             "-s",
             "7.5",
             "-e",

@@ -12,13 +12,13 @@ marinfold_experiment:
 
 ## Question
 
-Can we construct a useful evaluation set of experimental protein complexes in which **every constituent protein chain is below 30% sequence identity to the training data**, and measure exp343's inter-chain contact R-precision and structural accuracy after Helico folding?
+Can we construct a useful evaluation set of experimental protein complexes under either of two holdout definitions: **component-held-out**, where every chain is below 30% identity to every training chain, or **pair-held-out**, where no training complex contains homologs of both chains? Can it support exp343 inter-chain contact R-precision and structural evaluation with Helico?
 
 The first deliverable is a **survival table and an evidence-backed feasibility decision**, before running predictors.
 
 ## Hypothesis
 
-A freshly audited subset of FoldBench protein–protein assemblies is the best starting point because existing monomer training data was filtered against all FoldBench chains. However, the complex-training corpus used a narrower reference, so the surviving count is unknown. PINDER test dimers and, if needed, newer experimental PDB assemblies may add independent clean complexes.
+A freshly audited subset of FoldBench protein–protein assemblies is the best starting point because existing monomer training data was filtered against all FoldBench chains. The strict component rule may have poor yield, while the pair rule should retain complexes whose component families were seen separately but whose relationship was not. PINDER test dimers can add independent clean pairs.
 
 ## Background
 
@@ -35,7 +35,7 @@ A freshly audited subset of FoldBench protein–protein assemblies is the best s
 
 1. Pin source versions and the exact exp343 training manifest, including the held-out complex shard. Inventory reusable local sequence indexes and published metadata before building or transferring anything large.
 2. Census FoldBench protein–protein assemblies and PINDER test dimers. Lead with natural, protein-only biological dimers; distinguish homo/heterodimers, designs, antibodies/peptides, higher assemblies, unsupported chemistry, incomplete interfaces and context-ineligible inputs. Preserve every candidate with a named terminal status.
-3. Define a contaminating sequence hit as **identity >=0.30 and aligned coverage >=0.50 of the shorter sequence**. Reject a complex if any constituent chain hits any actual training chain. Use sensitive alignment searches with pinned parameters, explicit identity/coverage conventions, adequate hit limits and threshold checks. Preserve supporting alignments; an unsearched component is unknown, never a pass.
+3. Define a contaminating sequence hit as **identity >=0.30 and aligned coverage >=0.50 of the shorter sequence**. Evaluate two rules. The strict component rule rejects a complex if either chain hits any training chain. The pair rule rejects it only if one training complex document has a one-to-one assignment of both candidate chains to homologous chain instances. Use sensitive alignment searches with pinned parameters, explicit identity/coverage conventions, adequate hit limits and threshold checks. Preserve supporting alignments; an unsearched component is unknown, never a pass.
 4. Audit native AFDB, native ESM-Atlas, both actual ProteinMPNN sequence corpora, and both complex-source arms (AFCDB/PINDER). Reuse complete earlier alignments only with verified sequence and corpus provenance. Keep source-backbone lineage for redesigns and distinguish exact entries, homologs, and structural relatives.
 5. Audit Helico's inherited Protenix and contact-conditioning training exposure separately. Record MarinFold-clean and end-to-end-clean eligibility independently; temporal separation alone is not 30% sequence separation. Identify targets previously used for Helico development.
 6. Produce per-source and cumulative survival counts, by homo/heterodimer, plus per-chain evidence and per-complex rejection reasons. Report independent sequence/interface groups rather than treating multiple interfaces or repeated structures as independent targets.
@@ -64,81 +64,80 @@ Compare no contacts, predicted intra-chain contacts only, predicted intra+inter-
 
 ## Results
 
-The requested settings do **not** yield a useful complex benchmark from
-FoldBench PPI plus PINDER test. The locally auditable MarinFold arms leave zero
-FoldBench complexes and one PINDER homodimer, before either ProteinMPNN redesign
-arm is considered.
+The answer depends on the holdout claim. The strict component-held-out rule is
+not viable: it leaves zero FoldBench complexes and one PINDER homodimer after
+the locally auditable MarinFold arms, and that last target is exposed to
+Helico's documented fine-tuning pool. The proposed pair-held-out rule is viable
+for a benchmark of unseen chain-family pairings.
 
-| cumulative stage | FoldBench PPI | PINDER test |
+| cumulative stage or definition | FoldBench PPI | PINDER test |
 | --- | ---: | ---: |
 | source assemblies/dimers | 239 | 1,955 |
 | natural protein-only dimers passing scope/quality | 184 | 1,929 |
-| after AFCDB complex training | 14 | 40 |
-| after PINDER complex training | 12 | 34 |
-| after native AFDB | 4 | 8 |
-| after native ESM-Atlas | **0** | **1** |
+| strict component-held-out after local MarinFold arms | **0** | **1** |
+| pair-held-out after AFCDB complex training | 40 | 187 |
+| pair-held-out after PINDER complex training | **35** | **183** |
+| pair-held-out plus conservative Helico fine-tuning screen | **32** | **65** |
 
-The FoldBench scope survivors are 150 homodimers and 34 heterodimers. No
-heterodimer survives AFCDB. The sole local MarinFold survivor is PINDER target
-`6xnr__A1_UNDEFINED--6xnr__A2_UNDEFINED`, a 290-residue homodimer released
-2020-08-26 at 2.05 A. It has not been cleared against the two ProteinMPNN
-sequence corpora, so **one is an upper bound, not a certified survivor**.
+For the pair rule, a complex training document is contaminating only when its
+two chain instances can be assigned one-to-one to the two candidate chains and
+both exact alignments pass 30% identity over 50% of the shorter sequence. An
+AFCDB homodimer has two chain instances even though its decoded FASTA stores one
+deduplicated sequence. PINDER training documents require two distinct stored
+chains. The single-chain native AFDB, ESM-Atlas and ProteinMPNN documents cannot
+contain a paired witness and therefore do not exclude candidates under this
+definition.
 
-The conservative Helico fine-tuning exposure screen contains a qualifying hit
-for 6XNR. It therefore leaves zero candidates for a claim that the whole
-MarinFold-to-Helico path is sequence-held-out. Helico's complete inherited
-Protenix pretraining set remains unreconstructed, but that unknown cannot
-restore 6XNR after the observed fine-tuning exposure.
+The final MarinFold pair-held-out pool contains 218 dimers. FoldBench contributes
+15 homodimers and 20 heterodimers; PINDER contributes 40 homodimers and 143
+heterodimers. A conservative Helico screen rejects a candidate when two distinct
+chains from the same documented fine-tuning PDB entry match the candidate pair.
+It leaves 97 dimers: 13/19 FoldBench homo/heterodimers and 13/52 PINDER
+homo/heterodimers. Helico's inherited Protenix pretraining exposure remains
+unreconstructed, so 97 supports a fine-tuning-pair-clean claim rather than a
+fully certified end-to-end holdout claim.
 
-The exact identity calculation matters. For example, exp225 recorded the
-8AXI-A versus ESM-Atlas target
-`2762233d21f8e9b60694382259bc6b80` at estimated `fident=0.297`; the same
-alignment with an MMseqs backtrace has 200 identical positions over 620 aligned
-positions (32.26%). The retained checkpoint corpus therefore contains hits that
-the earlier score-derived estimate placed just below 30%. This audit runs
-`--alignment-mode 3 -a 1`, preserves `nident`, and applies the boundary with
-integer arithmetic.
+The broad complex-corpus search reached its 100,000-result median prefilter cap.
+All 220 apparent survivors were therefore searched again with a 1,000,000-result
+cap. The confirmation median was 86,868, below the cap, and two additional
+PINDER AFCDB pair witnesses were found, producing the final count of 218. Exact
+MMseqs backtraces (`--alignment-mode 3 -a 1`) provide `nident`; the 30% boundary
+is applied with integer arithmetic. This avoids the earlier score-derived
+identity error, exemplified by an 8AXI-A/ESM-Atlas alignment estimated at 29.7%
+but containing 200 identities over 620 aligned positions (32.26%).
 
-The complex-corpus search reached its 100,000-candidate median prefilter cap.
-Its apparent no-hit calls are consequently a high-sensitivity screen, while
-all reported exclusions have concrete alignment witnesses. This limitation can
-only reduce the one-candidate upper bound. Native searches were narrowed to all
-105 full/resolved sequence representations of the 46 complex-clean candidates;
-their median prefilter list was 20,565, below the 100,000 cap. Helico used a
-500,000 cap against a 454,536-chain reference.
-
-Reproduce the committed tables and plot from the prepared local databases:
+Reproduce the pair analysis and figure after preparing the local indexes:
 
 ```bash
-uv run python build_candidates.py
-uv run python analyze_survival.py
-uv run python select_survivor_queries.py
-uv run python search_sequences.py --arm native \
-  --queries data/native_queries.fasta --threads 48
-uv run python analyze_survival.py
-uv run python plot_survival.py
+uv run python analyze_pair_survival.py
+uv run python select_pair_queries.py
+uv run python search_sequences.py --arm complex \
+  --queries data/pair_queries.fasta --work /data/exp350_pair_confirm \
+  --target-db /data/exp350/complexDB --max-seqs 1000000 --threads 48
+uv run python analyze_pair_survival.py --complex-alignments \
+  /data/exp350/complex_query_alignments.tsv \
+  /data/exp350/complex_target_alignments.tsv \
+  /data/exp350_pair_confirm/complex_query_alignments.tsv \
+  /data/exp350_pair_confirm/complex_target_alignments.tsv
+uv run python plot_pair_survival.py
 uv run python build_summary.py
 ```
 
-The one-time complex decoder and Helico reference builders are
-`build_complex_sequences.py` and `prepare_helico_reference.py`. Search commands,
-hashes, database counts and source provenance are committed under `data/`; large
-alignment databases and logs remain under `/data/exp350`.
+Search commands, hashes, counts and compact witness tables are committed under
+`data/`. The complete compressed alignment evidence and logs are public in the
+[MarinFold HF bucket](https://huggingface.co/buckets/open-athena/MarinFold/tree/main/data/evals/exp350_complex_holdout_survival/evidence).
 
 ## Conclusion
 
-FoldBench is not viable for a 30%-identity-held-out evaluation of the current
-exp343 checkpoint, and PINDER test does not rescue it. Auditing the 320 GB of
-ProteinMPNN redesign sequences is unnecessary for this feasibility decision:
-those arms cannot increase an upper bound of one, and that one is already
-exposed to Helico fine-tuning.
+Use the 218 candidates as the input to Stage B if the intended claim is
+**pair-held-out**: the model may have seen each component family separately,
+but no observed complex-training example contains homologs of both partners.
+For Helico structural reporting, use the 97-candidate conservative subset and
+state that the screen covers documented Helico fine-tuning PDBs while inherited
+Protenix pretraining remains unknown.
 
-Stage B should not freeze either source as the benchmark. The next curation
-pass should start from experimental complexes outside FoldBench/PINDER and
-search them against these same checkpoint-exact indexes before manual review.
-Release date can prioritize candidates but cannot substitute for the sequence
-test. If that search still has poor yield, the practical alternative is to
-define the evaluation set first and train a new complex model with every arm,
-including redesigns and complex documents, decontaminated against the frozen
-reference. No R-precision or structure predictions should be launched from
-this candidate pool.
+Before launching predictors, freeze connected homology groups, collapse
+redundant assemblies/interfaces, remove prior development targets, and split
+development/test by group. This will determine the final independent test
+count. Keep the strict component-held-out result as a separate negative finding;
+it does not support a useful benchmark for this checkpoint from these sources.
