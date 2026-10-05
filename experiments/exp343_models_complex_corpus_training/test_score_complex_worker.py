@@ -73,8 +73,9 @@ def test_score_resumes_from_written_parts_and_recomputes_the_rest(tmp_path, monk
     def fake_score_batch(model, tokenizer, source, chunk, sections):
         computed.extend(chunk)
         return [
-            {"document_index": index, "document_id": source[index]["document_id"],
-             "scored_positions": 1, "nll_total": float(index)}
+            {c: 1 for c in worker.REQUIRED_PART_COLUMNS}
+            | {"document_index": index, "document_id": source[index]["document_id"],
+               "scored_positions": 1, "nll_total": float(index)}
             for index in chunk
         ]
 
@@ -84,10 +85,13 @@ def test_score_resumes_from_written_parts_and_recomputes_the_rest(tmp_path, monk
     # Pre-write part 0 as if a previous attempt had finished it.
     order = worker.part_order(documents)
     done = order[:10]
+    # Written in the CURRENT schema, so this test exercises resume rather than
+    # the stale-schema path.
     pq.write_table(
         pa.Table.from_pylist(
-            [{"document_index": i, "document_id": documents[i]["document_id"],
-              "scored_positions": 1, "nll_total": float(i)} for i in done]
+            [{c: 1 for c in worker.REQUIRED_PART_COLUMNS}
+             | {"document_index": i, "document_id": documents[i]["document_id"],
+                "scored_positions": 1, "nll_total": float(i)} for i in done]
         ),
         parts / "part-00000.parquet",
     )
@@ -105,8 +109,12 @@ def test_a_short_part_is_rejected_rather_than_trusted(tmp_path, monkeypatch) -> 
     monkeypatch.setattr(worker, "DOCUMENTS_PER_PART", 10)
     parts = tmp_path / "parts"
     parts.mkdir()
+    # Current schema, wrong row count -- so the row-count check is what fires,
+    # not the stale-schema path.
     pq.write_table(
-        pa.Table.from_pylist([{"document_index": 0, "nll_total": 1.0}]),
+        pa.Table.from_pylist(
+            [{c: 1 for c in worker.REQUIRED_PART_COLUMNS} | {"document_index": 0}]
+        ),
         parts / "part-00000.parquet",
     )
     with pytest.raises(ValueError, match="expected 10"):
@@ -130,3 +138,39 @@ def test_candidate_pairs_applies_the_separation_floor_within_chains_only() -> No
 
 def test_candidate_pairs_counts_every_cross_chain_pair_for_three_chains() -> None:
     assert worker.candidate_pairs([2, 3, 4]) == 2 * 3 + 2 * 4 + 3 * 4
+
+
+def test_a_part_predating_a_schema_change_is_recomputed(tmp_path, monkeypatch) -> None:
+    """A resume reads parts written by an earlier process.
+
+    When the row schema gains a column, those parts are not stale-but-usable --
+    they came from a different program. Recompute rather than trust them or
+    crash on the missing key, which is what a bare row-count check did.
+    """
+    documents = rows([500 - index for index in range(20)])
+    monkeypatch.setattr(worker, "DOCUMENTS_PER_PART", 10)
+    monkeypatch.setattr(worker, "BATCH_DOCUMENTS", 10)
+    computed: list[int] = []
+
+    def fake_score_batch(model, tokenizer, source, chunk, sections):
+        computed.extend(chunk)
+        return [
+            {c: 1 for c in worker.REQUIRED_PART_COLUMNS} | {"document_index": i}
+            for i in chunk
+        ]
+
+    monkeypatch.setattr(worker, "score_batch", fake_score_batch)
+    parts = tmp_path / "parts"
+    parts.mkdir()
+    order = worker.part_order(documents)
+    # An old-schema part: right row count, missing the timing columns.
+    pq.write_table(
+        pa.Table.from_pylist(
+            [{"document_index": i, "nll_total": 1.0} for i in order[:10]]
+        ),
+        parts / "part-00000.parquet",
+    )
+    scored = worker.score(None, None, documents, None, parts_prefix=str(parts))
+    assert len(scored) == 20
+    assert set(computed) == set(order)          # the stale part was recomputed
+    assert all(worker.REQUIRED_PART_COLUMNS <= set(r) for r in scored)

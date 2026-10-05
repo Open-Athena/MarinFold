@@ -60,6 +60,14 @@ MAX_SEQ_LEN = 8192
 #: 90 seconds -- instead of the whole shard. A completed run's first attempt
 #: already wrote every part, so a retry is then almost free.
 DOCUMENTS_PER_PART = 512
+#: Columns every durable part must carry. A resume reads parts written by an
+#: earlier process, so a schema change makes them stale -- and a part missing a
+#: column is not a resumable part, it is a part from a different program. Checked
+#: on read; a stale part is recomputed rather than trusted or crashed on.
+REQUIRED_PART_COLUMNS = frozenset({
+    "document_index", "document_id", "nll_total", "scored_positions",
+    "n_residues", "n_pairs", "elapsed_seconds", "batch_seconds", "batch_documents",
+})
 
 
 def log(message: str) -> None:
@@ -312,13 +320,17 @@ def score(model, tokenizer, rows: list[dict], sections_module, *, parts_prefix: 
         if name in existing:
             with fsspec.open(target, "rb") as handle:
                 recovered = pq.ParquetFile(handle).read().to_pylist()
-            if len(recovered) != len(indices):
+            missing = REQUIRED_PART_COLUMNS.difference(recovered[0] if recovered else ())
+            if missing:
+                log(f"{name} predates columns {sorted(missing)}; recomputing")
+            elif len(recovered) != len(indices):
                 raise ValueError(
                     f"{name} holds {len(recovered)} rows, expected {len(indices)}"
                 )
-            scored.extend(recovered)
-            log(f"resumed {name} ({len(recovered)} documents)")
-            continue
+            else:
+                scored.extend(recovered)
+                log(f"resumed {name} ({len(recovered)} documents)")
+                continue
         part_rows: list[dict] = []
         for batch_start in range(0, len(indices), BATCH_DOCUMENTS):
             part_rows.extend(
