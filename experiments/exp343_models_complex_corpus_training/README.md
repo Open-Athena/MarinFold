@@ -430,9 +430,13 @@ the specific capability the corpus exists to teach.
 
 ![Held-out complex loss by token role](plots/complex_loss_by_role.png)
 
-The complex evaluation was also run twice, and being a deterministic forward
-pass it **reproduces to 3e-11** (3.036928785 both times) — so the worker refactor
+The complex evaluation was run three times, and being a deterministic forward
+pass it **reproduces to 3e-11** (3.036928785 every time) — so the worker refactor
 that added per-document timing changed no measurement.
+
+Checkpoints are identified by the AGENTS.md `<wandb-run-name>-step-<N>` form
+throughout both pipelines, so every output prefix, aggregate row and
+`model_nickname` traces back to the exact run.
 
 Committed under [`data/eval_rollout_v2/`](data/eval_rollout_v2/) and
 [`data/complex_loss/`](data/complex_loss/) with provenance and **one timing row
