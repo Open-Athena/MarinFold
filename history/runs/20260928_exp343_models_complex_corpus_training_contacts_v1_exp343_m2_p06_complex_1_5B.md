@@ -17,6 +17,7 @@ marinfold_run:
   iris_job_ids:
   - /bizon/exp343-train-a01
   - /bizon/exp343-train-a02
+  - /bizon/exp343-train-a03
 ---
 # 2026-09-28 · exp343_models_complex_corpus_training · contacts-v1-exp343-m2-p06-complex-1.5B
 
