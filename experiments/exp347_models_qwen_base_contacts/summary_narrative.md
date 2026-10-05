@@ -36,7 +36,7 @@ Both 4B pilot checkpoints now have complete eval-val contact evaluations.
 Contacts-v1 final NLL: 0.51342 (0.8B), 0.50577 (2B), 0.49301 (4B).
 Prompted final NLL: 1.15186 (0.8B), 1.06211 (4B).
 These use the same 64 held-out AFDB documents; larger models score better.
-The partial 2B prompted NLL is about 1.20954 at 131.8M tokens.
+The latest partial 2B prompted NLL is about 1.20954.
 NLLs across the two tokenizations are not directly comparable.
 A greedy generation canary ran on both 2B smoke checkpoints: all 16 outputs
 hit the 256-token cap, produced zero valid pairs, and scored F1 zero.
@@ -44,27 +44,30 @@ This is not the FoldBench rollout-plus-resample benchmark.
 No causal pretrained-transfer advantage is established.
 Per-input timings and worker metadata were saved at evaluation time.
 
-## Full-scale continuation in preparation
+## Full-scale continuation
 
 Requested: full-scale 4B training with periodic eval-val R-precision.
-Working default: both formats, 100B additional tokens each, eval every1B.
-This budget is an announced operator assumption; the existing48-H100 cap remains.
-All2,067 co-located AFDB shards prepared:3.717M train and37,256 validation proteins.
-One corpus pass contains18.17B raw or5.21B prompted tokens.
-Planned allocation:16 training +4 evaluation H100s per4B arm, plus8 for the2B pilot.
-Continue the respective1B weights with fresh optimizer and data cursor.
-Both4B single-protein100-rollout evaluation smokes passed without truncation.
-E8 reference passed: all R=.42438, long R=.36599; all554units, no truncated rollouts.
-Two-node training/export passed. Exact optimizer resume and native IB are under test.
-Full-corpus production is not yet launched.
+Working default: both formats, 100B additional tokens each, eval every 1B.
+This budget is an announced operator assumption; the existing 48-H100 cap remains.
+All 2,067 co-located AFDB shards prepared: 3.717M train and 37,256 validation proteins.
+One corpus pass contains 18.17B raw or 5.21B prompted tokens.
+Allocation: 8 training  + up to 4 evaluation H100s per 4B arm, plus 8 for the 2B pilot.
+Continue the respective 1B weights with fresh optimizer and data cursor.
+Both 4B single-protein 100-rollout evaluation smokes passed without truncation.
+E8 reference passed: all R=0.42438, long R=0.36599; all 554 units, no truncated rollouts.
+Two-node training/export passed, but socket networking was slower than one node.
+The pinned image lacks libibverbs; production uses the proven 8-GPU profile.
+Both full-corpus phases are training on 8 H100s each with verified recovery checkpoints.
+Eval every 1B additional tokens; baseline 0 is the corresponding 1Bpilot.
+Checkpointed 90-day jobs; the 100B budget may outlast that execution window.
 
 ## Periodic R-precision contract
 
-Frozen97-protein eval-val only; eval-test is untouched.
+Frozen 97-protein eval-val only; eval-test is untouched.
 100 rollouts, T=1, top-p=.95, no top-k; unchanged exp89 resolved-pair metrics.
 Resample contacts-v1 N-terminal offsets and sequence-statement order.
 Prompted format uses independent samples of a fixed natural-language prefix.
-Translate6L+128 protein-token capacity to native Qwen token capacity.
+Translate 6L+128 protein-token capacity to native Qwen token capacity.
 Require every protein and no capped rollouts before publishing an aggregate.
 Save per-protein timings, raw completions, votes, and checkpoint provenance.
 Durable periodic exports survive rolling recovery-checkpoint deletion.
@@ -80,6 +83,6 @@ Existing exp232 m2-p06: all R=0.51980, long R=0.50173 on the same set.
 Full decontaminated AFDB KNN: all R=0.40715, long R=0.39211;
 this is corpus context, not an exact null for the pilots' 512-shard subset.
 One prompted rollout needed continuation of its original sampled prefix.
-All97 per-protein metric/timing records per arm are in data/eval_val_pilot.
+All 97 per-protein metric/timing records per arm are in data/eval_val_pilot.
 Small result tables are also public in the HF bucket.
 The full-scale curves will show whether more protein training improves accuracy.

@@ -102,20 +102,38 @@ rows, 201,653 over-length exclusions, 7,047 empty-contact exclusions,
 18,165,234,453 contacts-v1 tokens or 5,213,571,376 prompted tokens and
 611,324,110 training contacts. The committed
 [`full-corpus manifest`](data/full_corpus/manifest.json) records every source shard.
-A 100B-token phase therefore spans about5.5 raw or19.2 prompted corpus passes.
+A 100B-token phase therefore spans about 5.5 raw or 19.2 prompted corpus passes.
 
 `torch_launch.py` uses the Iris endpoint registry and Torch's supported rendezvous
 options for a fixed gang. Training stages weights once per node and uses local
-CUDA ranks; exact optimizer recovery requires the same world size. The planned
-allocation is 16 H100s per 4B arm plus four single-H100 evaluation workers per arm.
-Together with the continuing eight-GPU 2B pilot this is 48 GPUs. Multi-node
-training, durable periodic exports, and recovery are gated on a short real-model
-smoke test. These continuation runs have not yet been dispatched. Static Torch rendezvous and
-selection of Iris’s routable IPv4 network interface fixed the multi-node startup.
-The socket-transport test completed 1.81M tokens, exported periodic checkpoints,
-and verified that early inference exports survive optimizer checkpoint pruning.
-A native-InfiniBand resume test determines whether this profile is faster than
-the existing single-node profile before production placement.
+CUDA ranks; exact optimizer recovery requires the same world size. The full phases use eight H100s per arm plus up to four single-H100
+evaluation workers per arm. With the continuing eight-GPU 2B pilot this is at
+most 32 GPUs, below the user’s 48-GPU cap. The two-node test passed training
+and durable export checks after static rendezvous and explicit selection of
+Iris’s routable IPv4 network interface. It reached only 17.6K tokens/s versus
+roughly 27–34K for the existing one-node raw profile. Native InfiniBand was
+unavailable in the pinned image (`libibverbs.so` missing), so the long runs use
+the proven, faster one-node configuration. Their batch remains 32 complete
+documents per optimizer update. The two-node profile is not eligible for
+production until its image and throughput are validated.
+
+The raw full phase is running as
+`/timodonnell/exp347-qwen35-4b-contacts_v1-full-100bt-a01`, with
+[training W&B](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-4b-contacts_v1-full-100bt).
+The paired prompted phase is running as
+`/timodonnell/exp347-qwen35-4b-prompted-full-100bt-a01`, initialized from pilot
+step 22268, with [training W&B](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-4b-prompted-full-100bt).
+Phase token counts are additional exposure: evaluation checkpoint 0 refers to
+the 1B-token pilot weights. Jobs have a 90-day execution timeout and retain
+resumable state; the 100B-token budget is not a guarantee of completion within
+that time. Checkpoint accuracy curves are in the dedicated
+[contacts-v1 eval run](https://wandb.ai/open-athena/MarinFold/runs/exp347-4b-contacts-v1-full-eval-val)
+and [prompted eval run](https://wandb.ai/open-athena/MarinFold/runs/exp347-4b-prompted-full-eval-val).
+Both phases advanced and saved verified eight-rank optimizer/model/tokenizer
+checkpoints on October 5. Raw reached 5.05M additional tokens at step34; prompted
+reached 123,602 at step3 at the15:25 UTC observation. These are launch checks,
+not new accuracy results. Initial teacher-forced per-input timings are in
+`data/full_phase_initial_timings/`. Twenty-three local tests and Ruff passed.
 
 `eval_contract.py` freezes the **97-protein eval-val set** from exp245's pinned
 membership, sequences, and resolved-residue ground truth. It never selects
@@ -132,13 +150,13 @@ it is not an identical-tokenizer or identical-resampling comparison.
 `eval_worker.py` saves raw completions, symmetric vote matrices, exact checkpoint
 and input provenance, and per-protein timings. A Qwen rollout that reaches its initial allowance continues from its exact
 sampled token prefix with an independent continuation RNG stream, retaining
-already terminated samples. Continuation stops at termination or the64K context
+already terminated samples. Continuation stops at termination or the 64K context
 limit. A still-capped rollout aborts the measurement before its completion marker;
 continuation counts are recorded. The fixed E8 reference allowance is unchanged. `aggregate_eval.py` requires every
 expected unit and all 20 canonical metric rows before publishing an aggregate.
 The new runtime passed the E8 legacy554 reference gate: all R=0.42437655 and
-long R=0.36598821 against reference0.4245291 and0.3656152 (tolerance0.005).
-All554 units completed100 rollouts with no truncation. The metric and timing
+long R=0.36598821 against reference 0.4245291 and 0.3656152 (tolerance 0.005).
+All 554 units completed 100 rollouts with no truncation. The metric and timing
 tables are committed in [`data/e8_reference`](data/e8_reference).
 
 `periodic_eval.py` runs inside a persistent Iris CPU job and executes the fixed
