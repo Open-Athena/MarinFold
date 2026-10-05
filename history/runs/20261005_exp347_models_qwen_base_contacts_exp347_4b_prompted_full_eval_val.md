@@ -14,8 +14,9 @@ marinfold_run:
   git_sha: 62de43343497b2aae99f27273c6284d73dd80a19
   iris_job_ids:
   - /timodonnell/exp347-4b-prompted-full-eval-val-a01
+  - /timodonnell/exp347-4b-prompted-full-eval-val-a02
+  - /timodonnell/exp347-4b-prompted-full-eval-val-a03
 ---
-
 # 2026-10-05 · exp347_models_qwen_base_contacts · exp347-4b-prompted-full-eval-val
 
 **Launched:** 2026-10-05T14:28:46Z by bizon  

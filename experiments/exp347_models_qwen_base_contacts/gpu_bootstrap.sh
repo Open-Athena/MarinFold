@@ -8,8 +8,6 @@ export PYTORCH_ALLOC_CONF=expandable_segments:True
 export WANDB_PROJECT=MarinFold
 export WANDB_ENTITY=open-athena
 if [[ "${IRIS_NUM_TASKS:-1}" -gt 1 ]]; then
-  export NCCL_NET=Socket
-  export NCCL_IB_DISABLE=1
   export NCCL_DEBUG=INFO
 fi
 uv sync --locked --extra train --extra driver

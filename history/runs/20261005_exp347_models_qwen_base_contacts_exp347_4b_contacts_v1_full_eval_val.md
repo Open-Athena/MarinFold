@@ -15,6 +15,7 @@ marinfold_run:
   iris_job_ids:
   - /timodonnell/exp347-4b-contacts-v1-full-eval-val-a01
   - /timodonnell/exp347-4b-contacts-v1-full-eval-val-a02
+  - /timodonnell/exp347-4b-contacts-v1-full-eval-val-a03
 ---
 # 2026-10-05 · exp347_models_qwen_base_contacts · exp347-4b-contacts-v1-full-eval-val
 

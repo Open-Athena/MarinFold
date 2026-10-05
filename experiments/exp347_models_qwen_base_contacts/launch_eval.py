@@ -39,7 +39,7 @@ def requirements() -> list[str]:
 
 def build_bundle(destination: Path, targets: Path | None = None) -> None:
     """Bundle only the evaluator, frozen eval-val inputs, and exact metric reference."""
-    for name in ["common.py", "eval_contract.py", "eval_worker.py"]:
+    for name in ["common.py", "eval_contract.py", "eval_worker.py", "sampling.py"]:
         shutil.copy2(HERE / name, destination / name)
     shutil.copy2(
         targets or HERE / "data/eval_val.jsonl", destination / "eval_val.jsonl"

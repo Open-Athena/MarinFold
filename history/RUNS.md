@@ -7,6 +7,7 @@ _See [`README.md`](README.md) for the file schema + policy._
 
 | Date | Experiment | W&B run | Kind | User | Description | Details |
 |---|---|---|---|---|---|---|
+| 2026-10-05 | `exp347_models_qwen_base_contacts` | [exp347-4b-16gpu-scale-smoke](https://wandb.ai/open-athena/MarinFold/runs/exp347-4b-16gpu-scale-smoke) | `models` | bizon | Qwen3.5 base full-weight contact fine-tuning | [md](runs/20261005_exp347_models_qwen_base_contacts_exp347_4b_16gpu_scale_smoke.md) |
 | 2026-10-05 | `exp347_models_qwen_base_contacts` | [exp347-4b-prompted-full-eval-val](https://wandb.ai/open-athena/MarinFold/runs/exp347-4b-prompted-full-eval-val) | `evals` | bizon | Periodic Qwen checkpoint eval-val R-precision | [md](runs/20261005_exp347_models_qwen_base_contacts_exp347_4b_prompted_full_eval_val.md) |
 | 2026-10-05 | `exp347_models_qwen_base_contacts` | [exp347-4b-contacts-v1-full-eval-val](https://wandb.ai/open-athena/MarinFold/runs/exp347-4b-contacts-v1-full-eval-val) | `evals` | bizon | Periodic Qwen checkpoint eval-val R-precision | [md](runs/20261005_exp347_models_qwen_base_contacts_exp347_4b_contacts_v1_full_eval_val.md) |
 | 2026-10-05 | `exp347_models_qwen_base_contacts` | [exp347-e8-reference-rollout](https://wandb.ai/open-athena/MarinFold/runs/exp347-e8-reference-rollout) | `evals` | bizon | Canonical 100-rollout R-precision; E8 reference | [md](runs/20261005_exp347_models_qwen_base_contacts_exp347_e8_reference_rollout.md) |

@@ -25,23 +25,23 @@ The 2B prompted trial failed October 3 at 79.61M tokens with a distributed
 communication timeout; no preceding out-of-memory error was recorded.
 A single controlled resume was submitted October 5, retaining its optimizer,
 data cursor, RNG state, run identity, and scientific settings on eight H100s.
-It restored 78.14M tokens and completed its first resumed update.
+It restored 78.14M tokens and has advanced beyond 137M tokens.
 All five final checkpoints and their model/tokenizer/HF exports are verified.
 The other five successful runs use the same training code.
 The approved 4B model transfer is complete.
-Full-budget contact-generation evaluation remains outstanding.
+Both 4B pilot checkpoints now have complete eval-val contact evaluations.
 
 ## Validation likelihood and limits
 
 Contacts-v1 final NLL: 0.51342 (0.8B), 0.50577 (2B), 0.49301 (4B).
 Prompted final NLL: 1.15186 (0.8B), 1.06211 (4B).
 These use the same 64 held-out AFDB documents; larger models score better.
-The partial 2B prompted NLL is 1.22514 at 77.14M tokens.
+The partial 2B prompted NLL is about 1.20954 at 131.8M tokens.
 NLLs across the two tokenizations are not directly comparable.
 A greedy generation canary ran on both 2B smoke checkpoints: all 16 outputs
 hit the 256-token cap, produced zero valid pairs, and scored F1 zero.
 This is not the FoldBench rollout-plus-resample benchmark.
-No contact accuracy or causal pretrained-transfer advantage is established.
+No causal pretrained-transfer advantage is established.
 Per-input timings and worker metadata were saved at evaluation time.
 
 ## Full-scale continuation in preparation
@@ -55,7 +55,7 @@ Planned allocation:16 training +4 evaluation H100s per4B arm, plus8 for the2B pi
 Continue the respective1B weights with fresh optimizer and data cursor.
 Both4B single-protein100-rollout evaluation smokes passed without truncation.
 E8 reference passed: all R=.42438, long R=.36599; all554units, no truncated rollouts.
-Two-node training/export/resume gates are in progress; NCCL transport is under test.
+Two-node training/export passed. Exact optimizer resume and native IB are under test.
 Full-corpus production is not yet launched.
 
 ## Periodic R-precision contract
@@ -69,3 +69,17 @@ Require every protein and no capped rollouts before publishing an aggregate.
 Save per-protein timings, raw completions, votes, and checkpoint provenance.
 Durable periodic exports survive rolling recovery-checkpoint deletion.
 A persistent Iris driver logs all/long R-precision against checkpoint tokens.
+
+## 4B eval-val baselines after 1B tokens
+
+97 natural proteins, 100 completed rollouts per protein, no unfinished samples.
+contacts-v1: all R=0.14010, long R=0.10083.
+Prompted: all R=0.14350, long R=0.09894.
+Differences below ~0.005 are ties at the evaluator's resolution.
+Existing exp232 m2-p06: all R=0.51980, long R=0.50173 on the same set.
+Full decontaminated AFDB KNN: all R=0.40715, long R=0.39211;
+this is corpus context, not an exact null for the pilots' 512-shard subset.
+One prompted rollout needed continuation of its original sampled prefix.
+All97 per-protein metric/timing records per arm are in data/eval_val_pilot.
+Small result tables are also public in the HF bucket.
+The full-scale curves will show whether more protein training improves accuracy.

@@ -1,0 +1,13 @@
+format,split,range,n,r_precision
+contacts_v1,all,all,97,0.1401018585318727
+contacts_v1,all,long,97,0.10082980439424295
+contacts_v1,viral,all,6,0.1282612833108232
+contacts_v1,viral,long,6,0.11018646705862269
+contacts_v1,nonviral,all,91,0.14088255579919465
+contacts_v1,nonviral,long,91,0.10021288158120693
+prompted,all,all,97,0.14350014095666416
+prompted,all,long,97,0.09894294010687854
+prompted,viral,all,6,0.12572498970936088
+prompted,viral,long,6,0.08732061746106277
+prompted,nonviral,all,91,0.14467212895099188
+prompted,nonviral,long,91,0.09970924709451474

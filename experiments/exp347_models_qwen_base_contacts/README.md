@@ -110,9 +110,12 @@ CUDA ranks; exact optimizer recovery requires the same world size. The planned
 allocation is 16 H100s per 4B arm plus four single-H100 evaluation workers per arm.
 Together with the continuing eight-GPU 2B pilot this is 48 GPUs. Multi-node
 training, durable periodic exports, and recovery are gated on a short real-model
-smoke test. These continuation runs have not yet been dispatched. The two-node setup passed
-Torch rendezvous and staged both models, but stalled at the first NCCL collective;
-a socket-transport validation is in progress.
+smoke test. These continuation runs have not yet been dispatched. Static Torch rendezvous and
+selection of Iris’s routable IPv4 network interface fixed the multi-node startup.
+The socket-transport test completed 1.81M tokens, exported periodic checkpoints,
+and verified that early inference exports survive optimizer checkpoint pruning.
+A native-InfiniBand resume test determines whether this profile is faster than
+the existing single-node profile before production placement.
 
 `eval_contract.py` freezes the **97-protein eval-val set** from exp245's pinned
 membership, sequences, and resolved-residue ground truth. It never selects
@@ -127,8 +130,11 @@ statement capacity. This vocabulary and fixed-prefix adaptation is explicit;
 it is not an identical-tokenizer or identical-resampling comparison.
 
 `eval_worker.py` saves raw completions, symmetric vote matrices, exact checkpoint
-and input provenance, and per-protein timings. A capped rollout aborts that
-measurement before its completion marker. `aggregate_eval.py` requires every
+and input provenance, and per-protein timings. A Qwen rollout that reaches its initial allowance continues from its exact
+sampled token prefix with an independent continuation RNG stream, retaining
+already terminated samples. Continuation stops at termination or the64K context
+limit. A still-capped rollout aborts the measurement before its completion marker;
+continuation counts are recorded. The fixed E8 reference allowance is unchanged. `aggregate_eval.py` requires every
 expected unit and all 20 canonical metric rows before publishing an aggregate.
 The new runtime passed the E8 legacy554 reference gate: all R=0.42437655 and
 long R=0.36598821 against reference0.4245291 and0.3656152 (tolerance0.005).
@@ -173,10 +179,34 @@ negative log likelihood (NLL) is better **within each format**. The incomplete
 | 2B | prompted | 79,608,805 before failure | 1.46629 | 1.22514 at 77.14M tokens | Resumed from 78.14M |
 | 4B | prompted | 1,000,005,730 | 1.44411 | 1.06211 | Finished |
 
-The completed trials favor larger models on this likelihood diagnostic. No
-full-budget contact-generation accuracy evaluation has run yet, so these results
-do not establish whether prompted documents outperform contacts-v1 or whether
-pretraining improves contact prediction relative to training from scratch.
+The completed trials favor larger models on this likelihood diagnostic.
+
+The two 4B pilots were evaluated on all 97 eval-val proteins on October 5,
+with 100 completed rollouts per protein and no unfinished samples:
+
+| 4B format, after 1B tokens | All-range R-precision | Long-range R-precision |
+| --- | ---: | ---: |
+| contacts-v1 | 0.14010 | 0.10083 |
+| prompted | 0.14350 | 0.09894 |
+
+The format differences are below the approximately 0.005 evaluation resolution.
+These starting points are substantially below the existing exp232 m2-p06 model
+(0.51980 / 0.50173 on the same set). The full decontaminated AFDB sequence-KNN
+null is 0.40715 / 0.39211; that is corpus-level context, not an exact null for
+the pilots' 512-shard training subset. No pretrained-transfer advantage is
+established. Equal native-token budgets also expose the two formats to different
+numbers of proteins.
+
+The six viral targets score all-range R=0.12826 / 0.12572 for raw / prompted;
+the 91 nonviral targets score 0.14088 / 0.14467. The viral sample is small.
+The frozen low-MSA-depth natural FoldBench cut belongs to eval-test, so it is
+not read for this eval-val-only experiment. One prompted sample on `7xp9_A`
+needed prefix-preserving continuation; all 9,700 final samples per arm terminated.
+[`data/eval_val_pilot`](data/eval_val_pilot) contains the complete metric and
+timing tables; `summarize_eval_val.py` regenerates the viral split. These tables
+and the E8 reference are also in the
+[public HF bucket](https://huggingface.co/buckets/open-athena/MarinFold),
+published by `publish_to_hf.py`.
 
 The one-shard data smoke succeeded on 2026-10-02:
 `/timodonnell/exp347-data-smoke-a01`. Of 1,887 source rows, 98 exceeded 16K and one
@@ -222,9 +252,11 @@ Measured per-input validation times are retained in [`data/timings.csv`](data/ti
 
 ## Conclusion
 
-Five of six training trials have completed. Larger models have lower validation
-contact-token NLL within each format, but contact-prediction accuracy and the
-matched-budget 2B prompted result remain outstanding.
+Five of six pilot training trials have completed. Larger models have lower
+validation contact-token NLL within each format. The two 4B pilots have similar,
+low eval-val R-precision (0.14010 / 0.14350 overall); the full-scale phase will
+measure whether additional protein training improves this. The matched-budget
+2B prompted result remains outstanding.
 
 ## Production training
 

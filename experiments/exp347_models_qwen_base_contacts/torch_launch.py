@@ -1,7 +1,11 @@
 """Launch Torch ranks across an explicitly sized Iris H100 gang."""
 
+import errno
+import fcntl
 import hashlib
+import os
 import socket
+import struct
 import subprocess
 import sys
 import time
@@ -12,6 +16,23 @@ from iris.client.client import get_iris_ctx
 from iris.cluster.client.job_info import get_job_info
 
 
+def network_interface(address: str) -> str:
+    """Find the local IPv4 interface carrying Iris's routable node address."""
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+        for _, name in socket.if_nameindex():
+            try:
+                response = fcntl.ioctl(
+                    sock.fileno(), 0x8915, struct.pack("256s", name.encode())
+                )
+            except OSError as error:
+                if error.errno == errno.EADDRNOTAVAIL:
+                    continue
+                raise
+            if socket.inet_ntoa(response[20:24]) == address:
+                return name
+    raise ValueError(f"No local IPv4 interface carries Iris address {address}")
+
+
 def main() -> None:
     info = get_job_info()
     if info is None:
@@ -20,6 +41,15 @@ def main() -> None:
     if info.num_tasks == 1:
         subprocess.run([*command, "--standalone", *sys.argv[1:]], check=True)
         return
+    # Host-network pods expose SR-IOV interfaces with IPv6 link-local addresses.
+    # Those cannot connect across nodes. Select the physical interface by its
+    # actual Iris address instead of relying on region-dependent device names.
+    os.environ["NCCL_SOCKET_IFNAME"] = network_interface(info.advertise_host)
+    os.environ["NCCL_SOCKET_FAMILY"] = "AF_INET"
+    print(
+        f"NCCL interface: {os.environ['NCCL_SOCKET_IFNAME']} ({info.advertise_host})",
+        flush=True,
+    )
     ctx = get_iris_ctx()
     if ctx is None:
         raise RuntimeError("Missing Iris registry context")

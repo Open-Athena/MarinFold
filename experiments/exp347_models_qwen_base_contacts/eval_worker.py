@@ -16,6 +16,7 @@ import platform
 import socket
 import time
 from datetime import UTC, datetime
+from functools import partial
 from pathlib import Path
 
 import fsspec
@@ -33,6 +34,7 @@ from eval_contract import (
     rollout_prompt,
     score_votes,
 )
+from sampling import Sample, finish_rollouts
 
 
 def write_json(uri: str, value: dict | list) -> None:
@@ -65,6 +67,38 @@ def stage_model(uri: str, destination: Path) -> dict:
         if not (destination / name).exists():
             raise ValueError(f"Incomplete model export: missing {name}")
     return {"uri": uri, "files": identity}
+
+
+def generate_continuations(
+    model: LLM,
+    stop: str,
+    prefix_ids: list[list[int]],
+    limits: list[int],
+    seeds: list[int],
+) -> list[Sample]:
+    extended = model.generate(
+        [{"prompt_token_ids": ids} for ids in prefix_ids],
+        [
+            SamplingParams(
+                temperature=1.0,
+                top_p=0.95,
+                top_k=-1,
+                max_tokens=limit,
+                stop=[stop],
+                include_stop_str_in_output=True,
+                skip_special_tokens=False,
+                seed=s,
+            )
+            for limit, s in zip(limits, seeds, strict=True)
+        ],
+        use_tqdm=False,
+    )
+    return [
+        Sample(
+            o.outputs[0].text, tuple(o.outputs[0].token_ids), o.outputs[0].finish_reason
+        )
+        for o in extended
+    ]
 
 
 def main() -> None:
@@ -146,6 +180,18 @@ def main() -> None:
         "budget": "6L+128 domain-token capacity translated to native tokenizer; see eval_contract.py",
         "iris_job_id": os.environ.get("IRIS_JOB_ID"),
         "max_model_len": args.max_model_len,
+        "code_sha256": {
+            name: hashlib.sha256(
+                Path(__file__).with_name(name).read_bytes()
+            ).hexdigest()
+            for name in [
+                "eval_worker.py",
+                "eval_contract.py",
+                "sampling.py",
+                "common.py",
+            ]
+        },
+        "continuation": "Qwen length-capped prefixes continue with independent RNG streams up to the context limit; E8 reference cap is fixed",
     }
     write_json(f"{args.out}/provenance-shard-{args.shard}.json", provenance)
     for record in pending:
@@ -182,10 +228,28 @@ def main() -> None:
         ]
         inference_start = time.perf_counter()
         outputs = model.generate(list(prompts), parameters, use_tqdm=False)
-        elapsed = time.perf_counter() - inference_start
         if len(outputs) != N_ROLLOUTS:
             raise ValueError("Sampling did not return all requested rollouts")
-        completions = [o.outputs[0] for o in outputs]
+        completions = [
+            Sample(
+                o.outputs[0].text,
+                tuple(o.outputs[0].token_ids),
+                o.outputs[0].finish_reason,
+            )
+            for o in outputs
+        ]
+        initial_capped = sum(o.finish_reason == "length" for o in completions)
+        continuation_rounds = [0] * N_ROLLOUTS
+        if initial_capped and not args.reference_e8:
+            completions, continuation_rounds = finish_rollouts(
+                completions,
+                [list(o.prompt_token_ids) for o in outputs],
+                budget,
+                args.max_model_len,
+                [(seed + i) % (2**31) for i in range(N_ROLLOUTS)],
+                partial(generate_continuations, model, stop),
+            )
+        elapsed = time.perf_counter() - inference_start
         unfinished = sum(o.finish_reason != "stop" for o in completions)
         missing_format_end = sum(stop not in o.text for o in completions)
         unit = f"{args.out}/{record['dataset']}__{record['stem']}"
@@ -198,6 +262,7 @@ def main() -> None:
                     "text": o.text,
                     "finish_reason": o.finish_reason,
                     "tokens": len(o.token_ids),
+                    "continuation_rounds": continuation_rounds[i],
                 }
             )
             + "\n"
@@ -241,6 +306,8 @@ def main() -> None:
             "prompt_tokens_max": max(lengths),
             "max_tokens": budget,
             "max_model_len": args.max_model_len,
+            "initial_capped_rollouts": initial_capped,
+            "continuation_rounds": sum(continuation_rounds),
         }
         write_json(unit + "/timings.json", timing)
         if unfinished:
