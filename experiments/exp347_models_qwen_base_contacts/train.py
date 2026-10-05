@@ -9,6 +9,7 @@ and next-document cursor; HF exports always include the pretrained tokenizer.
 import argparse
 import contextlib
 import csv
+import hashlib
 import json
 import math
 import os
@@ -35,6 +36,7 @@ from transformers.models.qwen3_5.modeling_qwen3_5 import is_fast_path_available
 
 import wandb
 from common import FORMATS, MAX_LENGTH, MODELS, ROOT, SEED, TOKEN_BUDGET, run_name
+from corpus_stream import COUNTERS, CorpusStream
 
 
 def copy_tree_to_remote(local: Path, uri: str) -> None:
@@ -165,7 +167,7 @@ def checkpoint(
     model: Qwen3_5ForCausalLM,
     optimizer: ZeroRedundancyOptimizer,
     tokenizer: PreTrainedTokenizerBase,
-    stream: DocumentStream,
+    stream: DocumentStream | CorpusStream,
     root: str,
     step: int,
     tokens: int,
@@ -378,16 +380,12 @@ def main() -> None:
             raise ValueError(
                 "This optimizer checkpoint requires the original world size"
             )
-    data_manifest = None
-    if not args.smoke:
-        with fsspec.open(args.data + "/manifest.json") as handle:
-            data_manifest = json.load(handle)
-        if data_manifest["max_length"] != MAX_LENGTH or data_manifest[
-            "tokenizer"
-        ] != list(MODELS["0.8B"]):
-            raise ValueError(
-                "Token cache does not match the pinned experiment contract"
-            )
+    with fsspec.open(args.data + "/manifest.json") as handle:
+        data_manifest = json.load(handle)
+    if data_manifest["max_length"] != MAX_LENGTH or data_manifest["tokenizer"] != list(
+        MODELS["0.8B"]
+    ):
+        raise ValueError("Data does not match the pinned experiment contract")
     load_start = time.perf_counter()
     local_model = Path("/tmp/exp347-model")
     source = (
@@ -431,7 +429,11 @@ def main() -> None:
         weight_decay=0.1,
         foreach=False,
     )
-    stream = DocumentStream(args.data + "/train", args.format, rank, world)
+    stream = (
+        CorpusStream(args.data, data_manifest, tokenizer, rank, world)
+        if data_manifest.get("kind") == "source_documents"
+        else DocumentStream(args.data + "/train", args.format, rank, world)
+    )
     step, tokens = 0, 0
     if resume:
         state_path = Path(f"/tmp/exp347-rank-{rank}.pt")
@@ -449,7 +451,12 @@ def main() -> None:
         raise ValueError("Resume checking requires an existing smoke checkpoint")
     resumed_step = step
     model_load_seconds = time.perf_counter() - load_start
-    val_stream = DocumentStream(args.data + "/validation", args.format, rank, world)
+    val_stream = DocumentStream(
+        data_manifest.get("validation_prefix", args.data + "/validation"),
+        args.format,
+        rank,
+        world,
+    )
     val_rows = [val_stream.next() for _ in range(max(1, args.eval_documents // world))]
     run = None
     if rank == 0:
@@ -475,6 +482,12 @@ def main() -> None:
                 "loss": "all next tokens, global token mean",
                 "seed": SEED,
                 "data_manifest": data_manifest,
+                "training_code_sha256": {
+                    filename: hashlib.sha256(
+                        Path(__file__).with_name(filename).read_bytes()
+                    ).hexdigest()
+                    for filename in ["common.py", "corpus_stream.py", "train.py"]
+                },
             },
         )
         if args.eval_every_tokens:
@@ -530,6 +543,7 @@ def main() -> None:
     while tokens < args.tokens or (args.resume_check and step == resumed_step):
         began = time.perf_counter()
         batch = [stream.next() for _ in range(args.accumulation)]
+        data_seconds = time.perf_counter() - began
         counts = torch.tensor(
             [
                 sum(len(r[args.format]) - 1 for r in batch),
@@ -580,7 +594,27 @@ def main() -> None:
             "train/tokens_per_second": int(counts[0]) / elapsed,
             "run_progress": tokens / args.tokens,
             "train/peak_memory_gb": torch.cuda.max_memory_allocated() / 1e9,
+            "train/data_seconds": data_seconds,
         }
+        if isinstance(stream, CorpusStream):
+            admission = torch.tensor(
+                [
+                    [stream.state["counts"][s][c] for c in COUNTERS]
+                    for s in stream.sources
+                ],
+                device="cuda",
+                dtype=torch.int64,
+            )
+            dist.all_reduce(admission)
+            for source, values in zip(
+                stream.sources, admission.cpu().tolist(), strict=True
+            ):
+                metrics.update(
+                    {
+                        f"data/{source}/{c}": n
+                        for c, n in zip(COUNTERS, values, strict=True)
+                    }
+                )
         if rank == 0:
             print(json.dumps(metrics), flush=True)
         if run:

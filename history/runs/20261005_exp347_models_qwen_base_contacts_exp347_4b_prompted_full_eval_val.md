@@ -40,3 +40,9 @@ _(Bullet list of differences from the last run of this kind.)_
 ## Notes
 
 _(Anything else worth remembering — preemptions, midway tweaks, etc.)_
+
+October 5 corpus correction: this run belongs to the superseded AFDB-only
+scale-up. Training and waiting evaluation drivers were intentionally stopped.
+The pilot checkpoint-zero eval-val measurements remain valid. Replacement
+training uses the exp343 five-source 235.49M-document pool under distinct
+`corpus235m-100bt` identities; see experiment #347.

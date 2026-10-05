@@ -89,20 +89,61 @@ native tokens each**, evaluated every **1B additional tokens**, within the exist
 48-H100 cap. This numerical budget and retaining both formats are stated operator
 assumptions, not additional user-specified requirements. Each new phase starts
 from its corresponding 1B pilot's FP32 weights, with a fresh optimizer and corpus
-cursor; the larger gang and corpus make this a distinct training phase.
+cursor; the larger corpus makes this a distinct training phase.
 
-Full-corpus preparation uses all **2,067** co-located exp232 AFDB shards through
-`prepare.py`. Source size/ETag, preparation-code hashes, and output row counts
-protect resumed preparation. The paired complete-document transformation,
-length filter, and sequence-cluster validation split match the pilot.
-The new cache is `s3://marin-us-east-02a/MarinFold/exp347_qwen_base_contacts/data/full-v1`.
-Preparation completed as `/timodonnell/exp347-prepare-full-a01`: 3,963,003 source
-rows, 201,653 over-length exclusions, 7,047 empty-contact exclusions,
-**3,717,047 training** and **37,256 validation** proteins. One pass contains
-18,165,234,453 contacts-v1 tokens or 5,213,571,376 prompted tokens and
-611,324,110 training contacts. The committed
-[`full-corpus manifest`](data/full_corpus/manifest.json) records every source shard.
-A 100B-token phase therefore spans about 5.5 raw or 19.2 prompted corpus passes.
+The original scale-up was incorrectly described as the full corpus: it used only
+exp232's AFDB component (3,717,047 eligible training rows). The user corrected
+this on October 5. Both `*-full-100bt-a01` jobs and their waiting evaluation
+drivers were stopped; these runs are **superseded AFDB-only continuations**.
+Their manifests and initial timings remain as historical artifacts under
+`data/full_corpus/` and `data/full_phase_initial_timings/`; they are not the
+current full-corpus configuration. No accuracy claim uses the short continuations.
+
+The replacement uses the latest ready pool from
+[exp343](https://github.com/Open-Athena/MarinFold/issues/343), incorporating the
+four monomer corpora from [exp277](https://github.com/Open-Athena/MarinFold/issues/277):
+
+| Source | Published source documents | Parquet shards |
+| --- | ---: | ---: |
+| Native AFDB | 3,963,003 | 2,067 |
+| Native ESM-Atlas | 65,553,178 | 3,338 |
+| MPNN AFDB redesigns | 31,702,680 | 199 |
+| MPNN ESM redesigns | 130,872,044 | 3,338 |
+| Complex training documents | 3,400,000 | 170 |
+| **Total** | **235,490,905** | **9,112** |
+
+These are document counts, including redesign sequences, not unique native
+backbones. `corpus_catalog.py` audited every parquet footer and object ETag in
+the existing CoreWeave east bucket. The compact
+[`source manifest`](data/corpus235m/manifest.json) pins the complete catalog hash.
+The data prefix is
+`s3://marin-us-east-02a/MarinFold/exp347_qwen_base_contacts/data/corpus235m-v1`.
+No cross-region corpus transfer is involved. Exp343's 10,738 complex validation
+rows are excluded; exp292's unpublished supplementary sequences are not added.
+
+`corpus_stream.py` reads bounded projected batches and tokenizes online with the
+unchanged Qwen tokenizer. Every source is available from the first update. Ranks
+have disjoint shuffled shard assignments; each draw selects a source in proportion
+to its remaining raw rows. Every assigned source row is visited once per rank
+epoch, without replacement, with deterministic 128-row batch shuffling. This is
+not a uniform permutation of all individual documents. Exact recovery includes
+all source cursors, the catalog hash, rank layout, and cumulative admission counts.
+
+The **235.49M total is before experiment-specific filters**. Both formats exclude
+empty-contact documents and any pair of renderings exceeding 16,384 native tokens.
+The original 1% sequence-cluster holdout is inherited by native and MPNN sequences;
+complexes use their upstream `cluster_key` for the same hash holdout. The 64-document
+pilot AFDB likelihood diagnostic is retained. Training logs seen, accepted,
+validation, empty-contact and over-length counts separately for each source.
+Whole-corpus eligible counts and native-token totals are not yet measured; no
+number of complete passes is inferred from the old AFDB-only cache.
+
+The converter now preserves multiple disjoint cyclic chain intervals. Complex
+prompts expose numbered chains and residue ranges, allowing inter-chain contacts
+at any separation while retaining the within-chain separation rule. Monomer
+prompts are unchanged. Published upstream contact truncation is retained as-is;
+this experiment does not introduce additional cropping. A real eight-rank CPU
+sample admitted examples from every source and replayed all next-row cursors.
 
 `torch_launch.py` uses the Iris endpoint registry and Torch's supported rendezvous
 options for a fixed gang. Training stages weights once per node and uses local
@@ -117,23 +158,15 @@ the proven, faster one-node configuration. Their batch remains 32 complete
 documents per optimizer update. The two-node profile is not eligible for
 production until its image and throughput are validated.
 
-The raw full phase is running as
-`/timodonnell/exp347-qwen35-4b-contacts_v1-full-100bt-a01`, with
-[training W&B](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-4b-contacts_v1-full-100bt).
-The paired prompted phase is running as
-`/timodonnell/exp347-qwen35-4b-prompted-full-100bt-a01`, initialized from pilot
-step 22268, with [training W&B](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-4b-prompted-full-100bt).
-Phase token counts are additional exposure: evaluation checkpoint 0 refers to
-the 1B-token pilot weights. Jobs have a 90-day execution timeout and retain
-resumable state; the 100B-token budget is not a guarantee of completion within
-that time. Checkpoint accuracy curves are in the dedicated
-[contacts-v1 eval run](https://wandb.ai/open-athena/MarinFold/runs/exp347-4b-contacts-v1-full-eval-val)
-and [prompted eval run](https://wandb.ai/open-athena/MarinFold/runs/exp347-4b-prompted-full-eval-val).
-Both phases advanced and saved verified eight-rank optimizer/model/tokenizer
-checkpoints on October 5. Raw reached 5.05M additional tokens at step34; prompted
-reached 123,602 at step3 at the15:25 UTC observation. These are launch checks,
-not new accuracy results. Initial teacher-forced per-input timings are in
-`data/full_phase_initial_timings/`. Twenty-three local tests and Ruff passed.
+The replacement identities are
+`exp347-qwen35-4b-contacts_v1-corpus235m-100bt` and
+`exp347-qwen35-4b-prompted-corpus235m-100bt`. They initialize from the original
+1B pilot steps 6496 and 22268, respectively, so the mistaken AFDB-only extensions
+are not folded into the corrected comparison. Phase token counts are additional
+exposure: checkpoint zero is the corresponding 1B pilot. Jobs have a 90-day
+execution timeout and retain resumable state; the 100B budget is not a guarantee
+of completion within that time. The new source stream is undergoing a real 4B
+training/checkpoint/recovery smoke before the production replacements launch.
 
 `eval_contract.py` freezes the **97-protein eval-val set** from exp245's pinned
 membership, sequences, and resolved-residue ground truth. It never selects

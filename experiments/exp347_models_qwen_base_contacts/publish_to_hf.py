@@ -12,6 +12,7 @@ def main() -> None:
         "data/eval_val_pilot",
         "data/scale_smoke_timings",
         "data/full_phase_initial_timings",
+        "data/corpus235m",
     ]:
         subprocess.run(
             [

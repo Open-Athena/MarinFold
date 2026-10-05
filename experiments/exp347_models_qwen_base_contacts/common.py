@@ -75,7 +75,12 @@ def position(token: str) -> int:
 
 
 def convert_document(text: str) -> Document:
-    """Decode a monomer document without changing its contact set or order."""
+    """Decode disjoint chain runs without changing the contact set or order.
+
+    Each chain occupies a contiguous interval on the 2000-position ring.
+    Number chains by their N-terminal ring index, then concatenate their residue
+    indices for the prompted rendering. Monomer rendering remains unchanged.
+    """
     prefix, separator, completion = text.partition("<begin_statements>")
     if not separator or not prefix.startswith("<contacts-v1> <begin_sequence> "):
         raise ValueError("Expected a contacts-v1 document with both sections")
@@ -95,12 +100,32 @@ def convert_document(text: str) -> Document:
             if index in residues or b[1:-1] not in AA:
                 raise ValueError(f"Invalid or duplicate amino acid statement: {a} {b}")
             residues[index] = AA[b[1:-1]]
-    if len(starts) != 1 or len(ends) != 1 or not 2 <= len(residues) <= 2000:
-        raise ValueError("Expected exactly one nonempty protein chain")
-    ordered = [(starts[0] + i) % 2000 for i in range(len(residues))]
-    if set(ordered) != residues.keys() or ordered[-1] != ends[0]:
+    if (
+        not starts
+        or len(starts) != len(ends)
+        or len(set(starts)) != len(starts)
+        or len(set(ends)) != len(ends)
+        or not 2 <= len(residues) <= 2000
+    ):
+        raise ValueError("Expected unique paired nonempty protein termini")
+    chains: list[list[int]] = []
+    for start in sorted(starts):
+        chain = []
+        for offset in range(2000):
+            index = (start + offset) % 2000
+            if index not in residues or (offset and index in starts):
+                raise ValueError("Broken or overlapping chain interval")
+            chain.append(index)
+            if index in ends:
+                break
+        else:
+            raise ValueError("Chain has no C terminus")
+        chains.append(chain)
+    ordered = [index for chain in chains for index in chain]
+    if len(ordered) != len(residues) or set(ordered) != residues.keys():
         raise ValueError("Sequence positions or termini are inconsistent")
     one_based = {p: i + 1 for i, p in enumerate(ordered)}
+    chain_ids = {one_based[p]: i for i, chain in enumerate(chains) for p in chain}
     sequence = "".join(residues[p] for p in ordered)
     tokens = completion.split()
     if not tokens or tokens[-1] != "<end>" or (len(tokens) - 1) % 3:
@@ -112,16 +137,33 @@ def convert_document(text: str) -> Document:
             raise ValueError(f"Unsupported structure statement: {tokens[i]}")
         a, b = (one_based[position(t)] for t in tokens[i + 1 : i + 3])
         pair = tuple(sorted((a, b)))
-        if abs(a - b) < 6 or pair in seen:
+        if (chain_ids[a] == chain_ids[b] and abs(a - b) < 6) or pair in seen:
             raise ValueError(f"Duplicate or too-close contact: {pair}")
         seen.add(pair)
         contacts.append((a, b))
+    prompted_prefix = PROMPT + sequence + "\n\nContacts:\n"
+    if len(chains) > 1:
+        prompted_prefix = (
+            "Predict residue contacts for this protein complex. Residues are numbered "
+            "consecutively across the chains below; chain boundaries are explicit. "
+            "Write one pair of residue numbers per line, separated by a space. "
+            "Each pair denotes a side-chain contact with pyconfind contact degree "
+            "at least 0.001. Within a chain, sequence separation must be at least 6; "
+            "between different chains, any separation is allowed. "
+            "List each pair once, in any order. Finish with END.\n\n"
+            + "\n".join(
+                f"Chain {i + 1} (residues {one_based[chain[0]]}-{one_based[chain[-1]]}):\n"
+                + "".join(residues[p] for p in chain)
+                for i, chain in enumerate(chains)
+            )
+            + "\n\nContacts:\n"
+        )
     return Document(
         sequence,
         tuple(contacts),
         prefix + separator,
         completion,
-        PROMPT + sequence + "\n\nContacts:\n",
+        prompted_prefix,
         "".join(f"{a} {b}\n" for a, b in contacts) + "END\n",
     )
 

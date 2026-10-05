@@ -39,3 +39,9 @@ Use all 2,067 AFDB shards, with fresh optimizer/data cursor and a new run identi
 ## Notes
 
 Checkpoint0 on the accuracy curve is the corresponding 1B-token pilot. Durable periodic BF16 exports live outside rolling optimizer checkpoints. Separate persistent Iris evaluation drivers retain the final result after the trainer exits. Initial per-protein validation timings are committed under data/full_phase_initial_timings. No eval-test read.
+
+October 5 corpus correction: this run belongs to the superseded AFDB-only
+scale-up. Training and waiting evaluation drivers were intentionally stopped.
+The pilot checkpoint-zero eval-val measurements remain valid. Replacement
+training uses the exp343 five-source 235.49M-document pool under distinct
+`corpus235m-100bt` identities; see experiment #347.

@@ -1,0 +1,427 @@
+{
+  "data": "s3://marin-us-east-02a/MarinFold/exp347_qwen_base_contacts/data/corpus235m-v1",
+  "ranks": [
+    {
+      "rank": 0,
+      "examples": 256,
+      "elapsed_seconds": 2.455360360967461,
+      "documents_per_second": 104.2616815313948,
+      "tokens": {
+        "contacts_v1": 505664,
+        "prompted": 138722
+      },
+      "counts": {
+        "complex": {
+          "seen": 9,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 6,
+          "accepted": 3
+        },
+        "mpnn-afdb": {
+          "seen": 41,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 0,
+          "accepted": 41
+        },
+        "mpnn-esm": {
+          "seen": 158,
+          "validation": 2,
+          "empty_contacts": 7,
+          "too_long": 0,
+          "accepted": 149
+        },
+        "native-afdb": {
+          "seen": 5,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 1,
+          "accepted": 4
+        },
+        "native-esm": {
+          "seen": 60,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 1,
+          "accepted": 59
+        }
+      },
+      "resume_verified": true
+    },
+    {
+      "rank": 1,
+      "examples": 256,
+      "elapsed_seconds": 3.2666756469989195,
+      "documents_per_second": 78.36713150115962,
+      "tokens": {
+        "contacts_v1": 951168,
+        "prompted": 280971
+      },
+      "counts": {
+        "complex": {
+          "seen": 4,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 2,
+          "accepted": 2
+        },
+        "mpnn-afdb": {
+          "seen": 38,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 0,
+          "accepted": 38
+        },
+        "mpnn-esm": {
+          "seen": 144,
+          "validation": 0,
+          "empty_contacts": 2,
+          "too_long": 0,
+          "accepted": 142
+        },
+        "native-afdb": {
+          "seen": 7,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 0,
+          "accepted": 7
+        },
+        "native-esm": {
+          "seen": 67,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 0,
+          "accepted": 67
+        }
+      },
+      "resume_verified": true
+    },
+    {
+      "rank": 2,
+      "examples": 256,
+      "elapsed_seconds": 3.871493005019147,
+      "documents_per_second": 66.12436072288187,
+      "tokens": {
+        "contacts_v1": 886186,
+        "prompted": 258139
+      },
+      "counts": {
+        "complex": {
+          "seen": 4,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 2,
+          "accepted": 2
+        },
+        "mpnn-afdb": {
+          "seen": 37,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 0,
+          "accepted": 37
+        },
+        "mpnn-esm": {
+          "seen": 133,
+          "validation": 0,
+          "empty_contacts": 1,
+          "too_long": 0,
+          "accepted": 132
+        },
+        "native-afdb": {
+          "seen": 3,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 0,
+          "accepted": 3
+        },
+        "native-esm": {
+          "seen": 92,
+          "validation": 0,
+          "empty_contacts": 1,
+          "too_long": 9,
+          "accepted": 82
+        }
+      },
+      "resume_verified": true
+    },
+    {
+      "rank": 3,
+      "examples": 256,
+      "elapsed_seconds": 3.3831207370385528,
+      "documents_per_second": 75.66977944277923,
+      "tokens": {
+        "contacts_v1": 913085,
+        "prompted": 267956
+      },
+      "counts": {
+        "complex": {
+          "seen": 7,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 3,
+          "accepted": 4
+        },
+        "mpnn-afdb": {
+          "seen": 44,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 0,
+          "accepted": 44
+        },
+        "mpnn-esm": {
+          "seen": 139,
+          "validation": 0,
+          "empty_contacts": 5,
+          "too_long": 0,
+          "accepted": 134
+        },
+        "native-afdb": {
+          "seen": 2,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 0,
+          "accepted": 2
+        },
+        "native-esm": {
+          "seen": 76,
+          "validation": 4,
+          "empty_contacts": 0,
+          "too_long": 0,
+          "accepted": 72
+        }
+      },
+      "resume_verified": true
+    },
+    {
+      "rank": 4,
+      "examples": 256,
+      "elapsed_seconds": 2.4892528600175865,
+      "documents_per_second": 102.842103392498,
+      "tokens": {
+        "contacts_v1": 681031,
+        "prompted": 194078
+      },
+      "counts": {
+        "complex": {
+          "seen": 2,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 1,
+          "accepted": 1
+        },
+        "mpnn-afdb": {
+          "seen": 25,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 0,
+          "accepted": 25
+        },
+        "mpnn-esm": {
+          "seen": 162,
+          "validation": 2,
+          "empty_contacts": 2,
+          "too_long": 0,
+          "accepted": 158
+        },
+        "native-afdb": {
+          "seen": 5,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 1,
+          "accepted": 4
+        },
+        "native-esm": {
+          "seen": 68,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 0,
+          "accepted": 68
+        }
+      },
+      "resume_verified": true
+    },
+    {
+      "rank": 5,
+      "examples": 256,
+      "elapsed_seconds": 2.858264273032546,
+      "documents_per_second": 89.56484619541162,
+      "tokens": {
+        "contacts_v1": 647004,
+        "prompted": 180006
+      },
+      "counts": {
+        "complex": {
+          "seen": 6,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 4,
+          "accepted": 2
+        },
+        "mpnn-afdb": {
+          "seen": 32,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 0,
+          "accepted": 32
+        },
+        "mpnn-esm": {
+          "seen": 146,
+          "validation": 0,
+          "empty_contacts": 3,
+          "too_long": 0,
+          "accepted": 143
+        },
+        "native-afdb": {
+          "seen": 4,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 1,
+          "accepted": 3
+        },
+        "native-esm": {
+          "seen": 76,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 0,
+          "accepted": 76
+        }
+      },
+      "resume_verified": true
+    },
+    {
+      "rank": 6,
+      "examples": 256,
+      "elapsed_seconds": 2.876100330031477,
+      "documents_per_second": 89.00941226803387,
+      "tokens": {
+        "contacts_v1": 477851,
+        "prompted": 131464
+      },
+      "counts": {
+        "complex": {
+          "seen": 5,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 2,
+          "accepted": 3
+        },
+        "mpnn-afdb": {
+          "seen": 52,
+          "validation": 3,
+          "empty_contacts": 0,
+          "too_long": 0,
+          "accepted": 49
+        },
+        "mpnn-esm": {
+          "seen": 135,
+          "validation": 0,
+          "empty_contacts": 1,
+          "too_long": 0,
+          "accepted": 134
+        },
+        "native-afdb": {
+          "seen": 3,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 1,
+          "accepted": 2
+        },
+        "native-esm": {
+          "seen": 79,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 11,
+          "accepted": 68
+        }
+      },
+      "resume_verified": true
+    },
+    {
+      "rank": 7,
+      "examples": 256,
+      "elapsed_seconds": 3.0884070490137674,
+      "documents_per_second": 82.89062806075043,
+      "tokens": {
+        "contacts_v1": 707911,
+        "prompted": 199118
+      },
+      "counts": {
+        "complex": {
+          "seen": 4,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 2,
+          "accepted": 2
+        },
+        "mpnn-afdb": {
+          "seen": 39,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 0,
+          "accepted": 39
+        },
+        "mpnn-esm": {
+          "seen": 146,
+          "validation": 2,
+          "empty_contacts": 0,
+          "too_long": 0,
+          "accepted": 144
+        },
+        "native-afdb": {
+          "seen": 6,
+          "validation": 0,
+          "empty_contacts": 0,
+          "too_long": 0,
+          "accepted": 6
+        },
+        "native-esm": {
+          "seen": 67,
+          "validation": 2,
+          "empty_contacts": 0,
+          "too_long": 0,
+          "accepted": 65
+        }
+      },
+      "resume_verified": true
+    }
+  ],
+  "counts": {
+    "complex": {
+      "seen": 41,
+      "validation": 0,
+      "empty_contacts": 0,
+      "too_long": 22,
+      "accepted": 19
+    },
+    "mpnn-afdb": {
+      "seen": 308,
+      "validation": 3,
+      "empty_contacts": 0,
+      "too_long": 0,
+      "accepted": 305
+    },
+    "mpnn-esm": {
+      "seen": 1163,
+      "validation": 6,
+      "empty_contacts": 21,
+      "too_long": 0,
+      "accepted": 1136
+    },
+    "native-afdb": {
+      "seen": 35,
+      "validation": 0,
+      "empty_contacts": 0,
+      "too_long": 4,
+      "accepted": 31
+    },
+    "native-esm": {
+      "seen": 585,
+      "validation": 6,
+      "empty_contacts": 1,
+      "too_long": 21,
+      "accepted": 557
+    }
+  },
+  "note": "Engineering sample; admission rates are not whole-corpus estimates"
+}

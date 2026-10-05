@@ -49,15 +49,18 @@ Per-input timings and worker metadata were saved at evaluation time.
 Requested: full-scale 4B training with periodic eval-val R-precision.
 Working default: both formats, 100B additional tokens each, eval every 1B.
 This budget is an announced operator assumption; the existing 48-H100 cap remains.
-All 2,067 co-located AFDB shards prepared: 3.717M train and 37,256 validation proteins.
-One corpus pass contains 18.17B raw or 5.21B prompted tokens.
+Correction: the first scale-up was AFDB-only and has been stopped.
+Current source pool: 235,490,905 documents in 9,112 audited shards (exp343).
+Native AFDB/ESM + both MPNN redesign corpora + 3.4M complex train documents.
+Stream and tokenize online; preserve lineage holdouts and paired 16K filtering.
+235.49M is before filtering, not a measured eligible-protein count.
 Allocation: 8 training  + up to 4 evaluation H100s per 4B arm, plus 8 for the 2B pilot.
 Continue the respective 1B weights with fresh optimizer and data cursor.
 Both 4B single-protein 100-rollout evaluation smokes passed without truncation.
 E8 reference passed: all R=0.42438, long R=0.36599; all 554 units, no truncated rollouts.
 Two-node training/export passed, but socket networking was slower than one node.
 The pinned image lacks libibverbs; production uses the proven 8-GPU profile.
-Both full-corpus phases are training on 8 H100s each with verified recovery checkpoints.
+Both corrected phases will use 8 H100s each; source-stream GPU recovery validation is in progress.
 Eval every 1B additional tokens; baseline 0 is the corresponding 1Bpilot.
 Checkpointed 90-day jobs; the 100B budget may outlast that execution window.
 
