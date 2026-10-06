@@ -29,6 +29,8 @@ marinfold_run:
   - /zack/exp299-s3-gcs-cv1-validation-a01
   - /zack/exp299-s3-gcs-v2-cache-a01
   - /zack/exp299-s3-gcs-v2-cache-a02
+  - /zack/exp299-v2-exp277-full-epoch-driver-4x4gb200-08a-a06
+  - /zack/exp299-v2-exp277-full-epoch-driver-4x4gb200-08a-a06/delta-v2-exp277-full-epoch-1_5b-4x4gb200-08a-a03
 ---
 # 2026-09-22 · exp299_models_delta_stream_contacts · delta-v2-exp277-full-epoch-1_5b-4x4gb200-08a-a03
 
