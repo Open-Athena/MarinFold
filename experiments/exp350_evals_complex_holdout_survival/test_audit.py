@@ -8,7 +8,11 @@ from build_candidates import foldbench_members
 from build_complex_sequences import chain_sequences
 from export_helico_contacts import mapped_rankings
 from freeze_foldbench_eval import DATA, qualifying_alignment
-from score_complex_rollout_worker import candidate_pair_count, same_chain_too_close
+from score_complex_rollout_worker import (
+    candidate_pair_count,
+    generation_token_budget,
+    same_chain_too_close,
+)
 from score_foldbench_contacts import target_r_precision
 
 
@@ -167,3 +171,8 @@ def test_complex_candidate_universe_applies_separation_within_chains_only() -> N
     assert same_chain_too_close(8, 9, [10, 3])
     assert not same_chain_too_close(9, 10, [10, 3])
     assert not same_chain_too_close(0, 9, [10, 3])
+
+
+def test_complex_rollout_budget_avoids_the_monomer_cap_regression() -> None:
+    assert generation_token_budget(prompt_tokens=1_000, length=346) == 4_280
+    assert generation_token_budget(prompt_tokens=2_000, length=1_152) == 6_192

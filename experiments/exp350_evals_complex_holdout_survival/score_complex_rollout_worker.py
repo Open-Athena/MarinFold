@@ -30,6 +30,8 @@ import pyarrow.parquet as pq
 BEGIN = "<begin_statements>"
 NUM_POSITIONS = 2_000
 MINIMUM_SEPARATION = 6
+MODEL_CONTEXT = 8_192
+DEFAULT_CONTACT_MULT = 12
 CONTACT_RE = re.compile(r"<contact>\s+<p(\d+)>\s+<p(\d+)>")
 
 SCORE_SCHEMA = pa.schema(
@@ -223,6 +225,15 @@ def same_chain_too_close(first: int, second: int, chain_lengths: list[int]) -> b
     return False
 
 
+def generation_token_budget(
+    prompt_tokens: int,
+    length: int,
+    contact_mult: int = DEFAULT_CONTACT_MULT,
+) -> int:
+    """Return a non-truncating complex rollout budget within model context."""
+    return min(MODEL_CONTEXT - prompt_tokens, contact_mult * length + 128)
+
+
 def rollout_position_map(document) -> dict[int, int]:
     """Map randomized multi-chain position tokens to concatenated indices."""
 
@@ -256,7 +267,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--temperature", type=float, default=1.0)
     parser.add_argument("--top-p", type=float, default=0.95)
     parser.add_argument("--top-k", type=int, default=-1)
-    parser.add_argument("--contact-mult", type=int, default=6)
+    parser.add_argument("--contact-mult", type=int, default=DEFAULT_CONTACT_MULT)
     parser.add_argument("--accept-unfinished", action="store_true")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--gpu-frac", type=float, default=0.90)
@@ -385,8 +396,8 @@ def main() -> int:
             prompt_tokens = len(
                 tokenizer(prompts[first], add_special_tokens=False).input_ids
             )
-            max_tokens = min(
-                8_192 - prompt_tokens, arguments.contact_mult * record["L"] + 128
+            max_tokens = generation_token_budget(
+                prompt_tokens, record["L"], arguments.contact_mult
             )
             per_record.append(
                 {

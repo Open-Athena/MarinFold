@@ -89,6 +89,7 @@ MODEL_MANIFEST_B64 = base64.b64encode(
 ).decode()
 
 N_ROLLOUTS = int(os.environ.get("EVAL_CW_N_ROLLOUTS", "100"))
+CONTACT_MULT = int(os.environ.get("EVAL_CW_CONTACT_MULT", "12"))
 TOP_K = int(os.environ.get("EVAL_CW_TOP_K", "-1"))
 TOP_P = float(os.environ.get("EVAL_CW_TOP_P", "0.95"))
 TEMPERATURE = float(os.environ.get("EVAL_CW_TEMPERATURE", "1.0"))
@@ -159,6 +160,7 @@ exec "$VLLM_PY" {WORKER_LOCAL} \\
     --label {MODEL_LABEL} \\
     --shard {shard_i}/{num_shards} \\
     --n-rollouts {N_ROLLOUTS} \\
+    --contact-mult {CONTACT_MULT} \\
     --temperature {TEMPERATURE} \\
     --top-p {TOP_P} \\
     --top-k {TOP_K}{limit_arg}
@@ -222,7 +224,8 @@ def main() -> None:
 
     print(f"[eval-cw] {len(reqs)} job(s), {a.num_shards} shard(s), "
           f"1xH100 batch band | image={VLLM_IMAGE}\n"
-          f"          n_rollouts={N_ROLLOUTS} top_k={TOP_K} top_p={TOP_P} T={TEMPERATURE} "
+          f"          n_rollouts={N_ROLLOUTS} contact_mult={CONTACT_MULT} "
+          f"top_k={TOP_K} top_p={TOP_P} T={TEMPERATURE} "
           f"limit={a.limit}\n"
           f"          targets={TARGETS_HF} ({TARGETS_FILE.stat().st_size} bytes)"
           f"\n          out={OUT_S3}")
