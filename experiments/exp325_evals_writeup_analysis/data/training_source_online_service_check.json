@@ -1,0 +1,163 @@
+{
+  "checked_utc": "2026-10-06T13:26:41.975229+00:00",
+  "searches_submitted_date": "2026-09-30",
+  "action": "Rechecked live service and completed jobs; reused existing searches of the same database release",
+  "service": "EMBL-EBI HMMER, the official MGnify protein sequence-search service",
+  "documentation": "https://docs.mgnify.org/src/docs/mgnify-proteins-sequence-search.html",
+  "catalog_url": "https://www.ebi.ac.uk/Tools/hmmer/api/v1/search/databases",
+  "offered_mgnify_databases": [
+    {
+      "id": "mgnify30_c2",
+      "type": "seq",
+      "status": "enabled",
+      "name": "MGnify30-C2 - Non-singletons",
+      "version": "2026_07",
+      "release_date": "2026-07-11",
+      "order": 9
+    },
+    {
+      "id": "mgnify30_c5_fl",
+      "type": "seq",
+      "status": "enabled",
+      "name": "MGnify30-C5-FL - Larger non-singletons",
+      "version": "2026_07",
+      "release_date": "2026-07-11",
+      "order": 10
+    },
+    {
+      "id": "mgnify30_c5_ppfam",
+      "type": "seq",
+      "status": "enabled",
+      "name": "MGnify30-C5-PPfam - Pfam-poor non-singletons",
+      "version": "2026_07",
+      "release_date": "2026-07-11",
+      "order": 11
+    }
+  ],
+  "legacy_mgnify_search_url": "https://www.ebi.ac.uk/metagenomics/sequence-search",
+  "observed_redirect": "https://www.ebi.ac.uk/Tools/hmmer/search/phmmer?database=mgnify30_c2",
+  "historical_2023_02_offered": false,
+  "mgnify30_c2_definition": "Representatives of 30%-identity clusters with at least two members; 128674267 representatives per documentation",
+  "alternatives_checked": {
+    "esmatlas": "Official about page describes search APIs as a high-confidence, clustered subset of Atlas v0 (MGnify 2022_05), not the complete 2023_02 release",
+    "esmatlas_documentation": "https://esmatlas.com/about"
+  },
+  "bulk_download": "Not started; user requested a hosted search",
+  "jobs": [
+    {
+      "stem": "8ii8_A",
+      "job_id": "44038996-29bd-4375-8ba7-541b1f4c9302",
+      "http_status": 200,
+      "status": "SUCCESS",
+      "database": {
+        "id": "mgnify30_c2",
+        "type": "seq",
+        "status": "enabled",
+        "name": "MGnify30-C2 - Non-singletons",
+        "version": "2026_07",
+        "release_date": "2026-07-11",
+        "order": 9
+      },
+      "number_of_hits": 1,
+      "api_url": "https://www.ebi.ac.uk/Tools/hmmer/api/v1/search/44038996-29bd-4375-8ba7-541b1f4c9302",
+      "result_url": "https://www.ebi.ac.uk/Tools/hmmer/results/44038996-29bd-4375-8ba7-541b1f4c9302/score",
+      "saved_result": "data/inputs/training_source_search/hmmer_mgnify30_c2_8ii8_A_results.json",
+      "available": true,
+      "hits_e001_cov50": 0,
+      "hits_e001_cov80": 0,
+      "saved_result_sha256": "f5d3153a218dc55bfe63d7ce3cfe4893b6539b182df5ee311dcd8b011be81016"
+    },
+    {
+      "stem": "8oxk_A",
+      "job_id": "445b6f8c-8a10-45ff-9f93-35f48558b4b7",
+      "http_status": 200,
+      "status": "SUCCESS",
+      "database": {
+        "id": "mgnify30_c2",
+        "type": "seq",
+        "status": "enabled",
+        "name": "MGnify30-C2 - Non-singletons",
+        "version": "2026_07",
+        "release_date": "2026-07-11",
+        "order": 9
+      },
+      "number_of_hits": 0,
+      "api_url": "https://www.ebi.ac.uk/Tools/hmmer/api/v1/search/445b6f8c-8a10-45ff-9f93-35f48558b4b7",
+      "result_url": "https://www.ebi.ac.uk/Tools/hmmer/results/445b6f8c-8a10-45ff-9f93-35f48558b4b7/score",
+      "saved_result": "data/inputs/training_source_search/hmmer_mgnify30_c2_8oxk_A_results.json",
+      "available": true,
+      "hits_e001_cov50": 0,
+      "hits_e001_cov80": 0,
+      "saved_result_sha256": "1693f83cfc23d8362b54c5637f4f87a099f2c1df7f9eb7dee5dc8aa08277a5f7"
+    },
+    {
+      "stem": "8qoh_A",
+      "job_id": "7f4d414e-0aa2-483f-9c0f-c728cf43e252",
+      "http_status": 200,
+      "status": "SUCCESS",
+      "database": {
+        "id": "mgnify30_c2",
+        "type": "seq",
+        "status": "enabled",
+        "name": "MGnify30-C2 - Non-singletons",
+        "version": "2026_07",
+        "release_date": "2026-07-11",
+        "order": 9
+      },
+      "number_of_hits": 2,
+      "api_url": "https://www.ebi.ac.uk/Tools/hmmer/api/v1/search/7f4d414e-0aa2-483f-9c0f-c728cf43e252",
+      "result_url": "https://www.ebi.ac.uk/Tools/hmmer/results/7f4d414e-0aa2-483f-9c0f-c728cf43e252/score",
+      "saved_result": "data/inputs/training_source_search/hmmer_mgnify30_c2_8qoh_A_results.json",
+      "available": true,
+      "hits_e001_cov50": 0,
+      "hits_e001_cov80": 0,
+      "saved_result_sha256": "ce6419bd0601f7d4394f734e27eaded15e7c382d0daca6fe443b0c8400c73629"
+    },
+    {
+      "stem": "8ux2_A",
+      "job_id": "532239cf-56b8-4610-8428-5b731a2adcc7",
+      "http_status": 200,
+      "status": "SUCCESS",
+      "database": {
+        "id": "mgnify30_c2",
+        "type": "seq",
+        "status": "enabled",
+        "name": "MGnify30-C2 - Non-singletons",
+        "version": "2026_07",
+        "release_date": "2026-07-11",
+        "order": 9
+      },
+      "number_of_hits": 3,
+      "api_url": "https://www.ebi.ac.uk/Tools/hmmer/api/v1/search/532239cf-56b8-4610-8428-5b731a2adcc7",
+      "result_url": "https://www.ebi.ac.uk/Tools/hmmer/results/532239cf-56b8-4610-8428-5b731a2adcc7/score",
+      "saved_result": "data/inputs/training_source_search/hmmer_mgnify30_c2_8ux2_A_results.json",
+      "available": true,
+      "hits_e001_cov50": 1,
+      "hits_e001_cov80": 0,
+      "saved_result_sha256": "c1cc98e545b3ed3286bb68fa3ec8a38b4abc827524c84b55cfa95d50e6d519a1"
+    },
+    {
+      "stem": "8wrx_A",
+      "job_id": "8e254dae-ce50-4b56-b3f5-6809d9af9590",
+      "http_status": 200,
+      "status": "SUCCESS",
+      "database": {
+        "id": "mgnify30_c2",
+        "type": "seq",
+        "status": "enabled",
+        "name": "MGnify30-C2 - Non-singletons",
+        "version": "2026_07",
+        "release_date": "2026-07-11",
+        "order": 9
+      },
+      "number_of_hits": 0,
+      "api_url": "https://www.ebi.ac.uk/Tools/hmmer/api/v1/search/8e254dae-ce50-4b56-b3f5-6809d9af9590",
+      "result_url": "https://www.ebi.ac.uk/Tools/hmmer/results/8e254dae-ce50-4b56-b3f5-6809d9af9590/score",
+      "saved_result": "data/inputs/training_source_search/hmmer_mgnify30_c2_8wrx_A_results.json",
+      "available": true,
+      "hits_e001_cov50": 0,
+      "hits_e001_cov80": 0,
+      "saved_result_sha256": "5554fb14f6b4488e0b0b879b8089383366745007bc2adda6f7e31d9d66afe1fa"
+    }
+  ]
+}

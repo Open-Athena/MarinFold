@@ -9,7 +9,8 @@
   "destination": "scratch/training_source_search/mgnify_2023_02/mgy_clusters.fa.gz",
   "processing": "Download once with checksum verification; bounded-memory scan of all five sequences; retain hits and alignments, not a new full database copy",
   "search": "pyhmmer 0.12.3 phmmer; global database size Z=729215663; sequence and domain E<=0.001; report query coverage >=50% and >=80%",
-  "authorization_status": "not_started_pending_explicit_large_transfer_approval",
+  "authorization_status": "not_started_not_approved_deferred_in_favor_of_hosted_search",
+  "online_service_check": "training_source_online_service_check.json",
   "current_alternatives": "ColabFold UniRef30 2023_02 expansion already searched; EBI UniProt 2025_01 and MGnify30-C2 2026_07 searched as separate proxies",
   "jgi": "July 2023 source snapshot not accessible in this workspace; live IMG/M broad searches require authenticated access"
 }

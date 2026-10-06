@@ -68,6 +68,37 @@ E-value ≤0.001, excluding insertions and deletions. A significant whole-sequen
 score from several short domains does not automatically yield a well-covered hit.
 Zero results in this restricted subset do not establish absence from MGnify.
 
+### Online-service check, 2026-10-06
+
+These MGnify results were already obtained entirely through an online service.
+The [official MGnify sequence-search guide](https://docs.mgnify.org/src/docs/mgnify-proteins-sequence-search.html)
+directs users to EBI HMMER. We rechecked its live database catalog and all five
+completed jobs on 2026-10-06. The catalog still offers only MGnify30-C2,
+MGnify30-C5-FL and MGnify30-C5-PPfam, all version 2026_07. C2 is the broadest,
+with 128,674,267 representatives; both C5 options impose additional restrictions.
+There is no historical 2023_02 selection in this service. The old MGnify
+`sequence-search` URL redirects to the same HMMER C2 search.
+
+| Protein | Online result | Significant hits | Cover ≥50% of query | Cover ≥80% of query |
+|---|---|---:|---:|---:|
+| 8ii8_A | [HMMER](https://www.ebi.ac.uk/Tools/hmmer/results/44038996-29bd-4375-8ba7-541b1f4c9302/score) | 1 | 0 | 0 |
+| 8oxk_A | [HMMER](https://www.ebi.ac.uk/Tools/hmmer/results/445b6f8c-8a10-45ff-9f93-35f48558b4b7/score) | 0 | 0 | 0 |
+| 8qoh_A | [HMMER](https://www.ebi.ac.uk/Tools/hmmer/results/7f4d414e-0aa2-483f-9c0f-c728cf43e252/score) | 2 | 0 | 0 |
+| 8ux2_A | [HMMER](https://www.ebi.ac.uk/Tools/hmmer/results/532239cf-56b8-4610-8428-5b731a2adcc7/score) | 3 | 1 | 0 |
+| 8wrx_A | [HMMER](https://www.ebi.ac.uk/Tools/hmmer/results/8e254dae-ce50-4b56-b3f5-6809d9af9590/score) | 0 | 0 | 0 |
+
+The searches ran on 2026-09-30; this is an availability check, not a new
+independent measurement. Job links may expire, so the full original responses
+remain archived locally and in the public evidence package. The
+[service check](data/training_source_online_service_check.json) records the
+offered databases, completed job statuses, result links and archived-result hashes.
+
+We also checked [ESM Atlas's documented search coverage](https://esmatlas.com/about):
+its search APIs use a high-confidence, clustered subset of Atlas v0
+(MGnify 2022_05), even though the downloadable Atlas includes 2023_02. It does
+not provide a full historical-source search either. The online results above
+answer the available subset question; they do not measure full MGnify depth.
+
 The older ColabFold environmental mix (ColabFoldDB 202108) returned 0, 0, 0, 1
 and 1 significant hits, respectively. It combines several sources and is not a
 search of MGnify 2023_02. Differences across columns also reflect different
@@ -81,7 +112,9 @@ is available as 729,215,663 representatives clustered at 90% identity and
 downloaded only its small release metadata, not that sequence archive.
 The URL, checksum and proposed bounded-memory search are pinned in
 [the search plan](data/training_source_search_plan.json). The large download
-awaits the explicit approval required by the repository's transfer policy.
+is deferred following the user's preference for an online search; no archive
+transfer was started. Any future transfer would require the explicit approval
+specified by the repository's transfer policy.
 Even this search would measure source representatives, not the unpublished
 processed ESMC training subset.
 
