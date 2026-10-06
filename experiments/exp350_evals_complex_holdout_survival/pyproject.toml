@@ -13,6 +13,7 @@ dependencies = [
     "pyarrow>=20",
     "requests>=2.32",
     "s3fs>=2026.1",
+    "scipy>=1.13",
     "setuptools>=68",
 ]
 

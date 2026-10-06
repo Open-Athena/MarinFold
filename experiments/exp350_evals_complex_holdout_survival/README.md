@@ -276,6 +276,84 @@ and [Helico evaluation
 artifacts](https://huggingface.co/buckets/open-athena/MarinFold/tree/main/data/evals/exp350_foldbench_pair_holdout/contact_eval_v1/helico_v1)
 in the public MarinFold HF bucket.
 
+### Oracle best-of-many inter-chain contacts
+
+A requested exploratory follow-up generated **1,000 new attempts per target**
+with the same checkpoint and sampling settings (T=1, top-p=0.95, top-k=-1,
+8,192-token context). Individual contact maps are now saved. The 23-target
+membership and split remain frozen: 10/23,000 attempts were unfinished (two on
+development target 8h1m, six on test target 8jyv, two on test target 8smq). These
+receive zero credit and remain in the sampling budget. This is an additional
+diagnostic read of the test set, not a new blinded model comparison.
+
+For each target, best@k is the exact expected maximum over uniformly selected
+k-subsets of its 1,000 attempted rollouts. F1 evaluates the entire emitted,
+resolved inter-chain contact set. Single-map R-precision treats emitted pairs
+as score 1 and un-emitted pairs as score 0, averaging over ties in both tiers;
+F1 and R-precision are maximized separately using experimental truth. This is
+**oracle selection**, unavailable at inference time. It also avoids overstating
+a tiny, high-precision subset as a recovered interface.
+
+| attempted rollouts | oracle mean F1 | oracle mean R-precision | matched random best F1 | true contacts seen anywhere |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | 0.0085 | 0.0084 | 0.0015 | 0.8% |
+| 10 | 0.0415 | 0.0349 | 0.0105 | 6.1% |
+| 100 | **0.1101** | **0.0929** | 0.0332 | 36.6% |
+| 1,000 | **0.1923** | **0.1648** | 0.0536 | 85.7% |
+
+These are macro means across the 17 test targets. The best@1000 F1 interval is
+[0.1668, 0.2165] and the R-precision interval is [0.1352, 0.1909], bootstrapping
+the 13 test homology groups. The random control preserves each attempted map's
+number of predictions and completion status, drawing contacts uniformly from
+the same resolved cross-chain universe. A thousand Monte Carlo pools estimate
+random best F1. Pooled recovery has a high chance baseline: 1,000 matched random
+maps already recover **67.2%** of true contacts in expectation, versus the
+model's 85.7%. Pooled recovery does not imply a single good map.
+
+No test target has any sample with F1 >=0.5; four have a sample with F1 >=0.25.
+The strongest is **8jca: 9 correct contacts among 29 predictions and 29 true
+contacts**, giving 31.0% precision and recall. For larger interfaces, the
+F1-selected 8onf sample gets 23/122 true contacts among 57 predictions; 8smq gets
+37/200 among 129 predictions. Across targets, F1-selected best@1000 maps average
+26.6% precision and 18.3% recall.
+
+Ordinary consensus of the first 100 samples in this fresh pool yields 0.0297
+R-precision; consensus of all 1,000 reaches only **0.0373**. These consensus
+scores retain the original stable top-R tie convention, whereas single-map
+scores above marginalize ties. Increased sampling finds additional real
+contacts, but they are dispersed across largely incorrect maps and frequency
+ranking still struggles to select them. Whether a learned selector or Helico
+can exploit this diversity remains untested; these are contact-map results,
+not best-of-1,000 structure predictions.
+
+![Oracle sampling curves](plots/rollout_sampling.png)
+
+Twelve CoreWeave H100 root jobs, named
+`/bizon/exp350-foldbench-complex-s{0..11}of12-best1000-v1`, completed the run.
+Chunk size 1 records per-target inference timings (2,076 total GPU-seconds of
+inference). The saved individual maps exactly reconstruct every aggregate
+contact vote. Raw maps, aggregates, completion markers, timings, per-sample
+metrics and hash manifests are public in the [sampling artifact
+bundle](https://huggingface.co/buckets/open-athena/MarinFold/tree/main/data/evals/exp350_foldbench_pair_holdout/contact_eval_v1/sampling_v1).
+Small result tables and the figure are committed here.
+
+Reproduce the analysis from the public maps, without GPU inference:
+
+```bash
+hf buckets sync \
+  hf://buckets/open-athena/MarinFold/data/evals/exp350_foldbench_pair_holdout/contact_eval_v1/sampling_v1/raw \
+  /tmp/exp350-sampling-v1/raw
+uv run python score_rollout_sampling.py --root /tmp/exp350-sampling-v1/raw
+uv run python plot_rollout_sampling.py
+uv run python build_summary.py
+```
+
+To repeat inference, use `dispatch_foldbench_contacts_cw.py --num-shards 12`
+from the Iris client environment, setting `EVAL_CW_N_ROLLOUTS=1000`,
+`EVAL_CW_SAVE_ROLLOUTS=1`, `EVAL_CW_ACCEPT_UNFINISHED=1`,
+`EVAL_CW_CHUNK=1` and a fresh `EVAL_CW_OUT` prefix. Publish validated outputs
+with `uv run python publish_rollout_sampling.py --raw <raw-directory>`.
+
 ## Conclusion
 
 Use the frozen 30-target FoldBench set as the structural source benchmark under
@@ -294,3 +372,9 @@ DockQ 0.23, compared with all 17 under oracle contacts. The seven
 context-ineligible targets remain a structural-only extension. Keep the strict
 component-held-out result as a separate negative finding; it does not yield a
 useful benchmark for this checkpoint. PINDER is not needed for this evaluation.
+
+The 1,000-rollout diagnostic finds real inter-chain sampling signal: oracle
+best@1000 substantially beats a matched random null. It does not find mostly
+correct interface maps. Individual true contacts occur across many different
+rollouts, and consensus accuracy improves only modestly with ten times more
+samples.

@@ -91,6 +91,8 @@ MODEL_MANIFEST_B64 = base64.b64encode(
 N_ROLLOUTS = int(os.environ.get("EVAL_CW_N_ROLLOUTS", "100"))
 CONTACT_MULT = int(os.environ.get("EVAL_CW_CONTACT_MULT", "0"))
 ACCEPT_UNFINISHED = os.environ.get("EVAL_CW_ACCEPT_UNFINISHED") == "1"
+SAVE_ROLLOUTS = os.environ.get("EVAL_CW_SAVE_ROLLOUTS") == "1"
+CHUNK = int(os.environ.get("EVAL_CW_CHUNK", "8"))
 TOP_K = int(os.environ.get("EVAL_CW_TOP_K", "-1"))
 TOP_P = float(os.environ.get("EVAL_CW_TOP_P", "0.95"))
 TEMPERATURE = float(os.environ.get("EVAL_CW_TEMPERATURE", "1.0"))
@@ -120,6 +122,7 @@ def build_bootstrap(*, shard_i: int, num_shards: int, limit: int | None) -> str:
     worker_b64 = base64.b64encode(WORKER_SCRIPT.read_bytes()).decode()
     limit_arg = f" --limit {limit}" if limit else ""
     unfinished_arg = " --accept-unfinished" if ACCEPT_UNFINISHED else ""
+    save_arg = " --save-rollouts" if SAVE_ROLLOUTS else ""
     return f"""
 set -euo pipefail
 echo "[eval-cw] host=$(hostname) label={MODEL_LABEL} shard={shard_i}/{num_shards} image={VLLM_IMAGE}"
@@ -169,7 +172,8 @@ exec "$VLLM_PY" {WORKER_LOCAL} \\
     --contact-mult {CONTACT_MULT} \\
     --temperature {TEMPERATURE} \\
     --top-p {TOP_P} \\
-    --top-k {TOP_K}{limit_arg}{unfinished_arg}
+    --chunk {CHUNK} \\
+    --top-k {TOP_K}{limit_arg}{unfinished_arg}{save_arg}
 """.strip()
 
 

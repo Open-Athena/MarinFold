@@ -45,6 +45,19 @@ SCORE_SCHEMA = pa.schema(
     ]
 )
 
+ROLLOUT_SCHEMA = pa.schema(
+    [
+        ("dataset", pa.string()),
+        ("stem", pa.string()),
+        ("rollout", pa.int32()),
+        ("sampling_seed", pa.int64()),
+        ("finish_reason", pa.string()),
+        ("generated_tokens", pa.int32()),
+        ("parsed_contacts", pa.int32()),
+        ("contacts", pa.list_(pa.list_(pa.int16(), 2))),
+    ]
+)
+
 TIMING_SCHEMA = pa.schema(
     [
         ("dataset", pa.string()),
@@ -237,6 +250,23 @@ def generation_token_budget(
     return min(available_context, contact_mult * length + 128)
 
 
+def parse_rollout_contacts(
+    text: str, position_map: dict[int, int], chain_lengths: list[int]
+) -> tuple[list[tuple[int, int]], int]:
+    """Decode unique contacts in emission order into canonical chain coordinates."""
+    matches = CONTACT_RE.findall(text)
+    contacts: dict[tuple[int, int], None] = {}
+    for first_position, second_position in matches:
+        first = position_map.get(int(first_position))
+        second = position_map.get(int(second_position))
+        if first is None or second is None or first == second:
+            continue
+        if same_chain_too_close(first, second, chain_lengths):
+            continue
+        contacts[(min(first, second), max(first, second))] = None
+    return list(contacts), len(matches)
+
+
 def rollout_position_map(document) -> dict[int, int]:
     """Map randomized multi-chain position tokens to concatenated indices."""
 
@@ -272,6 +302,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--top-k", type=int, default=-1)
     parser.add_argument("--contact-mult", type=int, default=DEFAULT_CONTACT_MULT)
     parser.add_argument("--accept-unfinished", action="store_true")
+    parser.add_argument("--save-rollouts", action="store_true")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--gpu-frac", type=float, default=0.90)
     parser.add_argument("--chunk", type=int, default=8)
@@ -429,6 +460,7 @@ def main() -> int:
         inference_seconds = time.monotonic() - inference_start
         score_rows = {name: [] for name in SCORE_SCHEMA.names}
         timing_rows: list[dict] = []
+        rollout_rows: list[dict] = []
         marker_units: list[dict] = []
         group_unfinished = 0
         unfinished_details: list[dict] = []
@@ -465,35 +497,32 @@ def main() -> int:
             parsed_contacts = 0
             valid_contacts = 0
 
-            for output, position_map in zip(record_outputs, position_maps, strict=True):
-                if output.outputs[0].finish_reason != "stop":
-                    continue
-                seen: set[tuple[int, int]] = set()
-                matches = CONTACT_RE.findall(output.outputs[0].text)
-                parsed_contacts += len(matches)
-                for first_position, second_position in matches:
-                    first_index = position_map.get(int(first_position))
-                    second_index = position_map.get(int(second_position))
-                    if (
-                        first_index is None
-                        or second_index is None
-                        or first_index == second_index
-                    ):
-                        continue
-                    pair = (
-                        min(first_index, second_index),
-                        max(first_index, second_index),
+            for rollout, (output, position_map) in enumerate(
+                zip(record_outputs, position_maps, strict=True)
+            ):
+                sample = output.outputs[0]
+                contacts, n_parsed = parse_rollout_contacts(
+                    sample.text, position_map, chain_lengths
+                )
+                if arguments.save_rollouts:
+                    rollout_rows.append(
+                        {
+                            "dataset": record["dataset"],
+                            "stem": record["stem"],
+                            "rollout": rollout,
+                            "sampling_seed": arguments.seed * 1_000_003 + first + rollout,
+                            "finish_reason": sample.finish_reason,
+                            "generated_tokens": len(sample.token_ids),
+                            "parsed_contacts": n_parsed,
+                            "contacts": contacts,
+                        }
                     )
-                    if (
-                        same_chain_too_close(
-                            first_index, second_index, chain_lengths
-                        )
-                        or pair in seen
-                    ):
-                        continue
-                    seen.add(pair)
+                if sample.finish_reason != "stop":
+                    continue
+                parsed_contacts += n_parsed
+                valid_contacts += len(contacts)
+                for pair in contacts:
                     votes[pair] += 1
-                    valid_contacts += 1
 
             row_indices, column_indices = np.nonzero(np.triu(votes, k=1))
             score_rows["dataset"].extend([record["dataset"]] * len(row_indices))
@@ -572,6 +601,12 @@ def main() -> int:
         score_uri = f"{output_directory}/scores/{part_stem}.parquet"
         timing_uri = f"{output_directory}/timings/{part_stem}.parquet"
         marker_uri = f"{output_directory}/complete/{part_stem}.json"
+        rollout_uri = None
+        if arguments.save_rollouts:
+            rollout_uri = f"{output_directory}/rollouts/{part_stem}.parquet"
+            write_parquet(
+                pa.Table.from_pylist(rollout_rows, schema=ROLLOUT_SCHEMA), rollout_uri
+            )
         write_parquet(pa.table(score_rows, schema=SCORE_SCHEMA), score_uri)
         write_parquet(
             pa.Table.from_pylist(timing_rows, schema=TIMING_SCHEMA), timing_uri
@@ -586,6 +621,7 @@ def main() -> int:
                 "unfinished_details": unfinished_details,
                 "score_uri": score_uri,
                 "timing_uri": timing_uri,
+                "rollout_uri": rollout_uri,
             },
             marker_uri,
         )

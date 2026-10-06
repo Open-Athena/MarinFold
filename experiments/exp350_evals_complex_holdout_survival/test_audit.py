@@ -1,5 +1,8 @@
 """Tests for leakage decisions whose mistakes would silently certify dirty targets."""
 
+from itertools import combinations
+
+import numpy as np
 import pyarrow.parquet as pq
 import pytest
 
@@ -11,10 +14,16 @@ from freeze_foldbench_eval import DATA, qualifying_alignment
 from score_complex_rollout_worker import (
     candidate_pair_count,
     generation_token_budget,
+    parse_rollout_contacts,
     same_chain_too_close,
 )
 from score_foldbench_contacts import target_r_precision
 from score_helico_structures import compare_test_arms, dockq_maps
+from score_rollout_sampling import (
+    expected_best,
+    expected_r_precision,
+    random_union_recall,
+)
 
 
 def test_ring_wrap_and_shuffled_statements() -> None:
@@ -221,6 +230,42 @@ def test_complex_candidate_universe_applies_separation_within_chains_only() -> N
     assert same_chain_too_close(8, 9, [10, 3])
     assert not same_chain_too_close(9, 10, [10, 3])
     assert not same_chain_too_close(0, 9, [10, 3])
+
+
+def test_saved_rollout_preserves_cross_chain_pairs_and_emission_order() -> None:
+    text = (
+        "<contact> <p1999> <p0> <contact> <p0> <p1999> "
+        "<contact> <p1> <p0> <contact> <p4> <p3> "
+        "<contact> <p9> <p1999>"
+    )
+    contacts, count = parse_rollout_contacts(
+        text, {1999: 2, 0: 3, 1: 4, 4: 0, 3: 5}, [3, 3]
+    )
+    assert count == 5
+    assert contacts == [(2, 3), (0, 5)]
+
+
+def test_expected_best_matches_exhaustive_subsets_with_ties() -> None:
+    values = np.array([0.0, 0.2, 0.2, 0.9, 1.0])
+    for k in range(1, len(values) + 1):
+        brute_force = np.mean([max(subset) for subset in combinations(values, k)])
+        assert expected_best(values, k) == pytest.approx(brute_force)
+
+
+def test_binary_r_precision_accounts_for_both_score_tiers() -> None:
+    assert expected_r_precision(2, 2, 2, 10) == 1.0
+    assert expected_r_precision(0, 0, 2, 10) == 0.2
+    assert expected_r_precision(2, 4, 2, 10) == 0.5
+    assert expected_r_precision(1, 1, 2, 10) == pytest.approx((1 + 1 / 9) / 2)
+
+
+def test_random_union_matches_exhaustive_subset_products() -> None:
+    counts = np.array([0, 1, 4, 7, 10])
+    actual = random_union_recall(counts, 10)
+    for k in range(1, len(counts) + 1):
+        expected = np.mean([1 - np.prod(1 - np.array(subset) / 10)
+                            for subset in combinations(counts, k)])
+        assert actual[k] == pytest.approx(expected)
 
 
 def test_complex_rollout_budget_avoids_the_monomer_cap_regression() -> None:

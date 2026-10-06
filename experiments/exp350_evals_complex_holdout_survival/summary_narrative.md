@@ -75,3 +75,19 @@ On 17 test targets, mean DockQ is **0.0362** with contacts withheld, **0.0546** 
 The paired all-contact minus withheld delta is **+0.0335 [0.0024, 0.0679]**. All-contact minus intra-only is **+0.0151 [0.0002, 0.0266]**. Both improve 12/17 targets, isolating a positive contribution from predicted inter-chain contacts.
 
 Absolute predicted-contact performance remains low: 2/17 targets reach DockQ >=0.23, versus 1/17 with contacts withheld and 17/17 with oracle contacts.
+
+## Does sampling 1,000 times recover the interface?
+
+Exploratory follow-up: 1,000 attempted rollouts on each of the same 23 targets. Ten unfinished attempts receive zero credit; the target set remains fixed. Individual saved maps exactly reconstruct every aggregate vote.
+
+On 17 test targets, oracle best@100 F1 is **0.110**, rising to **0.192** at best@1000 (matched random: 0.033 and 0.054). Oracle R-precision rises from **0.093 to 0.165**. These require experimental truth to select the sample.
+
+No target has a sample with F1 >=0.5. The strongest is 8jca: 9 correct contacts out of 29 predicted and 29 true (31% precision and recall).
+
+## Real contacts occur, but in different samples
+
+Pooling 1,000 maps recovers **85.7%** of true contacts on average. A matched random pool already recovers **67.2%**, so pooled coverage alone is weak evidence.
+
+The best-of-many F1 advantage over random is real, but the best selected maps average only 26.6% precision and 18.3% recall. Ordinary 1,000-sample consensus reaches **0.0373 R-precision**.
+
+The contact model sometimes emits correct fragments of an interface; these samples do not establish reliable interface recovery. Learned selection or structural realization from this diversity remains untested.

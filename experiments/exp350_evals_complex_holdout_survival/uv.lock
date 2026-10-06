@@ -582,6 +582,8 @@ dependencies = [
     { name = "pyarrow" },
     { name = "requests" },
     { name = "s3fs" },
+    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "setuptools" },
 ]
 
@@ -603,6 +605,7 @@ requires-dist = [
     { name = "pyarrow", specifier = ">=20" },
     { name = "requests", specifier = ">=2.32" },
     { name = "s3fs", specifier = ">=2026.1" },
+    { name = "scipy", specifier = ">=1.13" },
     { name = "setuptools", specifier = ">=68" },
 ]
 

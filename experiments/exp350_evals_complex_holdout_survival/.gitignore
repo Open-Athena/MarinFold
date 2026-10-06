@@ -1,0 +1,3 @@
+# Individual sample details live in the public sampling_v1/derived bundle.
+/data/sampling_v1/per_rollout.csv
+/data/sampling_v1/oracle_selected.json
