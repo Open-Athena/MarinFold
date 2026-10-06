@@ -96,10 +96,14 @@ TOP_P = float(os.environ.get("EVAL_CW_TOP_P", "0.95"))
 TEMPERATURE = float(os.environ.get("EVAL_CW_TEMPERATURE", "1.0"))
 
 WORKER_SCRIPT = Path(__file__).with_name("score_complex_rollout_worker.py")
-TARGETS_FILE = Path(__file__).with_name("data") / "foldbench_complex_eval_targets.parquet"
+TARGETS_FILE = (
+    Path(__file__).with_name("data")
+    / "foldbench_complex_contact_eval_targets.parquet"
+)
 TARGETS_HF = (
     "hf://buckets/open-athena/MarinFold/data/evals/"
-    "exp350_foldbench_pair_holdout/v1/data/foldbench_complex_eval_targets.parquet"
+    "exp350_foldbench_pair_holdout/contact_eval_v1/"
+    "foldbench_complex_contact_eval_targets.parquet"
 )
 TARGETS_SHA256 = hashlib.sha256(TARGETS_FILE.read_bytes()).hexdigest()
 WORK_DIR = "/tmp/exp350_complex_eval"

@@ -145,12 +145,23 @@ extensions rather than pooled with natural complexes.
 | after Helico fine-tuning pair screen | 32 | 13 | 19 |
 | natural frozen benchmark | **30** | **13** | **17** |
 
-The 30 targets form 26 connected homology groups under the same exact 30%
-identity / 50%-of-shorter rule. Twenty-five groups are singletons; one
-five-target group shares a ubiquitin-family partner and stays entirely in test.
-The deterministic metadata-only split assigns 8 targets to development and 22
-to test. Development has 3 homodimers and test has 10; mean total length is
-448.25 versus 448.27 residues, respectively.
+The 30 structural targets form 26 connected homology groups under the same exact
+30% identity / 50%-of-shorter rule. Twenty-five groups are singletons; one
+five-target group shares a ubiquitin-family partner. A full-context diagnostic
+then ran 100 rollouts per target. Seven homodimers had at least one rollout use
+the checkpoint's complete 8,192-token context without finishing: 147 of 3,000
+diagnostic rollouts. A strict 100-rollout contact score would therefore be
+undefined for those targets. They remain in the structural source set, but the
+primary contact and contact-conditioned structural evaluation uses the 23
+context-complete targets.
+
+The contact set contains 19 connected homology groups, 6 homodimers and 17
+heterodimers. Its deterministic metadata-only split assigns 6 targets to
+development and 17 to test. Mean total length is 361.33 versus 361.29 residues,
+respectively. Report contact coverage as 23/30 alongside R-precision; do not
+treat truncated generations as finished samples. The context audit and
+filtered target table are public in the [MarinFold HF
+bucket](https://huggingface.co/buckets/open-athena/MarinFold/tree/main/data/evals/exp350_foldbench_pair_holdout/contact_eval_v1).
 
 For contact scoring, each target has a full canonical two-chain input, explicit
 FoldBench label-chain to mmCIF author-chain mapping, resolved-residue mask and
@@ -174,8 +185,9 @@ uv run python freeze_foldbench_eval.py --threads 24
 uv run python publish_foldbench_eval.py
 ```
 
-`foldbench_complex_eval_targets.parquet` is ready for a multi-chain adaptation
-of the exp82 100-rollout evaluator and carries the conventional `dataset`,
+`foldbench_complex_contact_eval_targets.parquet` is ready for the strict
+multi-chain adaptation of the exp82 100-rollout evaluator and carries the
+conventional `dataset`,
 `stem`, `L`, `input_seq`, `resolved`, `contacts`, and `gt_contacts` fields plus
 chain boundaries. `score_foldbench_contacts.py` implements stable top-R scoring
 over resolved cross-chain pairs and bootstraps independent homology groups.
@@ -190,7 +202,7 @@ context-ineligible and excluded before scoring. The CoreWeave dispatcher is
 pinned to
 `contacts-v1-exp343-m2-p06-complex-1.5B-step-280154`, validates the existing
 in-region checkpoint mirror, runs at batch priority and records per-target
-timings. Each root job retrieves the 183 KB frozen target parquet anonymously
+timings. Each root job retrieves the 160 KB contact target parquet anonymously
 from the public HF bundle, avoiding any workstation-to-object-store dependency:
 
 ```bash
@@ -220,13 +232,17 @@ ground-truth DockQ. Report DockQ, DockQ >=0.23 success, iRMSD and lRMSD.
 
 ## Conclusion
 
-Use the frozen 30-target FoldBench benchmark for the exp343 evaluation under the
-explicit **pair-held-out** claim: the model may have seen each component family
-separately, but no observed complex-training example contains homologs of both
-partners. FoldBench's temporal cutoff addresses inherited Protenix v1 exposure;
-the separate Helico fine-tuning pair screen addresses its later training pool.
+Use the frozen 30-target FoldBench set as the structural source benchmark under
+the explicit **pair-held-out** claim: the model may have seen each component
+family separately, but no observed complex-training example contains homologs
+of both partners. FoldBench's temporal cutoff addresses inherited Protenix v1
+exposure; the separate Helico fine-tuning pair screen addresses its later
+training pool.
 
-Tune contact budgets and structural settings on the 8-target development cut,
-then report the 22-target test cut once. Keep the strict component-held-out
-result as a separate negative finding; it does not yield a useful benchmark for
-this checkpoint. PINDER is not needed for this evaluation.
+Use the context-complete 23-target subset for primary R-precision and the
+matched contact-conditioned Helico comparison. Tune contact budgets and
+structural settings on its 6-target development cut, then report its 17-target
+test cut once. Report the seven context-ineligible targets as a structural-only
+extension. Keep the strict component-held-out result as a separate negative
+finding; it does not yield a useful benchmark for this checkpoint. PINDER is
+not needed for this evaluation.

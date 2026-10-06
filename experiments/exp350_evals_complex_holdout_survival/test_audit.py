@@ -128,6 +128,21 @@ def test_frozen_complex_universe_is_cross_chain_and_group_clean() -> None:
     assert all(len(splits) == 1 for splits in splits_by_group.values())
 
 
+def test_contact_eval_excludes_context_failures_before_resplitting() -> None:
+    rows = pq.read_table(
+        DATA / "foldbench_complex_contact_eval_targets.parquet"
+    ).to_pylist()
+    assert len(rows) == 23
+    assert sum(row["split"] == "dev" for row in rows) == 6
+    assert sum(row["split"] == "test" for row in rows) == 17
+    assert len({row["group_id"] for row in rows}) == 19
+    assert sum(row["complex_type"] == "homodimer" for row in rows) == 6
+    splits_by_group: dict[str, set[str]] = {}
+    for row in rows:
+        splits_by_group.setdefault(row["group_id"], set()).add(row["split"])
+    assert all(len(splits) == 1 for splits in splits_by_group.values())
+
+
 def test_inter_chain_r_precision_uses_only_resolved_interface_pairs() -> None:
     target = {
         "target_id": "example",

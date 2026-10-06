@@ -46,10 +46,18 @@ The set contains 13 homodimers and 17 heterodimers in 26 connected 30%-identity 
 
 Every target ships with its exact FoldBench assembly, canonical two-chain input, label-to-author residue map, resolved cross-chain candidate universe, and contacts-v1 pyconfind ground truth.
 
+## Contact-context eligibility
+
+A full-context diagnostic ran 100 rollouts for every target. Seven homodimers had at least one rollout reach the checkpoint's complete 8,192-token context: 147/3,000 rollouts in total. These remain valid structural targets but cannot support the strict exp82 requirement that every rollout finish.
+
+The primary contact and contact-conditioned structural comparison therefore uses **23 context-complete targets** in 19 homology groups. Its metadata-only split has **6 development / 17 test targets**, 6 homodimers and 17 heterodimers, and mean lengths of 361.33 versus 361.29 residues.
+
 ## Evaluation contract
 
-Contact evaluation ranks only resolved cross-chain residue pairs. R is the number of degree >=0.001 pyconfind interface contacts; no within-chain sequence-separation filter is applied across chains. Contact-budget choices use development only; the 22-target test cut is read once for the final result.
+Contact evaluation ranks only resolved cross-chain residue pairs. R is the number of degree >=0.001 pyconfind interface contacts; no within-chain sequence-separation filter is applied across chains. Contact-budget choices use the 6-target development cut only; the 17-target test cut is read once for the final result.
 
 The structural bundle uses FoldBench's native layout for Helico/DockQ and retains the exact two scored chains even when a deposited assembly has extra copies. Model sample selection must use model confidence; ground-truth best-of-N remains an oracle diagnostic.
 
 The complete 12.3 MB bundle is public at `hf://buckets/open-athena/MarinFold/data/evals/exp350_foldbench_pair_holdout/v1`.
+
+The context audit and 23-target contact table are public at `hf://buckets/open-athena/MarinFold/data/evals/exp350_foldbench_pair_holdout/contact_eval_v1`.

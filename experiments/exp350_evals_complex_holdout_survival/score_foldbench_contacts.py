@@ -9,7 +9,7 @@ import numpy as np
 import pyarrow.parquet as pq
 
 HERE = Path(__file__).resolve().parent
-DEFAULT_TARGETS = HERE / "data/foldbench_complex_eval_targets.parquet"
+DEFAULT_TARGETS = HERE / "data/foldbench_complex_contact_eval_targets.parquet"
 REQUIRED_VOTE_COLUMNS = {"dataset", "stem", "L", "i", "j", "votes"}
 
 

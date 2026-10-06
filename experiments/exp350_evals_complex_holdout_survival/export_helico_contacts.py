@@ -10,7 +10,7 @@ import pyarrow.parquet as pq
 from score_foldbench_contacts import load_votes
 
 HERE = Path(__file__).resolve().parent
-DEFAULT_TARGETS = HERE / "data/foldbench_complex_eval_targets.parquet"
+DEFAULT_TARGETS = HERE / "data/foldbench_complex_contact_eval_targets.parquet"
 DEFAULT_BUDGETS = {"L5": 0.2, "L2": 0.5, "L": 1.0}
 
 

@@ -19,19 +19,25 @@ def read_csv(path: Path) -> list[dict[str, str]]:
 def main() -> None:
     """Render selection flow and development/test composition."""
     audit = read_csv(HERE / "data/foldbench_freeze_audit.csv")
-    frozen = read_csv(HERE / "data/foldbench_complex_eval.csv")
+    frozen = read_csv(HERE / "data/foldbench_complex_contact_eval.csv")
     counts = [
         len(audit),
         sum("helico" not in row["freeze_status"] for row in audit),
         sum(row["freeze_status"] == "included" for row in audit),
+        len(frozen),
     ]
     labels = [
         "MarinFold\npair-clean",
         "Helico fine-tuning\npair-clean",
         "Natural\nfrozen set",
+        "Context-complete\ncontact set",
     ]
     figure, axes = plt.subplots(1, 2, figsize=(12, 4.6))
-    bars = axes[0].bar(labels, counts, color=["#5577aa", "#66a07a", "#d08b49"])
+    bars = axes[0].bar(
+        labels,
+        counts,
+        color=["#5577aa", "#66a07a", "#d08b49", "#8b5fa8"],
+    )
     for bar, count in zip(bars, counts, strict=True):
         axes[0].text(
             bar.get_x() + bar.get_width() / 2,
@@ -76,9 +82,9 @@ def main() -> None:
         HERE / "plots/foldbench_eval_freeze.png",
         caption=(
             "The 35 MarinFold pair-clean FoldBench dimers yield 30 natural "
-            "targets after three Helico fine-tuning pair-homology exclusions "
-            "and two de novo binder exclusions. The 8/22 split is grouped by "
-            "connected chain homology and exactly balances mean total length."
+            "structural targets, of which 23 complete all 100 contact rollouts "
+            "inside the model's 8,192-token context. The 6/17 contact split is "
+            "grouped by chain homology and balances mean total length."
         ),
     )
 
