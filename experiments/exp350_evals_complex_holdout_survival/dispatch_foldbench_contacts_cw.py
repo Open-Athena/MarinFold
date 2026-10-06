@@ -90,6 +90,7 @@ MODEL_MANIFEST_B64 = base64.b64encode(
 
 N_ROLLOUTS = int(os.environ.get("EVAL_CW_N_ROLLOUTS", "100"))
 CONTACT_MULT = int(os.environ.get("EVAL_CW_CONTACT_MULT", "12"))
+ACCEPT_UNFINISHED = os.environ.get("EVAL_CW_ACCEPT_UNFINISHED") == "1"
 TOP_K = int(os.environ.get("EVAL_CW_TOP_K", "-1"))
 TOP_P = float(os.environ.get("EVAL_CW_TOP_P", "0.95"))
 TEMPERATURE = float(os.environ.get("EVAL_CW_TEMPERATURE", "1.0"))
@@ -114,6 +115,7 @@ FSSPEC_VIRTUAL_ADDRESSING_EXPORT = (
 def build_bootstrap(*, shard_i: int, num_shards: int, limit: int | None) -> str:
     worker_b64 = base64.b64encode(WORKER_SCRIPT.read_bytes()).decode()
     limit_arg = f" --limit {limit}" if limit else ""
+    unfinished_arg = " --accept-unfinished" if ACCEPT_UNFINISHED else ""
     return f"""
 set -euo pipefail
 echo "[eval-cw] host=$(hostname) label={MODEL_LABEL} shard={shard_i}/{num_shards} image={VLLM_IMAGE}"
@@ -163,7 +165,7 @@ exec "$VLLM_PY" {WORKER_LOCAL} \\
     --contact-mult {CONTACT_MULT} \\
     --temperature {TEMPERATURE} \\
     --top-p {TOP_P} \\
-    --top-k {TOP_K}{limit_arg}
+    --top-k {TOP_K}{limit_arg}{unfinished_arg}
 """.strip()
 
 
@@ -226,7 +228,7 @@ def main() -> None:
           f"1xH100 batch band | image={VLLM_IMAGE}\n"
           f"          n_rollouts={N_ROLLOUTS} contact_mult={CONTACT_MULT} "
           f"top_k={TOP_K} top_p={TOP_P} T={TEMPERATURE} "
-          f"limit={a.limit}\n"
+          f"limit={a.limit} accept_unfinished={ACCEPT_UNFINISHED}\n"
           f"          targets={TARGETS_HF} ({TARGETS_FILE.stat().st_size} bytes)"
           f"\n          out={OUT_S3}")
     print(f"          model {MODEL_LABEL}: {MODEL_S3}")
