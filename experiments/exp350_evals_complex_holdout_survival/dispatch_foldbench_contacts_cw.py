@@ -21,6 +21,7 @@ Dry-run locally (build + print the JobRequests, no submit)::
 import argparse
 import base64
 import dataclasses
+import gzip
 import json
 import os
 from pathlib import Path
@@ -96,6 +97,18 @@ TARGETS_FILE = Path(__file__).with_name("data") / "foldbench_complex_eval_target
 WORK_DIR = "/tmp/exp350_complex_eval"
 WORKER_LOCAL = f"{WORK_DIR}/score_complex_rollout_worker.py"
 TARGETS_LOCAL = f"{WORK_DIR}/eval_targets.parquet"
+TARGETS_GZIP_B64 = base64.b64encode(
+    gzip.compress(TARGETS_FILE.read_bytes(), compresslevel=9)
+).decode()
+TARGETS_ENV_VARS = {
+    f"EVAL_TARGETS_GZIP_B64_{start // 80_000}": TARGETS_GZIP_B64[
+        start : start + 80_000
+    ]
+    for start in range(0, len(TARGETS_GZIP_B64), 80_000)
+}
+TARGETS_RESTORE = "\n".join(
+    """printf '%s' "$""" + name + '"' for name in TARGETS_ENV_VARS
+)
 
 # CoreWeave object storage rejects path-style S3. Literal braces on purpose.
 FSSPEC_VIRTUAL_ADDRESSING_EXPORT = (
@@ -105,7 +118,6 @@ FSSPEC_VIRTUAL_ADDRESSING_EXPORT = (
 
 def build_bootstrap(*, shard_i: int, num_shards: int, limit: int | None) -> str:
     worker_b64 = base64.b64encode(WORKER_SCRIPT.read_bytes()).decode()
-    targets_b64 = base64.b64encode(TARGETS_FILE.read_bytes()).decode()
     limit_arg = f" --limit {limit}" if limit else ""
     return f"""
 set -euo pipefail
@@ -117,7 +129,9 @@ echo "[eval-cw] AWS_ENDPOINT_URL=${{AWS_ENDPOINT_URL:-unset}} iris_FSSPEC_S3=${{
 
 mkdir -p {WORK_DIR}
 echo {worker_b64} | base64 -d > {WORKER_LOCAL}
-echo {targets_b64} | base64 -d > {TARGETS_LOCAL}
+(
+{TARGETS_RESTORE}
+) | base64 -d | gzip -d > {TARGETS_LOCAL}
 
 # vLLM + torch + transformers are baked into the image. Install marinfold WITHOUT
 # its dependency set so nothing repins the image's transformers out from under
@@ -179,12 +193,13 @@ def build_request(
         # from the workstation with no workspace bundle, so there is no pyproject to
         # sync (the step fails outright) — and we don't want one: the vLLM image
         # already has torch/vLLM, and the bootstrap installs the few extra wheels.
-        environment=create_environment(docker_image=VLLM_IMAGE, env_vars={},
+        environment=create_environment(docker_image=VLLM_IMAGE, env_vars=TARGETS_ENV_VARS,
                                        setup_scripts=[]),
         replicas=1,
         priority=IRIS_PRIORITY_BAND_BATCH,
         processes_per_task=1,
         max_retries_failure=3,
+        max_task_failures=3,
         max_retries_preemption=100,      # batch band is preemptible; the worker resumes
     )
 
