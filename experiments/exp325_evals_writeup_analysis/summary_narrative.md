@@ -48,7 +48,8 @@ Protein order: 8ii8_A, 8oxk_A, 8qoh_A, 8ux2_A, 8wrx_A.
 14 of the 15 well-covered 8ux2_A hits are 97.9–100% identical to the query.
 Counts exclude the added query; they are not Neff or final training-cluster counts.
 
-Newer UniProt and restricted MGnify searches remain shallow; versions kept separate.
+Online MGnify30 hits count heavily clustered representatives, not training-source depth.
+ESMC uses 70%-identity clustering; historical MGnify90 is the closer public search target.
 Full historical MGnify and JGI are not yet searched. Complete training depth is unknown.
 See TRAINING_SOURCE_SEARCH.md and data/training_source_depths.csv for details.
 Offline reduction: uv run python generation/search_training_sources.py prepare

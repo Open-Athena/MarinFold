@@ -10,6 +10,31 @@ not listed. The [model card](https://huggingface.co/biohub/ESMC-6B#training-data
 describes clustering at 70% sequence identity. Source-database hits are not
 counts of the final clusters sampled during training or proof of membership.
 
+## Which MGnify database answers the question?
+
+**MGnify30 representative-hit counts are not a suitable estimate of training-source
+MSA depth.** The historical release distributes representatives clustered at
+90% identity and 90% coverage (MGnify90), as documented in its
+[release README](https://ftp.ebi.ac.uk/pub/databases/metagenomics/peptide_database/2023_02/README.txt).
+ESMC's model card describes its own 70%-identity clustering, yielding 372 million
+MGnify clusters. This does not identify the exact processed sequence list or
+establish that every released MGnify90 representative entered ESMC training.
+
+The hosted MGnify30-C2 index collapses sequences much more aggressively and
+also excludes singleton clusters. One returned representative can stand for
+many homologs, and a representative search can miss a match to another member.
+Counting its hits without expanding and realigning cluster members cannot
+recover MGnify90 depth or ESMC's 70%-cluster depth. Its newer release introduces
+a separate mismatch. We selected it because it was the available hosted search,
+not because it matched ESMC's training preprocessing.
+
+For the source-abundance question, the appropriate public starting point is
+historical MGnify90 2023_02, retaining or recovering cluster membership when
+counting sequences. For training exposure, the ideal target is ESMC's processed
+70%-clustered corpus with its sampling policy. The existing online search is
+only a limited homolog-discovery check; its small counts are not evidence that
+the proteins have few homologs in MGnify or ESMC's training corpus.
+
 ## Historical UniRef
 
 ColabFold's [database history](https://github.com/sokrypton/ColabFold/wiki/MSA-Server-Database-History)
