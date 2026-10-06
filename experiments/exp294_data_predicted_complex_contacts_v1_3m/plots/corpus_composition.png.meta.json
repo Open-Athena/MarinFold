@@ -1,0 +1,10 @@
+{
+  "script": "plots.py",
+  "args": [
+    "--input",
+    "/data/exp294_predicted_complexes/metadata/normalized_*.parquet",
+    "--corpus-stats-json",
+    "/data/exp294_release/corpus/corpus_stats.json"
+  ],
+  "caption": "The finished corpus. AFCDB's heterodimer pool is exhausted at 183k, so the 500k heterodimer target is reached by adding PINDER."
+}

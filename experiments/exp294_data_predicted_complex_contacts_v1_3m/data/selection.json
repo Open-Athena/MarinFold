@@ -1,0 +1,87 @@
+{
+  "policy": {
+    "version": "pilot-v1-census",
+    "target_docs": 3000000,
+    "min_heterodimers": 200000,
+    "min_relaxed_quality_ratio": 0.3,
+    "max_total_residues": 1998,
+    "min_reported_interactions": 1,
+    "max_backbone_clashes": 10,
+    "max_length_mismatch": 0,
+    "sequence_annotation_path": "/data/exp294_predicted_complexes/accession_annotations.parquet",
+    "ranking": "quality_ratio DESC, ipsae_score DESC, pdockq2_score DESC, iptm DESC, num_interactions DESC, clashes_backbone ASC, source_model_key ASC",
+    "tier_a_docs": 1753570,
+    "tier_a_heterodimers": 65366,
+    "tier_b_heterodimer_floor_docs": 118443,
+    "tier_b_quota_docs": 1127987,
+    "selected_docs": 3000000,
+    "selected_heterodimers": 183809
+  },
+  "target_met": true,
+  "heterodimer_floor_met": false,
+  "selected_docs": 3000000,
+  "unique_sequence_pairs": 3000000,
+  "max_documents_per_sequence_pair": 1,
+  "ledger": [
+    {
+      "status": "not_selected",
+      "reason": "below_relaxed_quality_floor",
+      "rows": 10735524
+    },
+    {
+      "status": "not_selected",
+      "reason": "quota_filled_by_higher_ranked_models",
+      "rows": 133155
+    },
+    {
+      "status": "rejected",
+      "reason": "does_not_fit_contacts_ring",
+      "rows": 829608
+    },
+    {
+      "status": "rejected",
+      "reason": "duplicate_sequence_pair",
+      "rows": 441456
+    },
+    {
+      "status": "rejected",
+      "reason": "eval_sequence_homolog",
+      "rows": 2019682
+    },
+    {
+      "status": "rejected",
+      "reason": "missing_accession",
+      "rows": 895
+    },
+    {
+      "status": "rejected",
+      "reason": "missing_sequence_annotation",
+      "rows": 431536
+    },
+    {
+      "status": "rejected",
+      "reason": "no_reported_interaction",
+      "rows": 949709
+    },
+    {
+      "status": "rejected",
+      "reason": "sequence_model_length_mismatch",
+      "rows": 47118
+    },
+    {
+      "status": "rejected",
+      "reason": "too_many_backbone_clashes",
+      "rows": 10436337
+    },
+    {
+      "status": "selected",
+      "reason": "tier_a",
+      "rows": 1753570
+    },
+    {
+      "status": "selected",
+      "reason": "tier_b",
+      "rows": 1246430
+    }
+  ]
+}
