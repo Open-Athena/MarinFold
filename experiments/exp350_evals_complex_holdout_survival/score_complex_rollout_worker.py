@@ -31,7 +31,7 @@ BEGIN = "<begin_statements>"
 NUM_POSITIONS = 2_000
 MINIMUM_SEPARATION = 6
 MODEL_CONTEXT = 8_192
-DEFAULT_CONTACT_MULT = 12
+DEFAULT_CONTACT_MULT = 0
 CONTACT_RE = re.compile(r"<contact>\s+<p(\d+)>\s+<p(\d+)>")
 
 SCORE_SCHEMA = pa.schema(
@@ -231,7 +231,10 @@ def generation_token_budget(
     contact_mult: int = DEFAULT_CONTACT_MULT,
 ) -> int:
     """Return a non-truncating complex rollout budget within model context."""
-    return min(MODEL_CONTEXT - prompt_tokens, contact_mult * length + 128)
+    available_context = MODEL_CONTEXT - prompt_tokens
+    if contact_mult <= 0:
+        return available_context
+    return min(available_context, contact_mult * length + 128)
 
 
 def rollout_position_map(document) -> dict[int, int]:

@@ -182,10 +182,12 @@ over resolved cross-chain pairs and bootstraps independent homology groups.
 
 The chain-aware rollout worker preserves exp82's 100-sample settings while
 giving each chain independent termini and applying the six-residue separation
-filter only within a chain. Its complex-specific generation cap is `12L+128`,
-bounded by the model's remaining 8,192-token context; the exp82 monomer cap of
-`6L+128` truncated dense complex rollouts during the launch smoke test. Its
-CoreWeave dispatcher is pinned to
+filter only within a chain. Complex rollouts may use the model's entire
+remaining 8,192-token context: launch diagnostics showed that both the exp82
+monomer cap of `6L+128` and a `12L+128` cap truncate dense complex outputs.
+Targets whose rollouts still truncate at the full model context are
+context-ineligible and excluded before scoring. The CoreWeave dispatcher is
+pinned to
 `contacts-v1-exp343-m2-p06-complex-1.5B-step-280154`, validates the existing
 in-region checkpoint mirror, runs at batch priority and records per-target
 timings. Each root job retrieves the 183 KB frozen target parquet anonymously

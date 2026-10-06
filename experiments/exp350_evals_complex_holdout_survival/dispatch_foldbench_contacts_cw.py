@@ -89,7 +89,7 @@ MODEL_MANIFEST_B64 = base64.b64encode(
 ).decode()
 
 N_ROLLOUTS = int(os.environ.get("EVAL_CW_N_ROLLOUTS", "100"))
-CONTACT_MULT = int(os.environ.get("EVAL_CW_CONTACT_MULT", "12"))
+CONTACT_MULT = int(os.environ.get("EVAL_CW_CONTACT_MULT", "0"))
 ACCEPT_UNFINISHED = os.environ.get("EVAL_CW_ACCEPT_UNFINISHED") == "1"
 TOP_K = int(os.environ.get("EVAL_CW_TOP_K", "-1"))
 TOP_P = float(os.environ.get("EVAL_CW_TOP_P", "0.95"))

@@ -174,5 +174,13 @@ def test_complex_candidate_universe_applies_separation_within_chains_only() -> N
 
 
 def test_complex_rollout_budget_avoids_the_monomer_cap_regression() -> None:
-    assert generation_token_budget(prompt_tokens=1_000, length=346) == 4_280
+    assert (
+        generation_token_budget(
+            prompt_tokens=1_000,
+            length=346,
+            contact_mult=12,
+        )
+        == 4_280
+    )
+    assert generation_token_budget(prompt_tokens=1_000, length=346) == 7_192
     assert generation_token_budget(prompt_tokens=2_000, length=1_152) == 6_192
