@@ -6,9 +6,9 @@
 
 ## Question
 
-Can FoldBench PPI and PINDER test support a useful experimental-complex benchmark under a 30% identity threshold?
+Can FoldBench PPI support a useful experimental-complex benchmark under a 30% identity threshold?
 
-We compare a strict component-held-out claim with a pair-held-out claim, then screen the resulting pairs against Helico's documented fine-tuning PDB pool.
+We compare a strict component-held-out claim with a pair-held-out claim, then freeze a FoldBench-only set released after the inherited Protenix v1 training cutoff.
 
 ## Two holdout claims
 
@@ -34,6 +34,22 @@ Exact MMseqs backtraces provide integer identity counts. Commands, hashes, compa
 
 ## Decision
 
-Proceed to benchmark freezing under the explicit **pair-held-out** claim. Start with 218 MarinFold-clean pairs and use the 97-candidate conservative subset for Helico reporting.
+Use FoldBench under the explicit **pair-held-out** claim. Its release-date design protects the Helico comparison from inherited Protenix v1 pretraining exposure. We still remove three targets with a paired homolog in Helico's later fine-tuning pool.
 
-Before inference, cluster and deduplicate assemblies, remove prior development targets, and split development/test by connected homology group. Helico's inherited Protenix pretraining remains unknown, so structural results cannot claim a fully certified end-to-end holdout.
+PINDER is not part of the frozen benchmark.
+
+## Frozen FoldBench evaluation
+
+The 35 MarinFold-clean pairs become **30 natural dimers** after the three Helico fine-tuning exclusions and manual removal of two de novo binder targets.
+
+The set contains 13 homodimers and 17 heterodimers in 26 connected 30%-identity groups. One five-target ubiquitin-related group is kept intact. The deterministic split has **8 development and 22 test targets**; both cuts have the same mean length (448.25 vs 448.27 residues).
+
+Every target ships with its exact FoldBench assembly, canonical two-chain input, label-to-author residue map, resolved cross-chain candidate universe, and contacts-v1 pyconfind ground truth.
+
+## Evaluation contract
+
+Contact evaluation ranks only resolved cross-chain residue pairs. R is the number of degree >=0.001 pyconfind interface contacts; no within-chain sequence-separation filter is applied across chains. Contact-budget choices use development only; the 22-target test cut is read once for the final result.
+
+The structural bundle uses FoldBench's native layout for Helico/DockQ and retains the exact two scored chains even when a deposited assembly has extra copies. Model sample selection must use model confidence; ground-truth best-of-N remains an oracle diagnostic.
+
+The complete 12.3 MB bundle is public at `hf://buckets/open-athena/MarinFold/data/evals/exp350_foldbench_pair_holdout/v1`.

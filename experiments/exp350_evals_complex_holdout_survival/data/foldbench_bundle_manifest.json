@@ -1,0 +1,254 @@
+{
+  "dataset": "foldbench_complex_pair_holdout_v1",
+  "public_prefix": "hf://buckets/open-athena/MarinFold/data/evals/exp350_foldbench_pair_holdout/v1",
+  "foldbench_revision": "90a6033fed4fcb74d4f1304e932fd93b52d48a6c",
+  "foldbench_targets_sha256": "1d5a1a451b6831399a941a2c1efe998af3668165b471553177c6f3b441a9c8a8",
+  "selection": {
+    "pair_clean_candidates": 35,
+    "helico_finetune_pair_exclusions": 3,
+    "manual_design_exclusions": 2,
+    "included": 30,
+    "dev": 8,
+    "test": 22,
+    "homology_groups": 26
+  },
+  "coordinate_convention": "zero-based full canonical chain-1 || chain-2 sequence coordinates; candidate universe is Cartesian product of resolved positions in different chains",
+  "contact_definition": "contacts-v1 pyconfind native-only; degree >=0.001; inter-chain only",
+  "files": [
+    {
+      "path": "LICENSE.foldbench",
+      "bytes": 1079,
+      "sha256": "c3f1499802e196db2770717e5310336adac323fa8892dbba2d00eb360607507e"
+    },
+    {
+      "path": "README.md",
+      "bytes": 1129,
+      "sha256": "3a2f9fb0185715ffdfd5d23e94ad0be50ab51da64d784d2bc8a8f2fe6f25eb81"
+    },
+    {
+      "path": "data/foldbench_complex_eval.csv",
+      "bytes": 2802,
+      "sha256": "769a2188f9fc3f3f8b8a1c7ee510adc75210b254b18f3d49eb7ede70107f12a8"
+    },
+    {
+      "path": "data/foldbench_complex_eval_targets.parquet",
+      "bytes": 182730,
+      "sha256": "d4524963b57abdbd9d4df88d2c94b159c3f74b5171eb702e989e5073bfd78dc2"
+    },
+    {
+      "path": "data/foldbench_complex_gt_universe.jsonl",
+      "bytes": 539634,
+      "sha256": "40a8d75a07f8e8a25685e275ef06fbac3f23dc56585666ec18ba8094e0830ad6"
+    },
+    {
+      "path": "data/foldbench_eval_chains.csv",
+      "bytes": 18812,
+      "sha256": "a27681e12cada4539c0c49eb846578ed679a2d348d98d583ad8670dcd0ce8fbd"
+    },
+    {
+      "path": "data/foldbench_eval_chains.fasta",
+      "bytes": 14718,
+      "sha256": "5c1f223082829241e66d1d9636a2f449ad46ccb95520e26f7871a5153d22fe8f"
+    },
+    {
+      "path": "data/foldbench_freeze_audit.csv",
+      "bytes": 7149,
+      "sha256": "9f90f4626c89ca913898c6939558bd349db4e314c73d1b30b11b121388e729a5"
+    },
+    {
+      "path": "data/foldbench_homology_edges.csv",
+      "bytes": 1030,
+      "sha256": "82bb72efa47ca6b14df462a7f1e6410344edc6b318052b8e113b45d26aea2da5"
+    },
+    {
+      "path": "data/foldbench_homology_groups.csv",
+      "bytes": 995,
+      "sha256": "4e33690d7640d8305713d63f585d9a5265a562373de93c2b48ec9ddf8a7670ee"
+    },
+    {
+      "path": "data/foldbench_self_query_alignments.tsv",
+      "bytes": 9958,
+      "sha256": "a59b08ebbeaca43e61c0f6f5ceb9bc3b9153586da0eb6735b52dee52fe3de6d5"
+    },
+    {
+      "path": "data/foldbench_self_query_search.log",
+      "bytes": 8486,
+      "sha256": "2072ff94e1c4cb6144f56af5a4ef3bae159ecdfd5129c066c9f576566f13c6f5"
+    },
+    {
+      "path": "data/foldbench_self_search.json",
+      "bytes": 2575,
+      "sha256": "4b2a38840e1275b79dbc86fe3242886977404abd1b8328ef3cfb5dbf6c170b69"
+    },
+    {
+      "path": "data/foldbench_self_target_alignments.tsv",
+      "bytes": 9958,
+      "sha256": "99589d97ef6d144fa5b785491a8e689d674e6824503c78829dadb5ba59d72012"
+    },
+    {
+      "path": "data/foldbench_self_target_search.log",
+      "bytes": 8493,
+      "sha256": "cbd2c6f0615890fc1c2c4f2bcfb5507f712a9287c7552dee74aa9ea6d0ac7dde"
+    },
+    {
+      "path": "examples/alphafold3_inputs.json",
+      "bytes": 32961,
+      "sha256": "447012211b35162b2d64d364212a63e72ab02c66d9824aa259b6fa122d1c7251"
+    },
+    {
+      "path": "examples/ground_truths/7ytu-assembly1.cif",
+      "bytes": 127140,
+      "sha256": "e77091d30d072935d28dfe2ce4bd5e8e133c2998d3a804d1f746d4eb6fa92c7e"
+    },
+    {
+      "path": "examples/ground_truths/8adb-assembly1.cif",
+      "bytes": 450814,
+      "sha256": "31d3d4e9eebfe0d95433ace3e318e96593ead85518ba5d9bf8b00a644a97d62d"
+    },
+    {
+      "path": "examples/ground_truths/8axi-assembly1.cif",
+      "bytes": 1177266,
+      "sha256": "8422e5d2a1e148e3c2b336374531f88b6b92b4eee7bfb5bd29c0c3488120aa2d"
+    },
+    {
+      "path": "examples/ground_truths/8b3w-assembly1.cif",
+      "bytes": 962663,
+      "sha256": "792fba4760ddc408039590b0b94a11e9fa8dcf9156936c2314660460dd3f436c"
+    },
+    {
+      "path": "examples/ground_truths/8btj-assembly1.cif",
+      "bytes": 946802,
+      "sha256": "8f8bc545d485e1527a81ea98b818cd8f75db645c451189ed4f673f288a42c06f"
+    },
+    {
+      "path": "examples/ground_truths/8cqm-assembly1.cif",
+      "bytes": 261380,
+      "sha256": "43856d4bad3815a5394230fd7189a5ae6eda476d7f96f8921482699307dc13de"
+    },
+    {
+      "path": "examples/ground_truths/8ebb-assembly1.cif",
+      "bytes": 190391,
+      "sha256": "2e54e15faf9dc59e4f924adf34a55c5e855017ec19490930b5856c56e8b84426"
+    },
+    {
+      "path": "examples/ground_truths/8h1m-assembly1.cif",
+      "bytes": 525092,
+      "sha256": "cbf6778f10b6776ca4507ea8c2fa4278f9778964afcf65537f8b3df09afc4900"
+    },
+    {
+      "path": "examples/ground_truths/8hhj-assembly1.cif",
+      "bytes": 115268,
+      "sha256": "bc009c306b09421a836178cbee79f2bb22963f9d56e09f9d0ae1333b26d6133a"
+    },
+    {
+      "path": "examples/ground_truths/8htd-assembly1.cif",
+      "bytes": 275705,
+      "sha256": "cf0dd803772342e454f58106e8847843463ca01f03b27ea1c2bff0dc986550b8"
+    },
+    {
+      "path": "examples/ground_truths/8ipj-assembly1.cif",
+      "bytes": 245246,
+      "sha256": "abb53743cfb64e686e9a94e680c2b591f732a2d1815b3aec9f702e073e6091cd"
+    },
+    {
+      "path": "examples/ground_truths/8j48-assembly1.cif",
+      "bytes": 83913,
+      "sha256": "7e1ba2c56533c80a7de26cb32c416163c827a341f1396542aa8f1441faa5afd4"
+    },
+    {
+      "path": "examples/ground_truths/8jca-assembly1.cif",
+      "bytes": 321144,
+      "sha256": "a941a2aa744b6c0c4ac5aa06c381951aaf7bff98dd6025293e643543428e7390"
+    },
+    {
+      "path": "examples/ground_truths/8jyv-assembly1.cif",
+      "bytes": 475107,
+      "sha256": "cb7f304c87ee49e0af2f84cefd7832b4075607f1c0eb36def972cfd019cacb26"
+    },
+    {
+      "path": "examples/ground_truths/8ok4-assembly1.cif",
+      "bytes": 1097512,
+      "sha256": "ee7aea999e9d46d53bd294d70e8fe769c3ef8340ceafcc83c9c56be9b5e5a8f8"
+    },
+    {
+      "path": "examples/ground_truths/8onf-assembly1.cif",
+      "bytes": 474928,
+      "sha256": "f6893572ec1491f10850f394ac44d39261fa456de581a40a27e726d4327b079b"
+    },
+    {
+      "path": "examples/ground_truths/8ows-assembly1.cif",
+      "bytes": 236749,
+      "sha256": "176b0957763f739fda1bf8abd8cd62bd08378d133b49807c3c3f922fbeed923d"
+    },
+    {
+      "path": "examples/ground_truths/8pu1-assembly1.cif",
+      "bytes": 264385,
+      "sha256": "680d9f37ae46750cabc6c45886e87a85df5cd6363652c0b50dc0a0a2f68352a5"
+    },
+    {
+      "path": "examples/ground_truths/8q00-assembly1.cif",
+      "bytes": 210008,
+      "sha256": "d0c0a762faabf07e52876b42166259b7063d34dfd62ec52ba6a1792d2381515c"
+    },
+    {
+      "path": "examples/ground_truths/8q6q-assembly1.cif",
+      "bytes": 264693,
+      "sha256": "2e801e918b4d5e14bd4e7c077c6f5e081b724efd7e99df2ae4f7aca079c1af50"
+    },
+    {
+      "path": "examples/ground_truths/8r7a-assembly1.cif",
+      "bytes": 179378,
+      "sha256": "08ac835bf1dc33a514c85bd8a0b6d52fab054701f9911e2b336c84718c38c06f"
+    },
+    {
+      "path": "examples/ground_truths/8smq-assembly1.cif",
+      "bytes": 347270,
+      "sha256": "f9dde4d6bdf761ea1167138af8123fa24fc7dd131b2cf0d459de2fb859e07348"
+    },
+    {
+      "path": "examples/ground_truths/8t48-assembly1.cif",
+      "bytes": 134553,
+      "sha256": "46fcc1ee3cef1c60b5d1c3cd5f3d0c94230ef3fd321789850d90436f53f406a0"
+    },
+    {
+      "path": "examples/ground_truths/8tn8-assembly1.cif",
+      "bytes": 495413,
+      "sha256": "1e78aa9027f6974c5dc236a9a650518c9555d08e1df3cb9cf1ff354b5ee51bc2"
+    },
+    {
+      "path": "examples/ground_truths/8wk1-assembly1.cif",
+      "bytes": 229257,
+      "sha256": "b19f3c1f2d3d383f6787b0ce2176ec2abe00ee8b85ed47853e17533ccb5f9c1a"
+    },
+    {
+      "path": "examples/ground_truths/8wt4-assembly1.cif",
+      "bytes": 162300,
+      "sha256": "ef5670107a60e9c58a0b9c89f176f31a127f19ce1ab00b85d1a07dc928564c9a"
+    },
+    {
+      "path": "examples/ground_truths/8z4f-assembly1.cif",
+      "bytes": 320366,
+      "sha256": "93092f44297f49057f97f951f3101ec590507c361a24fb00a461418ce7facf57"
+    },
+    {
+      "path": "examples/ground_truths/9c68-assembly1.cif",
+      "bytes": 184832,
+      "sha256": "79685bae1dc382fbcc3e97a3e471e1a96e229a7a01ad5e2b9a2d71c3b0037798"
+    },
+    {
+      "path": "examples/ground_truths/9cys-assembly1.cif",
+      "bytes": 277183,
+      "sha256": "46bf7c5e2aecdce39790df004ded418fd036d8de3fa49c948fd83904fdcd2979"
+    },
+    {
+      "path": "examples/ground_truths/9gsq-assembly1.cif",
+      "bytes": 429566,
+      "sha256": "7365c49682976ce69eed1d52c103202fa389c48030c95edcb114f511586749e0"
+    },
+    {
+      "path": "targets/interface_protein_protein.csv",
+      "bytes": 1155,
+      "sha256": "5dbcd9a47ecd62f23a03b15f85cdc99a6573959153c9673b34f8debb155dee8f"
+    }
+  ]
+}

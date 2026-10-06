@@ -14,7 +14,9 @@ marinfold_experiment:
 
 Can we construct a useful evaluation set of experimental protein complexes under either of two holdout definitions: **component-held-out**, where every chain is below 30% identity to every training chain, or **pair-held-out**, where no training complex contains homologs of both chains? Can it support exp343 inter-chain contact R-precision and structural evaluation with Helico?
 
-The first deliverable is a **survival table and an evidence-backed feasibility decision**, before running predictors.
+The first deliverable was a **survival table and an evidence-backed feasibility
+decision**. The experiment now also freezes the selected FoldBench benchmark and
+its contact-scoring universe before running predictors.
 
 ## Hypothesis
 
@@ -31,7 +33,7 @@ A freshly audited subset of FoldBench protein–protein assemblies is the best s
 
 ## Approach
 
-### Stage A — survival audit (immediate scope)
+### Stage A — survival audit
 
 1. Pin source versions and the exact exp343 training manifest, including the held-out complex shard. Inventory reusable local sequence indexes and published metadata before building or transferring anything large.
 2. Census FoldBench protein–protein assemblies and PINDER test dimers. Lead with natural, protein-only biological dimers; distinguish homo/heterodimers, designs, antibodies/peptides, higher assemblies, unsupported chemistry, incomplete interfaces and context-ineligible inputs. Preserve every candidate with a named terminal status.
@@ -127,17 +129,99 @@ Search commands, hashes, counts and compact witness tables are committed under
 `data/`. The complete compressed alignment evidence and logs are public in the
 [MarinFold HF bucket](https://huggingface.co/buckets/open-athena/MarinFold/tree/main/data/evals/exp350_complex_holdout_survival/evidence).
 
+### Frozen FoldBench benchmark
+
+The final benchmark uses FoldBench alone. All targets postdate FoldBench's
+2023-01-13 cutoff, which keeps the Helico comparison after the inherited
+Protenix v1 pretraining window. The date cutoff does not protect against
+Helico's later fine-tuning data, so the three observed same-PDB pair-homology
+hits remain excluded. Manual citation review also found two de novo binder
+targets missed by the original title heuristic; those are recorded as designed
+extensions rather than pooled with natural complexes.
+
+| freeze stage | complexes | homodimer | heterodimer |
+| --- | ---: | ---: | ---: |
+| MarinFold pair-clean FoldBench candidates | 35 | 15 | 20 |
+| after Helico fine-tuning pair screen | 32 | 13 | 19 |
+| natural frozen benchmark | **30** | **13** | **17** |
+
+The 30 targets form 26 connected homology groups under the same exact 30%
+identity / 50%-of-shorter rule. Twenty-five groups are singletons; one
+five-target group shares a ubiquitin-family partner and stays entirely in test.
+The deterministic metadata-only split assigns 8 targets to development and 22
+to test. Development has 3 homodimers and test has 10; mean total length is
+448.25 versus 448.27 residues, respectively.
+
+For contact scoring, each target has a full canonical two-chain input, explicit
+FoldBench label-chain to mmCIF author-chain mapping, resolved-residue mask and
+contacts-v1 pyconfind interface truth in zero-based concatenated-sequence
+coordinates. The candidate universe is the Cartesian product of resolved
+positions across the two chains. R is the number of inter-chain contacts with
+degree >=0.001; the within-chain sequence-separation rule is not applied across
+chains. Across the set, R ranges from 10 to 200 contacts and the candidate
+universes contain 3,042 to 326,612 pairs.
+
+The structural half preserves the original FoldBench coordinates and native
+target CSV layout for Helico/DockQ, plus exact two-protein AF3 inputs. This is
+important for assemblies containing extra symmetry copies and for cases where
+FoldBench label chain IDs differ from author chain IDs. The 12.3 MB bundle is
+public at the [MarinFold HF bucket](https://huggingface.co/buckets/open-athena/MarinFold/tree/main/data/evals/exp350_foldbench_pair_holdout/v1).
+
+Rebuild and publish the frozen set with:
+
+```bash
+uv run python freeze_foldbench_eval.py --threads 24
+uv run python publish_foldbench_eval.py
+```
+
+`foldbench_complex_eval_targets.parquet` is ready for a multi-chain adaptation
+of the exp82 100-rollout evaluator and carries the conventional `dataset`,
+`stem`, `L`, `input_seq`, `resolved`, `contacts`, and `gt_contacts` fields plus
+chain boundaries. `score_foldbench_contacts.py` implements stable top-R scoring
+over resolved cross-chain pairs and bootstraps independent homology groups.
+
+The chain-aware rollout worker preserves exp82's 100-sample settings while
+giving each chain independent termini and applying the six-residue separation
+filter only within a chain. Its CoreWeave dispatcher is pinned to
+`contacts-v1-exp343-m2-p06-complex-1.5B-step-280154`, validates the existing
+in-region checkpoint mirror, runs at batch priority and records per-target
+timings. The staging step moves only the 183 KB target parquet:
+
+```bash
+set -a; source ~/.config/marin/cw-rno2a.env; set +a
+uv run python stage_foldbench_contacts_cw.py
+/home/bizon/git/marin-freshiris/.venv/bin/python \
+  dispatch_foldbench_contacts_cw.py
+```
+
+After collecting the score parts, compute the primary metric and prepare the
+structural conditioning arms with:
+
+```bash
+uv run python score_foldbench_contacts.py \
+  --scores <score-dir> --per-target data/contact_r_precision.csv \
+  --aggregate data/contact_r_precision_summary.csv
+uv run python export_helico_contacts.py \
+  --scores <score-dir> --out-dir <helico-arms-dir>
+```
+
+The exporter produces top-L/5, top-L/2 and top-L arms both with all predicted
+contacts and with intra-chain contacts only. Budgets depend on input length,
+never true R. Choose the budget on development, then run Helico on test with
+four arms: contacts withheld, predicted intra-chain, predicted intra+inter-chain
+and oracle. Use one trunk seed so Helico's built-in confidence ranking selects
+among diffusion samples without the benchmark runner selecting a seed by
+ground-truth DockQ. Report DockQ, DockQ >=0.23 success, iRMSD and lRMSD.
+
 ## Conclusion
 
-Use the 218 candidates as the input to Stage B if the intended claim is
-**pair-held-out**: the model may have seen each component family separately,
-but no observed complex-training example contains homologs of both partners.
-For Helico structural reporting, use the 97-candidate conservative subset and
-state that the screen covers documented Helico fine-tuning PDBs while inherited
-Protenix pretraining remains unknown.
+Use the frozen 30-target FoldBench benchmark for the exp343 evaluation under the
+explicit **pair-held-out** claim: the model may have seen each component family
+separately, but no observed complex-training example contains homologs of both
+partners. FoldBench's temporal cutoff addresses inherited Protenix v1 exposure;
+the separate Helico fine-tuning pair screen addresses its later training pool.
 
-Before launching predictors, freeze connected homology groups, collapse
-redundant assemblies/interfaces, remove prior development targets, and split
-development/test by group. This will determine the final independent test
-count. Keep the strict component-held-out result as a separate negative finding;
-it does not support a useful benchmark for this checkpoint from these sources.
+Tune contact budgets and structural settings on the 8-target development cut,
+then report the 22-target test cut once. Keep the strict component-held-out
+result as a separate negative finding; it does not yield a useful benchmark for
+this checkpoint. PINDER is not needed for this evaluation.

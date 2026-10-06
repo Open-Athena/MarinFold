@@ -1,0 +1,5 @@
+{
+  "script": "plot_foldbench_eval.py",
+  "args": [],
+  "caption": "The 35 MarinFold pair-clean FoldBench dimers yield 30 natural targets after three Helico fine-tuning pair-homology exclusions and two de novo binder exclusions. The 8/22 split is grouped by connected chain homology and exactly balances mean total length."
+}
