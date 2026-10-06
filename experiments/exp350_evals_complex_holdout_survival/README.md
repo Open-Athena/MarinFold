@@ -185,11 +185,11 @@ giving each chain independent termini and applying the six-residue separation
 filter only within a chain. Its CoreWeave dispatcher is pinned to
 `contacts-v1-exp343-m2-p06-complex-1.5B-step-280154`, validates the existing
 in-region checkpoint mirror, runs at batch priority and records per-target
-timings. The staging step moves only the 183 KB target parquet:
+timings. The dispatcher embeds the 183 KB frozen target parquet in each root job
+request, avoiding any workstation-to-object-store dependency:
 
 ```bash
 set -a; source ~/.config/marin/cw-rno2a.env; set +a
-uv run python stage_foldbench_contacts_cw.py
 /home/bizon/git/marin-freshiris/.venv/bin/python \
   dispatch_foldbench_contacts_cw.py
 ```

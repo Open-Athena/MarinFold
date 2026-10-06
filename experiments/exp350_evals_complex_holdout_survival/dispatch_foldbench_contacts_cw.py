@@ -5,9 +5,9 @@
 
 Six independent H100 root jobs run the exp82 100-rollout recipe with a
 chain-aware prompt and parser. The checkpoint already lives in CoreWeave object
-storage, so only the 30-target parquet must be staged before submission.
+storage, and the small frozen target table is embedded in each root job request.
 
-Run from the workstation after staging the target parquet::
+Run from the workstation::
 
     set -a; source ~/.config/marin/cw-rno2a.env; set +a
     /home/bizon/git/marin-freshiris/.venv/bin/python \\
@@ -57,9 +57,6 @@ S3_PREFIX = os.environ.get(
     "s3://marin-us-east-02a/MarinFold/"
     "exp350_evals_complex_holdout_survival/foldbench-pair-holdout-v1",
 )
-TARGETS_S3 = os.environ.get(
-    "EVAL_CW_TARGETS", f"{S3_PREFIX}/inputs/eval_targets.parquet"
-)
 OUT_S3 = os.environ.get("EVAL_CW_OUT", f"{S3_PREFIX}/rollout")
 # Job names are how a run is found in `iris job list` on a shared cluster, so a
 # re-use of this dispatcher from another experiment should name its jobs after
@@ -95,8 +92,10 @@ TOP_P = float(os.environ.get("EVAL_CW_TOP_P", "0.95"))
 TEMPERATURE = float(os.environ.get("EVAL_CW_TEMPERATURE", "1.0"))
 
 WORKER_SCRIPT = Path(__file__).with_name("score_complex_rollout_worker.py")
+TARGETS_FILE = Path(__file__).with_name("data") / "foldbench_complex_eval_targets.parquet"
 WORK_DIR = "/tmp/exp350_complex_eval"
 WORKER_LOCAL = f"{WORK_DIR}/score_complex_rollout_worker.py"
+TARGETS_LOCAL = f"{WORK_DIR}/eval_targets.parquet"
 
 # CoreWeave object storage rejects path-style S3. Literal braces on purpose.
 FSSPEC_VIRTUAL_ADDRESSING_EXPORT = (
@@ -106,6 +105,7 @@ FSSPEC_VIRTUAL_ADDRESSING_EXPORT = (
 
 def build_bootstrap(*, shard_i: int, num_shards: int, limit: int | None) -> str:
     worker_b64 = base64.b64encode(WORKER_SCRIPT.read_bytes()).decode()
+    targets_b64 = base64.b64encode(TARGETS_FILE.read_bytes()).decode()
     limit_arg = f" --limit {limit}" if limit else ""
     return f"""
 set -euo pipefail
@@ -117,6 +117,7 @@ echo "[eval-cw] AWS_ENDPOINT_URL=${{AWS_ENDPOINT_URL:-unset}} iris_FSSPEC_S3=${{
 
 mkdir -p {WORK_DIR}
 echo {worker_b64} | base64 -d > {WORKER_LOCAL}
+echo {targets_b64} | base64 -d > {TARGETS_LOCAL}
 
 # vLLM + torch + transformers are baked into the image. Install marinfold WITHOUT
 # its dependency set so nothing repins the image's transformers out from under
@@ -145,7 +146,7 @@ export PYTHONPATH={WORK_DIR}:${{PYTHONPATH:-}}
 exec "$VLLM_PY" {WORKER_LOCAL} \\
     --model {MODEL_S3} \\
     --model-manifest-b64 {MODEL_MANIFEST_B64} \\
-    --targets {TARGETS_S3} \\
+    --targets {TARGETS_LOCAL} \\
     --out {OUT_S3} \\
     --label {MODEL_LABEL} \\
     --shard {shard_i}/{num_shards} \\
@@ -214,7 +215,8 @@ def main() -> None:
           f"1xH100 batch band | image={VLLM_IMAGE}\n"
           f"          n_rollouts={N_ROLLOUTS} top_k={TOP_K} top_p={TOP_P} T={TEMPERATURE} "
           f"limit={a.limit}\n"
-          f"          targets={TARGETS_S3}\n          out={OUT_S3}")
+          f"          targets={TARGETS_FILE} ({TARGETS_FILE.stat().st_size} bytes, embedded)"
+          f"\n          out={OUT_S3}")
     print(f"          model {MODEL_LABEL}: {MODEL_S3}")
 
     if os.environ.get("EVAL_CW_DRY_RUN"):

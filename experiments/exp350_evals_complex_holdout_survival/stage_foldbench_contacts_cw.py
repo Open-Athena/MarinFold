@@ -5,7 +5,7 @@ import hashlib
 import os
 from pathlib import Path
 
-import fsspec
+import s3fs
 
 HERE = Path(__file__).resolve().parent
 SOURCE = HERE / "data/foldbench_complex_eval_targets.parquet"
@@ -21,13 +21,12 @@ def digest(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def coreweave_filesystem() -> fsspec.AbstractFileSystem:
+def coreweave_filesystem() -> s3fs.S3FileSystem:
     """Return an S3 filesystem configured for CoreWeave object storage."""
-    return fsspec.filesystem(
-        "s3",
-        endpoint_url="https://cwobject.com",
+    return s3fs.S3FileSystem(
         key=os.environ["CW_KEY_ID"],
         secret=os.environ["CW_KEY_SECRET"],
+        client_kwargs={"endpoint_url": "https://cwobject.com"},
         config_kwargs={"s3": {"addressing_style": "virtual"}},
     )
 
