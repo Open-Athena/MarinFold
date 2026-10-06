@@ -270,3 +270,12 @@ The pTM selection comparison is cached in `structured_selection_comparison.csv`.
 Figure 02c uses pTM on x and measured TM-score on y. Each protein gets a PDF
 page with original ESMFold2 and reconstructed Helico panels. Other structural
 benchmark figures retain their archived selection protocols.
+## Additional AlphaFold3 sampling on the five low-depth proteins
+
+See [AF3_SAMPLING.md](AF3_SAMPLING.md#reproduce-and-trace-each-point) for the
+generation, scoring and publication commands. This analysis has its own frozen
+protocol, per-seed table, prefix curves and timing CSVs. Regenerate just its
+figures with `uv run python render_af3_sampling.py`; regenerate the complete
+interactive draft with `uv run python render.py`, and assemble all per-protein
+pages with `uv run python build_summary.py`. None of these rendering commands
+runs a predictor or recomputes structural accuracy.

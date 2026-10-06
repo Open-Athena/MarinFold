@@ -64,7 +64,10 @@ class Predictor:
                 if actual != pin["sha256"]:
                     raise ValueError(f"Weight digest mismatch: {name}")
         started = time.monotonic()
-        self.model = (AF2 if VARIANT == "af2" else AF3)(Path("/work/weights") / VARIANT)
+        weights = Path("/work/weights") / VARIANT
+        self.model = (AF2(weights) if VARIANT == "af2" else AF3(
+            weights, diffusion_samples=protocol["af3"]["diffusion_samples_per_seed"],
+            recycles=protocol["af3"]["recycles"]))
         load = time.monotonic() - started
         gpu = subprocess.check_output(
             ["nvidia-smi", "--query-gpu=name,memory.total,compute_cap", "--format=csv,noheader,nounits"], text=True,
@@ -89,7 +92,11 @@ class Predictor:
         msa_path = Path("/work/inputs") / f"{record['stem']}.a3m.gz"
         if hashlib.sha256(msa_path.read_bytes()).hexdigest() != record["msa_sha256"]:
             raise ValueError("Alignment digest mismatch")
-        prediction = self.model.predict(record, read_msa(msa_path), output)
+        if VARIANT == "af3":
+            prediction = self.model.predict(record, read_msa(msa_path), output,
+                                            seeds=tuple(self.protocol["af3"]["seeds"]))
+        else:
+            prediction = self.model.predict(record, read_msa(msa_path), output)
         (output / "input.json").write_text(json.dumps(record, indent=2) + "\n")
         report = {**record, **prediction, **self.metadata, "mode": "msa_no_templates", "n_pairs": 0,
                   "model_nickname": VARIANT, "timestamp_utc": dt.datetime.now(dt.timezone.utc).isoformat(),

@@ -1,0 +1,10 @@
+{
+  "pilot_app": "https://modal.com/apps/open-athena/main/ap-elIIWAXnstNrLeDF0s2MpP",
+  "extension_app": "https://modal.com/apps/open-athena/main/ap-G0n6MdNHi3nj8LoqrAa5J5",
+  "initial_packaging_failure": "ap-7PNeOkMMg491d7ObWhcH5l: sibling module was not mounted; stopped before inference, fixed module mount.",
+  "pilot_complete": true,
+  "pilot_samples": 500,
+  "extension_budget_per_protein": 1000,
+  "extension_reason": "No TM >=0.8 for 8qoh_A and 8ux2_A in first 100; follow frozen extension rule.",
+  "extension_complete": false
+}

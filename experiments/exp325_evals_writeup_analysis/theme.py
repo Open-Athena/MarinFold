@@ -38,6 +38,7 @@ ORDER = {
 }
 TITLES = {
     "01_predictors": "Fewer relatives, less accurate structures",
+    "01b_af3_sampling": "Does more AlphaFold3 sampling recover accurate folds?",
     "02_oracle": "What if we already knew the contact map?",
     "02b_confidence": "Where does the oracle rank among plausible maps?",
     "02c_accuracy_confidence": "Does pTM track TM-score?",
@@ -47,6 +48,7 @@ TITLES = {
     "06_sampling": "Does a better contact map appear in the samples?",
 }
 CAPTIONS = {
+    "01b_af3_sampling": "Five natural FoldBench eval-test proteins with MSA depth <10. Every point is one full AF3 run with a fresh seed, one diffusion sample, ten recycles, the same archived MSA and no templates. The menu selects a protein; hover exposes the seed and exact scores. Full-precision pTM selects without ground truth; the oracle best TM is an offline diagnostic. Curves follow ascending-seed prefixes. Dashed line: the prespecified working accuracy threshold TM >=0.8. Five proteins remain five biological examples.",
     "02c_accuracy_confidence": "TM-score versus Helico pTM for five natural proteins with MSA depth <10. Each protein has 100 ESMFold2 predictions; their extracted maps each receive three Helico samples. Highest pTM selects the Helico sample and ranks maps, without ipTM or a clash penalty. The horizontal coordinate is selected Helico pTM. The menu switches the vertical coordinate between original ESMFold2 TM-score and reconstructed Helico TM-score, and can isolate each protein. Diamonds mark oracle contacts; original oracle TM-score is 1 because its source is the experimental reference. TM-score uses matched protein CA atoms; pTM retains all input tokens. Every map is retained. These are five biological examples, not 500 independent proteins.",
     "02b_confidence": "All five natural FoldBench proteins with MSA depth <10 (test split). Each dot is one of 100 single-sequence ESMFold2 predictions, converted to a full contact/non-contact map and folded by Helico; diamonds use the ground-truth oracle map. Every map has the same eligible-pair mask and three Helico diffusion samples. Highest pTM selects a sample per map; that pTM also ranks the 101 maps. No ipTM term, clash penalty or map filtering is used. Contact counts may vary. Rank 1 is highest pTM; ties are shown as rank intervals. Vertical jitter only separates points. These 500 decoys represent five proteins.",
     "01_predictors": "Natural FoldBench monomers; the same 305 proteins in every structural arm. Points are protein means; bars are 95% protein-bootstrap intervals. MSA depth counts sequences, including the query, in the alignment used by Protenix-v2 + MSA.",

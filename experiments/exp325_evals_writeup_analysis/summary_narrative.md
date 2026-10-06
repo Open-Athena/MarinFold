@@ -27,6 +27,21 @@ Protein order: 8ii8_A, 8oxk_A, 8qoh_A, 8ux2_A, 8wrx_A. Only five biological exam
 Top-L contacts raise Helico GDT-TS from 0.150 to 0.504 on 305 matched natural proteins.
 The paired gain is 0.354 [0.323, 0.387]. All cuts were fixed before test inference.
 
+## Can more AlphaFold3 sampling recover accurate folds?
+
+Five natural proteins with MSA depth <10, all in the authorized test split.
+100 fresh full AF3 runs per protein are complete; the 1,000-run extension is running.
+One diffusion sample per independent seed, ten recycles, fixed archived MSA, no templates.
+
+8oxk_A: best TM rises from 0.516 in the original 25 to 0.818 in 100 fresh runs.
+The first TM >=0.8 appears on draw 85; it ranks third by pTM in the pilot.
+pTM selects a different structure with TM 0.643.
+8qoh_A and 8ux2_A have no TM >=0.8 in the first 100; best TM 0.473 / 0.505.
+8ii8_A and 8wrx_A already fold well; best TM 0.876 / 0.919.
+
+Per-protein plots separate oracle best-of-N from pTM-selected TM.
+Five proteins remain five biological examples; no inference recipe tuning.
+
 ## Useful diversity is the open question
 
 314 proteins × 100 samples: consensus R-precision 0.561; oracle best individual map 0.528.

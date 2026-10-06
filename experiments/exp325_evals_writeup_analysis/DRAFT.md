@@ -16,6 +16,10 @@ AlphaFold2, AlphaFold3 and Boltz-2 use the shared benchmark MSAs here, with temp
 
 ![Existing predictors across MSA depths](plots/01_predictors.png)
 
+Can more AF3 sampling help? In the first 100 full runs, 8oxk_A reaches TM-score 0.818,
+but pTM selects a 0.643 structure. The [five-protein sampling analysis](AF3_SAMPLING.md)
+is extending to 1,000 runs per protein.
+
 Helico does much better when we give it the answer: the ground-truth contact map, including non-contacts. This is an information upper bound.
 
 ![Helico with oracle contacts](plots/02_oracle.png)

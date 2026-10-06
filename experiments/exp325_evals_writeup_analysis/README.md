@@ -213,6 +213,12 @@ for AF3. AF3 predictions and derived results carry its
 [output terms](data/af3_output_terms.md) and [required notice](data/af3_notice.txt).
 Parameter files remain private; the public package contains predictions and scores.
 
+The [AF3 sampling analysis](AF3_SAMPLING.md) tests 100 and 1,000 independent full
+runs on the five natural proteins with depth <10, using one diffusion sample
+per seed. It reports reference-scored best-of-N separately from pTM selection,
+with a TM-versus-pTM scatter and sampling curve for each protein. Its generation,
+scoring and rendering are separate from the original 25-sample baseline tables.
+
 Boltz-2 uses the official [source revision b1ebfc4](https://github.com/jwohlwend/boltz/tree/b1ebfc46ecf57f5414e0d1a6f9027bbb122c53bc)
 and the public `boltz2_conf.ckpt` checksum in `data/boltz2_inputs.json`.
 Cite [Passaro et al. (2025)](https://doi.org/10.1101/2025.06.14.659707).

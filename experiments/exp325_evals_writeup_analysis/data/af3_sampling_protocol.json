@@ -1,0 +1,61 @@
+{
+  "status": "fixed_before_inference",
+  "date": "2026-10-06",
+  "af3_source_sha": "3c89cc7b89aa7042b72885af9016a45b262da008",
+  "weights_sha256": "0dd0290af76eec0119f4c0c41f441fbce4ec18aa21a0a02cac4a3af01d841369",
+  "worker_sha256": "1624dada0f758b98a1f6450b4de1476084317c418f6fce1a93e5029661754200",
+  "targets": [
+    {
+      "stem": "8ii8_A",
+      "sequence": "SLTLSPLPPLSNDIYPIGRNSLGNLMTATEKAKELPQEDKSAAQFQATSQESYKSAVSQTTKESPSASLAKFCKEAETAYPALYKAIQANDSASAKELAKSIASKLTEVATRAGNVAQAYNQGAAKAQEGQKLMKSALPGSHPVKDSVDDALQYLSPAAQVFTSMQSSLNESAKNVVAAADKVGKVPANQIASEDSGEAIANAWAKLGVKATAQAEAYNKWQGNQ",
+      "n_residues": 225,
+      "eval_set": "eval-test",
+      "msa_depth": 3,
+      "msa_sha256": "1c350a5b0c93b2e2a9d3c547a7224cb1e5344de71c1b6617865a6daed7e9c2e0"
+    },
+    {
+      "stem": "8oxk_A",
+      "sequence": "GSDGWTCAGSDFDGDQVRGQARHWVDQQKTKFSDFQTHDGVQLCHFELGEGNQLTQSFTGFRAYCDEPGDVYNVRYWDVSSRTWVLCTHYDIDF",
+      "n_residues": 94,
+      "eval_set": "eval-test",
+      "msa_depth": 6,
+      "msa_sha256": "28d4617ebcec182c7b2edce231e5781ddeac295d19caad7d348a114cb50226bd"
+    },
+    {
+      "stem": "8qoh_A",
+      "sequence": "AHFQSEIEENYEAVGNVVVDLMGGCEPTLRVGRVQLGNDIFTLREEIRATELKRVLYVGTTEGDEFPVVVYAWTNGNSYESAKAFVASQGLNVPCRIVGYRSYDKMSGYTAIIFPQGHVYSLRTFLQRSVPTRATETALYYVAETLRSLCTRRIIHCALTPDNVFMYMDSTGASLKTFPVCWDDCVDAAMFSERGLKFVPSLPVLMRHAVKEIDGSYIDFVSFCRMFRQIENNCSAMCQKVAKMKAPPVVRMTDYTNIQTELTWDMDAVMNHFC",
+      "n_residues": 274,
+      "eval_set": "eval-test",
+      "msa_depth": 3,
+      "msa_sha256": "97a276e77f5d11e58959961e8c70849648834a06d27417ba3fe46216c3a614f7"
+    },
+    {
+      "stem": "8ux2_A",
+      "sequence": "PHEITGGNRQEKLAQLMRQFESGGLYLRTVSDHRDEFENTFMPKLDACLGHGCDERYWSSATFIQQGLNGKVHDPHADRTGLIISADARLGGFSTFDAATANVPSGLEPSQYFPGQFPKFDMMGAYQATWNEDIFSVDATAVSEQQMDELGIPDEYRSVFDFDRIQEKMAQPRLAGREVEPTEAKICYQPKDVLGIYVDVDSPASQSKARELQQAMREQGFDLPFIAYRGGAAQELASV",
+      "n_residues": 239,
+      "eval_set": "eval-test",
+      "msa_depth": 6,
+      "msa_sha256": "cb420f6f39150caf43bea84c7014d98cc10d1ebc4be94f90cd4b983d7c0a206a"
+    },
+    {
+      "stem": "8wrx_A",
+      "sequence": "MKTIFTKKQTEELLNDISIEKQKELFNSMHDFRSQHAKEARIPGWSDKYNKLEKKMLSDFEEVTGIKYDTLESELIWDNLSNKFLY",
+      "n_residues": 86,
+      "eval_set": "eval-test",
+      "msa_depth": 4,
+      "msa_sha256": "8deb6092416ad74debf40808d42145043eee84c51a6cab9d76069f5f5ebdf3ff"
+    }
+  ],
+  "seed_start": 10000,
+  "pilot_budget": 100,
+  "max_budget": 1000,
+  "diffusion_samples_per_seed": 1,
+  "recycles": 10,
+  "templates": false,
+  "msa": "Same archived ColabFold A3M as original exp325 AF3 baseline; protein-only query.",
+  "accuracy_threshold_tm": 0.8,
+  "selection": "Highest pTM; report oracle best TM separately. Ties resolved by earliest seed.",
+  "extension_rule": "Extend all five to 1000 if any protein has no TM >= 0.8 in first 100.",
+  "interpretation": "Five fixed eval-test cases, diagnostic sampling study; no changes to model, inputs or generation recipe based on accuracy.",
+  "confidence_precision": "Full precision pTM and ranking_score from model metadata; official summary JSON rounds to two decimals and is not used for ranking."
+}

@@ -31,3 +31,4 @@ Nothing in compute — 217 units is ~3 minutes on twelve single-H100 CoreWeave
 shards. The cost is statistical: every look is an opportunity to select, even
 informally ("that direction looked worse on test, drop it"), and the set has no
 replacement queued.
+| 11 | 2026-10-06 | #325 AlphaFold3 independent-seed sampling on `8ii8_A`, `8oxk_A`, `8qoh_A`, `8ux2_A`, `8wrx_A` | Explicit user request: test 100 / 1000 runs for the five very-low-depth natural proteins. Frozen shared MSA, no templates, ten recycles, one diffusion sample per full seed run; seeds 10000–10999. Pilot 100; extend all five to 1000 if any lacks TM ≥0.8. Report oracle best TM separately from pTM selection; no training or recipe tuning. | Pending; protocol in exp325 `data/af3_sampling_protocol.json`. |

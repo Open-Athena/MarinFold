@@ -1,0 +1,17 @@
+{
+  "budget": 100,
+  "n_proteins": 5,
+  "n_new_samples": 500,
+  "protocol_sha256": "15d0c16653df28be44c2669ea1f4b5eff4723f5d170f39304817163aff1e7142",
+  "helico_metric_revision": "b10385d736673c81b10e70d1099962af6f2573c0",
+  "scorer_sha256": "2a264c00c31a14b147fdc94f0626d5cbc38a15d16cf9584a558512b14b599d5d",
+  "packages": {
+    "numpy": "2.4.4",
+    "pandas": "2.3.3",
+    "gemmi": "0.7.5",
+    "tmtools": "0.3.0"
+  },
+  "original_selected_tm_parity": "passed all five, tolerance 1e-8",
+  "tm_definition": "TM-align on atom-matched CA coordinates; reference length normalization",
+  "original_ptm_precision": "Historical official summaries are rounded to 2 decimals; fresh seeds retain full precision."
+}

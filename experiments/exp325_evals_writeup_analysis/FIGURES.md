@@ -97,3 +97,15 @@ AF2/3; `boltz2_{structure_metrics,contact_metrics}.csv` are its source tables.
 `boltz2_inputs.json` pins code, weight hashes, sampling and MSA processing;
 `boltz2_run.json` records scorer and input hashes; `boltz2_timings.csv` records
 GPU time, setup time, runtime packages and the selected candidate per protein.
+
+AF3 additional sampling is Figure `01b_af3_sampling`, with individual PDF/PNG/SVG
+pages `01b_af3_sampling_<stem>`. `generation/score_af3_sampling.py` scores each
+seed and validates the original five selected TM-scores. `prepare_af3_sampling.py`
+creates the prefix curves and budget summary; `render_af3_sampling.py` only reads
+prepared CSVs and verifies their hashes. Scatter points map to `(stem, seed)` in
+`data/af3_sampling_samples.csv`; curve vertices to `(stem, budget)` in
+`data/af3_sampling_curves.csv`; the combined comparison uses
+`data/af3_sampling_summary.csv`. Each selected point has its seed ID in the
+source row, and every seed has a structure path and checksum. The interactive
+view selects a protein and exposes exact seed/pTM/TM values on hover. See
+[AF3_SAMPLING.md](AF3_SAMPLING.md) for the frozen protocol, interpretation and commands.

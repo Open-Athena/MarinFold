@@ -1,0 +1,5 @@
+{
+  "script": "render_af3_sampling.py",
+  "args": [],
+  "caption": "8wrx_A: each point is one independent AF3 trunk + diffusion run, seeds starting at 10000, ten recycles, fixed archived MSA and no templates. Full-precision pTM selects without using truth. Oracle best TM uses truth only for this diagnostic. Dashed line: prespecified TM >=0.8. Curves use the ascending-seed prefix; original dotted baseline selected among five seeds x five samples by official ranking_score. Data: af3_sampling_samples.csv and af3_sampling_curves.csv; original baseline: af3_sampling_original.csv. All are in data/; preprocessing: prepare_af3_sampling.py."
+}

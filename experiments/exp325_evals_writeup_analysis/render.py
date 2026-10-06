@@ -21,6 +21,7 @@ from plotly.offline import get_plotlyjs
 from plotly.subplots import make_subplots
 
 from build_summary import save_plot_with_meta
+from render_af3_sampling import main as render_af3_sampling
 from theme import CAPTIONS, COHORTS, FONT, GRID, INK, METHODS, METRICS, ORDER, PALETTE, PAPER, TIERS, TITLES
 
 HERE = Path(__file__).resolve().parent
@@ -485,11 +486,16 @@ def preview(names: list[str]) -> None:
                        'Contact extraction: <a href="../data/structured_decoy_maps.csv">seeds, map/structure hashes and contact counts</a>. ')
         elif name == "03_method":
             lineage = 'Training inventory: <a href="../data/training_sources.csv">training_sources.csv</a>. '
+        elif name == "01b_af3_sampling":
+            lineage = ('Each dot: <a href="../data/af3_sampling_samples.csv">per-seed accuracy, pTM and structure hashes</a>. '
+                       'Curves: <a href="../data/af3_sampling_curves.csv">prefix budgets and selected seeds</a>. '
+                       '<a href="../AF3_SAMPLING.md">Protocol, results and reproduction commands</a>. ')
+        manifest = "af3_sampling_analysis.json" if name == "01b_af3_sampling" else "manifest.json"
         sections.append(f'<section id="section-{name}"><p class="number">FIGURE {name[:2]}</p>'
                         f'<h2>{html.escape(TITLES[name])}</h2><div class="frame"><div id="{name}" class="chart"></div></div>'
                         f'<p class="caption">{html.escape(CAPTIONS[name])}</p>'
                         f'<details><summary>Figure data and provenance</summary><p>{lineage}'
-                        '<a href="../data/manifest.json">Input hashes and metric definitions</a>.</p>'
+                        f'<a href="../data/{manifest}">Input hashes and metric definitions</a>.</p>'
                         f'<p><a href="../plots/{name}.svg">SVG</a> · <a href="../plots/{name}.png">PNG</a> · '
                         f'<a href="{name}.json">Plotly JSON</a></p></details></section>')
     page = '''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -531,6 +537,10 @@ def main() -> None:
     export_plotly(method_figure(pd.read_csv(DATA / "training_sources.csv")), "03_method")
     export_plotly(sampling_figure(summary, rows), "06_sampling")
     names = list(TITLES)
+    if (DATA / "af3_sampling_samples.csv").exists():
+        render_af3_sampling()
+    else:
+        names.remove("01b_af3_sampling")
     if (DATA / "structured_confidence_ranks.csv").exists():
         export_plotly(confidence_figure(), "02b_confidence")
         export_plotly(accuracy_confidence_figure(), "02c_accuracy_confidence")

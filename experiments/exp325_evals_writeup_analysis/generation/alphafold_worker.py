@@ -84,24 +84,26 @@ class AF2:
 
 
 class AF3:
-    """Official AlphaFold3 interfaces, five fixed seeds and five samples each."""
+    """Official AlphaFold3 interfaces with explicit seed and sampling budgets."""
 
-    def __init__(self, weights: Path) -> None:
+    def __init__(self, weights: Path, *, diffusion_samples: int, recycles: int) -> None:
         import jax
 
         sys.path.insert(0, "/opt/alphafold3")
         import run_alphafold
 
         self.api = run_alphafold
+        self.diffusion_samples = diffusion_samples
+        self.recycles = recycles
         self.runner = run_alphafold.ModelRunner(
-            config=run_alphafold.make_model_config(num_diffusion_samples=5, num_recycles=10),
+            config=run_alphafold.make_model_config(num_diffusion_samples=diffusion_samples, num_recycles=recycles),
             device=jax.local_devices(backend="gpu")[0], model_dir=weights,
         )
         # Materialize the lazy weight property during separately timed setup.
         if not self.runner.model_params:
             raise ValueError("AlphaFold3 parameter load returned no tensors")
 
-    def predict(self, record: dict, msa: str, output: Path) -> dict:
+    def predict(self, record: dict, msa: str, output: Path, *, seeds: tuple[int, ...]) -> dict:
         """Use the official confidence-selection/output writer, including notices."""
         import jax
         from alphafold3.common import folding_input
@@ -109,7 +111,9 @@ class AF3:
         from alphafold3.data import featurisation
 
         name = record["stem"].lower()
-        payload = dict(name=name, modelSeeds=[42, 43, 44, 45, 46], dialect="alphafold3", version=1,
+        if not seeds or len(set(seeds)) != len(seeds):
+            raise ValueError("Require nonempty, unique AF3 seeds")
+        payload = dict(name=name, modelSeeds=list(seeds), dialect="alphafold3", version=1,
                        sequences=[{"protein": {"id": "A", "sequence": record["sequence"],
                                                 "unpairedMsa": msa, "pairedMsa": "", "templates": []}}])
         fold_input = folding_input.Input.from_json(json.dumps(payload))
@@ -138,8 +142,10 @@ class AF3:
         scores = [(r.seed, i, float(s.metadata["ranking_score"])) for r in results
                   for i, s in enumerate(r.inference_results)]
         best = max(scores, key=lambda r: r[2])
-        return dict(elapsed_seconds=elapsed, n_samples=25, selected=f"seed-{best[0]}_sample-{best[1]}",
-                    selection_confidence=best[2], n_cycles=10, n_seeds=5)
+        selected = next(r for r in results if r.seed == best[0]).inference_results[best[1]]
+        return dict(elapsed_seconds=elapsed, n_samples=len(scores), selected=f"seed-{best[0]}_sample-{best[1]}",
+                    selection_confidence=best[2], ptm=float(selected.metadata["ptm"]),
+                    n_cycles=self.recycles, n_seeds=len(seeds))
 
 
 def read_msa(path: Path) -> str:
