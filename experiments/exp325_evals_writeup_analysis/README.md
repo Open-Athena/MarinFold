@@ -240,9 +240,9 @@ This distinction is explicit in the manifest and figure captions.
 Small tables and figures live on this branch. `publish_to_hf.py` packages raw
 completions, votes, diffusion coordinates, conditioning maps, scores and timings
 for the [public artifact prefix](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking).
-Eighteen analysis checks pass, including source-row round trips and fixed
+Twenty-two analysis checks pass, including source-row round trips and fixed
 confidence selection. Desktop and mobile previews were checked in Chromium,
-including the test-split menus; the PDF has three narrative and sixteen plot pages. The accuracy–confidence section has
+including the test-split menus; the PDF has five narrative and twenty-one plot pages, including five separate AF3 sampling pages. The accuracy–confidence section has
 one page per protein, with original ESMFold2 and reconstructed Helico TM-score versus pTM,
 its oracle rank, and the cached within-protein correlations.
 
@@ -255,3 +255,8 @@ correlations are 0.08–0.29 for four proteins and 0.61 for the fifth. Aggregati
 selection. The evidence supports limited usefulness of individual samples,
 not an absence of contact-set diversity. Better whole-map candidates,
 inference-time search and post-training remain directions to investigate.
+
+Additional AF3 sampling recovers an accurate 8oxk_A fold: TM 0.947 after 1,000
+independent full runs, selected by pTM; 20 / 1,000 reach TM ≥0.8. Two other
+low-depth proteins remain below that threshold after 1,000 runs. This separates
+the presence of rare accurate candidates from the ability to rank them.

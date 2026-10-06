@@ -94,14 +94,33 @@ the paths in the per-sample CSV. The public package includes no weights.
 
 ## Results
 
-The first 100 runs produced TM ≥0.8 for three proteins. The 1,000-run extension is in progress.
+All **5,000 new predictions completed**: 1,000 independent full runs for each protein. The first 100 results and their timing records are unchanged from the pilot. Every candidate matched the full resolved CA chain; the original five selected baseline TM-scores reproduce within 1e-8.
 
-| Protein | Best TM, original 25 | Best TM, new 100 | pTM-selected TM, new 100 | TM ≥0.8 / 100 |
-|---|---:|---:|---:|---:|
-| 8ii8_A | 0.874 | 0.876 | 0.866 | 98 |
-| 8oxk_A | 0.516 | 0.818 | 0.643 | 1 |
-| 8qoh_A | 0.471 | 0.473 | 0.372 | 0 |
-| 8ux2_A | 0.432 | 0.505 | 0.382 | 0 |
-| 8wrx_A | 0.918 | 0.919 | 0.897 | 100 |
+| Protein | Best TM, original 25 | Best TM, new 100 | Best TM, new 1,000 | pTM-selected TM, new 1,000 | TM ≥0.8 / 1,000 |
+|---|---:|---:|---:|---:|---:|
+| 8ii8_A | 0.874 | 0.876 | 0.881 | 0.849 | 978 |
+| 8oxk_A | 0.516 | 0.818 | 0.947 | 0.947 | 20 |
+| 8qoh_A | 0.471 | 0.473 | 0.502 | 0.472 | 0 |
+| 8ux2_A | 0.432 | 0.505 | 0.635 | 0.434 | 0 |
+| 8wrx_A | 0.918 | 0.919 | 0.936 | 0.895 | 1000 |
 
-The first TM ≥0.8 for 8oxk_A appeared on run 85 (seed 10084), but pTM did not select it. The extension follows the frozen rule because 8qoh_A and 8ux2_A have no TM ≥0.8 in the pilot.
+**Extra sampling rescues 8oxk_A.** The first TM ≥0.8 appears on draw 85
+(seed 10084), and the best structure reaches TM 0.947 on draw 471 (seed 10470).
+Highest pTM also selects seed 10470. Twenty of the 1,000 runs (2%) reach
+TM ≥0.8. At a budget of 100, the best candidate's TM was 0.818 while the
+pTM-selected candidate's TM was 0.643; increasing the pool improves both
+candidate generation and final confidence selection in this case.
+
+8ii8_A and 8wrx_A already fold well in the original baseline. 8qoh_A and
+8ux2_A remain below TM 0.8 after 1,000 runs (maxima 0.502 and 0.635), and
+neither reaches 0.7. This is a failure to find an accurate prediction within
+this fixed budget and input recipe, not evidence that accuracy is impossible.
+
+![AF3 sampling by protein](plots/01b_af3_sampling.png)
+
+Per-protein PDFs: [8ii8_A](plots/01b_af3_sampling_8ii8_A.pdf) ·
+[8oxk_A](plots/01b_af3_sampling_8oxk_A.pdf) ·
+[8qoh_A](plots/01b_af3_sampling_8qoh_A.pdf) ·
+[8ux2_A](plots/01b_af3_sampling_8ux2_A.pdf) ·
+[8wrx_A](plots/01b_af3_sampling_8wrx_A.pdf).
+The [complete slide deck](plots/summary.pdf) includes all five as individual pages.

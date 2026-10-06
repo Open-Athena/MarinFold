@@ -6,5 +6,10 @@
   "pilot_samples": 500,
   "extension_budget_per_protein": 1000,
   "extension_reason": "No TM >=0.8 for 8qoh_A and 8ux2_A in first 100; follow frozen extension rule.",
-  "extension_complete": false
+  "extension_complete": true,
+  "total_new_predictions": 5000,
+  "original_candidates_scored": 125,
+  "pilot_prefix_check": "All 500 original pilot rows and timing records are unchanged, exact equality.",
+  "complete_seed_coverage": true,
+  "all_ca_residues_matched": true
 }

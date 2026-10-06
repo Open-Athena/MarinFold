@@ -4,10 +4,10 @@
   "generator_sha256": "985dfcddebac9c2fbf2d4c79d88d3c827acf85e24cfe4242906d4883b8e3ad38",
   "files": {
     "af3_sampling_protocol.json": "15d0c16653df28be44c2669ea1f4b5eff4723f5d170f39304817163aff1e7142",
-    "af3_sampling_samples.csv": "47c20bebb16d0c99af410c3db7296ff6046183d3e4420ec116380d34e0520441",
+    "af3_sampling_samples.csv": "00b8dcc8b679b9214ce86a622146c1253fba05d6aae9e4de005c5cd8c56f1c20",
     "af3_sampling_original.csv": "98ea5be3d19e0b1278cd10f0a48b95b0100931faf0fa98a3d4cabfb8e1e8a7a0",
-    "af3_sampling_scoring.json": "584928e489aaf6fc69ba8b79fb040575effa8c61da106307093555984ef671e1",
-    "af3_sampling_curves.csv": "b49ab209df0194ad84639572ec52a9347646c038c7c6ff6e43591dca3e5a10df",
-    "af3_sampling_summary.csv": "0e6393ede667c8ed4b00188a298c84e61f244b7b8f4b86bcf674a8899a2409e4"
+    "af3_sampling_scoring.json": "6c138622dfc04e54c70cf5c4e47a570bfeef43a1e6bf9017dc96dffaee446c47",
+    "af3_sampling_curves.csv": "a25d613291d1f6b3b7f69cad74aa6872c012d889f0b61f2d09eb299d5715bf86",
+    "af3_sampling_summary.csv": "8aa7d8fc59db0563ab78a652b98fffc729ef76c52b1433a08681c0c4029c3186"
   }
 }

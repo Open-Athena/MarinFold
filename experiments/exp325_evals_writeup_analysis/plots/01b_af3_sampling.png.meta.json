@@ -1,6 +1,6 @@
 {
   "script": "render_af3_sampling.py",
   "args": [],
-  "caption": "Best of 100 and 100 independent AF3 runs versus highest-pTM selection at 100. Only five biological examples. Oracle best uses the reference; pTM selection does not. Dashed line: prespecified TM >=0.8. Source: data/af3_sampling_summary.csv.",
+  "caption": "Best of 100 and 1,000 independent AF3 runs versus highest-pTM selection at 1,000. Only five biological examples. Oracle best uses the reference; pTM selection does not. Dashed line: prespecified TM >=0.8. Source: data/af3_sampling_summary.csv.",
   "include_in_summary": false
 }
