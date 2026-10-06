@@ -112,3 +112,11 @@ listings exactly matched both source object counts and aggregate byte totals;
 each uploaded object was also checked against its source size. Both tokenizers
 were staged alongside the caches. The common destination is
 `gs://marin-us-east5/protein-structure/MarinFold/exp299_contacts_delta_stream_v2_sequence_prefix/exp277_full_epoch_tokenized_cache/2026.09.22.1/`.
+
+On 2026-10-06 the a05 root driver terminated after cumulative worker failures;
+its child was consequently killed after reaching step 197,771 (93.96% of the
+finite epoch). Validation loss had improved to 1.02085 during cooldown, versus
+1.06328 before decay. Driver a06 was submitted with a higher root retry limit,
+placed immediately on 4×4 GB200, restored the complete temporary checkpoint at
+step 197,598, and resumed from step 197,599 at approximately 2.6 seconds/update.
+About 9.3 hours of uninterrupted compute remained at restart.
