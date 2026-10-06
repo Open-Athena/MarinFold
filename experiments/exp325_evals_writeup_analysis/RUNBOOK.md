@@ -30,6 +30,18 @@ Lato font come from Open Athena's site at commit
 `plotly` shortcode accepts these data/layout/config envelopes. No site changes,
 deployment or pull request are part of this branch.
 
+`DRAFT.md` embeds the committed `plots/*.png` files using standard Markdown so
+all eight figures render on GitHub. For website integration, replace each image
+with the matching Plotly shortcode: the PNG basename selects the desktop and
+mobile JSON files, and the image's alt text supplies the title. For example:
+
+```text
+{{plotly: 01_predictors.json | title="Existing predictors across MSA depths" | mobile="01_predictors-mobile.json"}}
+```
+
+The interactive figures remain in `site/index.html` and `site/*.json`; no new
+analysis or figure rendering is needed to switch presentation formats.
+
 # Regenerate predictions (expensive; not needed for styling)
 
 The fixed checkpoint, targets and controls live in `generation/` and
