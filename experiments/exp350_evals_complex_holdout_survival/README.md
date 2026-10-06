@@ -185,8 +185,8 @@ giving each chain independent termini and applying the six-residue separation
 filter only within a chain. Its CoreWeave dispatcher is pinned to
 `contacts-v1-exp343-m2-p06-complex-1.5B-step-280154`, validates the existing
 in-region checkpoint mirror, runs at batch priority and records per-target
-timings. The dispatcher embeds the 183 KB frozen target parquet in each root job
-request, avoiding any workstation-to-object-store dependency:
+timings. Each root job retrieves the 183 KB frozen target parquet anonymously
+from the public HF bundle, avoiding any workstation-to-object-store dependency:
 
 ```bash
 set -a; source ~/.config/marin/cw-rno2a.env; set +a

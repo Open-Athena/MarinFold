@@ -5,7 +5,8 @@
 
 Six independent H100 root jobs run the exp82 100-rollout recipe with a
 chain-aware prompt and parser. The checkpoint already lives in CoreWeave object
-storage, and the small frozen target table is embedded in each root job request.
+storage, and each job retrieves the small frozen target table from its public
+HF bucket.
 
 Run from the workstation::
 
@@ -21,7 +22,7 @@ Dry-run locally (build + print the JobRequests, no submit)::
 import argparse
 import base64
 import dataclasses
-import gzip
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -94,21 +95,14 @@ TEMPERATURE = float(os.environ.get("EVAL_CW_TEMPERATURE", "1.0"))
 
 WORKER_SCRIPT = Path(__file__).with_name("score_complex_rollout_worker.py")
 TARGETS_FILE = Path(__file__).with_name("data") / "foldbench_complex_eval_targets.parquet"
+TARGETS_HF = (
+    "hf://buckets/open-athena/MarinFold/data/evals/"
+    "exp350_foldbench_pair_holdout/v1/data/foldbench_complex_eval_targets.parquet"
+)
+TARGETS_SHA256 = hashlib.sha256(TARGETS_FILE.read_bytes()).hexdigest()
 WORK_DIR = "/tmp/exp350_complex_eval"
 WORKER_LOCAL = f"{WORK_DIR}/score_complex_rollout_worker.py"
 TARGETS_LOCAL = f"{WORK_DIR}/eval_targets.parquet"
-TARGETS_GZIP_B64 = base64.b64encode(
-    gzip.compress(TARGETS_FILE.read_bytes(), compresslevel=9)
-).decode()
-TARGETS_ENV_VARS = {
-    f"EVAL_TARGETS_GZIP_B64_{start // 80_000}": TARGETS_GZIP_B64[
-        start : start + 80_000
-    ]
-    for start in range(0, len(TARGETS_GZIP_B64), 80_000)
-}
-TARGETS_RESTORE = "\n".join(
-    """printf '%s' "$""" + name + '"' for name in TARGETS_ENV_VARS
-)
 
 # CoreWeave object storage rejects path-style S3. Literal braces on purpose.
 FSSPEC_VIRTUAL_ADDRESSING_EXPORT = (
@@ -129,9 +123,9 @@ echo "[eval-cw] AWS_ENDPOINT_URL=${{AWS_ENDPOINT_URL:-unset}} iris_FSSPEC_S3=${{
 
 mkdir -p {WORK_DIR}
 echo {worker_b64} | base64 -d > {WORKER_LOCAL}
-(
-{TARGETS_RESTORE}
-) | base64 -d | gzip -d > {TARGETS_LOCAL}
+HF_TOKEN="" uvx --from 'huggingface-hub>=2.1,<3' hf buckets cp \\
+  {TARGETS_HF} {TARGETS_LOCAL}
+echo "{TARGETS_SHA256}  {TARGETS_LOCAL}" | sha256sum --check
 
 # vLLM + torch + transformers are baked into the image. Install marinfold WITHOUT
 # its dependency set so nothing repins the image's transformers out from under
@@ -193,7 +187,7 @@ def build_request(
         # from the workstation with no workspace bundle, so there is no pyproject to
         # sync (the step fails outright) — and we don't want one: the vLLM image
         # already has torch/vLLM, and the bootstrap installs the few extra wheels.
-        environment=create_environment(docker_image=VLLM_IMAGE, env_vars=TARGETS_ENV_VARS,
+        environment=create_environment(docker_image=VLLM_IMAGE, env_vars={},
                                        setup_scripts=[]),
         replicas=1,
         priority=IRIS_PRIORITY_BAND_BATCH,
@@ -230,7 +224,7 @@ def main() -> None:
           f"1xH100 batch band | image={VLLM_IMAGE}\n"
           f"          n_rollouts={N_ROLLOUTS} top_k={TOP_K} top_p={TOP_P} T={TEMPERATURE} "
           f"limit={a.limit}\n"
-          f"          targets={TARGETS_FILE} ({TARGETS_FILE.stat().st_size} bytes, embedded)"
+          f"          targets={TARGETS_HF} ({TARGETS_FILE.stat().st_size} bytes)"
           f"\n          out={OUT_S3}")
     print(f"          model {MODEL_LABEL}: {MODEL_S3}")
 
