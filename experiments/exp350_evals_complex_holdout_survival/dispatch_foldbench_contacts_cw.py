@@ -247,8 +247,14 @@ def main() -> None:
     from iris.cli.connect import open_iris_client
 
     cluster = os.environ.get("EVAL_CW_CLUSTER", "cw-rno2a")
-    print(f"[eval-cw] submitting from the workstation via the {cluster} controller tunnel")
-    with open_iris_client(cluster_name=cluster, workspace=None) as iris_client:
+    config = os.environ.get("EVAL_CW_CONFIG")
+    location = config or cluster
+    print(f"[eval-cw] submitting from the workstation via {location}")
+    with open_iris_client(
+        config_file=Path(config) if config else None,
+        cluster_name=None if config else cluster,
+        workspace=None,
+    ) as iris_client:
         _submit_and_wait(FrayIrisClient.from_iris_client(iris_client), reqs, must_wait=False)
 
 
