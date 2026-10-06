@@ -1,19 +1,28 @@
 [project]
 name = "exp350-complex-holdout-survival"
 version = "0.1.0"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.14"
 dependencies = [
+    "cython>=3",
+    "dockq==2.1.3",
     "duckdb>=1.3",
     "gemmi>=0.7",
+    "helico",
     "marinfold[contacts-v1]",
     "matplotlib>=3.10",
     "pyarrow>=20",
     "requests>=2.32",
     "s3fs>=2026.1",
+    "setuptools>=68",
 ]
 
 [dependency-groups]
 dev = ["pytest>=8", "ruff>=0.11"]
 
 [tool.uv.sources]
+helico = { git = "https://github.com/Open-Athena/helico.git", rev = "75f7baf4e9147cf97ca212c3a71b4d367ef198d9" }
 marinfold = { path = "../../marinfold" }
+
+[tool.uv]
+no-build-isolation-package = ["dockq"]
+override-dependencies = ["numpy>=2"]

@@ -59,7 +59,7 @@ def target_r_precision(target: dict, votes: dict[tuple[int, int], int]) -> dict:
     order = np.argsort(-scores, kind="mergesort")
     top = [candidates[index] for index in order[: len(truth)]]
     correct = sum(pair in truth for pair in top)
-    invalid_positive = sum(
+    positive_outside_interface = sum(
         count > 0 and pair not in candidate_set for pair, count in votes.items()
     )
     return {
@@ -77,7 +77,7 @@ def target_r_precision(target: dict, votes: dict[tuple[int, int], int]) -> dict:
         "r_precision": correct / len(truth),
         "random_r_precision": len(truth) / len(candidates),
         "n_positive_predictions": sum(score > 0 for score in scores),
-        "n_invalid_positive_predictions": invalid_positive,
+        "n_positive_predictions_outside_interface_universe": positive_outside_interface,
     }
 
 

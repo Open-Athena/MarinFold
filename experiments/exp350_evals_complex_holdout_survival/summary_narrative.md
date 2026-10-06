@@ -61,3 +61,17 @@ The structural bundle uses FoldBench's native layout for Helico/DockQ and retain
 The complete 12.3 MB bundle is public at `hf://buckets/open-athena/MarinFold/data/evals/exp350_foldbench_pair_holdout/v1`.
 
 The context audit and 23-target contact table are public at `hf://buckets/open-athena/MarinFold/data/evals/exp350_foldbench_pair_holdout/contact_eval_v1`.
+
+## Contact result
+
+The exp343 model completed 2,300/2,300 strict rollouts. On the 17-target test split, mean inter-chain R-precision is **0.0260 [0.0036, 0.0453]** versus a random expectation of **0.0028**. The score is about 9.3 times random, though low in absolute terms.
+
+On the six development targets, all-contact top-L gives the best Helico result: mean pair-specific DockQ **0.1284**, versus 0.0381 at L/2 and 0.0329 at L/5. Top-L is frozen before reading structural test results.
+
+## Structural result
+
+On 17 test targets, mean DockQ is **0.0362** with contacts withheld, **0.0546** with predicted intra-chain contacts, **0.0697** with all predicted contacts, and **0.8010** with oracle contacts.
+
+The paired all-contact minus withheld delta is **+0.0335 [0.0024, 0.0679]**. All-contact minus intra-only is **+0.0151 [0.0002, 0.0266]**. Both improve 12/17 targets, isolating a positive contribution from predicted inter-chain contacts.
+
+Absolute predicted-contact performance remains low: 2/17 targets reach DockQ >=0.23, versus 1/17 with contacts withheld and 17/17 with oracle contacts.

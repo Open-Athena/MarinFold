@@ -230,6 +230,52 @@ and oracle. Use one trunk seed so Helico's built-in confidence ranking selects
 among diffusion samples without the benchmark runner selecting a seed by
 ground-truth DockQ. Report DockQ, DockQ >=0.23 success, iRMSD and lRMSD.
 
+### Final contact and structural evaluation
+
+The exp343 checkpoint completed 100/100 rollouts for every one of the 23
+context-eligible targets, for 2,300 usable rollouts and no unfinished samples.
+On the 17-target test split, mean inter-chain R-precision is **0.0260** (95%
+homology-group bootstrap interval **[0.0036, 0.0453]**) versus a
+resolved-interface-universe random expectation of **0.0028**. The six-target
+development split is near random: 0.0043 versus 0.0043. The test score is about
+9.3 times its random expectation, but its absolute precision remains low.
+
+The contact budget was selected using only the six development targets.
+All-contact top-L reaches mean pair-specific DockQ **0.1284**, compared with
+0.0381 for L/2 and 0.0329 for L/5, so top-L was frozen before reading the
+structural test result. The final confidence-selected Helico comparison is:
+
+| test arm | mean DockQ (95% group bootstrap) | median | DockQ >=0.23 |
+| --- | ---: | ---: | ---: |
+| contacts withheld | 0.0362 [0.0151, 0.0513] | 0.0215 | 1/17 (5.9%) |
+| predicted intra-chain top-L | 0.0546 [0.0214, 0.0878] | 0.0144 | 2/17 (11.8%) |
+| predicted all-contact top-L | **0.0697 [0.0258, 0.1023]** | 0.0146 | **2/17 (11.8%)** |
+| oracle contacts | 0.8010 [0.7557, 0.8406] | 0.8377 | 17/17 (100%) |
+
+Paired target-level differences sharpen the comparison. All predicted contacts
+improve mean DockQ over contacts withheld by **+0.0335 [0.0024, 0.0679]** and
+improve 12/17 targets. The all-contact arm also beats the intra-only control by
+**+0.0151 [0.0002, 0.0266]**, again improving 12/17 targets. Intra-only versus
+withheld is +0.0184 [-0.0061, 0.0585]. These intervals resample the 13 independent
+test homology groups and preserve target pairing. The all-versus-intra result
+isolates a small positive contribution from predicted interface contacts; the
+large oracle ceiling shows that accurate contacts can drive this Helico
+checkpoint, while the low absolute predicted-contact success rate leaves ample
+room for better contact precision and structure realization.
+
+Helico used `/ckpts/contacts-msafree-01/final.pt` at step 6000 in true
+single-sequence mode, one trunk seed, three diffusion samples, six cycles, and
+confidence-only sample selection. Scoring is exact-pair, symmetry-aware DockQ
+2.1.3 against the frozen FoldBench author chains. The ten development/test arms
+produce 104 per-target timing records. Raw contact scores, Helico predictions,
+corrected PDB exports, timings and derived tables are published under the
+public artifact prefixes recorded in `data/contact_rollout_manifest.json` and
+`data/helico_eval_manifest.json`. Browse the [contact rollout
+artifacts](https://huggingface.co/buckets/open-athena/MarinFold/tree/main/data/evals/exp350_foldbench_pair_holdout/contact_eval_v1/rollout_v1)
+and [Helico evaluation
+artifacts](https://huggingface.co/buckets/open-athena/MarinFold/tree/main/data/evals/exp350_foldbench_pair_holdout/contact_eval_v1/helico_v1)
+in the public MarinFold HF bucket.
+
 ## Conclusion
 
 Use the frozen 30-target FoldBench set as the structural source benchmark under
@@ -239,10 +285,12 @@ of both partners. FoldBench's temporal cutoff addresses inherited Protenix v1
 exposure; the separate Helico fine-tuning pair screen addresses its later
 training pool.
 
-Use the context-complete 23-target subset for primary R-precision and the
-matched contact-conditioned Helico comparison. Tune contact budgets and
-structural settings on its 6-target development cut, then report its 17-target
-test cut once. Report the seven context-ineligible targets as a structural-only
-extension. Keep the strict component-held-out result as a separate negative
-finding; it does not yield a useful benchmark for this checkpoint. PINDER is
-not needed for this evaluation.
+The context-complete 23-target subset supports the primary R-precision and
+matched Helico comparison. Its blinded 17-target result shows that predicted
+contacts improve structure quality over withheld contacts, and that the
+inter-chain predictions add signal beyond an intra-chain contact control. The
+effect is small in absolute terms: only two predicted-contact structures cross
+DockQ 0.23, compared with all 17 under oracle contacts. The seven
+context-ineligible targets remain a structural-only extension. Keep the strict
+component-held-out result as a separate negative finding; it does not yield a
+useful benchmark for this checkpoint. PINDER is not needed for this evaluation.

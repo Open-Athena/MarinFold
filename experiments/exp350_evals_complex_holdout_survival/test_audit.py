@@ -14,6 +14,7 @@ from score_complex_rollout_worker import (
     same_chain_too_close,
 )
 from score_foldbench_contacts import target_r_precision
+from score_helico_structures import compare_test_arms, dockq_maps
 
 
 def test_ring_wrap_and_shuffled_statements() -> None:
@@ -160,7 +161,41 @@ def test_inter_chain_r_precision_uses_only_resolved_interface_pairs() -> None:
     row = target_r_precision(target, scores)
     assert row["n_correct"] == 1
     assert row["r_precision"] == 0.5
-    assert row["n_invalid_positive_predictions"] == 1
+    assert row["n_positive_predictions_outside_interface_universe"] == 1
+
+
+def test_dockq_checks_both_homodimer_chain_permutations() -> None:
+    model_chain_ids = {"A": "A", "A-2": "B"}
+    assert dockq_maps(["A", "C"], ["A", "A-2"], model_chain_ids, "heterodimer") == [
+        {"A": "A", "C": "B"}
+    ]
+    assert dockq_maps(["A", "C"], ["A", "A-2"], model_chain_ids, "homodimer") == [
+        {"A": "A", "C": "B"},
+        {"A": "B", "C": "A"},
+    ]
+
+
+def test_structural_comparison_pairs_targets_before_averaging() -> None:
+    rows = [
+        {
+            "split": "test",
+            "arm": arm,
+            "target_id": target_id,
+            "group_id": f"group-{target_id}",
+            "dockq": dockq,
+            "acceptable_or_better": dockq >= 0.23,
+        }
+        for arm, target_id, dockq in [
+            ("off", "a", 0.1),
+            ("off", "b", 0.2),
+            ("marinfold_all_L", "a", 0.3),
+            ("marinfold_all_L", "b", 0.1),
+        ]
+    ]
+    comparison = compare_test_arms(rows)[0]
+    assert comparison["mean_paired_dockq_delta"] == pytest.approx(0.05)
+    assert comparison["n_improved"] == 1
+    assert comparison["n_worse"] == 1
 
 
 def test_helico_export_uses_chain_local_resolved_indices() -> None:

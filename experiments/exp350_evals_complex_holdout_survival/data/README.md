@@ -22,3 +22,21 @@ and log bundle published at
 `native_queries.fasta` contains all representations for the 46 candidates that
 survived the two complex-training arms under the strict component rule. It is
 retained to reproduce that negative result.
+
+# Final contact and Helico artifacts
+
+`contact_r_precision.csv` contains one strict 100-rollout inter-chain result per
+context-eligible target. `contact_r_precision_summary.csv` aggregates by frozen
+split with 10,000-replicate homology-group bootstrap intervals. `timings.csv`
+records per-target timing and worker metadata for 23 targets scored by six
+CoreWeave jobs. `contact_rollout_manifest.json` pins the checkpoint, targets,
+six CoreWeave jobs, raw score-part hashes and public artifact prefix.
+
+`helico_arms/` contains the six length-budget contact inputs evaluated on
+development. `helico_per_target.csv` records exact pair-specific, symmetry-aware
+DockQ, iRMSD, lRMSD and Fnat for all ten Helico arms. `helico_summary.csv`
+aggregates each arm; `helico_comparisons.csv` gives prespecified paired test
+deltas; `helico_timings.csv` contains all 104 predictor timing rows.
+`helico_eval_manifest.json` pins the selected budget, Helico checkpoint and git
+revision, inference/scoring settings, Modal volume paths, hashes and the public
+HF prefix.
