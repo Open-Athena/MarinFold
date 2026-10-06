@@ -354,6 +354,78 @@ from the Iris client environment, setting `EVAL_CW_N_ROLLOUTS=1000`,
 `EVAL_CW_CHUNK=1` and a fresh `EVAL_CW_OUT` prefix. Publish validated outputs
 with `uv run python publish_rollout_sampling.py --raw <raw-directory>`.
 
+### Controls for amino-acid and residue contact biases
+
+The uniform-pair null does not account for residue chemistry or differences in
+which residues tend to participate in contacts. A second exploratory analysis
+uses the same saved 23,000 attempts, frozen target membership and metrics:
+
+- **Amino-acid pair counts:** preserve each rollout's number of contacts in
+  every ordered (chain-A amino acid, chain-B amino acid) stratum. Draw distinct
+  residue pairs uniformly within each stratum. Independent hypergeometric
+  draws give the exact true-positive distribution without constructing the
+  randomized maps. This controls residue-type preferences without fitting a
+  propensity model to experimental truth.
+- **Per-residue degrees:** preserve each individual residue's predicted number
+  of inter-chain contacts, then exchange partners using valid bipartite edge
+  swaps. Moves producing duplicate edges are rejected, and rejected proposals
+  still count toward chain length. This preserves interface-residue selection,
+  including any useful localization the model learned, and specifically tests
+  additional information about which residues pair with each other.
+
+Each primary control produces 1,000 randomized pools of 1,000 attempted maps
+per target. Oracle selection, tie handling, failed-attempt treatment and
+best-of-k subset averaging match the original sampling diagnostic.
+
+| test predictor/control | best@100 F1 | best@1000 F1 | best@1000 R-precision |
+| --- | ---: | ---: | ---: |
+| uniform pairs, matched map size | 0.0332 | 0.0536 | — |
+| matched amino-acid pair counts | **0.0478** | **0.0729** | **0.0593** |
+| matched per-residue contact counts | **0.0820** | **0.1348** | **0.1133** |
+| MarinFold oracle | **0.1101** | **0.1923** | **0.1648** |
+
+Simple biases explain some of the earlier advantage over uniform random, but
+the model still exceeds both controls. Its best@1000 F1 advantage over the
+amino-acid control is **+0.1195 [0.0965, 0.1491]**. Over the per-residue-degree
+control it is **+0.0575 [0.0389, 0.0878]**, positive on 16/17 test targets.
+These are paired 95% intervals resampling the 13 homology groups. Best@1000
+R-precision exceeds the degree control by **+0.0515 [0.0343, 0.0780]**. Degree
+conditioning preserves more than chemical nuisance biases: it also preserves
+any correct localization of the interface residues. Its higher score should
+therefore not be interpreted entirely as an amino-acid-size effect.
+
+The degree sampler uses the standard symmetric bipartite switch chain, whose
+stationary distribution is uniform over simple graphs with the fixed degrees
+([Carstens and Kleer, 2018](https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.APPROX-RANDOM.2018.36)).
+Finite-chain draws are **approximate**, with 100 attempted swaps per edge for
+burn-in and 20 per edge between retained maps. A separate sensitivity run uses
+500 for burn-in and 100 between maps, with 250 randomized pools. The resulting
+test best@1000 F1 baseline is **0.1350**, versus **0.1348** in the primary run;
+R-precision is 0.1135 versus 0.1133. This stability is an empirical mixing check,
+not a general convergence proof.
+
+The kernel's sampling distribution passes comparison with exact enumeration
+on a small graph. Every final map is checked for unchanged row/column degrees
+and absence of duplicate pairs. All 1,013 nonempty maps with no accepted swaps
+are confirmed to have no valid switch. The original model scores reproduce
+exactly, and all source artifact hashes match. Per-target chain comparisons,
+simulation error estimates and per-rollout diagnostics are saved. No additional
+model inference or Helico structure prediction was required.
+
+![Bias-matched sampling controls](plots/sampling_controls.png)
+
+The [public conditional-control bundle](https://huggingface.co/buckets/open-athena/MarinFold/tree/main/data/evals/exp350_foldbench_pair_holdout/contact_eval_v1/sampling_controls_v1)
+contains the randomized true-positive counts, mixing diagnostics, result tables
+and provenance manifest. From the experiment environment, with a C++17/OpenMP
+compiler available:
+
+```bash
+uv run python score_sampling_controls.py --root /tmp/exp350-sampling-v1/raw
+uv run python plot_sampling_controls.py
+uv run python build_summary.py
+uv run python publish_sampling_controls.py
+```
+
 ## Conclusion
 
 Use the frozen 30-target FoldBench set as the structural source benchmark under
@@ -374,7 +446,10 @@ component-held-out result as a separate negative finding; it does not yield a
 useful benchmark for this checkpoint. PINDER is not needed for this evaluation.
 
 The 1,000-rollout diagnostic finds real inter-chain sampling signal: oracle
-best@1000 substantially beats a matched random null. It does not find mostly
-correct interface maps. Individual true contacts occur across many different
-rollouts, and consensus accuracy improves only modestly with ten times more
-samples.
+best@1000 exceeds both an amino-acid-pair-count control and a stricter
+per-residue-degree control. The advantage over the latter supports additional
+residue-pairing information beyond the choice of interface residues. It does
+not find mostly correct interface maps. Individual true contacts occur across
+many different rollouts, and consensus accuracy improves only modestly with ten
+times more samples. Ground-truth-free selection of the better maps remains
+unresolved.

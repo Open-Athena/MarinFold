@@ -91,3 +91,19 @@ Pooling 1,000 maps recovers **85.7%** of true contacts on average. A matched ran
 The best-of-many F1 advantage over random is real, but the best selected maps average only 26.6% precision and 18.3% recall. Ordinary 1,000-sample consensus reaches **0.0373 R-precision**.
 
 The contact model sometimes emits correct fragments of an interface; these samples do not establish reliable interface recovery. Learned selection or structural realization from this diversity remains untested.
+
+## Do simple contact biases explain the sampling advantage?
+
+Two stronger controls use the same saved rollouts. One preserves each map's amino-acid pair counts. The other preserves every individual residue's contact count and shuffles partners through valid bipartite edge swaps.
+
+Test best@1000 F1: **5.4%** for uniform random pairs, **7.3%** for the amino-acid control, **13.5%** for the per-residue-degree control, and **19.2%** for MarinFold.
+
+Best@100 F1 is 3.3%, 4.8%, 8.2%, and 11.0%, respectively. These are oracle-selected contact maps, not an inference-time selection method.
+
+## Pairing signal survives both controls
+
+Against the per-residue-degree control, the paired best@1000 F1 advantage is **+5.8 percentage points [3.9, 8.8]**, positive on 16/17 test targets. R-precision is 16.5% versus 11.3%.
+
+The degree control preserves any learned localization of interface residues; it tests the additional pairing information. Its score is not solely an amino-acid-size effect.
+
+The sampler is approximate. Five times more shuffling yields 13.50% F1 versus 13.48%. Small-graph exact enumeration, degree/duplicate checks and source hashes validate the implementation. Absolute quality remains limited: no original sample reaches F1 50%.
