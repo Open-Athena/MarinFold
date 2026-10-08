@@ -40,13 +40,13 @@ ORDER = {
     "06_sampling_pl5": ["single", "consensus", "best100"],
 }
 TITLES = {
-    "02e_oracle_budget": "How many true contacts does Helico need?",
-    "02f_oracle_budget_context": "Sparse oracle contacts in predictor context",
     "01_predictors": "Fewer relatives, less accurate structures",
     "01b_af3_sampling": "Does more AlphaFold3 sampling recover accurate folds?",
     "01c_af3_context": "Extra AF3 sampling in predictor context",
     "01d_af3_depth_context": "The low-depth comparison changes at greater depth",
     "02_oracle": "What if we already knew the contact map?",
+    "02e_oracle_budget": "How many true contacts does Helico need at low MSA depth?",
+    "02f_oracle_budget_context": "Sparse oracle contacts at low MSA depth: predictor context",
     "02b_confidence": "Where does the oracle rank among plausible maps?",
     "02c_accuracy_confidence": "Does pTM track TM-score?",
     "03_method": "From one sequence to a contact map",
@@ -58,8 +58,8 @@ TITLES = {
     "06_sampling_pl5": "Does a better top-L/5 contact set appear in the samples?",
 }
 CAPTIONS = {
-    "02e_oracle_budget": "Random subsets of 5, 10, L/5 and L/2 true contacts on the same 305 natural proteins as Figure 02. Unselected pairs stay unknown. Average two subsets within protein after confidence selection among three diffusion samples per map; bootstrap proteins. Fresh all-positive, full positive/negative and no-contact controls. Ground-truth diagnostic, no MSA. See ORACLE_BUDGET.md and oracle_budget_per_protein.csv for counts and source rows.",
-    "02f_oracle_budget_context": "The same oracle-budget sweep alongside Figure 02's archived AF3, AF2, Boltz-2 and Protenix + MSA baselines. Every arm uses the same 305 proteins. The selector menu changes Helico sample selection only. Oracle subsets use ground truth. See ORACLE_BUDGET.md for the complete frozen protocol.",
+    "02e_oracle_budget": "All five natural Figure 02 proteins with MSA depth <10. Random subsets of 5, 10, floor(L/5) and floor(L/2) true contacts; L is frozen input sequence length. Unselected pairs stay unknown. Two independent subsets per budget, nested across budgets within each draw. Three diffusion samples/map, six recycles, seed42, no MSA. Highest ranking_score selects one sample per subset, then average the two subset accuracies within protein. Hollow dots show both subsets; filled markers show their mean. The sixth panel averages the five proteins with 95% protein-bootstrap intervals. Fresh no-contact, all-positive and full positive/negative controls. All oracle contacts use ground truth. Menus expose each protein and pTM selection. See ORACLE_BUDGET.md and oracle_budget_per_protein.csv for counts and source rows.",
+    "02f_oracle_budget_context": "The same five low-depth natural proteins in every arm: sparse oracle conditioning versus archived AF3, AF2, Boltz-2, Protenix-v2 with/without MSA, ESMFold/ESMFold2 and Helico with 248B-token MarinFold contacts. Predictor inputs and sampling budgets retain their original protocols. Faint dots show individual proteins; means and 95% intervals bootstrap the five proteins. Oracle subsets use ground truth and are averaged within protein. The selector menu changes only the new Helico oracle-budget sweep; archived predictors and MarinFold folding retain their original selection. See ORACLE_BUDGET.md.",
     "04_contacts_pl5": "P@L/5 on 314 natural FoldBench proteins, using k=max(1,floor(L/5)) and L equal to the frozen input sequence length, not the number of resolved residues. Same nine predictors and same archived predictions as the R-precision panel, including AF2, AF3, Boltz-2 and decontaminated sequence-KNN. Ground truth and eligible pairs are unchanged: pyconfind degree >=0.001, resolved residues, separation >=6 for all-range or >=24 for long-range. Structure contacts rank by degree, MarinFold by votes; stable candidate-order ties. Means and 95% protein-bootstrap intervals. The menu exposes both ranges and split/design views. Preprocessing reproduces every archived R-precision score before using its P@L/5 counterpart.",
     "04b_knn": "Same 314 natural proteins and fixed 248B-token MarinFold checkpoint. Sequence-KNN transfers contacts from the ten nearest sequences in the native decontaminated training corpus; it does not index the additional ProteinMPNN redesign sequences. Points are protein means with 95% protein-bootstrap intervals. The menu exposes all-range and long-range P@L/5 and R-precision. Paired MarinFold-minus-KNN differences and their intervals are in pl5_paired_deltas.csv. This is a contact-prediction baseline, not a structure predictor.",
     "06_sampling_pl5": "P@L/5 counterpart of the sampling diagnostic: the exact same 314 natural proteins and first 100 iid rollouts per protein. L is frozen input sequence length; k=max(1,floor(L/5)). Individual maps retain emission order after eligibility filtering and deduplication; unfilled ranks receive zero credit and invalid/unfinished maps score zero. Consensus ranks votes from all parsed maps, matching the original diagnostic. Oracle best-of-100 is reselected using P@L/5 and uses ground truth. The scatter pairs consensus with this newly selected oracle per protein. Main contact-panel votes instead omit unfinished maps. This measures contact accuracy, not distinct folds.",

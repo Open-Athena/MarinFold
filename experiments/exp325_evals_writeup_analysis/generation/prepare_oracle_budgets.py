@@ -1,4 +1,4 @@
-"""Freeze oracle subsets for the exact 305-protein Figure 02 population.
+"""Freeze oracle subsets for Figure 02's five natural proteins at MSA depth <10.
 
 Run with the existing pinned Helico environment:
 uv run --project /home/bizon/git/helico --no-sync python generation/prepare_oracle_budgets.py
@@ -21,7 +21,7 @@ from oracle_budgets import BUDGETS, REPLICATES, build_maps, map_keys, random_see
 ROOT = Path(__file__).resolve().parent.parent
 REPO = Path("/home/bizon/git/helico")
 HELICO_SHA = "b10385d736673c81b10e70d1099962af6f2573c0"
-DESTINATION = ROOT / "scratch/helico/oracle_budget"
+DESTINATION = ROOT / "scratch/helico/oracle_budget_low_msa"
 
 
 def main() -> None:
@@ -30,9 +30,9 @@ def main() -> None:
         raise ValueError("Helico source differs from the frozen comparison")
     rows = pd.read_csv(ROOT / "data/figure_rows.csv")
     cohort = rows[(rows.figure == "02_oracle") & (rows.method == "oracle") &
-                  (rows.metric == "gdt_ts") & (rows.designed == 0)]
-    if len(cohort) != 305 or cohort.stem.duplicated().any():
-        raise ValueError("Expected the 305 natural proteins in Figure 02")
+                  (rows.metric == "gdt_ts") & (rows.designed == 0) & (rows.msa_depth < 10)]
+    if len(cohort) != 5 or cohort.stem.duplicated().any():
+        raise ValueError("Expected all five natural proteins with MSA depth <10 in Figure 02")
     targets = pd.read_csv(REPO / "experiments/exp14_foldbench_held_out_monomers/data/targets.csv")
     targets = targets[targets.stem.isin(cohort.stem)].merge(
         cohort[["stem", "msa_depth", "tier"]], on="stem", validate="one_to_one")
@@ -80,7 +80,8 @@ def main() -> None:
     targets.to_csv(ROOT / "data/oracle_budget_targets.csv", index=False)
     (DESTINATION / "ranked_pairs.json").write_text("{}\n")
     pd.DataFrame(records).to_csv(ROOT / "data/oracle_budget_maps.csv", index=False)
-    protocol = dict(phase="oracle_budget", source_sha=HELICO_SHA, n_targets=len(targets),
+    protocol = dict(phase="oracle_budget", cohort="All five natural Figure 02 proteins with MSA depth <10",
+        source_sha=HELICO_SHA, n_targets=len(targets),
         n_maps_per_target=len(map_keys()), n_random_replicates=REPLICATES,
         budgets=list(BUDGETS), map_keys=[f"{a}-{r}" for a, r in map_keys()],
         contact_definition="Helico oracle_contact_state; pyconfind 0.6.0 native_only, 3A, degree >=0.001, separation >=6",

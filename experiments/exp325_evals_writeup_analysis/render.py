@@ -501,6 +501,12 @@ def preview(names: list[str]) -> None:
                        'Contact extraction: <a href="../data/structured_decoy_maps.csv">seeds, map/structure hashes and contact counts</a>. ')
         elif name == "03_method":
             lineage = 'Training inventory: <a href="../data/training_sources.csv">training_sources.csv</a>. '
+        elif name in ("02e_oracle_budget", "02f_oracle_budget_context"):
+            lineage = ('Data: <a href="../data/oracle_budget_summary.csv">five-protein means and intervals</a>; '
+                       '<a href="../data/oracle_budget_per_protein.csv">per-protein values and original sample rows</a>; '
+                       '<a href="../data/oracle_budget_selected.csv">selected diffusion samples for both random subsets</a>; '
+                       '<a href="../data/oracle_budget_maps.csv">exact contact counts and input hashes</a>; '
+                       '<a href="../ORACLE_BUDGET.md">protocol and results</a>. ')
         elif name in ("04_contacts_pl5", "04b_knn", "06_sampling_pl5"):
             lineage = ('Data: <a href="../data/pl5_summary.csv">means and intervals</a>; '
                        '<a href="../data/pl5_figure_rows.csv">protein scores and source rows</a>; '
@@ -519,6 +525,8 @@ def preview(names: list[str]) -> None:
             manifest = "af3_context_analysis.json"
         if name in ("04_contacts_pl5", "04b_knn", "06_sampling_pl5"):
             manifest = "pl5_analysis.json"
+        if name in ("02e_oracle_budget", "02f_oracle_budget_context"):
+            manifest = "oracle_budget_analysis.json"
         sections.append(f'<section id="section-{name}"><p class="number">FIGURE {name[:2]}</p>'
                         f'<h2>{html.escape(TITLES[name])}</h2><div class="frame"><div id="{name}" class="chart"></div></div>'
                         f'<p class="caption">{html.escape(CAPTIONS[name])}</p>'

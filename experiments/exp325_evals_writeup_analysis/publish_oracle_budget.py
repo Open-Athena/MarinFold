@@ -35,21 +35,19 @@ def main() -> None:
     if stage.exists():
         shutil.rmtree(stage)
     stage.mkdir(parents=True)
-    for pattern in ("data/oracle_budget*", "data/helico_oracle_budget*", "data/figure_rows.csv",
-                    "data/inputs/Lato-*", "plots/02e*", "plots/02f*", "plots/summary.pdf", "site/*",
+    for pattern in ("data/*.csv", "data/*.json", "data/inputs/Lato-*", "plots/*", "site/*",
                     "*oracle_budget*.py", "generation/*oracle_budget*.py", "generation/run_helico.py",
                     "generation/archive_helico.py", "generation/pyproject.toml", "generation/uv.lock",
-                    "theme.py", "poster_style.py", "prepare.py", "render.py", "plan_missing.py",
-                    "build_summary.py", "pyproject.toml", "uv.lock", "README.md", "DRAFT.md",
-                    "ORACLE_BUDGET.md", "POSTER.md", "FIGURES.md", "summary_narrative.md"):
+                    "theme.py", "poster_style.py", "prepare.py", "render*.py", "plan_missing.py",
+                    "build_summary.py", "pyproject.toml", "uv.lock", "*.md"):
         for source in HERE.glob(pattern):
-            if not source.is_file():
+            if not source.is_file() or source.name == "oracle_budget_publication.json":
                 continue
             target = stage / source.relative_to(HERE)
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, target)
     with tarfile.open(stage / "oracle_budget_inputs.tar.gz", "w:gz") as archive:
-        archive.add(HERE / "scratch/helico/oracle_budget", arcname="oracle_budget_inputs")
+        archive.add(HERE / "scratch/helico/oracle_budget_low_msa", arcname="oracle_budget_inputs")
     shutil.copyfile(HERE / "scratch/oracle_budget_coordinates.tar.gz", stage / "oracle_budget_coordinates.tar.gz")
     inventory = {str(path.relative_to(stage)): dict(bytes=path.stat().st_size, sha256=digest(path))
                  for path in sorted(stage.rglob("*")) if path.is_file()}

@@ -1,0 +1,371 @@
+stem,method,selector,metric,value,min_draw,max_draw,n_draws,n_contacts,source,source_rows,eval_set,msa_depth,tier,L_exp245
+8ii8_A,no_contacts,ptm,gdt_ts,0.3199999999999999,0.3199999999999999,0.3199999999999999,1,0.0,helico_oracle_budget_samples.csv,[24],eval-test,3,<10,226
+8ii8_A,no_contacts,ptm,lddt,0.5519258294334282,0.5519258294334282,0.5519258294334282,1,0.0,helico_oracle_budget_samples.csv,[24],eval-test,3,<10,226
+8ii8_A,no_contacts,ptm,tm_score,0.7084921094618537,0.7084921094618537,0.7084921094618537,1,0.0,helico_oracle_budget_samples.csv,[24],eval-test,3,<10,226
+8ii8_A,no_contacts,ranking_score,gdt_ts,0.4222222222222222,0.4222222222222222,0.4222222222222222,1,0.0,helico_oracle_budget_samples.csv,[26],eval-test,3,<10,226
+8ii8_A,no_contacts,ranking_score,lddt,0.5141345427059714,0.5141345427059714,0.5141345427059714,1,0.0,helico_oracle_budget_samples.csv,[26],eval-test,3,<10,226
+8ii8_A,no_contacts,ranking_score,tm_score,0.689857804510424,0.689857804510424,0.689857804510424,1,0.0,helico_oracle_budget_samples.csv,[26],eval-test,3,<10,226
+8ii8_A,oracle,ptm,gdt_ts,0.9722222222222222,0.9722222222222222,0.9722222222222222,1,138.0,helico_oracle_budget_samples.csv,[32],eval-test,3,<10,226
+8ii8_A,oracle,ptm,lddt,0.8913414065389749,0.8913414065389749,0.8913414065389749,1,138.0,helico_oracle_budget_samples.csv,[32],eval-test,3,<10,226
+8ii8_A,oracle,ptm,tm_score,0.9838521875935452,0.9838521875935452,0.9838521875935452,1,138.0,helico_oracle_budget_samples.csv,[32],eval-test,3,<10,226
+8ii8_A,oracle,ranking_score,gdt_ts,0.9588888888888888,0.9588888888888888,0.9588888888888888,1,138.0,helico_oracle_budget_samples.csv,[30],eval-test,3,<10,226
+8ii8_A,oracle,ranking_score,lddt,0.8720782875798073,0.8720782875798073,0.8720782875798073,1,138.0,helico_oracle_budget_samples.csv,[30],eval-test,3,<10,226
+8ii8_A,oracle,ranking_score,tm_score,0.982379381924912,0.982379381924912,0.982379381924912,1,138.0,helico_oracle_budget_samples.csv,[30],eval-test,3,<10,226
+8ii8_A,oracle_10,ptm,gdt_ts,0.72,0.7022222222222222,0.7377777777777778,2,10.0,helico_oracle_budget_samples.csv,"[3, 16]",eval-test,3,<10,226
+8ii8_A,oracle_10,ptm,lddt,0.7053235715089818,0.65735031601293,0.7532968270050338,2,10.0,helico_oracle_budget_samples.csv,"[3, 16]",eval-test,3,<10,226
+8ii8_A,oracle_10,ptm,tm_score,0.8914980002211527,0.8814363498522445,0.9015596505900608,2,10.0,helico_oracle_budget_samples.csv,"[3, 16]",eval-test,3,<10,226
+8ii8_A,oracle_10,ranking_score,gdt_ts,0.72,0.7022222222222222,0.7377777777777778,2,10.0,helico_oracle_budget_samples.csv,"[3, 16]",eval-test,3,<10,226
+8ii8_A,oracle_10,ranking_score,lddt,0.7053235715089818,0.65735031601293,0.7532968270050338,2,10.0,helico_oracle_budget_samples.csv,"[3, 16]",eval-test,3,<10,226
+8ii8_A,oracle_10,ranking_score,tm_score,0.8914980002211527,0.8814363498522445,0.9015596505900608,2,10.0,helico_oracle_budget_samples.csv,"[3, 16]",eval-test,3,<10,226
+8ii8_A,oracle_5,ptm,gdt_ts,0.42166666666666663,0.3788888888888889,0.4644444444444444,2,5.0,helico_oracle_budget_samples.csv,"[1, 12]",eval-test,3,<10,226
+8ii8_A,oracle_5,ptm,lddt,0.5541648574323346,0.5165975137099756,0.5917322011546935,2,5.0,helico_oracle_budget_samples.csv,"[1, 12]",eval-test,3,<10,226
+8ii8_A,oracle_5,ptm,tm_score,0.7094964164580239,0.6399228884857812,0.7790699444302666,2,5.0,helico_oracle_budget_samples.csv,"[1, 12]",eval-test,3,<10,226
+8ii8_A,oracle_5,ranking_score,gdt_ts,0.41000000000000003,0.3788888888888889,0.4411111111111111,2,5.0,helico_oracle_budget_samples.csv,"[1, 13]",eval-test,3,<10,226
+8ii8_A,oracle_5,ranking_score,lddt,0.5578609221466364,0.5165975137099756,0.5991243305832972,2,5.0,helico_oracle_budget_samples.csv,"[1, 13]",eval-test,3,<10,226
+8ii8_A,oracle_5,ranking_score,tm_score,0.7079442916219939,0.6399228884857812,0.7759656947582066,2,5.0,helico_oracle_budget_samples.csv,"[1, 13]",eval-test,3,<10,226
+8ii8_A,oracle_L2,ptm,gdt_ts,0.9644444444444444,0.9566666666666668,0.9722222222222222,2,113.0,helico_oracle_budget_samples.csv,"[11, 23]",eval-test,3,<10,226
+8ii8_A,oracle_L2,ptm,lddt,0.8862787668258792,0.8810038436178254,0.8915536900339331,2,113.0,helico_oracle_budget_samples.csv,"[11, 23]",eval-test,3,<10,226
+8ii8_A,oracle_L2,ptm,tm_score,0.9825968266617677,0.9816558887699308,0.9835377645536048,2,113.0,helico_oracle_budget_samples.csv,"[11, 23]",eval-test,3,<10,226
+8ii8_A,oracle_L2,ranking_score,gdt_ts,0.9644444444444444,0.9644444444444444,0.9644444444444444,2,113.0,helico_oracle_budget_samples.csv,"[9, 21]",eval-test,3,<10,226
+8ii8_A,oracle_L2,ranking_score,lddt,0.8761981151798781,0.8723918881973594,0.8800043421623969,2,113.0,helico_oracle_budget_samples.csv,"[9, 21]",eval-test,3,<10,226
+8ii8_A,oracle_L2,ranking_score,tm_score,0.9834085129953828,0.983207304440446,0.9836097215503196,2,113.0,helico_oracle_budget_samples.csv,"[9, 21]",eval-test,3,<10,226
+8ii8_A,oracle_L5,ptm,gdt_ts,0.7861111111111111,0.7588888888888888,0.8133333333333334,2,45.0,helico_oracle_budget_samples.csv,"[6, 19]",eval-test,3,<10,226
+8ii8_A,oracle_L5,ptm,lddt,0.7689097151863109,0.7688120165323813,0.7690074138402405,2,45.0,helico_oracle_budget_samples.csv,"[6, 19]",eval-test,3,<10,226
+8ii8_A,oracle_L5,ptm,tm_score,0.9213390091716946,0.9142937320236058,0.9283842863197836,2,45.0,helico_oracle_budget_samples.csv,"[6, 19]",eval-test,3,<10,226
+8ii8_A,oracle_L5,ranking_score,gdt_ts,0.7861111111111111,0.7588888888888888,0.8133333333333334,2,45.0,helico_oracle_budget_samples.csv,"[6, 19]",eval-test,3,<10,226
+8ii8_A,oracle_L5,ranking_score,lddt,0.7689097151863109,0.7688120165323813,0.7690074138402405,2,45.0,helico_oracle_budget_samples.csv,"[6, 19]",eval-test,3,<10,226
+8ii8_A,oracle_L5,ranking_score,tm_score,0.9213390091716946,0.9142937320236058,0.9283842863197836,2,45.0,helico_oracle_budget_samples.csv,"[6, 19]",eval-test,3,<10,226
+8ii8_A,oracle_positive_all,ptm,gdt_ts,0.9611111111111112,0.9611111111111112,0.9611111111111112,1,138.0,helico_oracle_budget_samples.csv,[27],eval-test,3,<10,226
+8ii8_A,oracle_positive_all,ptm,lddt,0.8758004856789052,0.8758004856789052,0.8758004856789052,1,138.0,helico_oracle_budget_samples.csv,[27],eval-test,3,<10,226
+8ii8_A,oracle_positive_all,ptm,tm_score,0.9833428783346848,0.9833428783346848,0.9833428783346848,1,138.0,helico_oracle_budget_samples.csv,[27],eval-test,3,<10,226
+8ii8_A,oracle_positive_all,ranking_score,gdt_ts,0.9611111111111112,0.9611111111111112,0.9611111111111112,1,138.0,helico_oracle_budget_samples.csv,[27],eval-test,3,<10,226
+8ii8_A,oracle_positive_all,ranking_score,lddt,0.8758004856789052,0.8758004856789052,0.8758004856789052,1,138.0,helico_oracle_budget_samples.csv,[27],eval-test,3,<10,226
+8ii8_A,oracle_positive_all,ranking_score,tm_score,0.9833428783346848,0.9833428783346848,0.9833428783346848,1,138.0,helico_oracle_budget_samples.csv,[27],eval-test,3,<10,226
+8oxk_A,no_contacts,ptm,gdt_ts,0.0957446808510638,0.0957446808510638,0.0957446808510638,1,0.0,helico_oracle_budget_samples.csv,[57],eval-test,6,<10,99
+8oxk_A,no_contacts,ptm,lddt,0.2803123981718983,0.2803123981718983,0.2803123981718983,1,0.0,helico_oracle_budget_samples.csv,[57],eval-test,6,<10,99
+8oxk_A,no_contacts,ptm,tm_score,0.3275213569254598,0.3275213569254598,0.3275213569254598,1,0.0,helico_oracle_budget_samples.csv,[57],eval-test,6,<10,99
+8oxk_A,no_contacts,ranking_score,gdt_ts,0.0957446808510638,0.0957446808510638,0.0957446808510638,1,0.0,helico_oracle_budget_samples.csv,[57],eval-test,6,<10,99
+8oxk_A,no_contacts,ranking_score,lddt,0.2803123981718983,0.2803123981718983,0.2803123981718983,1,0.0,helico_oracle_budget_samples.csv,[57],eval-test,6,<10,99
+8oxk_A,no_contacts,ranking_score,tm_score,0.3275213569254598,0.3275213569254598,0.3275213569254598,1,0.0,helico_oracle_budget_samples.csv,[57],eval-test,6,<10,99
+8oxk_A,oracle,ptm,gdt_ts,0.9547872340425532,0.9547872340425532,0.9547872340425532,1,95.0,helico_oracle_budget_samples.csv,[65],eval-test,6,<10,99
+8oxk_A,oracle,ptm,lddt,0.8796840926750608,0.8796840926750608,0.8796840926750608,1,95.0,helico_oracle_budget_samples.csv,[65],eval-test,6,<10,99
+8oxk_A,oracle,ptm,tm_score,0.951882688888694,0.951882688888694,0.951882688888694,1,95.0,helico_oracle_budget_samples.csv,[65],eval-test,6,<10,99
+8oxk_A,oracle,ranking_score,gdt_ts,0.9547872340425532,0.9547872340425532,0.9547872340425532,1,95.0,helico_oracle_budget_samples.csv,[65],eval-test,6,<10,99
+8oxk_A,oracle,ranking_score,lddt,0.8796840926750608,0.8796840926750608,0.8796840926750608,1,95.0,helico_oracle_budget_samples.csv,[65],eval-test,6,<10,99
+8oxk_A,oracle,ranking_score,tm_score,0.951882688888694,0.951882688888694,0.951882688888694,1,95.0,helico_oracle_budget_samples.csv,[65],eval-test,6,<10,99
+8oxk_A,oracle_10,ptm,gdt_ts,0.2087765957446808,0.1888297872340425,0.2287234042553191,2,10.0,helico_oracle_budget_samples.csv,"[36, 50]",eval-test,6,<10,99
+8oxk_A,oracle_10,ptm,lddt,0.3858271992781171,0.3833895911836708,0.3882648073725634,2,10.0,helico_oracle_budget_samples.csv,"[36, 50]",eval-test,6,<10,99
+8oxk_A,oracle_10,ptm,tm_score,0.43046690209321314,0.4286334708828422,0.4323003333035841,2,10.0,helico_oracle_budget_samples.csv,"[36, 50]",eval-test,6,<10,99
+8oxk_A,oracle_10,ranking_score,gdt_ts,0.2087765957446808,0.1888297872340425,0.2287234042553191,2,10.0,helico_oracle_budget_samples.csv,"[36, 50]",eval-test,6,<10,99
+8oxk_A,oracle_10,ranking_score,lddt,0.3858271992781171,0.3833895911836708,0.3882648073725634,2,10.0,helico_oracle_budget_samples.csv,"[36, 50]",eval-test,6,<10,99
+8oxk_A,oracle_10,ranking_score,tm_score,0.43046690209321314,0.4286334708828422,0.4323003333035841,2,10.0,helico_oracle_budget_samples.csv,"[36, 50]",eval-test,6,<10,99
+8oxk_A,oracle_5,ptm,gdt_ts,0.1542553191489361,0.0824468085106382,0.226063829787234,2,5.0,helico_oracle_budget_samples.csv,"[34, 45]",eval-test,6,<10,99
+8oxk_A,oracle_5,ptm,lddt,0.34317741275159375,0.3129308111992113,0.3734240143039762,2,5.0,helico_oracle_budget_samples.csv,"[34, 45]",eval-test,6,<10,99
+8oxk_A,oracle_5,ptm,tm_score,0.38382723045356637,0.3335638168163907,0.4340906440907421,2,5.0,helico_oracle_budget_samples.csv,"[34, 45]",eval-test,6,<10,99
+8oxk_A,oracle_5,ranking_score,gdt_ts,0.1542553191489361,0.0824468085106382,0.226063829787234,2,5.0,helico_oracle_budget_samples.csv,"[34, 45]",eval-test,6,<10,99
+8oxk_A,oracle_5,ranking_score,lddt,0.34317741275159375,0.3129308111992113,0.3734240143039762,2,5.0,helico_oracle_budget_samples.csv,"[34, 45]",eval-test,6,<10,99
+8oxk_A,oracle_5,ranking_score,tm_score,0.38382723045356637,0.3335638168163907,0.4340906440907421,2,5.0,helico_oracle_budget_samples.csv,"[34, 45]",eval-test,6,<10,99
+8oxk_A,oracle_L2,ptm,gdt_ts,0.9414893617021277,0.9122340425531916,0.9707446808510638,2,49.0,helico_oracle_budget_samples.csv,"[44, 55]",eval-test,6,<10,99
+8oxk_A,oracle_L2,ptm,lddt,0.8712234829179443,0.8468421800195509,0.8956047858163376,2,49.0,helico_oracle_budget_samples.csv,"[44, 55]",eval-test,6,<10,99
+8oxk_A,oracle_L2,ptm,tm_score,0.9450372751799521,0.9258664715835196,0.9642080787763846,2,49.0,helico_oracle_budget_samples.csv,"[44, 55]",eval-test,6,<10,99
+8oxk_A,oracle_L2,ranking_score,gdt_ts,0.9414893617021277,0.9122340425531916,0.9707446808510638,2,49.0,helico_oracle_budget_samples.csv,"[44, 55]",eval-test,6,<10,99
+8oxk_A,oracle_L2,ranking_score,lddt,0.8712234829179443,0.8468421800195509,0.8956047858163376,2,49.0,helico_oracle_budget_samples.csv,"[44, 55]",eval-test,6,<10,99
+8oxk_A,oracle_L2,ranking_score,tm_score,0.9450372751799521,0.9258664715835196,0.9642080787763846,2,49.0,helico_oracle_budget_samples.csv,"[44, 55]",eval-test,6,<10,99
+8oxk_A,oracle_L5,ptm,gdt_ts,0.5026595744680851,0.1994680851063829,0.8058510638297872,2,19.0,helico_oracle_budget_samples.csv,"[39, 53]",eval-test,6,<10,99
+8oxk_A,oracle_L5,ptm,lddt,0.561432110421349,0.3550072271842389,0.7678569936584592,2,19.0,helico_oracle_budget_samples.csv,"[39, 53]",eval-test,6,<10,99
+8oxk_A,oracle_L5,ptm,tm_score,0.6182450744651523,0.3696195103892634,0.8668706385410412,2,19.0,helico_oracle_budget_samples.csv,"[39, 53]",eval-test,6,<10,99
+8oxk_A,oracle_L5,ranking_score,gdt_ts,0.5026595744680851,0.1994680851063829,0.8058510638297872,2,19.0,helico_oracle_budget_samples.csv,"[39, 53]",eval-test,6,<10,99
+8oxk_A,oracle_L5,ranking_score,lddt,0.561432110421349,0.3550072271842389,0.7678569936584592,2,19.0,helico_oracle_budget_samples.csv,"[39, 53]",eval-test,6,<10,99
+8oxk_A,oracle_L5,ranking_score,tm_score,0.6182450744651523,0.3696195103892634,0.8668706385410412,2,19.0,helico_oracle_budget_samples.csv,"[39, 53]",eval-test,6,<10,99
+8oxk_A,oracle_positive_all,ptm,gdt_ts,0.949468085106383,0.949468085106383,0.949468085106383,1,95.0,helico_oracle_budget_samples.csv,[62],eval-test,6,<10,99
+8oxk_A,oracle_positive_all,ptm,lddt,0.8821739203088055,0.8821739203088055,0.8821739203088055,1,95.0,helico_oracle_budget_samples.csv,[62],eval-test,6,<10,99
+8oxk_A,oracle_positive_all,ptm,tm_score,0.9521724576334484,0.9521724576334484,0.9521724576334484,1,95.0,helico_oracle_budget_samples.csv,[62],eval-test,6,<10,99
+8oxk_A,oracle_positive_all,ranking_score,gdt_ts,0.949468085106383,0.949468085106383,0.949468085106383,1,95.0,helico_oracle_budget_samples.csv,[62],eval-test,6,<10,99
+8oxk_A,oracle_positive_all,ranking_score,lddt,0.8821739203088055,0.8821739203088055,0.8821739203088055,1,95.0,helico_oracle_budget_samples.csv,[62],eval-test,6,<10,99
+8oxk_A,oracle_positive_all,ranking_score,tm_score,0.9521724576334484,0.9521724576334484,0.9521724576334484,1,95.0,helico_oracle_budget_samples.csv,[62],eval-test,6,<10,99
+8qoh_A,no_contacts,ptm,gdt_ts,0.0620437956204379,0.0620437956204379,0.0620437956204379,1,0.0,helico_oracle_budget_samples.csv,[92],eval-test,3,<10,278
+8qoh_A,no_contacts,ptm,lddt,0.2705561040644894,0.2705561040644894,0.2705561040644894,1,0.0,helico_oracle_budget_samples.csv,[92],eval-test,3,<10,278
+8qoh_A,no_contacts,ptm,tm_score,0.322245879599063,0.322245879599063,0.322245879599063,1,0.0,helico_oracle_budget_samples.csv,[92],eval-test,3,<10,278
+8qoh_A,no_contacts,ranking_score,gdt_ts,0.0620437956204379,0.0620437956204379,0.0620437956204379,1,0.0,helico_oracle_budget_samples.csv,[92],eval-test,3,<10,278
+8qoh_A,no_contacts,ranking_score,lddt,0.2705561040644894,0.2705561040644894,0.2705561040644894,1,0.0,helico_oracle_budget_samples.csv,[92],eval-test,3,<10,278
+8qoh_A,no_contacts,ranking_score,tm_score,0.322245879599063,0.322245879599063,0.322245879599063,1,0.0,helico_oracle_budget_samples.csv,[92],eval-test,3,<10,278
+8qoh_A,oracle,ptm,gdt_ts,0.906021897810219,0.906021897810219,0.906021897810219,1,266.0,helico_oracle_budget_samples.csv,[98],eval-test,3,<10,278
+8qoh_A,oracle,ptm,lddt,0.8404722852816601,0.8404722852816601,0.8404722852816601,1,266.0,helico_oracle_budget_samples.csv,[98],eval-test,3,<10,278
+8qoh_A,oracle,ptm,tm_score,0.9619074286232726,0.9619074286232726,0.9619074286232726,1,266.0,helico_oracle_budget_samples.csv,[98],eval-test,3,<10,278
+8qoh_A,oracle,ranking_score,gdt_ts,0.906021897810219,0.906021897810219,0.906021897810219,1,266.0,helico_oracle_budget_samples.csv,[98],eval-test,3,<10,278
+8qoh_A,oracle,ranking_score,lddt,0.8404722852816601,0.8404722852816601,0.8404722852816601,1,266.0,helico_oracle_budget_samples.csv,[98],eval-test,3,<10,278
+8qoh_A,oracle,ranking_score,tm_score,0.9619074286232726,0.9619074286232726,0.9619074286232726,1,266.0,helico_oracle_budget_samples.csv,[98],eval-test,3,<10,278
+8qoh_A,oracle_10,ptm,gdt_ts,0.04698905109489045,0.0456204379562043,0.0483576642335766,2,10.0,helico_oracle_budget_samples.csv,"[69, 83]",eval-test,3,<10,278
+8qoh_A,oracle_10,ptm,lddt,0.2717979804690095,0.263963306661291,0.279632654276728,2,10.0,helico_oracle_budget_samples.csv,"[69, 83]",eval-test,3,<10,278
+8qoh_A,oracle_10,ptm,tm_score,0.33237265770787394,0.3274773449501961,0.3372679704655518,2,10.0,helico_oracle_budget_samples.csv,"[69, 83]",eval-test,3,<10,278
+8qoh_A,oracle_10,ranking_score,gdt_ts,0.04698905109489045,0.0456204379562043,0.0483576642335766,2,10.0,helico_oracle_budget_samples.csv,"[69, 83]",eval-test,3,<10,278
+8qoh_A,oracle_10,ranking_score,lddt,0.2717979804690095,0.263963306661291,0.279632654276728,2,10.0,helico_oracle_budget_samples.csv,"[69, 83]",eval-test,3,<10,278
+8qoh_A,oracle_10,ranking_score,tm_score,0.33237265770787394,0.3274773449501961,0.3372679704655518,2,10.0,helico_oracle_budget_samples.csv,"[69, 83]",eval-test,3,<10,278
+8qoh_A,oracle_5,ptm,gdt_ts,0.0401459854014598,0.0392335766423357,0.0410583941605839,2,5.0,helico_oracle_budget_samples.csv,"[68, 78]",eval-test,3,<10,278
+8qoh_A,oracle_5,ptm,lddt,0.2625948659563794,0.2457930255625525,0.2793967063502063,2,5.0,helico_oracle_budget_samples.csv,"[68, 78]",eval-test,3,<10,278
+8qoh_A,oracle_5,ptm,tm_score,0.3050424711606956,0.2878593504989757,0.3222255918224155,2,5.0,helico_oracle_budget_samples.csv,"[68, 78]",eval-test,3,<10,278
+8qoh_A,oracle_5,ranking_score,gdt_ts,0.0401459854014598,0.0392335766423357,0.0410583941605839,2,5.0,helico_oracle_budget_samples.csv,"[68, 78]",eval-test,3,<10,278
+8qoh_A,oracle_5,ranking_score,lddt,0.2625948659563794,0.2457930255625525,0.2793967063502063,2,5.0,helico_oracle_budget_samples.csv,"[68, 78]",eval-test,3,<10,278
+8qoh_A,oracle_5,ranking_score,tm_score,0.3050424711606956,0.2878593504989757,0.3222255918224155,2,5.0,helico_oracle_budget_samples.csv,"[68, 78]",eval-test,3,<10,278
+8qoh_A,oracle_L2,ptm,gdt_ts,0.885492700729927,0.8777372262773723,0.8932481751824818,2,139.0,helico_oracle_budget_samples.csv,"[77, 89]",eval-test,3,<10,278
+8qoh_A,oracle_L2,ptm,lddt,0.8274424619218989,0.8259265537629112,0.8289583700808865,2,139.0,helico_oracle_budget_samples.csv,"[77, 89]",eval-test,3,<10,278
+8qoh_A,oracle_L2,ptm,tm_score,0.9591322861311947,0.9545850848799674,0.963679487382422,2,139.0,helico_oracle_budget_samples.csv,"[77, 89]",eval-test,3,<10,278
+8qoh_A,oracle_L2,ranking_score,gdt_ts,0.885492700729927,0.8777372262773723,0.8932481751824818,2,139.0,helico_oracle_budget_samples.csv,"[77, 89]",eval-test,3,<10,278
+8qoh_A,oracle_L2,ranking_score,lddt,0.8274424619218989,0.8259265537629112,0.8289583700808865,2,139.0,helico_oracle_budget_samples.csv,"[77, 89]",eval-test,3,<10,278
+8qoh_A,oracle_L2,ranking_score,tm_score,0.9591322861311947,0.9545850848799674,0.963679487382422,2,139.0,helico_oracle_budget_samples.csv,"[77, 89]",eval-test,3,<10,278
+8qoh_A,oracle_L5,ptm,gdt_ts,0.6500912408759124,0.6468978102189782,0.6532846715328466,2,55.0,helico_oracle_budget_samples.csv,"[72, 86]",eval-test,3,<10,278
+8qoh_A,oracle_L5,ptm,lddt,0.7070611998524753,0.6801800305586926,0.733942369146258,2,55.0,helico_oracle_budget_samples.csv,"[72, 86]",eval-test,3,<10,278
+8qoh_A,oracle_L5,ptm,tm_score,0.8899479406346699,0.8789781496393677,0.900917731629972,2,55.0,helico_oracle_budget_samples.csv,"[72, 86]",eval-test,3,<10,278
+8qoh_A,oracle_L5,ranking_score,gdt_ts,0.6500912408759124,0.6468978102189782,0.6532846715328466,2,55.0,helico_oracle_budget_samples.csv,"[72, 86]",eval-test,3,<10,278
+8qoh_A,oracle_L5,ranking_score,lddt,0.7070611998524753,0.6801800305586926,0.733942369146258,2,55.0,helico_oracle_budget_samples.csv,"[72, 86]",eval-test,3,<10,278
+8qoh_A,oracle_L5,ranking_score,tm_score,0.8899479406346699,0.8789781496393677,0.900917731629972,2,55.0,helico_oracle_budget_samples.csv,"[72, 86]",eval-test,3,<10,278
+8qoh_A,oracle_positive_all,ptm,gdt_ts,0.8968978102189781,0.8968978102189781,0.8968978102189781,1,266.0,helico_oracle_budget_samples.csv,[95],eval-test,3,<10,278
+8qoh_A,oracle_positive_all,ptm,lddt,0.8325491310014959,0.8325491310014959,0.8325491310014959,1,266.0,helico_oracle_budget_samples.csv,[95],eval-test,3,<10,278
+8qoh_A,oracle_positive_all,ptm,tm_score,0.9592510228628937,0.9592510228628937,0.9592510228628937,1,266.0,helico_oracle_budget_samples.csv,[95],eval-test,3,<10,278
+8qoh_A,oracle_positive_all,ranking_score,gdt_ts,0.8968978102189781,0.8968978102189781,0.8968978102189781,1,266.0,helico_oracle_budget_samples.csv,[95],eval-test,3,<10,278
+8qoh_A,oracle_positive_all,ranking_score,lddt,0.8325491310014959,0.8325491310014959,0.8325491310014959,1,266.0,helico_oracle_budget_samples.csv,[95],eval-test,3,<10,278
+8qoh_A,oracle_positive_all,ranking_score,tm_score,0.9592510228628937,0.9592510228628937,0.9592510228628937,1,266.0,helico_oracle_budget_samples.csv,[95],eval-test,3,<10,278
+8ux2_A,no_contacts,ptm,gdt_ts,0.01875,0.01875,0.01875,1,0.0,helico_oracle_budget_samples.csv,[125],eval-test,6,<10,246
+8ux2_A,no_contacts,ptm,lddt,0.2624504392759259,0.2624504392759259,0.2624504392759259,1,0.0,helico_oracle_budget_samples.csv,[125],eval-test,6,<10,246
+8ux2_A,no_contacts,ptm,tm_score,0.2754987818778325,0.2754987818778325,0.2754987818778325,1,0.0,helico_oracle_budget_samples.csv,[125],eval-test,6,<10,246
+8ux2_A,no_contacts,ranking_score,gdt_ts,0.01875,0.01875,0.01875,1,0.0,helico_oracle_budget_samples.csv,[125],eval-test,6,<10,246
+8ux2_A,no_contacts,ranking_score,lddt,0.2624504392759259,0.2624504392759259,0.2624504392759259,1,0.0,helico_oracle_budget_samples.csv,[125],eval-test,6,<10,246
+8ux2_A,no_contacts,ranking_score,tm_score,0.2754987818778325,0.2754987818778325,0.2754987818778325,1,0.0,helico_oracle_budget_samples.csv,[125],eval-test,6,<10,246
+8ux2_A,oracle,ptm,gdt_ts,0.89375,0.89375,0.89375,1,216.0,helico_oracle_budget_samples.csv,[130],eval-test,6,<10,246
+8ux2_A,oracle,ptm,lddt,0.8159008677189067,0.8159008677189067,0.8159008677189067,1,216.0,helico_oracle_budget_samples.csv,[130],eval-test,6,<10,246
+8ux2_A,oracle,ptm,tm_score,0.9615099262615566,0.9615099262615566,0.9615099262615566,1,216.0,helico_oracle_budget_samples.csv,[130],eval-test,6,<10,246
+8ux2_A,oracle,ranking_score,gdt_ts,0.89375,0.89375,0.89375,1,216.0,helico_oracle_budget_samples.csv,[130],eval-test,6,<10,246
+8ux2_A,oracle,ranking_score,lddt,0.8159008677189067,0.8159008677189067,0.8159008677189067,1,216.0,helico_oracle_budget_samples.csv,[130],eval-test,6,<10,246
+8ux2_A,oracle,ranking_score,tm_score,0.9615099262615566,0.9615099262615566,0.9615099262615566,1,216.0,helico_oracle_budget_samples.csv,[130],eval-test,6,<10,246
+8ux2_A,oracle_10,ptm,gdt_ts,0.15625,0.040625,0.271875,2,10.0,helico_oracle_budget_samples.csv,"[102, 115]",eval-test,6,<10,246
+8ux2_A,oracle_10,ptm,lddt,0.34363456142821547,0.2868888864815677,0.4003802363748632,2,10.0,helico_oracle_budget_samples.csv,"[102, 115]",eval-test,6,<10,246
+8ux2_A,oracle_10,ptm,tm_score,0.4070559202596214,0.2725175013040573,0.5415943392151855,2,10.0,helico_oracle_budget_samples.csv,"[102, 115]",eval-test,6,<10,246
+8ux2_A,oracle_10,ranking_score,gdt_ts,0.15625,0.040625,0.271875,2,10.0,helico_oracle_budget_samples.csv,"[102, 115]",eval-test,6,<10,246
+8ux2_A,oracle_10,ranking_score,lddt,0.34363456142821547,0.2868888864815677,0.4003802363748632,2,10.0,helico_oracle_budget_samples.csv,"[102, 115]",eval-test,6,<10,246
+8ux2_A,oracle_10,ranking_score,tm_score,0.4070559202596214,0.2725175013040573,0.5415943392151855,2,10.0,helico_oracle_budget_samples.csv,"[102, 115]",eval-test,6,<10,246
+8ux2_A,oracle_5,ptm,gdt_ts,0.07395833333333329,0.0291666666666666,0.11875,2,5.0,helico_oracle_budget_samples.csv,"[99, 112]",eval-test,6,<10,246
+8ux2_A,oracle_5,ptm,lddt,0.3026504831493537,0.2778433772789808,0.3274575890197267,2,5.0,helico_oracle_budget_samples.csv,"[99, 112]",eval-test,6,<10,246
+8ux2_A,oracle_5,ptm,tm_score,0.36387665554015075,0.3314302571214727,0.3963230539588288,2,5.0,helico_oracle_budget_samples.csv,"[99, 112]",eval-test,6,<10,246
+8ux2_A,oracle_5,ranking_score,gdt_ts,0.07395833333333329,0.0291666666666666,0.11875,2,5.0,helico_oracle_budget_samples.csv,"[99, 112]",eval-test,6,<10,246
+8ux2_A,oracle_5,ranking_score,lddt,0.3026504831493537,0.2778433772789808,0.3274575890197267,2,5.0,helico_oracle_budget_samples.csv,"[99, 112]",eval-test,6,<10,246
+8ux2_A,oracle_5,ranking_score,tm_score,0.36387665554015075,0.3314302571214727,0.3963230539588288,2,5.0,helico_oracle_budget_samples.csv,"[99, 112]",eval-test,6,<10,246
+8ux2_A,oracle_L2,ptm,gdt_ts,0.8583333333333334,0.8541666666666667,0.8624999999999999,2,123.0,helico_oracle_budget_samples.csv,"[110, 122]",eval-test,6,<10,246
+8ux2_A,oracle_L2,ptm,lddt,0.818100971173533,0.8109285458937722,0.8252733964532938,2,123.0,helico_oracle_budget_samples.csv,"[110, 122]",eval-test,6,<10,246
+8ux2_A,oracle_L2,ptm,tm_score,0.9440927474879619,0.941221527879339,0.9469639670965848,2,123.0,helico_oracle_budget_samples.csv,"[110, 122]",eval-test,6,<10,246
+8ux2_A,oracle_L2,ranking_score,gdt_ts,0.8583333333333334,0.8541666666666667,0.8624999999999999,2,123.0,helico_oracle_budget_samples.csv,"[110, 122]",eval-test,6,<10,246
+8ux2_A,oracle_L2,ranking_score,lddt,0.818100971173533,0.8109285458937722,0.8252733964532938,2,123.0,helico_oracle_budget_samples.csv,"[110, 122]",eval-test,6,<10,246
+8ux2_A,oracle_L2,ranking_score,tm_score,0.9440927474879619,0.941221527879339,0.9469639670965848,2,123.0,helico_oracle_budget_samples.csv,"[110, 122]",eval-test,6,<10,246
+8ux2_A,oracle_L5,ptm,gdt_ts,0.4119791666666667,0.2572916666666667,0.5666666666666667,2,49.0,helico_oracle_budget_samples.csv,"[106, 117]",eval-test,6,<10,246
+8ux2_A,oracle_L5,ptm,lddt,0.5730753241758837,0.5335800987964598,0.6125705495553075,2,49.0,helico_oracle_budget_samples.csv,"[106, 117]",eval-test,6,<10,246
+8ux2_A,oracle_L5,ptm,tm_score,0.7080247636693142,0.6154775790362047,0.8005719483024237,2,49.0,helico_oracle_budget_samples.csv,"[106, 117]",eval-test,6,<10,246
+8ux2_A,oracle_L5,ranking_score,gdt_ts,0.4119791666666667,0.2572916666666667,0.5666666666666667,2,49.0,helico_oracle_budget_samples.csv,"[106, 117]",eval-test,6,<10,246
+8ux2_A,oracle_L5,ranking_score,lddt,0.5730753241758837,0.5335800987964598,0.6125705495553075,2,49.0,helico_oracle_budget_samples.csv,"[106, 117]",eval-test,6,<10,246
+8ux2_A,oracle_L5,ranking_score,tm_score,0.7080247636693142,0.6154775790362047,0.8005719483024237,2,49.0,helico_oracle_budget_samples.csv,"[106, 117]",eval-test,6,<10,246
+8ux2_A,oracle_positive_all,ptm,gdt_ts,0.8947916666666667,0.8947916666666667,0.8947916666666667,1,216.0,helico_oracle_budget_samples.csv,[128],eval-test,6,<10,246
+8ux2_A,oracle_positive_all,ptm,lddt,0.8374083262016444,0.8374083262016444,0.8374083262016444,1,216.0,helico_oracle_budget_samples.csv,[128],eval-test,6,<10,246
+8ux2_A,oracle_positive_all,ptm,tm_score,0.9608651454551488,0.9608651454551488,0.9608651454551488,1,216.0,helico_oracle_budget_samples.csv,[128],eval-test,6,<10,246
+8ux2_A,oracle_positive_all,ranking_score,gdt_ts,0.8947916666666667,0.8947916666666667,0.8947916666666667,1,216.0,helico_oracle_budget_samples.csv,[128],eval-test,6,<10,246
+8ux2_A,oracle_positive_all,ranking_score,lddt,0.8374083262016444,0.8374083262016444,0.8374083262016444,1,216.0,helico_oracle_budget_samples.csv,[128],eval-test,6,<10,246
+8ux2_A,oracle_positive_all,ranking_score,tm_score,0.9608651454551488,0.9608651454551488,0.9608651454551488,1,216.0,helico_oracle_budget_samples.csv,[128],eval-test,6,<10,246
+8wrx_A,no_contacts,ptm,gdt_ts,0.4767441860465116,0.4767441860465116,0.4767441860465116,1,0.0,helico_oracle_budget_samples.csv,[157],eval-test,4,<10,88
+8wrx_A,no_contacts,ptm,lddt,0.6408030560899808,0.6408030560899808,0.6408030560899808,1,0.0,helico_oracle_budget_samples.csv,[157],eval-test,4,<10,88
+8wrx_A,no_contacts,ptm,tm_score,0.6394327797791782,0.6394327797791782,0.6394327797791782,1,0.0,helico_oracle_budget_samples.csv,[157],eval-test,4,<10,88
+8wrx_A,no_contacts,ranking_score,gdt_ts,0.622093023255814,0.622093023255814,0.622093023255814,1,0.0,helico_oracle_budget_samples.csv,[158],eval-test,4,<10,88
+8wrx_A,no_contacts,ranking_score,lddt,0.6462164237087464,0.6462164237087464,0.6462164237087464,1,0.0,helico_oracle_budget_samples.csv,[158],eval-test,4,<10,88
+8wrx_A,no_contacts,ranking_score,tm_score,0.7013023799299334,0.7013023799299334,0.7013023799299334,1,0.0,helico_oracle_budget_samples.csv,[158],eval-test,4,<10,88
+8wrx_A,oracle,ptm,gdt_ts,0.9447674418604652,0.9447674418604652,0.9447674418604652,1,78.0,helico_oracle_budget_samples.csv,[164],eval-test,4,<10,88
+8wrx_A,oracle,ptm,lddt,0.8733443096048543,0.8733443096048543,0.8733443096048543,1,78.0,helico_oracle_budget_samples.csv,[164],eval-test,4,<10,88
+8wrx_A,oracle,ptm,tm_score,0.9507825413677692,0.9507825413677692,0.9507825413677692,1,78.0,helico_oracle_budget_samples.csv,[164],eval-test,4,<10,88
+8wrx_A,oracle,ranking_score,gdt_ts,0.9447674418604652,0.9447674418604652,0.9447674418604652,1,78.0,helico_oracle_budget_samples.csv,[164],eval-test,4,<10,88
+8wrx_A,oracle,ranking_score,lddt,0.8733443096048543,0.8733443096048543,0.8733443096048543,1,78.0,helico_oracle_budget_samples.csv,[164],eval-test,4,<10,88
+8wrx_A,oracle,ranking_score,tm_score,0.9507825413677692,0.9507825413677692,0.9507825413677692,1,78.0,helico_oracle_budget_samples.csv,[164],eval-test,4,<10,88
+8wrx_A,oracle_10,ptm,gdt_ts,0.6758720930232558,0.6424418604651163,0.7093023255813953,2,10.0,helico_oracle_budget_samples.csv,"[136, 149]",eval-test,4,<10,88
+8wrx_A,oracle_10,ptm,lddt,0.7482344698090869,0.7310335577919196,0.7654353818262543,2,10.0,helico_oracle_budget_samples.csv,"[136, 149]",eval-test,4,<10,88
+8wrx_A,oracle_10,ptm,tm_score,0.8046181405106314,0.793818758167607,0.8154175228536557,2,10.0,helico_oracle_budget_samples.csv,"[136, 149]",eval-test,4,<10,88
+8wrx_A,oracle_10,ranking_score,gdt_ts,0.6758720930232558,0.6424418604651163,0.7093023255813953,2,10.0,helico_oracle_budget_samples.csv,"[136, 149]",eval-test,4,<10,88
+8wrx_A,oracle_10,ranking_score,lddt,0.7482344698090869,0.7310335577919196,0.7654353818262543,2,10.0,helico_oracle_budget_samples.csv,"[136, 149]",eval-test,4,<10,88
+8wrx_A,oracle_10,ranking_score,tm_score,0.8046181405106314,0.793818758167607,0.8154175228536557,2,10.0,helico_oracle_budget_samples.csv,"[136, 149]",eval-test,4,<10,88
+8wrx_A,oracle_5,ptm,gdt_ts,0.8023255813953488,0.7441860465116279,0.8604651162790697,2,5.0,helico_oracle_budget_samples.csv,"[134, 146]",eval-test,4,<10,88
+8wrx_A,oracle_5,ptm,lddt,0.7666667437472251,0.7137991157318336,0.8195343717626166,2,5.0,helico_oracle_budget_samples.csv,"[134, 146]",eval-test,4,<10,88
+8wrx_A,oracle_5,ptm,tm_score,0.8522047376378635,0.8049621571172046,0.8994473181585224,2,5.0,helico_oracle_budget_samples.csv,"[134, 146]",eval-test,4,<10,88
+8wrx_A,oracle_5,ranking_score,gdt_ts,0.8023255813953488,0.7441860465116279,0.8604651162790697,2,5.0,helico_oracle_budget_samples.csv,"[134, 146]",eval-test,4,<10,88
+8wrx_A,oracle_5,ranking_score,lddt,0.7666667437472251,0.7137991157318336,0.8195343717626166,2,5.0,helico_oracle_budget_samples.csv,"[134, 146]",eval-test,4,<10,88
+8wrx_A,oracle_5,ranking_score,tm_score,0.8522047376378635,0.8049621571172046,0.8994473181585224,2,5.0,helico_oracle_budget_samples.csv,"[134, 146]",eval-test,4,<10,88
+8wrx_A,oracle_L2,ptm,gdt_ts,0.8880813953488371,0.8517441860465116,0.9244186046511628,2,44.0,helico_oracle_budget_samples.csv,"[142, 155]",eval-test,4,<10,88
+8wrx_A,oracle_L2,ptm,lddt,0.845601089610774,0.8364196388929999,0.8547825403285481,2,44.0,helico_oracle_budget_samples.csv,"[142, 155]",eval-test,4,<10,88
+8wrx_A,oracle_L2,ptm,tm_score,0.9237938303696802,0.9107920056623178,0.9367956550770428,2,44.0,helico_oracle_budget_samples.csv,"[142, 155]",eval-test,4,<10,88
+8wrx_A,oracle_L2,ranking_score,gdt_ts,0.882267441860465,0.8401162790697674,0.9244186046511628,2,44.0,helico_oracle_budget_samples.csv,"[142, 154]",eval-test,4,<10,88
+8wrx_A,oracle_L2,ranking_score,lddt,0.8411335004439839,0.8274844605594198,0.8547825403285481,2,44.0,helico_oracle_budget_samples.csv,"[142, 154]",eval-test,4,<10,88
+8wrx_A,oracle_L2,ranking_score,tm_score,0.9269501300520375,0.9171046050270324,0.9367956550770428,2,44.0,helico_oracle_budget_samples.csv,"[142, 154]",eval-test,4,<10,88
+8wrx_A,oracle_L5,ptm,gdt_ts,0.7194767441860465,0.5348837209302325,0.9040697674418604,2,17.0,helico_oracle_budget_samples.csv,"[139, 152]",eval-test,4,<10,88
+8wrx_A,oracle_L5,ptm,lddt,0.7423089018795324,0.6414990935326328,0.8431187102264319,2,17.0,helico_oracle_budget_samples.csv,"[139, 152]",eval-test,4,<10,88
+8wrx_A,oracle_L5,ptm,tm_score,0.7951055650479357,0.6752998186451719,0.9149113114506996,2,17.0,helico_oracle_budget_samples.csv,"[139, 152]",eval-test,4,<10,88
+8wrx_A,oracle_L5,ranking_score,gdt_ts,0.757267441860465,0.6104651162790697,0.9040697674418604,2,17.0,helico_oracle_budget_samples.csv,"[140, 152]",eval-test,4,<10,88
+8wrx_A,oracle_L5,ranking_score,lddt,0.7555682995412165,0.6680178888560012,0.8431187102264319,2,17.0,helico_oracle_budget_samples.csv,"[140, 152]",eval-test,4,<10,88
+8wrx_A,oracle_L5,ranking_score,tm_score,0.8084616431208734,0.7020119747910473,0.9149113114506996,2,17.0,helico_oracle_budget_samples.csv,"[140, 152]",eval-test,4,<10,88
+8wrx_A,oracle_positive_all,ptm,gdt_ts,0.9447674418604652,0.9447674418604652,0.9447674418604652,1,78.0,helico_oracle_budget_samples.csv,[160],eval-test,4,<10,88
+8wrx_A,oracle_positive_all,ptm,lddt,0.874331711558384,0.874331711558384,0.874331711558384,1,78.0,helico_oracle_budget_samples.csv,[160],eval-test,4,<10,88
+8wrx_A,oracle_positive_all,ptm,tm_score,0.9448501101210754,0.9448501101210754,0.9448501101210754,1,78.0,helico_oracle_budget_samples.csv,[160],eval-test,4,<10,88
+8wrx_A,oracle_positive_all,ranking_score,gdt_ts,0.8895348837209303,0.8895348837209303,0.8895348837209303,1,78.0,helico_oracle_budget_samples.csv,[159],eval-test,4,<10,88
+8wrx_A,oracle_positive_all,ranking_score,lddt,0.8462982832618026,0.8462982832618026,0.8462982832618026,1,78.0,helico_oracle_budget_samples.csv,[159],eval-test,4,<10,88
+8wrx_A,oracle_positive_all,ranking_score,tm_score,0.9195442898064544,0.9195442898064544,0.9195442898064544,1,78.0,helico_oracle_budget_samples.csv,[159],eval-test,4,<10,88
+8ii8_A,esmfold,ranking_score,gdt_ts,0.333333,0.333333,0.333333,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2333],eval-test,3,<10,226
+8oxk_A,esmfold,ranking_score,gdt_ts,0.56117,0.56117,0.56117,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2374],eval-test,6,<10,99
+8qoh_A,esmfold,ranking_score,gdt_ts,0.207117,0.207117,0.207117,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2395],eval-test,3,<10,278
+8ux2_A,esmfold,ranking_score,gdt_ts,0.135983,0.135983,0.135983,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2443],eval-test,6,<10,246
+8wrx_A,esmfold,ranking_score,gdt_ts,0.822674,0.822674,0.822674,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2462],eval-test,4,<10,88
+8ii8_A,esmfold2,ranking_score,gdt_ts,0.547778,0.547778,0.547778,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2657],eval-test,3,<10,226
+8oxk_A,esmfold2,ranking_score,gdt_ts,0.93617,0.93617,0.93617,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2698],eval-test,6,<10,99
+8qoh_A,esmfold2,ranking_score,gdt_ts,0.709854,0.709854,0.709854,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2719],eval-test,3,<10,278
+8ux2_A,esmfold2,ranking_score,gdt_ts,0.355649,0.355649,0.355649,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2767],eval-test,6,<10,246
+8wrx_A,esmfold2,ranking_score,gdt_ts,0.848837,0.848837,0.848837,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2786],eval-test,4,<10,88
+8ii8_A,protenix_msa,ranking_score,gdt_ts,0.357778,0.357778,0.357778,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3067],eval-test,3,<10,226
+8oxk_A,protenix_msa,ranking_score,gdt_ts,0.082447,0.082447,0.082447,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3115],eval-test,6,<10,99
+8qoh_A,protenix_msa,ranking_score,gdt_ts,0.099453,0.099453,0.099453,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3140],eval-test,3,<10,278
+8ux2_A,protenix_msa,ranking_score,gdt_ts,0.406904,0.406904,0.406904,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3185],eval-test,6,<10,246
+8wrx_A,protenix_msa,ranking_score,gdt_ts,0.677326,0.677326,0.677326,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3206],eval-test,4,<10,88
+8ii8_A,protenix_ss,ranking_score,gdt_ts,0.316667,0.316667,0.316667,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3391],eval-test,3,<10,226
+8oxk_A,protenix_ss,ranking_score,gdt_ts,0.154255,0.154255,0.154255,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3439],eval-test,6,<10,99
+8qoh_A,protenix_ss,ranking_score,gdt_ts,0.020985,0.020985,0.020985,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3464],eval-test,3,<10,278
+8ux2_A,protenix_ss,ranking_score,gdt_ts,0.055439,0.055439,0.055439,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3509],eval-test,6,<10,246
+8wrx_A,protenix_ss,ranking_score,gdt_ts,0.80814,0.80814,0.80814,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3530],eval-test,4,<10,88
+8ii8_A,esmfold,ranking_score,lddt,0.580509,0.580509,0.580509,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2333],eval-test,3,<10,226
+8oxk_A,esmfold,ranking_score,lddt,0.595357,0.595357,0.595357,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2374],eval-test,6,<10,99
+8qoh_A,esmfold,ranking_score,lddt,0.531386,0.531386,0.531386,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2395],eval-test,3,<10,278
+8ux2_A,esmfold,ranking_score,lddt,0.379029,0.379029,0.379029,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2443],eval-test,6,<10,246
+8wrx_A,esmfold,ranking_score,lddt,0.797279,0.797279,0.797279,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2462],eval-test,4,<10,88
+8ii8_A,esmfold2,ranking_score,lddt,0.673713,0.673713,0.673713,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2657],eval-test,3,<10,226
+8oxk_A,esmfold2,ranking_score,lddt,0.884104,0.884104,0.884104,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2698],eval-test,6,<10,99
+8qoh_A,esmfold2,ranking_score,lddt,0.726961,0.726961,0.726961,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2719],eval-test,3,<10,278
+8ux2_A,esmfold2,ranking_score,lddt,0.555284,0.555284,0.555284,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2767],eval-test,6,<10,246
+8wrx_A,esmfold2,ranking_score,lddt,0.822499,0.822499,0.822499,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2786],eval-test,4,<10,88
+8ii8_A,protenix_msa,ranking_score,lddt,0.576945,0.576945,0.576945,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3067],eval-test,3,<10,226
+8oxk_A,protenix_msa,ranking_score,lddt,0.287306,0.287306,0.287306,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3115],eval-test,6,<10,99
+8qoh_A,protenix_msa,ranking_score,lddt,0.362117,0.362117,0.362117,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3140],eval-test,3,<10,278
+8ux2_A,protenix_msa,ranking_score,lddt,0.624409,0.624409,0.624409,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3185],eval-test,6,<10,246
+8wrx_A,protenix_msa,ranking_score,lddt,0.697372,0.697372,0.697372,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3206],eval-test,4,<10,88
+8ii8_A,protenix_ss,ranking_score,lddt,0.56287,0.56287,0.56287,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3391],eval-test,3,<10,226
+8oxk_A,protenix_ss,ranking_score,lddt,0.341495,0.341495,0.341495,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3439],eval-test,6,<10,99
+8qoh_A,protenix_ss,ranking_score,lddt,0.267832,0.267832,0.267832,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3464],eval-test,3,<10,278
+8ux2_A,protenix_ss,ranking_score,lddt,0.313039,0.313039,0.313039,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3509],eval-test,6,<10,246
+8wrx_A,protenix_ss,ranking_score,lddt,0.812745,0.812745,0.812745,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3530],eval-test,4,<10,88
+8ii8_A,af2,ranking_score,gdt_ts,0.4011111111111111,0.4011111111111111,0.4011111111111111,1,,experiments/exp325_evals_writeup_analysis/data/af2_structure_metrics.csv,[154],eval-test,3,<10,226
+8oxk_A,af2,ranking_score,gdt_ts,0.0425531914893617,0.0425531914893617,0.0425531914893617,1,,experiments/exp325_evals_writeup_analysis/data/af2_structure_metrics.csv,[202],eval-test,6,<10,99
+8qoh_A,af2,ranking_score,gdt_ts,0.0127737226277372,0.0127737226277372,0.0127737226277372,1,,experiments/exp325_evals_writeup_analysis/data/af2_structure_metrics.csv,[230],eval-test,3,<10,278
+8ux2_A,af2,ranking_score,gdt_ts,0.0115062761506276,0.0115062761506276,0.0115062761506276,1,,experiments/exp325_evals_writeup_analysis/data/af2_structure_metrics.csv,[277],eval-test,6,<10,246
+8wrx_A,af2,ranking_score,gdt_ts,0.5145348837209303,0.5145348837209303,0.5145348837209303,1,,experiments/exp325_evals_writeup_analysis/data/af2_structure_metrics.csv,[298],eval-test,4,<10,88
+8ii8_A,af2,ranking_score,lddt,0.5587718554445708,0.5587718554445708,0.5587718554445708,1,,experiments/exp325_evals_writeup_analysis/data/af2_structure_metrics.csv,[154],eval-test,3,<10,226
+8oxk_A,af2,ranking_score,lddt,0.340876619850109,0.340876619850109,0.340876619850109,1,,experiments/exp325_evals_writeup_analysis/data/af2_structure_metrics.csv,[202],eval-test,6,<10,99
+8qoh_A,af2,ranking_score,lddt,0.2682796647248686,0.2682796647248686,0.2682796647248686,1,,experiments/exp325_evals_writeup_analysis/data/af2_structure_metrics.csv,[230],eval-test,3,<10,278
+8ux2_A,af2,ranking_score,lddt,0.2747405729110119,0.2747405729110119,0.2747405729110119,1,,experiments/exp325_evals_writeup_analysis/data/af2_structure_metrics.csv,[277],eval-test,6,<10,246
+8wrx_A,af2,ranking_score,lddt,0.6323992662114459,0.6323992662114459,0.6323992662114459,1,,experiments/exp325_evals_writeup_analysis/data/af2_structure_metrics.csv,[298],eval-test,4,<10,88
+8ii8_A,af3,ranking_score,gdt_ts,0.5788888888888889,0.5788888888888889,0.5788888888888889,1,,experiments/exp325_evals_writeup_analysis/data/af3_structure_metrics.csv,[154],eval-test,3,<10,226
+8oxk_A,af3,ranking_score,gdt_ts,0.1329787234042553,0.1329787234042553,0.1329787234042553,1,,experiments/exp325_evals_writeup_analysis/data/af3_structure_metrics.csv,[202],eval-test,6,<10,99
+8qoh_A,af3,ranking_score,gdt_ts,0.0282846715328467,0.0282846715328467,0.0282846715328467,1,,experiments/exp325_evals_writeup_analysis/data/af3_structure_metrics.csv,[230],eval-test,3,<10,278
+8ux2_A,af3,ranking_score,gdt_ts,0.1035564853556485,0.1035564853556485,0.1035564853556485,1,,experiments/exp325_evals_writeup_analysis/data/af3_structure_metrics.csv,[277],eval-test,6,<10,246
+8wrx_A,af3,ranking_score,gdt_ts,0.8168604651162791,0.8168604651162791,0.8168604651162791,1,,experiments/exp325_evals_writeup_analysis/data/af3_structure_metrics.csv,[298],eval-test,4,<10,88
+8ii8_A,af3,ranking_score,lddt,0.6767653665924638,0.6767653665924638,0.6767653665924638,1,,experiments/exp325_evals_writeup_analysis/data/af3_structure_metrics.csv,[154],eval-test,3,<10,226
+8oxk_A,af3,ranking_score,lddt,0.3439095306925564,0.3439095306925564,0.3439095306925564,1,,experiments/exp325_evals_writeup_analysis/data/af3_structure_metrics.csv,[202],eval-test,6,<10,99
+8qoh_A,af3,ranking_score,lddt,0.3357241196049819,0.3357241196049819,0.3357241196049819,1,,experiments/exp325_evals_writeup_analysis/data/af3_structure_metrics.csv,[230],eval-test,3,<10,278
+8ux2_A,af3,ranking_score,lddt,0.3340080913823349,0.3340080913823349,0.3340080913823349,1,,experiments/exp325_evals_writeup_analysis/data/af3_structure_metrics.csv,[277],eval-test,6,<10,246
+8wrx_A,af3,ranking_score,lddt,0.8131016463917431,0.8131016463917431,0.8131016463917431,1,,experiments/exp325_evals_writeup_analysis/data/af3_structure_metrics.csv,[298],eval-test,4,<10,88
+8ii8_A,boltz2,ranking_score,gdt_ts,0.5477777777777778,0.5477777777777778,0.5477777777777778,1,,experiments/exp325_evals_writeup_analysis/data/boltz2_structure_metrics.csv,[154],eval-test,3,<10,226
+8oxk_A,boltz2,ranking_score,gdt_ts,0.0452127659574468,0.0452127659574468,0.0452127659574468,1,,experiments/exp325_evals_writeup_analysis/data/boltz2_structure_metrics.csv,[202],eval-test,6,<10,99
+8qoh_A,boltz2,ranking_score,gdt_ts,0.0547445255474452,0.0547445255474452,0.0547445255474452,1,,experiments/exp325_evals_writeup_analysis/data/boltz2_structure_metrics.csv,[230],eval-test,3,<10,278
+8ux2_A,boltz2,ranking_score,gdt_ts,0.0784518828451883,0.0784518828451883,0.0784518828451883,1,,experiments/exp325_evals_writeup_analysis/data/boltz2_structure_metrics.csv,[277],eval-test,6,<10,246
+8wrx_A,boltz2,ranking_score,gdt_ts,0.4709302325581395,0.4709302325581395,0.4709302325581395,1,,experiments/exp325_evals_writeup_analysis/data/boltz2_structure_metrics.csv,[298],eval-test,4,<10,88
+8ii8_A,boltz2,ranking_score,lddt,0.6680024420438551,0.6680024420438551,0.6680024420438551,1,,experiments/exp325_evals_writeup_analysis/data/boltz2_structure_metrics.csv,[154],eval-test,3,<10,226
+8oxk_A,boltz2,ranking_score,lddt,0.3123772840826488,0.3123772840826488,0.3123772840826488,1,,experiments/exp325_evals_writeup_analysis/data/boltz2_structure_metrics.csv,[202],eval-test,6,<10,99
+8qoh_A,boltz2,ranking_score,lddt,0.3072173721815103,0.3072173721815103,0.3072173721815103,1,,experiments/exp325_evals_writeup_analysis/data/boltz2_structure_metrics.csv,[230],eval-test,3,<10,278
+8ux2_A,boltz2,ranking_score,lddt,0.3800178284695515,0.3800178284695515,0.3800178284695515,1,,experiments/exp325_evals_writeup_analysis/data/boltz2_structure_metrics.csv,[277],eval-test,6,<10,246
+8wrx_A,boltz2,ranking_score,lddt,0.6216217468244188,0.6216217468244188,0.6216217468244188,1,,experiments/exp325_evals_writeup_analysis/data/boltz2_structure_metrics.csv,[298],eval-test,4,<10,88
+8ii8_A,marinfold_helico,ranking_score,gdt_ts,0.3355555555555555,0.3355555555555555,0.3355555555555555,1,,experiments/exp325_evals_writeup_analysis/data/helico_folding_samples.csv,[317],eval-test,3,<10,226
+8oxk_A,marinfold_helico,ranking_score,gdt_ts,0.0877659574468085,0.0877659574468085,0.0877659574468085,1,,experiments/exp325_evals_writeup_analysis/data/helico_folding_samples.csv,[556],eval-test,6,<10,99
+8qoh_A,marinfold_helico,ranking_score,gdt_ts,0.208941605839416,0.208941605839416,0.208941605839416,1,,experiments/exp325_evals_writeup_analysis/data/helico_folding_samples.csv,[683],eval-test,3,<10,278
+8ux2_A,marinfold_helico,ranking_score,gdt_ts,0.1260416666666666,0.1260416666666666,0.1260416666666666,1,,experiments/exp325_evals_writeup_analysis/data/helico_folding_samples.csv,[952],eval-test,6,<10,246
+8wrx_A,marinfold_helico,ranking_score,gdt_ts,0.5465116279069767,0.5465116279069767,0.5465116279069767,1,,experiments/exp325_evals_writeup_analysis/data/helico_folding_samples.csv,[1073],eval-test,4,<10,88
+8ii8_A,marinfold_helico,ranking_score,lddt,0.4902655151895273,0.4902655151895273,0.4902655151895273,1,,experiments/exp325_evals_writeup_analysis/data/helico_folding_samples.csv,[317],eval-test,3,<10,226
+8oxk_A,marinfold_helico,ranking_score,lddt,0.3591116829730881,0.3591116829730881,0.3591116829730881,1,,experiments/exp325_evals_writeup_analysis/data/helico_folding_samples.csv,[556],eval-test,6,<10,99
+8qoh_A,marinfold_helico,ranking_score,lddt,0.4235878058446363,0.4235878058446363,0.4235878058446363,1,,experiments/exp325_evals_writeup_analysis/data/helico_folding_samples.csv,[683],eval-test,3,<10,278
+8ux2_A,marinfold_helico,ranking_score,lddt,0.3439453315422863,0.3439453315422863,0.3439453315422863,1,,experiments/exp325_evals_writeup_analysis/data/helico_folding_samples.csv,[952],eval-test,6,<10,246
+8wrx_A,marinfold_helico,ranking_score,lddt,0.6247918824922303,0.6247918824922303,0.6247918824922303,1,,experiments/exp325_evals_writeup_analysis/data/helico_folding_samples.csv,[1073],eval-test,4,<10,88
+8ii8_A,esmfold,ptm,gdt_ts,0.333333,0.333333,0.333333,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2333],eval-test,3,<10,226
+8oxk_A,esmfold,ptm,gdt_ts,0.56117,0.56117,0.56117,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2374],eval-test,6,<10,99
+8qoh_A,esmfold,ptm,gdt_ts,0.207117,0.207117,0.207117,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2395],eval-test,3,<10,278
+8ux2_A,esmfold,ptm,gdt_ts,0.135983,0.135983,0.135983,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2443],eval-test,6,<10,246
+8wrx_A,esmfold,ptm,gdt_ts,0.822674,0.822674,0.822674,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2462],eval-test,4,<10,88
+8ii8_A,esmfold2,ptm,gdt_ts,0.547778,0.547778,0.547778,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2657],eval-test,3,<10,226
+8oxk_A,esmfold2,ptm,gdt_ts,0.93617,0.93617,0.93617,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2698],eval-test,6,<10,99
+8qoh_A,esmfold2,ptm,gdt_ts,0.709854,0.709854,0.709854,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2719],eval-test,3,<10,278
+8ux2_A,esmfold2,ptm,gdt_ts,0.355649,0.355649,0.355649,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2767],eval-test,6,<10,246
+8wrx_A,esmfold2,ptm,gdt_ts,0.848837,0.848837,0.848837,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2786],eval-test,4,<10,88
+8ii8_A,protenix_msa,ptm,gdt_ts,0.357778,0.357778,0.357778,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3067],eval-test,3,<10,226
+8oxk_A,protenix_msa,ptm,gdt_ts,0.082447,0.082447,0.082447,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3115],eval-test,6,<10,99
+8qoh_A,protenix_msa,ptm,gdt_ts,0.099453,0.099453,0.099453,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3140],eval-test,3,<10,278
+8ux2_A,protenix_msa,ptm,gdt_ts,0.406904,0.406904,0.406904,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3185],eval-test,6,<10,246
+8wrx_A,protenix_msa,ptm,gdt_ts,0.677326,0.677326,0.677326,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3206],eval-test,4,<10,88
+8ii8_A,protenix_ss,ptm,gdt_ts,0.316667,0.316667,0.316667,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3391],eval-test,3,<10,226
+8oxk_A,protenix_ss,ptm,gdt_ts,0.154255,0.154255,0.154255,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3439],eval-test,6,<10,99
+8qoh_A,protenix_ss,ptm,gdt_ts,0.020985,0.020985,0.020985,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3464],eval-test,3,<10,278
+8ux2_A,protenix_ss,ptm,gdt_ts,0.055439,0.055439,0.055439,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3509],eval-test,6,<10,246
+8wrx_A,protenix_ss,ptm,gdt_ts,0.80814,0.80814,0.80814,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3530],eval-test,4,<10,88
+8ii8_A,esmfold,ptm,lddt,0.580509,0.580509,0.580509,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2333],eval-test,3,<10,226
+8oxk_A,esmfold,ptm,lddt,0.595357,0.595357,0.595357,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2374],eval-test,6,<10,99
+8qoh_A,esmfold,ptm,lddt,0.531386,0.531386,0.531386,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2395],eval-test,3,<10,278
+8ux2_A,esmfold,ptm,lddt,0.379029,0.379029,0.379029,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2443],eval-test,6,<10,246
+8wrx_A,esmfold,ptm,lddt,0.797279,0.797279,0.797279,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2462],eval-test,4,<10,88
+8ii8_A,esmfold2,ptm,lddt,0.673713,0.673713,0.673713,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2657],eval-test,3,<10,226
+8oxk_A,esmfold2,ptm,lddt,0.884104,0.884104,0.884104,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2698],eval-test,6,<10,99
+8qoh_A,esmfold2,ptm,lddt,0.726961,0.726961,0.726961,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2719],eval-test,3,<10,278
+8ux2_A,esmfold2,ptm,lddt,0.555284,0.555284,0.555284,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2767],eval-test,6,<10,246
+8wrx_A,esmfold2,ptm,lddt,0.822499,0.822499,0.822499,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[2786],eval-test,4,<10,88
+8ii8_A,protenix_msa,ptm,lddt,0.576945,0.576945,0.576945,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3067],eval-test,3,<10,226
+8oxk_A,protenix_msa,ptm,lddt,0.287306,0.287306,0.287306,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3115],eval-test,6,<10,99
+8qoh_A,protenix_msa,ptm,lddt,0.362117,0.362117,0.362117,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3140],eval-test,3,<10,278
+8ux2_A,protenix_msa,ptm,lddt,0.624409,0.624409,0.624409,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3185],eval-test,6,<10,246
+8wrx_A,protenix_msa,ptm,lddt,0.697372,0.697372,0.697372,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3206],eval-test,4,<10,88
+8ii8_A,protenix_ss,ptm,lddt,0.56287,0.56287,0.56287,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3391],eval-test,3,<10,226
+8oxk_A,protenix_ss,ptm,lddt,0.341495,0.341495,0.341495,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3439],eval-test,6,<10,99
+8qoh_A,protenix_ss,ptm,lddt,0.267832,0.267832,0.267832,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3464],eval-test,3,<10,278
+8ux2_A,protenix_ss,ptm,lddt,0.313039,0.313039,0.313039,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3509],eval-test,6,<10,246
+8wrx_A,protenix_ss,ptm,lddt,0.812745,0.812745,0.812745,1,,experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv,[3530],eval-test,4,<10,88
+8ii8_A,af2,ptm,gdt_ts,0.4011111111111111,0.4011111111111111,0.4011111111111111,1,,experiments/exp325_evals_writeup_analysis/data/af2_structure_metrics.csv,[154],eval-test,3,<10,226
+8oxk_A,af2,ptm,gdt_ts,0.0425531914893617,0.0425531914893617,0.0425531914893617,1,,experiments/exp325_evals_writeup_analysis/data/af2_structure_metrics.csv,[202],eval-test,6,<10,99
+8qoh_A,af2,ptm,gdt_ts,0.0127737226277372,0.0127737226277372,0.0127737226277372,1,,experiments/exp325_evals_writeup_analysis/data/af2_structure_metrics.csv,[230],eval-test,3,<10,278
+8ux2_A,af2,ptm,gdt_ts,0.0115062761506276,0.0115062761506276,0.0115062761506276,1,,experiments/exp325_evals_writeup_analysis/data/af2_structure_metrics.csv,[277],eval-test,6,<10,246
+8wrx_A,af2,ptm,gdt_ts,0.5145348837209303,0.5145348837209303,0.5145348837209303,1,,experiments/exp325_evals_writeup_analysis/data/af2_structure_metrics.csv,[298],eval-test,4,<10,88
+8ii8_A,af2,ptm,lddt,0.5587718554445708,0.5587718554445708,0.5587718554445708,1,,experiments/exp325_evals_writeup_analysis/data/af2_structure_metrics.csv,[154],eval-test,3,<10,226
+8oxk_A,af2,ptm,lddt,0.340876619850109,0.340876619850109,0.340876619850109,1,,experiments/exp325_evals_writeup_analysis/data/af2_structure_metrics.csv,[202],eval-test,6,<10,99
+8qoh_A,af2,ptm,lddt,0.2682796647248686,0.2682796647248686,0.2682796647248686,1,,experiments/exp325_evals_writeup_analysis/data/af2_structure_metrics.csv,[230],eval-test,3,<10,278
+8ux2_A,af2,ptm,lddt,0.2747405729110119,0.2747405729110119,0.2747405729110119,1,,experiments/exp325_evals_writeup_analysis/data/af2_structure_metrics.csv,[277],eval-test,6,<10,246
+8wrx_A,af2,ptm,lddt,0.6323992662114459,0.6323992662114459,0.6323992662114459,1,,experiments/exp325_evals_writeup_analysis/data/af2_structure_metrics.csv,[298],eval-test,4,<10,88
+8ii8_A,af3,ptm,gdt_ts,0.5788888888888889,0.5788888888888889,0.5788888888888889,1,,experiments/exp325_evals_writeup_analysis/data/af3_structure_metrics.csv,[154],eval-test,3,<10,226
+8oxk_A,af3,ptm,gdt_ts,0.1329787234042553,0.1329787234042553,0.1329787234042553,1,,experiments/exp325_evals_writeup_analysis/data/af3_structure_metrics.csv,[202],eval-test,6,<10,99
+8qoh_A,af3,ptm,gdt_ts,0.0282846715328467,0.0282846715328467,0.0282846715328467,1,,experiments/exp325_evals_writeup_analysis/data/af3_structure_metrics.csv,[230],eval-test,3,<10,278
+8ux2_A,af3,ptm,gdt_ts,0.1035564853556485,0.1035564853556485,0.1035564853556485,1,,experiments/exp325_evals_writeup_analysis/data/af3_structure_metrics.csv,[277],eval-test,6,<10,246
+8wrx_A,af3,ptm,gdt_ts,0.8168604651162791,0.8168604651162791,0.8168604651162791,1,,experiments/exp325_evals_writeup_analysis/data/af3_structure_metrics.csv,[298],eval-test,4,<10,88
+8ii8_A,af3,ptm,lddt,0.6767653665924638,0.6767653665924638,0.6767653665924638,1,,experiments/exp325_evals_writeup_analysis/data/af3_structure_metrics.csv,[154],eval-test,3,<10,226
+8oxk_A,af3,ptm,lddt,0.3439095306925564,0.3439095306925564,0.3439095306925564,1,,experiments/exp325_evals_writeup_analysis/data/af3_structure_metrics.csv,[202],eval-test,6,<10,99
+8qoh_A,af3,ptm,lddt,0.3357241196049819,0.3357241196049819,0.3357241196049819,1,,experiments/exp325_evals_writeup_analysis/data/af3_structure_metrics.csv,[230],eval-test,3,<10,278
+8ux2_A,af3,ptm,lddt,0.3340080913823349,0.3340080913823349,0.3340080913823349,1,,experiments/exp325_evals_writeup_analysis/data/af3_structure_metrics.csv,[277],eval-test,6,<10,246
+8wrx_A,af3,ptm,lddt,0.8131016463917431,0.8131016463917431,0.8131016463917431,1,,experiments/exp325_evals_writeup_analysis/data/af3_structure_metrics.csv,[298],eval-test,4,<10,88
+8ii8_A,boltz2,ptm,gdt_ts,0.5477777777777778,0.5477777777777778,0.5477777777777778,1,,experiments/exp325_evals_writeup_analysis/data/boltz2_structure_metrics.csv,[154],eval-test,3,<10,226
+8oxk_A,boltz2,ptm,gdt_ts,0.0452127659574468,0.0452127659574468,0.0452127659574468,1,,experiments/exp325_evals_writeup_analysis/data/boltz2_structure_metrics.csv,[202],eval-test,6,<10,99
+8qoh_A,boltz2,ptm,gdt_ts,0.0547445255474452,0.0547445255474452,0.0547445255474452,1,,experiments/exp325_evals_writeup_analysis/data/boltz2_structure_metrics.csv,[230],eval-test,3,<10,278
+8ux2_A,boltz2,ptm,gdt_ts,0.0784518828451883,0.0784518828451883,0.0784518828451883,1,,experiments/exp325_evals_writeup_analysis/data/boltz2_structure_metrics.csv,[277],eval-test,6,<10,246
+8wrx_A,boltz2,ptm,gdt_ts,0.4709302325581395,0.4709302325581395,0.4709302325581395,1,,experiments/exp325_evals_writeup_analysis/data/boltz2_structure_metrics.csv,[298],eval-test,4,<10,88
+8ii8_A,boltz2,ptm,lddt,0.6680024420438551,0.6680024420438551,0.6680024420438551,1,,experiments/exp325_evals_writeup_analysis/data/boltz2_structure_metrics.csv,[154],eval-test,3,<10,226
+8oxk_A,boltz2,ptm,lddt,0.3123772840826488,0.3123772840826488,0.3123772840826488,1,,experiments/exp325_evals_writeup_analysis/data/boltz2_structure_metrics.csv,[202],eval-test,6,<10,99
+8qoh_A,boltz2,ptm,lddt,0.3072173721815103,0.3072173721815103,0.3072173721815103,1,,experiments/exp325_evals_writeup_analysis/data/boltz2_structure_metrics.csv,[230],eval-test,3,<10,278
+8ux2_A,boltz2,ptm,lddt,0.3800178284695515,0.3800178284695515,0.3800178284695515,1,,experiments/exp325_evals_writeup_analysis/data/boltz2_structure_metrics.csv,[277],eval-test,6,<10,246
+8wrx_A,boltz2,ptm,lddt,0.6216217468244188,0.6216217468244188,0.6216217468244188,1,,experiments/exp325_evals_writeup_analysis/data/boltz2_structure_metrics.csv,[298],eval-test,4,<10,88
+8ii8_A,marinfold_helico,ptm,gdt_ts,0.3355555555555555,0.3355555555555555,0.3355555555555555,1,,experiments/exp325_evals_writeup_analysis/data/helico_folding_samples.csv,[317],eval-test,3,<10,226
+8oxk_A,marinfold_helico,ptm,gdt_ts,0.0877659574468085,0.0877659574468085,0.0877659574468085,1,,experiments/exp325_evals_writeup_analysis/data/helico_folding_samples.csv,[556],eval-test,6,<10,99
+8qoh_A,marinfold_helico,ptm,gdt_ts,0.208941605839416,0.208941605839416,0.208941605839416,1,,experiments/exp325_evals_writeup_analysis/data/helico_folding_samples.csv,[683],eval-test,3,<10,278
+8ux2_A,marinfold_helico,ptm,gdt_ts,0.1260416666666666,0.1260416666666666,0.1260416666666666,1,,experiments/exp325_evals_writeup_analysis/data/helico_folding_samples.csv,[952],eval-test,6,<10,246
+8wrx_A,marinfold_helico,ptm,gdt_ts,0.5465116279069767,0.5465116279069767,0.5465116279069767,1,,experiments/exp325_evals_writeup_analysis/data/helico_folding_samples.csv,[1073],eval-test,4,<10,88
+8ii8_A,marinfold_helico,ptm,lddt,0.4902655151895273,0.4902655151895273,0.4902655151895273,1,,experiments/exp325_evals_writeup_analysis/data/helico_folding_samples.csv,[317],eval-test,3,<10,226
+8oxk_A,marinfold_helico,ptm,lddt,0.3591116829730881,0.3591116829730881,0.3591116829730881,1,,experiments/exp325_evals_writeup_analysis/data/helico_folding_samples.csv,[556],eval-test,6,<10,99
+8qoh_A,marinfold_helico,ptm,lddt,0.4235878058446363,0.4235878058446363,0.4235878058446363,1,,experiments/exp325_evals_writeup_analysis/data/helico_folding_samples.csv,[683],eval-test,3,<10,278
+8ux2_A,marinfold_helico,ptm,lddt,0.3439453315422863,0.3439453315422863,0.3439453315422863,1,,experiments/exp325_evals_writeup_analysis/data/helico_folding_samples.csv,[952],eval-test,6,<10,246
+8wrx_A,marinfold_helico,ptm,lddt,0.6247918824922303,0.6247918824922303,0.6247918824922303,1,,experiments/exp325_evals_writeup_analysis/data/helico_folding_samples.csv,[1073],eval-test,4,<10,88

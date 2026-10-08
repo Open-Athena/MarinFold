@@ -38,6 +38,13 @@ Helico does much better when we give it the answer: the ground-truth contact map
 
 ![Helico with oracle contacts](plots/02_oracle.png)
 
+On the five low-depth proteins, random L/5 true contacts give mean GDT-TS 0.622;
+L/2 gives 0.906, versus 0.932 for the full oracle map. Ten contacts give 0.362.
+
+![Sparse oracle contacts, per protein](plots/02e_oracle_budget.png)
+
+![Sparse oracle contacts versus existing predictors](plots/02f_oracle_budget_context.png)
+
 Aside: ranking by pTM puts the oracle first for four low-depth proteins and fifth for one.
 
 ![Oracle versus ESMFold2 contact maps](plots/02b_confidence.png)

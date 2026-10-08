@@ -35,8 +35,9 @@ ROOT = HERE.parent
 PHASE = os.environ.get("WRITEUP_PHASE", "confidence")
 if PHASE not in ("confidence", "folding", "structured", "oracle_budget"):
     raise ValueError(PHASE)
-TARGETS = Path("/root/sweep/data") if Path("/root/sweep/data/targets.csv").exists() else ROOT / "scratch" / "helico" / PHASE
-RESULTS = ROOT / "scratch" / "helico_results" / PHASE
+INPUT_FOLDER = "oracle_budget_low_msa" if PHASE == "oracle_budget" else PHASE
+TARGETS = Path("/root/sweep/data") if Path("/root/sweep/data/targets.csv").exists() else ROOT / "scratch" / "helico" / INPUT_FOLDER
+RESULTS = ROOT / "scratch" / "helico_results" / INPUT_FOLDER
 HELICO_REPO = Path("/root/helico") if Path("/root/helico/src").exists() else Path(os.environ.get("HELICO_REPO", "/home/bizon/git/helico"))
 HELICO_SHA = "b10385d736673c81b10e70d1099962af6f2573c0"
 CHECKPOINT = "/ckpts/contacts-msafree-01/contacts-msafree-01-step-6000.pt"
@@ -45,7 +46,7 @@ N_SAMPLES = 3
 N_CYCLES = 6
 SEED = 42
 MAX_TOKENS = 2048
-N_WORKERS = 16 if PHASE == "oracle_budget" else 8
+N_WORKERS = 5 if PHASE == "oracle_budget" else 8
 TAG = f"exp325-exp277-step266344-{PHASE}-v1"
 
 
@@ -72,8 +73,10 @@ def estimate() -> tuple[int, float]:
     """Apply Helico's dry-run cost gate to the complete sweep."""
     with (TARGETS / "targets.csv").open() as stream:
         targets = list(csv.DictReader(stream))
-    if len(targets) != {"confidence": 20, "folding": 211, "structured": 5, "oracle_budget": 305}[PHASE]:
+    if len(targets) != {"confidence": 20, "folding": 211, "structured": 5, "oracle_budget": 5}[PHASE]:
         raise ValueError(f"unexpected target count: {len(targets)}")
+    if PHASE == "oracle_budget" and any(float(target["msa_depth"]) >= 10 or int(target["designed"]) != 0 for target in targets):
+        raise ValueError("Oracle-budget sweep is restricted to natural proteins at MSA depth <10")
     limit = int(os.environ.get("SWEEP_TARGET_LIMIT", "0"))
     if limit:
         targets = targets[:limit]

@@ -89,6 +89,17 @@ See TRAINING_SOURCE_SEARCH.md and data/training_source_depths.csv for details.
 Offline reduction: uv run python generation/search_training_sources.py prepare
 
 
+## Sparse oracle contacts at very low MSA depth
+
+All five natural proteins with MSA depth <10; Helico receives no MSA.
+Random positive contacts only; every unselected pair remains unknown.
+Two random subsets/budget/protein, three diffusion samples/map, confidence selection.
+Mean GDT-TS: none 0.244; 5 contacts 0.296; 10 contacts 0.362; L/5 0.622; L/2 0.906.
+All true contacts 0.918; full positive/negative oracle 0.932. ESMFold2 baseline 0.680.
+Per-protein panels retain both subset results. L/2 comes close to the full map.
+Only five proteins; two subsets do not fully characterize map-sampling variability.
+Source: ORACLE_BUDGET.md, data/oracle_budget_*.csv; render.py uses cached tables.
+
 ## Precision at L/5 and the KNN comparison
 
 k=max(1,floor(L/5)); L is the input sequence length, not the resolved-residue count.

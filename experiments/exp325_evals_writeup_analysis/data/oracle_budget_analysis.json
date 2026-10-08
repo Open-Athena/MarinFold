@@ -1,0 +1,82 @@
+{
+  "sources": {
+    "oracle_budget_protocol.json": "14e12254ac89eb0494a6d950bc2311644fbddd9eb90d585f7d5661fd7155327c",
+    "oracle_budget_targets.csv": "5dd14345a3886c7e9c05250634a4e458063bd02fe72073d957f1ddbf37f01057",
+    "oracle_budget_maps.csv": "0fe540655e10b84a7e574193f11843c65de047b520e5c48d3e4d1bba6cf0897e",
+    "helico_oracle_budget_samples.csv": "82701f7a9bb2400836f70826918ee3348b58c3cc339820f0ef8c00dfc62b5f1b",
+    "helico_oracle_budget_timings.csv": "86d67ca3027fc3a5d3f49e6b7a07b9d42e532e68c516a5fc79064ef0422c3166",
+    "helico_oracle_budget_run.json": "59c79bb7df7295736307af8aa428b0e4de48be4c138d9be55eb876f4740a19d8",
+    "figure_rows.csv": "35a551c403cab4f12c5701ec880ccecb0f2ff8b8795ad01aad4a146a5fd90901"
+  },
+  "protocol": {
+    "phase": "oracle_budget",
+    "cohort": "All five natural Figure 02 proteins with MSA depth <10",
+    "source_sha": "b10385d736673c81b10e70d1099962af6f2573c0",
+    "n_targets": 5,
+    "n_maps_per_target": 11,
+    "n_random_replicates": 2,
+    "budgets": [
+      "random_5",
+      "random_10",
+      "random_L5",
+      "random_L2"
+    ],
+    "map_keys": [
+      "random_5-0",
+      "random_10-0",
+      "random_L5-0",
+      "random_L2-0",
+      "random_5-1",
+      "random_10-1",
+      "random_L5-1",
+      "random_L2-1",
+      "top_0-0",
+      "positive_all-0",
+      "oracle-0"
+    ],
+    "contact_definition": "Helico oracle_contact_state; pyconfind 0.6.0 native_only, 3A, degree >=0.001, separation >=6",
+    "sampling": "Uniform without replacement among upper-triangle true contacts; nested budget prefixes within each replicate",
+    "sparse_encoding": "Selected pairs PRESENT=2, every other pair UNKNOWN=0; no ABSENT=1 entries",
+    "controls": "Fresh top_0, positive_all (no non-contacts), and oracle (full positives and negatives)",
+    "length": "L_exp245: frozen input sequence length, not the number of resolved tokens",
+    "shortage": "Relative L/5 and L/2 budgets cap at all available true contacts; requested/effective counts are saved. Fixed 5/10 must be exact.",
+    "inference": "Same MSA-free step6000 checkpoint; three diffusion samples, six recycles, seed42 per map",
+    "selection": "Main comparison: highest ranking_score among three samples, matching Figure 02. pTM selection saved as a sensitivity analysis. Average the two random subsets within each protein; never select the best subset.",
+    "files_sha256": {
+      "8ii8_A": {
+        "gt_sha256": "9209e1e9fbfe14b01e7d4f8bf6482d2812d377d7d76bae21d349a393431ba93b",
+        "maps_sha256": "e2fd1d186540ef9baa2706c09de478a670b859925089d38fc6af94bfd086c4cf"
+      },
+      "8qoh_A": {
+        "gt_sha256": "e660966e2fcde7cb0451ffbaf9f29d105cc09ec419d1c145be789c9803874697",
+        "maps_sha256": "0dff8f9a3ef51d68a3296d6258a693e069938ff66afffe9cb28a78acdfff6c48"
+      },
+      "8wrx_A": {
+        "gt_sha256": "47f16df440a10209e8cff433f8cbb0826390abf6d1b84edaa10d9a0d27dd71f0",
+        "maps_sha256": "500d21177f3876d4ea3275aed208229db8a84fdb1766e1c0955db46791f4c47f"
+      },
+      "8oxk_A": {
+        "gt_sha256": "9fcdcea6ca750fac29139227ba6b94bc2919e98bda76d3f0d5d20c1491be8a6b",
+        "maps_sha256": "d94ff36717f555f33a1067e5fbce4a6d4b2c2cb7beac4c639f8f866f59fbb3eb"
+      },
+      "8ux2_A": {
+        "gt_sha256": "0fb548b86b03513f11e3d27da6c6f3030a0d5472f083cd258e5dc05f076d3f0d",
+        "maps_sha256": "7b48926bcd8f110d5c4a2a517fa33e180afef4c4d8f03c27edf15fe6135dbbab"
+      }
+    }
+  },
+  "files": {
+    "oracle_budget_selected.csv": "1428f7fe264bfc15f16cd3a9b1af33a28d630d8c22d9500fcb2f803b6d705382",
+    "oracle_budget_per_protein.csv": "ecab74007129402d937a4713cdc826e50195cb52211499a87d369ddfd63cede6",
+    "oracle_budget_summary.csv": "94ad15464fd1ba1b34e7eae163509a295d0f367f479a28299c0135e164c536a4",
+    "oracle_budget_paired_deltas.csv": "d4df08ebe0e6d957bfdd24164279f8ac84da986b5c6839fb8939d475d7b2a04b",
+    "oracle_budget_control_check.csv": "a8215109506172018e163d87de6249f98f14f6f5de52312bb2fa20440cef900c",
+    "oracle_budget_gdt_table.csv": "81e6cf709d80bb8ba847f00b724fa32160360ac531b3fd393fe678e27f02629a"
+  },
+  "n_targets": 5,
+  "n_maps": 55,
+  "n_samples": 165,
+  "capped_relative_budgets": [],
+  "aggregation": "Confidence-select diffusion sample; average the two subsets within protein; equal-weight protein mean and 5000 protein bootstrap replicates",
+  "baseline_selection": "External predictor selections are unchanged. The selector menu changes only Helico sample selection."
+}

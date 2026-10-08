@@ -240,9 +240,9 @@ This distinction is explicit in the manifest and figure captions.
 Small tables and figures live on this branch. `publish_to_hf.py` packages raw
 completions, votes, diffusion coordinates, conditioning maps, scores and timings
 for the [public artifact prefix](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking).
-Thirty analysis checks pass, including source-row round trips and fixed
+Thirty-three analysis checks pass, including source-row round trips and fixed
 confidence selection. Desktop and mobile previews were checked in Chromium,
-including the test-split menus; the PDF has seven narrative and thirty-one plot pages, including five separate AF3 sampling pages and two TM-score context panels. The accuracy–confidence section has
+including the test-split menus; the PDF includes five separate AF3 sampling pages, two TM-score context panels, and the new low-depth sparse-oracle GDT-TS/lDDT comparisons. The accuracy–confidence section has
 one page per protein, with original ESMFold2 and reconstructed Helico TM-score versus pTM,
 its oracle rank, and the cached within-protein correlations.
 
@@ -281,6 +281,16 @@ decontaminated sequence-KNN **0.657**; long-range **0.761 / 0.595**. At depth <1
 MarinFold is **0.595**, KNN **0.102**, ESMFold2 **0.727** (five proteins).
 The 100-rollout diagnostic gives consensus **0.829** versus oracle-best
 individual **0.609**, with the oracle reselected by P@L/5. The original
-R-precision plots remain available. All 34 static plots now have native vector
+R-precision plots remain available. All 38 static plots now have native vector
 PDF/SVG and 7,200-pixel-wide PNG exports for printing; [POSTER.md](POSTER.md)
 links the complete downloadable collection.
+
+[Sparse oracle contacts at MSA depth <10](ORACLE_BUDGET.md): all five natural
+proteins, 55 maps and 165 structures. Mean GDT-TS is **0.244** without contacts,
+**0.296 / 0.362 / 0.622 / 0.906** for 5 / 10 / L/5 / L/2 randomly selected true
+contacts, **0.918** for all true contacts with unknown remainder, and **0.932**
+for the full positive/negative oracle. Two subsets per budget are averaged
+within protein after confidence selection; no MSA. New figures show every
+protein, the five-protein mean and all archived predictors on the same cohort.
+Exact maps, samples, source rows and direct timings are retained. The full
+305-protein sweep was not run; the user narrowed the scope before submission.

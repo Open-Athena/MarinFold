@@ -1,0 +1,5 @@
+{
+  "script": "render.py",
+  "args": [],
+  "caption": "All five natural Figure 02 proteins with MSA depth <10. Random subsets of 5, 10, floor(L/5) and floor(L/2) true contacts; L is frozen input sequence length. Unselected pairs stay unknown. Two independent subsets per budget, nested across budgets within each draw. Three diffusion samples/map, six recycles, seed42, no MSA. Highest ranking_score selects one sample per subset, then average the two subset accuracies within protein. Hollow dots show both subsets; filled markers show their mean. The sixth panel averages the five proteins with 95% protein-bootstrap intervals. Fresh no-contact, all-positive and full positive/negative controls. All oracle contacts use ground truth. Menus expose each protein and pTM selection. See ORACLE_BUDGET.md and oracle_budget_per_protein.csv for counts and source rows."
+}

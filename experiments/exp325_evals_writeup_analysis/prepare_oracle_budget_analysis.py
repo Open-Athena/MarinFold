@@ -38,6 +38,8 @@ def main() -> None:
     sources = {path.name: hashlib.sha256(path.read_bytes()).hexdigest() for path in paths}
     protocol = json.loads(paths[0].read_text())
     targets, maps, samples, timings = (pd.read_csv(path) for path in paths[1:5])
+    if len(targets) != 5 or targets.stem.duplicated().any() or not (targets.msa_depth < 10).all() or targets.designed.any():
+        raise ValueError("Expected all five natural Figure 02 proteins at MSA depth <10")
     samples["source_row"] = np.arange(len(samples))
     expected_maps = {(stem, arm, replicate) for stem in targets.stem for arm, replicate in map_keys()}
     actual_maps = set(samples[["stem", "arm", "map_seed"]].itertuples(index=False, name=None))
@@ -69,8 +71,11 @@ def main() -> None:
     per_protein = pd.DataFrame(records).merge(targets[["stem", "eval_set", "msa_depth", "tier", "L_exp245"]],
                                             on="stem", validate="many_to_one")
     original = pd.read_csv(DATA / "figure_rows.csv")
-    baselines = original[(original.figure == "02_oracle") & original.stem.isin(targets.stem) &
-                        original.method.isin(["af3", "af2", "boltz2", "protenix_msa"])].copy()
+    baselines = original[original.stem.isin(targets.stem) &
+        ((original.figure == "01_predictors") |
+         ((original.figure == "05_folding") & (original.method == "marinfold_helico")))].copy()
+    if baselines.duplicated(["stem", "method", "metric"]).any() or len(baselines) != 5 * 8 * 2:
+        raise ValueError("Incomplete matched predictor context")
     baselines["source_rows"] = baselines.source_row.map(lambda row: json.dumps([int(row)]))
     baselines["n_draws"] = 1
     baselines["n_contacts"] = np.nan
@@ -80,6 +85,8 @@ def main() -> None:
     combined = pd.concat([per_protein, *[baselines.assign(selector=selector)[per_protein.columns]
         for selector in ("ranking_score", "ptm")]], ignore_index=True)
     combined.to_csv(DATA / "oracle_budget_per_protein.csv", index=False)
+    combined[(combined.selector == "ranking_score") & (combined.metric == "gdt_ts")].pivot(
+        index="stem", columns="method", values="value").to_csv(DATA / "oracle_budget_gdt_table.csv")
     summaries, deltas = [], []
     for cohort in ("natural", "eval-val", "eval-test"):
         cohort_rows = combined if cohort == "natural" else combined[combined.eval_set == cohort]
@@ -114,7 +121,7 @@ def main() -> None:
     control["delta"] = control.value_fresh - control.value_archived
     control.to_csv(DATA / "oracle_budget_control_check.csv", index=False)
     outputs = ["oracle_budget_selected.csv", "oracle_budget_per_protein.csv", "oracle_budget_summary.csv",
-               "oracle_budget_paired_deltas.csv", "oracle_budget_control_check.csv"]
+               "oracle_budget_paired_deltas.csv", "oracle_budget_control_check.csv", "oracle_budget_gdt_table.csv"]
     manifest = dict(sources=sources, protocol=protocol,
         files={name: hashlib.sha256((DATA / name).read_bytes()).hexdigest() for name in outputs},
         n_targets=len(targets), n_maps=len(expected_maps), n_samples=len(samples),

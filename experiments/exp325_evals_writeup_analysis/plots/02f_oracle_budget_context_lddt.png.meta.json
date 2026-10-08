@@ -1,0 +1,5 @@
+{
+  "script": "render.py",
+  "args": [],
+  "caption": "The same five low-depth natural proteins in every arm: sparse oracle conditioning versus archived AF3, AF2, Boltz-2, Protenix-v2 with/without MSA, ESMFold/ESMFold2 and Helico with 248B-token MarinFold contacts. Predictor inputs and sampling budgets retain their original protocols. Faint dots show individual proteins; means and 95% intervals bootstrap the five proteins. Oracle subsets use ground truth and are averaged within protein. The selector menu changes only the new Helico oracle-budget sweep; archived predictors and MarinFold folding retain their original selection. See ORACLE_BUDGET.md."
+}
