@@ -13,6 +13,29 @@ from benchmark import af2rank_composite, load_af2rank_rows, spearman_correlation
 from full_worker_cw import CONFIG, RUN_FINGERPRINT
 
 H100_PLANNING_USD_PER_HOUR = 3.95
+COMMITTED_TIMING_COLUMNS = (
+    "stem",
+    "n_residues",
+    "n_pairs",
+    "mode",
+    "elapsed_seconds",
+    "model_load_seconds",
+    "total_seconds",
+    "model_nickname",
+    "runner_tag",
+    "gpu_name",
+    "gpu_total_memory_gb",
+    "gpu_compute_capability",
+    "hostname",
+    "platform",
+    "torch_version",
+    "timestamp_utc",
+    "cuequivariance_torch_version",
+    "model_load_share_seconds",
+    "target_setup_share_seconds",
+    "runner_setup_share_seconds",
+    "output_share_seconds",
+)
 
 
 def load_csv(path: Path) -> list[dict[str, str]]:
@@ -261,6 +284,13 @@ def main() -> None:
     write_csv(args.output_dir / "full_native_ranking.csv", native_rows)
     write_csv(args.output_dir / "full_native_summary.csv", native_summary)
     write_csv(args.output_dir / "full_paired_comparisons.csv", comparison_rows)
+    write_csv(
+        args.output_dir / "timings.csv",
+        [
+            {column: row[column] for column in COMMITTED_TIMING_COLUMNS}
+            for row in timings
+        ],
+    )
     (args.output_dir / "full_run_manifest.json").write_text(
         json.dumps(run_manifest, indent=2, sort_keys=True) + "\n"
     )

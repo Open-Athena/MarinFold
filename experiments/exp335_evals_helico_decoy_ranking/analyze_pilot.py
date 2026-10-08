@@ -231,7 +231,7 @@ def main() -> None:
     for source, destination in (
         (RESULTS / "candidate_metrics_full.csv", DATA / "pilot_candidate_metrics.csv"),
         (RESULTS / "sample_metrics_full.csv", DATA / "pilot_sample_metrics.csv"),
-        (RESULTS / "timings_full.csv", DATA / "timings.csv"),
+        (RESULTS / "timings_full.csv", DATA / "pilot_timings.csv"),
     ):
         write_csv(destination, load_csv(source))
     shutil.copyfile(

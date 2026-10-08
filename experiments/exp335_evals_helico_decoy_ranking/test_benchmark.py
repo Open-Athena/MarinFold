@@ -1,11 +1,13 @@
 """Tests for AF2Rank benchmark metrics and pilot selection."""
 
 import math
+import tempfile
 import unittest
+from pathlib import Path
 
 from benchmark import af2rank_composite, rankdata, spearman_correlation
 from full_worker_cw import PART_SIZE, assign_tasks
-from prepare_full import project_candidate_to_target
+from prepare_full import digest_candidate_sources, project_candidate_to_target
 from select_pilot import quantile_indices, select_targets
 
 
@@ -97,6 +99,19 @@ class BenchmarkTest(unittest.TestCase):
             project_candidate_to_target("AAA", "AAAA", [], [[0.0, 0.0, 0.0]] * 4)
         with self.assertRaises(ValueError):
             project_candidate_to_target("ABC", "AXBC", [], [[0.0, 0.0, 0.0]] * 4)
+
+    def test_candidate_source_digest_changes_with_pdb_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "natives").mkdir()
+            (root / "target").mkdir()
+            (root / "natives" / "target.pdb").write_text("native\n")
+            decoy = root / "target" / "decoy.pdb"
+            decoy.write_text("first\n")
+            first = digest_candidate_sources(root, "target", ["native", "decoy.pdb"])
+            decoy.write_text("second\n")
+            second = digest_candidate_sources(root, "target", ["native", "decoy.pdb"])
+            self.assertNotEqual(first, second)
 
 
 if __name__ == "__main__":

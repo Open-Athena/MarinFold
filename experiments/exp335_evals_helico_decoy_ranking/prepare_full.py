@@ -46,6 +46,21 @@ def digest_candidate_ids(candidate_ids: list[str]) -> str:
     ).hexdigest()
 
 
+def digest_candidate_sources(
+    decoy_dir: Path, target: str, candidate_ids: list[str]
+) -> str:
+    """Hash the ordered source PDB bytes that feed one target payload."""
+    digest = hashlib.sha256()
+    for decoy_id in candidate_ids:
+        path = candidate_path(decoy_dir, target, decoy_id)
+        digest.update(decoy_id.encode())
+        digest.update(b"\0")
+        with path.open("rb") as stream:
+            for chunk in iter(lambda: stream.read(8 << 20), b""):
+                digest.update(chunk)
+    return digest.hexdigest()
+
+
 def initialize_worker() -> None:
     """Load the pyconfind rotamer library once in each worker process."""
     global _ROTAMER_LIBRARY
@@ -136,6 +151,7 @@ def validate_existing(
     *,
     source_fingerprint: str,
     candidate_ids_sha256: str,
+    source_pdbs_sha256: str,
 ) -> dict | None:
     """Return valid resume metadata, or None when a target must be rebuilt."""
     if not payload_path.is_file() or not metadata_path.is_file():
@@ -144,6 +160,8 @@ def validate_existing(
     if metadata.get("source_fingerprint") != source_fingerprint:
         return None
     if metadata.get("candidate_ids_sha256") != candidate_ids_sha256:
+        return None
+    if metadata.get("source_pdbs_sha256") != source_pdbs_sha256:
         return None
     if metadata.get("file_sha256") != sha256_file(payload_path):
         return None
@@ -160,6 +178,7 @@ def prepare_target(task: dict) -> dict:
     output_dir = Path(task["output_dir"])
     source_fingerprint = task["source_fingerprint"]
     candidate_ids_sha256 = digest_candidate_ids(candidate_ids)
+    source_pdbs_sha256 = digest_candidate_sources(decoy_dir, target, candidate_ids)
     payload_path = output_dir / "targets" / f"{target}.json.gz"
     metadata_path = output_dir / "targets" / f"{target}.meta.json"
     existing = validate_existing(
@@ -167,6 +186,7 @@ def prepare_target(task: dict) -> dict:
         metadata_path,
         source_fingerprint=source_fingerprint,
         candidate_ids_sha256=candidate_ids_sha256,
+        source_pdbs_sha256=source_pdbs_sha256,
     )
     if existing is not None:
         return existing
@@ -211,6 +231,7 @@ def prepare_target(task: dict) -> dict:
         "n_candidates": len(candidates),
         "n_residues": len(sequence),
         "candidate_ids_sha256": candidate_ids_sha256,
+        "source_pdbs_sha256": source_pdbs_sha256,
         "source_fingerprint": source_fingerprint,
         "input_sha256": input_sha256,
         "file_sha256": sha256_file(payload_path),
