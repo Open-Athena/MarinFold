@@ -1,0 +1,75 @@
+{
+  "prefix": "hf://buckets/open-athena/MarinFold/data/exp352-casp-precision-context/v1",
+  "files": [
+    {
+      "path": "inputs.json.gz",
+      "bytes": 2547813,
+      "sha256": "54dd94bb99dc8f11cf453ac4c2f5ee4cbd6c66bb53b8ddebc64bc43eb3cbec8c"
+    },
+    {
+      "path": "data/coordinate_audit.csv",
+      "bytes": 16125,
+      "sha256": "dc2daa526c16d3baa8e8288aa217e31e53d03c2778e27f99df454254757aa311"
+    },
+    {
+      "path": "data/historical_context.csv",
+      "bytes": 2078,
+      "sha256": "0d532b7cc685ec888e39c04d1ac800eb26a339a87eb22f0ba26db98c95f4269a"
+    },
+    {
+      "path": "data/native_reference_deltas.csv",
+      "bytes": 2722,
+      "sha256": "2210c565e3e02c58eda4fc94013a362fe643e3d5095e1bae9d4c6aa77d850074"
+    },
+    {
+      "path": "data/native_reference_per_protein.csv.gz",
+      "bytes": 30170,
+      "sha256": "71370b3d5b8b470dadaaf99390a1da2974c9f240af5fa6e7fe6bd3bc0c6fd7b2"
+    },
+    {
+      "path": "data/native_reference_sources.csv",
+      "bytes": 427,
+      "sha256": "49c522e7c953b08522a103df49c5f145cd33312a9d2c5324a434d40c6791d3b0"
+    },
+    {
+      "path": "data/native_reference_summary.csv",
+      "bytes": 4237,
+      "sha256": "6093972864436e68ebb35b80e3d0d088360cf8415b38542394015a52336ba7b1"
+    },
+    {
+      "path": "data/per_protein.csv.gz",
+      "bytes": 118348,
+      "sha256": "f9391e002dff27a7fc5034dc7600bb3e02b851a3b03b5a279d3191c6f6ffc0b5"
+    },
+    {
+      "path": "data/provenance.json",
+      "bytes": 8098,
+      "sha256": "9bb95898ee0b6d5cea21db9f45e06bb9aa5b4ec4d2c9b083c6fdcc326e09cd8a"
+    },
+    {
+      "path": "data/source_timings.csv",
+      "bytes": 37253,
+      "sha256": "bf0d78a63e7013be8e806e14faf2c305258b7ed611bb0a51a7bc8038db8c0d83"
+    },
+    {
+      "path": "data/summary.csv",
+      "bytes": 63766,
+      "sha256": "df10c3da1e67817d5659cb577a2a747ca23a88d08795017ec16f25caf9c25111"
+    },
+    {
+      "path": "plots/precision_and_depth.png",
+      "bytes": 88511,
+      "sha256": "016b65faa74bc38577611b6af4c16012285c67200356d1cd0aed5b533f69afb8"
+    },
+    {
+      "path": "plots/precision_and_depth.png.meta.json",
+      "bytes": 248,
+      "sha256": "1ca2fcb9dd3d6c494b4ac25b216b50791f42e0dd2ac3adc6e907d72f5fa42a92"
+    },
+    {
+      "path": "plots/summary.pdf",
+      "bytes": 171194,
+      "sha256": "4bec795de3aa54a8b14de0cb31a47c03667c9beb09c16cc337c70f2b0b568e63"
+    }
+  ]
+}

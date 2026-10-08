@@ -1,0 +1,11 @@
+[project]
+name = "exp352-evals-casp-precision-context"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["numpy", "pandas", "scipy", "scikit-learn", "gemmi", "matplotlib", "huggingface-hub>=1.5", "s3fs"]
+
+[dependency-groups]
+dev = ["pytest", "ruff"]
+
+[tool.uv]
+package = false
