@@ -13,6 +13,8 @@ DESTINATION = (
     "hf://buckets/open-athena/MarinFold/data/evals/exp335_helico_decoy_ranking/full-v1"
 )
 HERE = Path(__file__).resolve().parent
+DATA_DIR = HERE / "data"
+PLOTS_DIR = HERE / "plots"
 REFERENCE_CSV_SHA256 = (
     "ddb3b91c27561212fa9152df4a4a436b9d01990cfe801569d7adc7f925fb75c9"
 )
@@ -75,7 +77,7 @@ def rebuild_public_artifacts(args: argparse.Namespace) -> None:
             "--af2rank-csv",
             str(args.af2rank_csv),
             "--output-dir",
-            str(args.data_dir),
+            str(DATA_DIR),
         ],
         [sys.executable, str(HERE / "plot_full.py")],
         [sys.executable, str(HERE / "build_summary.py")],
@@ -91,8 +93,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--results-dir", type=Path, default=Path("scratch/full_results")
     )
-    parser.add_argument("--data-dir", type=Path, default=Path("data"))
-    parser.add_argument("--plots-dir", type=Path, default=Path("plots"))
     parser.add_argument("--input-dir", type=Path, default=Path("scratch/full_inputs"))
     parser.add_argument(
         "--af2rank-csv",
@@ -120,8 +120,6 @@ def main() -> None:
     if "open-athena" not in orgs:
         raise PermissionError("active Hugging Face token lacks open-athena access")
     args.results_dir = task_path(args.results_dir)
-    args.data_dir = task_path(args.data_dir)
-    args.plots_dir = task_path(args.plots_dir)
     args.input_dir = task_path(args.input_dir)
     args.af2rank_csv = task_path(args.af2rank_csv)
     args.kubeconfig = task_path(args.kubeconfig)
@@ -132,17 +130,17 @@ def main() -> None:
         args.results_dir / "sample_metrics.csv",
         args.results_dir / "timings.csv",
         args.results_dir / "manifest.json",
-        args.data_dir / "full_metric_summary.csv",
-        args.data_dir / "full_native_summary.csv",
-        args.data_dir / "full_paired_comparisons.csv",
-        args.data_dir / "full_per_target_metrics.csv",
-        args.data_dir / "full_native_ranking.csv",
-        args.data_dir / "full_run_manifest.json",
-        args.plots_dir / "full_metric_comparison.png",
-        args.plots_dir / "full_metric_comparison.png.meta.json",
-        args.plots_dir / "full_native_selection.png",
-        args.plots_dir / "full_native_selection.png.meta.json",
-        args.plots_dir / "summary.pdf",
+        DATA_DIR / "full_metric_summary.csv",
+        DATA_DIR / "full_native_summary.csv",
+        DATA_DIR / "full_paired_comparisons.csv",
+        DATA_DIR / "full_per_target_metrics.csv",
+        DATA_DIR / "full_native_ranking.csv",
+        DATA_DIR / "full_run_manifest.json",
+        PLOTS_DIR / "full_metric_comparison.png",
+        PLOTS_DIR / "full_metric_comparison.png.meta.json",
+        PLOTS_DIR / "full_native_selection.png",
+        PLOTS_DIR / "full_native_selection.png.meta.json",
+        PLOTS_DIR / "summary.pdf",
     ]
     missing = [path for path in paths if not path.is_file()]
     if missing:

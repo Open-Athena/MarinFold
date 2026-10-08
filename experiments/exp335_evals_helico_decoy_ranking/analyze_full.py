@@ -288,16 +288,6 @@ def main() -> None:
         {column: row[column] for column in COMMITTED_TIMING_COLUMNS} for row in timings
     ]
     write_csv(args.output_dir / "timings.csv", committed_timings)
-    pilot_stems = {
-        f"{row['target']}/{row['decoy_id']}"
-        for row in load_csv(args.output_dir / "pilot_candidates.csv")
-    }
-    pilot_timings = [row for row in committed_timings if row["stem"] in pilot_stems]
-    if len(pilot_timings) != len(pilot_stems):
-        raise ValueError(
-            f"expected {len(pilot_stems)} pilot timing rows, found {len(pilot_timings)}"
-        )
-    write_csv(args.output_dir / "pilot_timings.csv", pilot_timings)
     (args.output_dir / "full_run_manifest.json").write_text(
         json.dumps(run_manifest, indent=2, sort_keys=True) + "\n"
     )
