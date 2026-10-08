@@ -325,6 +325,11 @@ def predict_candidate(
 
     rep_atom_idx = base_batch["rep_atom_idx"][0].cpu().numpy()
     candidate_ca = np.asarray(candidate["candidate_ca"], dtype=np.float64)
+    if len(rep_atom_idx) != len(candidate_ca):
+        raise ValueError(
+            f"{target}/{candidate['decoy_id']}: {len(rep_atom_idx)} predicted "
+            f"representative atoms for {len(candidate_ca)} candidate C-alpha atoms"
+        )
     sample_rows = []
     for sample_index in range(N_SAMPLES):
         predicted_ca = (
@@ -471,6 +476,16 @@ def main() -> None:
     if not 0 <= args.shard < args.num_shards:
         raise ValueError(f"invalid shard {args.shard}/{args.num_shards}")
     manifest = read_json(MANIFEST_URI)
+    if manifest.get("schema_version") != 2:
+        raise ValueError(
+            f"expected prepared-input schema 2, found {manifest.get('schema_version')}"
+        )
+    if manifest.get("n_targets") != 133 or manifest.get("n_candidates") != 180_212:
+        raise ValueError(
+            "unexpected benchmark coverage: "
+            f"{manifest.get('n_targets')} targets / "
+            f"{manifest.get('n_candidates')} candidates"
+        )
     shards = assign_tasks(manifest, args.num_shards)
     tasks = shards[args.shard]
     if args.target is not None:

@@ -137,7 +137,7 @@ into a larger model batch, because batching would assign different diffusion
 noise to candidates and change the scientific comparison. It still amortizes
 checkpoint loading and target tokenization and uses resumable 32-candidate
 parts. The immutable run fingerprint is
-`efbfe3df8519d16654d75b62d0819ca05e81c46db87fe993a8fb9c168a6111cd`;
+`218867e25066a5bbae9c74c0d29289cf041a8795691424617f0d8929d51f5a08`;
 working outputs live under
 `s3://marin-us-east-02a/MarinFold/exp335/full-v1/results/<fingerprint>/` and
 will be consolidated into the public `open-athena/MarinFold` Hugging Face
