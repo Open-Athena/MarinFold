@@ -1,0 +1,22 @@
+{
+  "tag": "exp325-exp277-step266344-seed_completion-v1",
+  "helico_source_sha": "b10385d736673c81b10e70d1099962af6f2573c0",
+  "helico_checkpoint": "/ckpts/contacts-msafree-01/contacts-msafree-01-step-6000.pt",
+  "helico_checkpoint_step": 6000,
+  "helico_checkpoint_sha256": "779d540e5bb45cd26bb970188da2f1937ed3079942923a1356c29d06f20fe644",
+  "contact_checkpoint": "contacts-v1-exp277-m2-p06-full-epoch-1.5B-step-266344",
+  "conditioning_source": "0,5,10,L/5 oracle seed contacts retained and completed to L/2 using 100-rollout MarinFold consensus",
+  "n_targets": 5,
+  "n_cuts": 35,
+  "n_samples": 105,
+  "n_diffusion_samples_per_cut": 3,
+  "n_trunk_recycles": 6,
+  "seed_per_map": 42,
+  "phase": "seed_completion",
+  "selection": "highest ranking_score among three diffusion samples per map",
+  "max_tokens": 2048,
+  "single_sequence": true,
+  "msa": false,
+  "oracle_budget_protocol_sha256": "5702bb447762bf9fa3ff7bd371c6259472d28be650cf63298a12a56dd345ca7f",
+  "completed_at_utc": "2026-10-08T22:54:10.604247+00:00"
+}

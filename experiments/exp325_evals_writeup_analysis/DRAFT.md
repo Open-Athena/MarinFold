@@ -46,6 +46,17 @@ L/2 gives 0.906, versus 0.932 for the full oracle map. Ten contacts give 0.362.
 
 ![Sparse oracle contacts versus existing predictors](plots/02f_oracle_budget_context.png)
 
+Can MarinFold extend a few known contacts? With 10 true seed contacts, filling
+to L/2 raises mean GDT-TS from 0.362 to 0.469, but helps only three of five
+proteins. With L/5 seeds, all five improve; the mean rises from 0.622 to 0.747.
+
+![Seeded contact completion, per protein](plots/02g_seed_completion.png)
+
+The added contacts also become more accurate as the seed set grows.
+[Protocol and paired results](SEED_COMPLETION.md).
+
+![Accuracy of newly predicted contacts](plots/02h_seed_contact_precision.png)
+
 Aside: ranking by pTM puts the oracle first for four low-depth proteins and fifth for one.
 
 ![Oracle versus ESMFold2 contact maps](plots/02b_confidence.png)

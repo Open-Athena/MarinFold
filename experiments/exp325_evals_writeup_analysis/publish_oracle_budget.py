@@ -24,22 +24,27 @@ def main() -> None:
     parser.add_argument("--archive", action="store_true", help="Recover raw coordinates from the durable Modal volume")
     parser.add_argument("--upload", action="store_true")
     parser.add_argument("--l2", action="store_true", help="Publish the 305-protein L/2 follow-up")
+    parser.add_argument("--seed-completion", action="store_true", help="Publish the paired contact-completion follow-up")
     args = parser.parse_args()
-    phase = "oracle_l2" if args.l2 else "oracle_budget"
-    destination = PUBLIC_ROOT + ("/oracle-l2-2026-10-08" if args.l2 else "/oracle-budget-2026-10-08")
+    if args.l2 and args.seed_completion:
+        raise ValueError("Choose one publication phase")
+    phase = "seed_completion" if args.seed_completion else ("oracle_l2" if args.l2 else "oracle_budget")
+    destination = PUBLIC_ROOT + "/" + phase.replace("_", "-") + "-2026-10-08"
     manifest = json.loads((HERE / f"data/{phase}_analysis.json").read_text())
     for name, expected in manifest["files"].items():
         if digest(HERE / "data" / name) != expected:
             raise ValueError(f"Stale oracle-budget result: {name}")
     if args.archive:
         subprocess.run(["uv", "run", "--project", "generation", "modal", "run",
-                        "generation/archive_helico.py", "--oracle-l2" if args.l2 else "--oracle-budget"], cwd=HERE, check=True)
+                        "generation/archive_helico.py", "--" + phase.replace("_", "-")], cwd=HERE, check=True)
     stage = HERE / "scratch" / f"public_{phase}"
     if stage.exists():
         shutil.rmtree(stage)
     stage.mkdir(parents=True)
     for pattern in ("data/*.csv", "data/*.json", "data/*.txt", "data/*.md", "data/inputs/Lato-*", "plots/*", "site/*",
-                    "*oracle_budget*.py", "*oracle_l2*.py", "generation/*oracle_budget*.py", "generation/run_helico.py",
+                    "*oracle_budget*.py", "*oracle_l2*.py", "*seed_completion*.py", "generation/*seed_completion*.py",
+                    "generation/run_contacts.py", "generation/score_rollout_worker.py", "generation/checkpoint_manifest.json",
+                    "generation/*oracle_budget*.py", "generation/run_helico.py",
                     "generation/archive_helico.py", "generation/pyproject.toml", "generation/uv.lock",
                     "theme.py", "poster_style.py", "prepare.py", "render*.py", "plan_missing.py",
                     "build_summary.py", "sources_remote.json", "pyproject.toml", "uv.lock", "*.md"):
@@ -50,8 +55,13 @@ def main() -> None:
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, target)
     with tarfile.open(stage / f"{phase}_inputs.tar.gz", "w:gz") as archive:
-        archive.add(HERE / "scratch/helico" / ("oracle_l2" if args.l2 else "oracle_budget_low_msa"), arcname=f"{phase}_inputs")
+        archive.add(HERE / "scratch/helico" / (phase if phase != "oracle_budget" else "oracle_budget_low_msa"), arcname=f"{phase}_inputs")
+        if args.seed_completion:
+            archive.add(HERE / "scratch/seed_completion/inputs", arcname="marinfold_seed_prompts")
     shutil.copyfile(HERE / f"scratch/{phase}_coordinates.tar.gz", stage / f"{phase}_coordinates.tar.gz")
+    if args.seed_completion:
+        shutil.copyfile(HERE / "scratch/seed_completion/rollouts.tar.gz", stage / "seed_completion_rollouts.tar.gz")
+        shutil.copyfile(HERE / "scratch/oracle_budget_coordinates.tar.gz", stage / "reused_direct_coordinates.tar.gz")
     inventory = {str(path.relative_to(stage)): dict(bytes=path.stat().st_size, sha256=digest(path))
                  for path in sorted(stage.rglob("*")) if path.is_file()}
     publication = dict(destination=destination, files=inventory,

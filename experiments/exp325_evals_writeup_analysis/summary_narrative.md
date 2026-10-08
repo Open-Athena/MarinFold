@@ -110,6 +110,24 @@ Per-protein panels retain both subset results. L/2 comes close to the full map.
 Only five proteins; two subsets do not fully characterize map-sampling variability.
 Source: ORACLE_BUDGET.md, data/oracle_budget_*.csv; render.py uses cached tables.
 
+## Can MarinFold extend known contacts?
+
+Five natural proteins with MSA depth <10; fixed 248B-token model, no MSA input.
+Same 0, 5, 10 or L/5 true seed contacts in both arms; two subsets when nonzero.
+Direct Helico versus retaining the seeds and filling to L/2 with 100-rollout consensus.
+
+Mean GDT-TS, direct → completed:
+0 seeds: 0.244 → 0.301; 5: 0.296 → 0.379; 10: 0.362 → 0.469; L/5: 0.622 → 0.747.
+At 10 seeds, 8oxk_A / 8qoh_A / 8wrx_A improve; 8ii8_A / 8ux2_A worsen.
+At L/5 all five improve, with the largest gains on 8oxk_A and 8qoh_A.
+Mean TM at 10 seeds: 0.573 → 0.712. Mean lDDT: 0.491 → 0.604.
+Added-contact precision alone: 44.6% / 56.6% / 63.1% / 81.3% across seed budgets.
+
+All 3,500 rollouts and 105 new structures retained; direct predictions reused exactly.
+Confidence selection per map, subset averaging within protein, protein bootstrap.
+Exploratory oracle-seeded diagnostic; only five biological examples.
+Source: SEED_COMPLETION.md; seed_completion_per_protein.csv → selected source rows.
+
 ## Precision at L/5 and the KNN comparison
 
 k=max(1,floor(L/5)); L is the input sequence length, not the resolved-residue count.

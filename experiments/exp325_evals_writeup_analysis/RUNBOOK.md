@@ -311,3 +311,12 @@ when source predictions change. Run `uv run python render.py` and
 `uv run python export_poster.py --width-px 7200 --print-dpi 300 --upload`
 for native vector PDFs/SVGs and raster print files. It never reruns inference
 or metric analysis. The package and sizes are described in [POSTER.md](POSTER.md).
+
+## Completing sparse oracle contacts
+
+[SEED_COMPLETION.md](SEED_COMPLETION.md#reproduce) records input preparation,
+100-rollout conditional MarinFold inference, Helico folding and the full raw
+artifact audit. Run `uv run python prepare_seed_completion_analysis.py` once
+when those predictions change. The regular `render.py`, `build_summary.py`
+and `export_poster.py` commands then include all four new static panels and
+the two interactive panels using only cached tables.

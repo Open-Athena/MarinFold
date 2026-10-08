@@ -142,3 +142,17 @@ P@L/5 and R-precision, each at both ranges; `06_sampling_pl5{,_long}` reselects
 the oracle sample at the new cutoff. Existing R-precision inputs are preserved.
 Every static plot now has a native PDF as well as SVG/PNG; [POSTER.md](POSTER.md)
 describes the print bundle and its manifest.
+
+## Ground-truth-seeded contact completion
+
+`02g_seed_completion` compares direct sparse conditioning with the same seeds
+extended by MarinFold to L/2 total contacts, individually for all five low-depth
+proteins and their mean. `_tm_score` and `_lddt` provide metric alternatives.
+`02h_seed_contact_precision` separates accuracy of the new predictions from
+accuracy of the full seed-plus-prediction contact set.
+
+`generation/prepare_seed_completion.py` freezes the paired inputs and ranks the
+completed rollouts without correctness labels. `prepare_seed_completion_analysis.py`
+caches confidence selection, subset averages and paired protein bootstraps.
+`render_seed_completion.py` only reads those cached tables. Exact point-to-row
+keys, all commands and the public raw archives are in [SEED_COMPLETION.md](SEED_COMPLETION.md).

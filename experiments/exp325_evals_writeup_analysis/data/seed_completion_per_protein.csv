@@ -1,0 +1,241 @@
+stem,budget,method,selector,metric,value,min_draw,max_draw,n_seed,n_contacts,n_draws,source,source_rows,msa_depth,L_exp245
+8ii8_A,0,complete,ptm,gdt_ts,0.3622222222222222,0.3622222222222222,0.3622222222222222,0,113,1,helico_seed_completion_samples.csv,[0],3,226
+8ii8_A,0,complete,ptm,tm_score,0.6702209688013282,0.6702209688013282,0.6702209688013282,0,113,1,helico_seed_completion_samples.csv,[0],3,226
+8ii8_A,0,complete,ptm,lddt,0.504003634550747,0.504003634550747,0.504003634550747,0,113,1,helico_seed_completion_samples.csv,[0],3,226
+8ii8_A,0,complete,ranking_score,gdt_ts,0.3622222222222222,0.3622222222222222,0.3622222222222222,0,113,1,helico_seed_completion_samples.csv,[0],3,226
+8ii8_A,0,complete,ranking_score,tm_score,0.6702209688013282,0.6702209688013282,0.6702209688013282,0,113,1,helico_seed_completion_samples.csv,[0],3,226
+8ii8_A,0,complete,ranking_score,lddt,0.504003634550747,0.504003634550747,0.504003634550747,0,113,1,helico_seed_completion_samples.csv,[0],3,226
+8ii8_A,0,direct,ptm,gdt_ts,0.3199999999999999,0.3199999999999999,0.3199999999999999,0,0,1,helico_oracle_budget_samples.csv,[24],3,226
+8ii8_A,0,direct,ptm,tm_score,0.7084921094618537,0.7084921094618537,0.7084921094618537,0,0,1,helico_oracle_budget_samples.csv,[24],3,226
+8ii8_A,0,direct,ptm,lddt,0.5519258294334282,0.5519258294334282,0.5519258294334282,0,0,1,helico_oracle_budget_samples.csv,[24],3,226
+8ii8_A,0,direct,ranking_score,gdt_ts,0.4222222222222222,0.4222222222222222,0.4222222222222222,0,0,1,helico_oracle_budget_samples.csv,[26],3,226
+8ii8_A,0,direct,ranking_score,tm_score,0.689857804510424,0.689857804510424,0.689857804510424,0,0,1,helico_oracle_budget_samples.csv,[26],3,226
+8ii8_A,0,direct,ranking_score,lddt,0.5141345427059714,0.5141345427059714,0.5141345427059714,0,0,1,helico_oracle_budget_samples.csv,[26],3,226
+8ii8_A,10,complete,ptm,gdt_ts,0.6094444444444445,0.5233333333333333,0.6955555555555556,10,113,2,helico_seed_completion_samples.csv,"[11, 13]",3,226
+8ii8_A,10,complete,ptm,tm_score,0.859425070873381,0.8343109526636,0.8845391890831621,10,113,2,helico_seed_completion_samples.csv,"[11, 13]",3,226
+8ii8_A,10,complete,ptm,lddt,0.6774830736076937,0.6398256702208069,0.7151404769945804,10,113,2,helico_seed_completion_samples.csv,"[11, 13]",3,226
+8ii8_A,10,complete,ranking_score,gdt_ts,0.6094444444444445,0.5233333333333333,0.6955555555555556,10,113,2,helico_seed_completion_samples.csv,"[11, 13]",3,226
+8ii8_A,10,complete,ranking_score,tm_score,0.859425070873381,0.8343109526636,0.8845391890831621,10,113,2,helico_seed_completion_samples.csv,"[11, 13]",3,226
+8ii8_A,10,complete,ranking_score,lddt,0.6774830736076937,0.6398256702208069,0.7151404769945804,10,113,2,helico_seed_completion_samples.csv,"[11, 13]",3,226
+8ii8_A,10,direct,ptm,gdt_ts,0.72,0.7022222222222222,0.7377777777777778,10,10,2,helico_oracle_budget_samples.csv,"[3, 16]",3,226
+8ii8_A,10,direct,ptm,tm_score,0.8914980002211527,0.8814363498522445,0.9015596505900608,10,10,2,helico_oracle_budget_samples.csv,"[3, 16]",3,226
+8ii8_A,10,direct,ptm,lddt,0.7053235715089818,0.65735031601293,0.7532968270050338,10,10,2,helico_oracle_budget_samples.csv,"[3, 16]",3,226
+8ii8_A,10,direct,ranking_score,gdt_ts,0.72,0.7022222222222222,0.7377777777777778,10,10,2,helico_oracle_budget_samples.csv,"[3, 16]",3,226
+8ii8_A,10,direct,ranking_score,tm_score,0.8914980002211527,0.8814363498522445,0.9015596505900608,10,10,2,helico_oracle_budget_samples.csv,"[3, 16]",3,226
+8ii8_A,10,direct,ranking_score,lddt,0.7053235715089818,0.65735031601293,0.7532968270050338,10,10,2,helico_oracle_budget_samples.csv,"[3, 16]",3,226
+8ii8_A,5,complete,ptm,gdt_ts,0.29277777777777775,0.1622222222222222,0.4233333333333333,5,113,2,helico_seed_completion_samples.csv,"[3, 7]",3,226
+8ii8_A,5,complete,ptm,tm_score,0.6645204435310079,0.6199607416632797,0.7090801453987362,5,113,2,helico_seed_completion_samples.csv,"[3, 7]",3,226
+8ii8_A,5,complete,ptm,lddt,0.5051808430227883,0.4529478458049887,0.5574138402405879,5,113,2,helico_seed_completion_samples.csv,"[3, 7]",3,226
+8ii8_A,5,complete,ranking_score,gdt_ts,0.29277777777777775,0.1622222222222222,0.4233333333333333,5,113,2,helico_seed_completion_samples.csv,"[3, 7]",3,226
+8ii8_A,5,complete,ranking_score,tm_score,0.6645204435310079,0.6199607416632797,0.7090801453987362,5,113,2,helico_seed_completion_samples.csv,"[3, 7]",3,226
+8ii8_A,5,complete,ranking_score,lddt,0.5051808430227883,0.4529478458049887,0.5574138402405879,5,113,2,helico_seed_completion_samples.csv,"[3, 7]",3,226
+8ii8_A,5,direct,ptm,gdt_ts,0.42166666666666663,0.3788888888888889,0.4644444444444444,5,5,2,helico_oracle_budget_samples.csv,"[1, 12]",3,226
+8ii8_A,5,direct,ptm,tm_score,0.7094964164580239,0.6399228884857812,0.7790699444302666,5,5,2,helico_oracle_budget_samples.csv,"[1, 12]",3,226
+8ii8_A,5,direct,ptm,lddt,0.5541648574323346,0.5165975137099756,0.5917322011546935,5,5,2,helico_oracle_budget_samples.csv,"[1, 12]",3,226
+8ii8_A,5,direct,ranking_score,gdt_ts,0.41000000000000003,0.3788888888888889,0.4411111111111111,5,5,2,helico_oracle_budget_samples.csv,"[1, 13]",3,226
+8ii8_A,5,direct,ranking_score,tm_score,0.7079442916219939,0.6399228884857812,0.7759656947582066,5,5,2,helico_oracle_budget_samples.csv,"[1, 13]",3,226
+8ii8_A,5,direct,ranking_score,lddt,0.5578609221466364,0.5165975137099756,0.5991243305832972,5,5,2,helico_oracle_budget_samples.csv,"[1, 13]",3,226
+8ii8_A,L5,complete,ptm,gdt_ts,0.7994444444444444,0.7911111111111111,0.8077777777777778,45,113,2,helico_seed_completion_samples.csv,"[17, 18]",3,226
+8ii8_A,L5,complete,ptm,tm_score,0.9229994322214284,0.9155346083141552,0.9304642561287017,45,113,2,helico_seed_completion_samples.csv,"[17, 18]",3,226
+8ii8_A,L5,complete,ptm,lddt,0.7893050127852559,0.7667969315385729,0.811813094031939,45,113,2,helico_seed_completion_samples.csv,"[17, 18]",3,226
+8ii8_A,L5,complete,ranking_score,gdt_ts,0.7994444444444444,0.7911111111111111,0.8077777777777778,45,113,2,helico_seed_completion_samples.csv,"[17, 18]",3,226
+8ii8_A,L5,complete,ranking_score,tm_score,0.9229994322214284,0.9155346083141552,0.9304642561287017,45,113,2,helico_seed_completion_samples.csv,"[17, 18]",3,226
+8ii8_A,L5,complete,ranking_score,lddt,0.7893050127852559,0.7667969315385729,0.811813094031939,45,113,2,helico_seed_completion_samples.csv,"[17, 18]",3,226
+8ii8_A,L5,direct,ptm,gdt_ts,0.7861111111111111,0.7588888888888888,0.8133333333333334,45,45,2,helico_oracle_budget_samples.csv,"[6, 19]",3,226
+8ii8_A,L5,direct,ptm,tm_score,0.9213390091716946,0.9142937320236058,0.9283842863197836,45,45,2,helico_oracle_budget_samples.csv,"[6, 19]",3,226
+8ii8_A,L5,direct,ptm,lddt,0.7689097151863109,0.7688120165323813,0.7690074138402405,45,45,2,helico_oracle_budget_samples.csv,"[6, 19]",3,226
+8ii8_A,L5,direct,ranking_score,gdt_ts,0.7861111111111111,0.7588888888888888,0.8133333333333334,45,45,2,helico_oracle_budget_samples.csv,"[6, 19]",3,226
+8ii8_A,L5,direct,ranking_score,tm_score,0.9213390091716946,0.9142937320236058,0.9283842863197836,45,45,2,helico_oracle_budget_samples.csv,"[6, 19]",3,226
+8ii8_A,L5,direct,ranking_score,lddt,0.7689097151863109,0.7688120165323813,0.7690074138402405,45,45,2,helico_oracle_budget_samples.csv,"[6, 19]",3,226
+8oxk_A,0,complete,ptm,gdt_ts,0.2101063829787234,0.2101063829787234,0.2101063829787234,0,49,1,helico_seed_completion_samples.csv,[22],6,99
+8oxk_A,0,complete,ptm,tm_score,0.357486794978783,0.357486794978783,0.357486794978783,0,49,1,helico_seed_completion_samples.csv,[22],6,99
+8oxk_A,0,complete,ptm,lddt,0.3886491431817992,0.3886491431817992,0.3886491431817992,0,49,1,helico_seed_completion_samples.csv,[22],6,99
+8oxk_A,0,complete,ranking_score,gdt_ts,0.2101063829787234,0.2101063829787234,0.2101063829787234,0,49,1,helico_seed_completion_samples.csv,[22],6,99
+8oxk_A,0,complete,ranking_score,tm_score,0.357486794978783,0.357486794978783,0.357486794978783,0,49,1,helico_seed_completion_samples.csv,[22],6,99
+8oxk_A,0,complete,ranking_score,lddt,0.3886491431817992,0.3886491431817992,0.3886491431817992,0,49,1,helico_seed_completion_samples.csv,[22],6,99
+8oxk_A,0,direct,ptm,gdt_ts,0.0957446808510638,0.0957446808510638,0.0957446808510638,0,0,1,helico_oracle_budget_samples.csv,[57],6,99
+8oxk_A,0,direct,ptm,tm_score,0.3275213569254598,0.3275213569254598,0.3275213569254598,0,0,1,helico_oracle_budget_samples.csv,[57],6,99
+8oxk_A,0,direct,ptm,lddt,0.2803123981718983,0.2803123981718983,0.2803123981718983,0,0,1,helico_oracle_budget_samples.csv,[57],6,99
+8oxk_A,0,direct,ranking_score,gdt_ts,0.0957446808510638,0.0957446808510638,0.0957446808510638,0,0,1,helico_oracle_budget_samples.csv,[57],6,99
+8oxk_A,0,direct,ranking_score,tm_score,0.3275213569254598,0.3275213569254598,0.3275213569254598,0,0,1,helico_oracle_budget_samples.csv,[57],6,99
+8oxk_A,0,direct,ranking_score,lddt,0.2803123981718983,0.2803123981718983,0.2803123981718983,0,0,1,helico_oracle_budget_samples.csv,[57],6,99
+8oxk_A,10,complete,ptm,gdt_ts,0.5452127659574468,0.1675531914893616,0.922872340425532,10,49,2,helico_seed_completion_samples.csv,"[31, 35]",6,99
+8oxk_A,10,complete,ptm,tm_score,0.7042795011219608,0.4755613238082716,0.93299767843565,10,49,2,helico_seed_completion_samples.csv,"[31, 35]",6,99
+8oxk_A,10,complete,ptm,lddt,0.6242198400828829,0.4067442579394588,0.841695422226307,10,49,2,helico_seed_completion_samples.csv,"[31, 35]",6,99
+8oxk_A,10,complete,ranking_score,gdt_ts,0.5452127659574468,0.1675531914893616,0.922872340425532,10,49,2,helico_seed_completion_samples.csv,"[31, 35]",6,99
+8oxk_A,10,complete,ranking_score,tm_score,0.7042795011219608,0.4755613238082716,0.93299767843565,10,49,2,helico_seed_completion_samples.csv,"[31, 35]",6,99
+8oxk_A,10,complete,ranking_score,lddt,0.6242198400828829,0.4067442579394588,0.841695422226307,10,49,2,helico_seed_completion_samples.csv,"[31, 35]",6,99
+8oxk_A,10,direct,ptm,gdt_ts,0.2087765957446808,0.1888297872340425,0.2287234042553191,10,10,2,helico_oracle_budget_samples.csv,"[36, 50]",6,99
+8oxk_A,10,direct,ptm,tm_score,0.43046690209321314,0.4286334708828422,0.4323003333035841,10,10,2,helico_oracle_budget_samples.csv,"[36, 50]",6,99
+8oxk_A,10,direct,ptm,lddt,0.3858271992781171,0.3833895911836708,0.3882648073725634,10,10,2,helico_oracle_budget_samples.csv,"[36, 50]",6,99
+8oxk_A,10,direct,ranking_score,gdt_ts,0.2087765957446808,0.1888297872340425,0.2287234042553191,10,10,2,helico_oracle_budget_samples.csv,"[36, 50]",6,99
+8oxk_A,10,direct,ranking_score,tm_score,0.43046690209321314,0.4286334708828422,0.4323003333035841,10,10,2,helico_oracle_budget_samples.csv,"[36, 50]",6,99
+8oxk_A,10,direct,ranking_score,lddt,0.3858271992781171,0.3833895911836708,0.3882648073725634,10,10,2,helico_oracle_budget_samples.csv,"[36, 50]",6,99
+8oxk_A,5,complete,ptm,gdt_ts,0.34574468085106375,0.3218085106382978,0.3696808510638297,5,49,2,helico_seed_completion_samples.csv,"[24, 29]",6,99
+8oxk_A,5,complete,ptm,tm_score,0.560707171853209,0.4941430900254029,0.627271253681015,5,49,2,helico_seed_completion_samples.csv,"[24, 29]",6,99
+8oxk_A,5,complete,ptm,lddt,0.47268082582068227,0.43771879986966,0.5076428517717045,5,49,2,helico_seed_completion_samples.csv,"[24, 29]",6,99
+8oxk_A,5,complete,ranking_score,gdt_ts,0.34574468085106375,0.3218085106382978,0.3696808510638297,5,49,2,helico_seed_completion_samples.csv,"[24, 29]",6,99
+8oxk_A,5,complete,ranking_score,tm_score,0.560707171853209,0.4941430900254029,0.627271253681015,5,49,2,helico_seed_completion_samples.csv,"[24, 29]",6,99
+8oxk_A,5,complete,ranking_score,lddt,0.47268082582068227,0.43771879986966,0.5076428517717045,5,49,2,helico_seed_completion_samples.csv,"[24, 29]",6,99
+8oxk_A,5,direct,ptm,gdt_ts,0.1542553191489361,0.0824468085106382,0.226063829787234,5,5,2,helico_oracle_budget_samples.csv,"[34, 45]",6,99
+8oxk_A,5,direct,ptm,tm_score,0.38382723045356637,0.3335638168163907,0.4340906440907421,5,5,2,helico_oracle_budget_samples.csv,"[34, 45]",6,99
+8oxk_A,5,direct,ptm,lddt,0.34317741275159375,0.3129308111992113,0.3734240143039762,5,5,2,helico_oracle_budget_samples.csv,"[34, 45]",6,99
+8oxk_A,5,direct,ranking_score,gdt_ts,0.1542553191489361,0.0824468085106382,0.226063829787234,5,5,2,helico_oracle_budget_samples.csv,"[34, 45]",6,99
+8oxk_A,5,direct,ranking_score,tm_score,0.38382723045356637,0.3335638168163907,0.4340906440907421,5,5,2,helico_oracle_budget_samples.csv,"[34, 45]",6,99
+8oxk_A,5,direct,ranking_score,lddt,0.34317741275159375,0.3129308111992113,0.3734240143039762,5,5,2,helico_oracle_budget_samples.csv,"[34, 45]",6,99
+8oxk_A,L5,complete,ptm,gdt_ts,0.9534574468085106,0.9361702127659576,0.9707446808510638,19,49,2,helico_seed_completion_samples.csv,"[38, 41]",6,99
+8oxk_A,L5,complete,ptm,tm_score,0.9558672602307602,0.944369180718858,0.9673653397426624,19,49,2,helico_seed_completion_samples.csv,"[38, 41]",6,99
+8oxk_A,L5,complete,ptm,lddt,0.8741133122227143,0.8571524058586145,0.8910742185868139,19,49,2,helico_seed_completion_samples.csv,"[38, 41]",6,99
+8oxk_A,L5,complete,ranking_score,gdt_ts,0.9534574468085106,0.9361702127659576,0.9707446808510638,19,49,2,helico_seed_completion_samples.csv,"[38, 41]",6,99
+8oxk_A,L5,complete,ranking_score,tm_score,0.9558672602307602,0.944369180718858,0.9673653397426624,19,49,2,helico_seed_completion_samples.csv,"[38, 41]",6,99
+8oxk_A,L5,complete,ranking_score,lddt,0.8741133122227143,0.8571524058586145,0.8910742185868139,19,49,2,helico_seed_completion_samples.csv,"[38, 41]",6,99
+8oxk_A,L5,direct,ptm,gdt_ts,0.5026595744680851,0.1994680851063829,0.8058510638297872,19,19,2,helico_oracle_budget_samples.csv,"[39, 53]",6,99
+8oxk_A,L5,direct,ptm,tm_score,0.6182450744651523,0.3696195103892634,0.8668706385410412,19,19,2,helico_oracle_budget_samples.csv,"[39, 53]",6,99
+8oxk_A,L5,direct,ptm,lddt,0.561432110421349,0.3550072271842389,0.7678569936584592,19,19,2,helico_oracle_budget_samples.csv,"[39, 53]",6,99
+8oxk_A,L5,direct,ranking_score,gdt_ts,0.5026595744680851,0.1994680851063829,0.8058510638297872,19,19,2,helico_oracle_budget_samples.csv,"[39, 53]",6,99
+8oxk_A,L5,direct,ranking_score,tm_score,0.6182450744651523,0.3696195103892634,0.8668706385410412,19,19,2,helico_oracle_budget_samples.csv,"[39, 53]",6,99
+8oxk_A,L5,direct,ranking_score,lddt,0.561432110421349,0.3550072271842389,0.7678569936584592,19,19,2,helico_oracle_budget_samples.csv,"[39, 53]",6,99
+8qoh_A,0,complete,ptm,gdt_ts,0.2454379562043795,0.2454379562043795,0.2454379562043795,0,139,1,helico_seed_completion_samples.csv,[44],3,278
+8qoh_A,0,complete,ptm,tm_score,0.5688910325785096,0.5688910325785096,0.5688910325785096,0,139,1,helico_seed_completion_samples.csv,[44],3,278
+8qoh_A,0,complete,ptm,lddt,0.4006149536007257,0.4006149536007257,0.4006149536007257,0,139,1,helico_seed_completion_samples.csv,[44],3,278
+8qoh_A,0,complete,ranking_score,gdt_ts,0.2454379562043795,0.2454379562043795,0.2454379562043795,0,139,1,helico_seed_completion_samples.csv,[44],3,278
+8qoh_A,0,complete,ranking_score,tm_score,0.5688910325785096,0.5688910325785096,0.5688910325785096,0,139,1,helico_seed_completion_samples.csv,[44],3,278
+8qoh_A,0,complete,ranking_score,lddt,0.4006149536007257,0.4006149536007257,0.4006149536007257,0,139,1,helico_seed_completion_samples.csv,[44],3,278
+8qoh_A,0,direct,ptm,gdt_ts,0.0620437956204379,0.0620437956204379,0.0620437956204379,0,0,1,helico_oracle_budget_samples.csv,[92],3,278
+8qoh_A,0,direct,ptm,tm_score,0.322245879599063,0.322245879599063,0.322245879599063,0,0,1,helico_oracle_budget_samples.csv,[92],3,278
+8qoh_A,0,direct,ptm,lddt,0.2705561040644894,0.2705561040644894,0.2705561040644894,0,0,1,helico_oracle_budget_samples.csv,[92],3,278
+8qoh_A,0,direct,ranking_score,gdt_ts,0.0620437956204379,0.0620437956204379,0.0620437956204379,0,0,1,helico_oracle_budget_samples.csv,[92],3,278
+8qoh_A,0,direct,ranking_score,tm_score,0.322245879599063,0.322245879599063,0.322245879599063,0,0,1,helico_oracle_budget_samples.csv,[92],3,278
+8qoh_A,0,direct,ranking_score,lddt,0.2705561040644894,0.2705561040644894,0.2705561040644894,0,0,1,helico_oracle_budget_samples.csv,[92],3,278
+8qoh_A,10,complete,ptm,gdt_ts,0.3658759124087591,0.3531021897810219,0.3786496350364963,10,139,2,helico_seed_completion_samples.csv,"[53, 56]",3,278
+8qoh_A,10,complete,ptm,tm_score,0.7123836744777869,0.6969847619423003,0.7277825870132737,10,139,2,helico_seed_completion_samples.csv,"[53, 56]",3,278
+8qoh_A,10,complete,ptm,lddt,0.5308292882390268,0.5117103475764941,0.5499482289015594,10,139,2,helico_seed_completion_samples.csv,"[53, 56]",3,278
+8qoh_A,10,complete,ranking_score,gdt_ts,0.3658759124087591,0.3531021897810219,0.3786496350364963,10,139,2,helico_seed_completion_samples.csv,"[53, 56]",3,278
+8qoh_A,10,complete,ranking_score,tm_score,0.7123836744777869,0.6969847619423003,0.7277825870132737,10,139,2,helico_seed_completion_samples.csv,"[53, 56]",3,278
+8qoh_A,10,complete,ranking_score,lddt,0.5308292882390268,0.5117103475764941,0.5499482289015594,10,139,2,helico_seed_completion_samples.csv,"[53, 56]",3,278
+8qoh_A,10,direct,ptm,gdt_ts,0.04698905109489045,0.0456204379562043,0.0483576642335766,10,10,2,helico_oracle_budget_samples.csv,"[69, 83]",3,278
+8qoh_A,10,direct,ptm,tm_score,0.33237265770787394,0.3274773449501961,0.3372679704655518,10,10,2,helico_oracle_budget_samples.csv,"[69, 83]",3,278
+8qoh_A,10,direct,ptm,lddt,0.2717979804690095,0.263963306661291,0.279632654276728,10,10,2,helico_oracle_budget_samples.csv,"[69, 83]",3,278
+8qoh_A,10,direct,ranking_score,gdt_ts,0.04698905109489045,0.0456204379562043,0.0483576642335766,10,10,2,helico_oracle_budget_samples.csv,"[69, 83]",3,278
+8qoh_A,10,direct,ranking_score,tm_score,0.33237265770787394,0.3274773449501961,0.3372679704655518,10,10,2,helico_oracle_budget_samples.csv,"[69, 83]",3,278
+8qoh_A,10,direct,ranking_score,lddt,0.2717979804690095,0.263963306661291,0.279632654276728,10,10,2,helico_oracle_budget_samples.csv,"[69, 83]",3,278
+8qoh_A,5,complete,ptm,gdt_ts,0.3362226277372262,0.3220802919708029,0.3503649635036496,5,139,2,helico_seed_completion_samples.csv,"[47, 50]",3,278
+8qoh_A,5,complete,ptm,tm_score,0.7195905739367024,0.7135270029154115,0.7256541449579934,5,139,2,helico_seed_completion_samples.csv,"[47, 50]",3,278
+8qoh_A,5,complete,ptm,lddt,0.5219425844773753,0.5151922975601152,0.5286928713946355,5,139,2,helico_seed_completion_samples.csv,"[47, 50]",3,278
+8qoh_A,5,complete,ranking_score,gdt_ts,0.3362226277372262,0.3220802919708029,0.3503649635036496,5,139,2,helico_seed_completion_samples.csv,"[47, 50]",3,278
+8qoh_A,5,complete,ranking_score,tm_score,0.7195905739367024,0.7135270029154115,0.7256541449579934,5,139,2,helico_seed_completion_samples.csv,"[47, 50]",3,278
+8qoh_A,5,complete,ranking_score,lddt,0.5219425844773753,0.5151922975601152,0.5286928713946355,5,139,2,helico_seed_completion_samples.csv,"[47, 50]",3,278
+8qoh_A,5,direct,ptm,gdt_ts,0.0401459854014598,0.0392335766423357,0.0410583941605839,5,5,2,helico_oracle_budget_samples.csv,"[68, 78]",3,278
+8qoh_A,5,direct,ptm,tm_score,0.3050424711606956,0.2878593504989757,0.3222255918224155,5,5,2,helico_oracle_budget_samples.csv,"[68, 78]",3,278
+8qoh_A,5,direct,ptm,lddt,0.2625948659563794,0.2457930255625525,0.2793967063502063,5,5,2,helico_oracle_budget_samples.csv,"[68, 78]",3,278
+8qoh_A,5,direct,ranking_score,gdt_ts,0.0401459854014598,0.0392335766423357,0.0410583941605839,5,5,2,helico_oracle_budget_samples.csv,"[68, 78]",3,278
+8qoh_A,5,direct,ranking_score,tm_score,0.3050424711606956,0.2878593504989757,0.3222255918224155,5,5,2,helico_oracle_budget_samples.csv,"[68, 78]",3,278
+8qoh_A,5,direct,ranking_score,lddt,0.2625948659563794,0.2457930255625525,0.2793967063502063,5,5,2,helico_oracle_budget_samples.csv,"[68, 78]",3,278
+8qoh_A,L5,complete,ptm,gdt_ts,0.7956204379562044,0.7609489051094891,0.8302919708029197,55,139,2,helico_seed_completion_samples.csv,"[59, 61]",3,278
+8qoh_A,L5,complete,ptm,tm_score,0.9219344187400669,0.9024854464012468,0.9413833910788868,55,139,2,helico_seed_completion_samples.csv,"[59, 61]",3,278
+8qoh_A,L5,complete,ptm,lddt,0.7519119227007103,0.713245383552826,0.7905784618485947,55,139,2,helico_seed_completion_samples.csv,"[59, 61]",3,278
+8qoh_A,L5,complete,ranking_score,gdt_ts,0.7956204379562044,0.7609489051094891,0.8302919708029197,55,139,2,helico_seed_completion_samples.csv,"[59, 61]",3,278
+8qoh_A,L5,complete,ranking_score,tm_score,0.9219344187400669,0.9024854464012468,0.9413833910788868,55,139,2,helico_seed_completion_samples.csv,"[59, 61]",3,278
+8qoh_A,L5,complete,ranking_score,lddt,0.7519119227007103,0.713245383552826,0.7905784618485947,55,139,2,helico_seed_completion_samples.csv,"[59, 61]",3,278
+8qoh_A,L5,direct,ptm,gdt_ts,0.6500912408759124,0.6468978102189782,0.6532846715328466,55,55,2,helico_oracle_budget_samples.csv,"[72, 86]",3,278
+8qoh_A,L5,direct,ptm,tm_score,0.8899479406346699,0.8789781496393677,0.900917731629972,55,55,2,helico_oracle_budget_samples.csv,"[72, 86]",3,278
+8qoh_A,L5,direct,ptm,lddt,0.7070611998524753,0.6801800305586926,0.733942369146258,55,55,2,helico_oracle_budget_samples.csv,"[72, 86]",3,278
+8qoh_A,L5,direct,ranking_score,gdt_ts,0.6500912408759124,0.6468978102189782,0.6532846715328466,55,55,2,helico_oracle_budget_samples.csv,"[72, 86]",3,278
+8qoh_A,L5,direct,ranking_score,tm_score,0.8899479406346699,0.8789781496393677,0.900917731629972,55,55,2,helico_oracle_budget_samples.csv,"[72, 86]",3,278
+8qoh_A,L5,direct,ranking_score,lddt,0.7070611998524753,0.6801800305586926,0.733942369146258,55,55,2,helico_oracle_budget_samples.csv,"[72, 86]",3,278
+8ux2_A,0,complete,ptm,gdt_ts,0.0510416666666666,0.0510416666666666,0.0510416666666666,0,123,1,helico_seed_completion_samples.csv,[65],6,246
+8ux2_A,0,complete,ptm,tm_score,0.3068912761163169,0.3068912761163169,0.3068912761163169,0,123,1,helico_seed_completion_samples.csv,[65],6,246
+8ux2_A,0,complete,ptm,lddt,0.3040211892407188,0.3040211892407188,0.3040211892407188,0,123,1,helico_seed_completion_samples.csv,[65],6,246
+8ux2_A,0,complete,ranking_score,gdt_ts,0.0510416666666666,0.0510416666666666,0.0510416666666666,0,123,1,helico_seed_completion_samples.csv,[65],6,246
+8ux2_A,0,complete,ranking_score,tm_score,0.3068912761163169,0.3068912761163169,0.3068912761163169,0,123,1,helico_seed_completion_samples.csv,[65],6,246
+8ux2_A,0,complete,ranking_score,lddt,0.3040211892407188,0.3040211892407188,0.3040211892407188,0,123,1,helico_seed_completion_samples.csv,[65],6,246
+8ux2_A,0,direct,ptm,gdt_ts,0.01875,0.01875,0.01875,0,0,1,helico_oracle_budget_samples.csv,[125],6,246
+8ux2_A,0,direct,ptm,tm_score,0.2754987818778325,0.2754987818778325,0.2754987818778325,0,0,1,helico_oracle_budget_samples.csv,[125],6,246
+8ux2_A,0,direct,ptm,lddt,0.2624504392759259,0.2624504392759259,0.2624504392759259,0,0,1,helico_oracle_budget_samples.csv,[125],6,246
+8ux2_A,0,direct,ranking_score,gdt_ts,0.01875,0.01875,0.01875,0,0,1,helico_oracle_budget_samples.csv,[125],6,246
+8ux2_A,0,direct,ranking_score,tm_score,0.2754987818778325,0.2754987818778325,0.2754987818778325,0,0,1,helico_oracle_budget_samples.csv,[125],6,246
+8ux2_A,0,direct,ranking_score,lddt,0.2624504392759259,0.2624504392759259,0.2624504392759259,0,0,1,helico_oracle_budget_samples.csv,[125],6,246
+8ux2_A,10,complete,ptm,gdt_ts,0.0963541666666666,0.0510416666666666,0.1416666666666666,10,123,2,helico_seed_completion_samples.csv,"[73, 77]",6,246
+8ux2_A,10,complete,ptm,tm_score,0.42710587662487676,0.3181671029672672,0.5360446502824863,10,123,2,helico_seed_completion_samples.csv,"[73, 77]",6,246
+8ux2_A,10,complete,ptm,lddt,0.3904599668511878,0.3453590308847266,0.435560902817649,10,123,2,helico_seed_completion_samples.csv,"[73, 77]",6,246
+8ux2_A,10,complete,ranking_score,gdt_ts,0.0963541666666666,0.0510416666666666,0.1416666666666666,10,123,2,helico_seed_completion_samples.csv,"[73, 77]",6,246
+8ux2_A,10,complete,ranking_score,tm_score,0.42710587662487676,0.3181671029672672,0.5360446502824863,10,123,2,helico_seed_completion_samples.csv,"[73, 77]",6,246
+8ux2_A,10,complete,ranking_score,lddt,0.3904599668511878,0.3453590308847266,0.435560902817649,10,123,2,helico_seed_completion_samples.csv,"[73, 77]",6,246
+8ux2_A,10,direct,ptm,gdt_ts,0.15625,0.040625,0.271875,10,10,2,helico_oracle_budget_samples.csv,"[102, 115]",6,246
+8ux2_A,10,direct,ptm,tm_score,0.4070559202596214,0.2725175013040573,0.5415943392151855,10,10,2,helico_oracle_budget_samples.csv,"[102, 115]",6,246
+8ux2_A,10,direct,ptm,lddt,0.34363456142821547,0.2868888864815677,0.4003802363748632,10,10,2,helico_oracle_budget_samples.csv,"[102, 115]",6,246
+8ux2_A,10,direct,ranking_score,gdt_ts,0.15625,0.040625,0.271875,10,10,2,helico_oracle_budget_samples.csv,"[102, 115]",6,246
+8ux2_A,10,direct,ranking_score,tm_score,0.4070559202596214,0.2725175013040573,0.5415943392151855,10,10,2,helico_oracle_budget_samples.csv,"[102, 115]",6,246
+8ux2_A,10,direct,ranking_score,lddt,0.34363456142821547,0.2868888864815677,0.4003802363748632,10,10,2,helico_oracle_budget_samples.csv,"[102, 115]",6,246
+8ux2_A,5,complete,ptm,gdt_ts,0.11197916666666666,0.109375,0.1145833333333333,5,123,2,helico_seed_completion_samples.csv,"[68, 70]",6,246
+8ux2_A,5,complete,ptm,tm_score,0.4171090811662572,0.4104428166523359,0.4237753456801785,5,123,2,helico_seed_completion_samples.csv,"[68, 70]",6,246
+8ux2_A,5,complete,ptm,lddt,0.3574106823672152,0.3536882115890847,0.3611331531453456,5,123,2,helico_seed_completion_samples.csv,"[68, 70]",6,246
+8ux2_A,5,complete,ranking_score,gdt_ts,0.11197916666666666,0.109375,0.1145833333333333,5,123,2,helico_seed_completion_samples.csv,"[68, 70]",6,246
+8ux2_A,5,complete,ranking_score,tm_score,0.4171090811662572,0.4104428166523359,0.4237753456801785,5,123,2,helico_seed_completion_samples.csv,"[68, 70]",6,246
+8ux2_A,5,complete,ranking_score,lddt,0.3574106823672152,0.3536882115890847,0.3611331531453456,5,123,2,helico_seed_completion_samples.csv,"[68, 70]",6,246
+8ux2_A,5,direct,ptm,gdt_ts,0.07395833333333329,0.0291666666666666,0.11875,5,5,2,helico_oracle_budget_samples.csv,"[99, 112]",6,246
+8ux2_A,5,direct,ptm,tm_score,0.36387665554015075,0.3314302571214727,0.3963230539588288,5,5,2,helico_oracle_budget_samples.csv,"[99, 112]",6,246
+8ux2_A,5,direct,ptm,lddt,0.3026504831493537,0.2778433772789808,0.3274575890197267,5,5,2,helico_oracle_budget_samples.csv,"[99, 112]",6,246
+8ux2_A,5,direct,ranking_score,gdt_ts,0.07395833333333329,0.0291666666666666,0.11875,5,5,2,helico_oracle_budget_samples.csv,"[99, 112]",6,246
+8ux2_A,5,direct,ranking_score,tm_score,0.36387665554015075,0.3314302571214727,0.3963230539588288,5,5,2,helico_oracle_budget_samples.csv,"[99, 112]",6,246
+8ux2_A,5,direct,ranking_score,lddt,0.3026504831493537,0.2778433772789808,0.3274575890197267,5,5,2,helico_oracle_budget_samples.csv,"[99, 112]",6,246
+8ux2_A,L5,complete,ptm,gdt_ts,0.42447916666666663,0.3020833333333333,0.546875,49,123,2,helico_seed_completion_samples.csv,"[78, 82]",6,246
+8ux2_A,L5,complete,ptm,tm_score,0.7536478457688562,0.7111084724146874,0.7961872191230249,49,123,2,helico_seed_completion_samples.csv,"[78, 82]",6,246
+8ux2_A,L5,complete,ptm,lddt,0.6457796199802841,0.6437843268949529,0.6477749130656152,49,123,2,helico_seed_completion_samples.csv,"[78, 82]",6,246
+8ux2_A,L5,complete,ranking_score,gdt_ts,0.42447916666666663,0.3020833333333333,0.546875,49,123,2,helico_seed_completion_samples.csv,"[78, 82]",6,246
+8ux2_A,L5,complete,ranking_score,tm_score,0.7536478457688562,0.7111084724146874,0.7961872191230249,49,123,2,helico_seed_completion_samples.csv,"[78, 82]",6,246
+8ux2_A,L5,complete,ranking_score,lddt,0.6457796199802841,0.6437843268949529,0.6477749130656152,49,123,2,helico_seed_completion_samples.csv,"[78, 82]",6,246
+8ux2_A,L5,direct,ptm,gdt_ts,0.4119791666666667,0.2572916666666667,0.5666666666666667,49,49,2,helico_oracle_budget_samples.csv,"[106, 117]",6,246
+8ux2_A,L5,direct,ptm,tm_score,0.7080247636693142,0.6154775790362047,0.8005719483024237,49,49,2,helico_oracle_budget_samples.csv,"[106, 117]",6,246
+8ux2_A,L5,direct,ptm,lddt,0.5730753241758837,0.5335800987964598,0.6125705495553075,49,49,2,helico_oracle_budget_samples.csv,"[106, 117]",6,246
+8ux2_A,L5,direct,ranking_score,gdt_ts,0.4119791666666667,0.2572916666666667,0.5666666666666667,49,49,2,helico_oracle_budget_samples.csv,"[106, 117]",6,246
+8ux2_A,L5,direct,ranking_score,tm_score,0.7080247636693142,0.6154775790362047,0.8005719483024237,49,49,2,helico_oracle_budget_samples.csv,"[106, 117]",6,246
+8ux2_A,L5,direct,ranking_score,lddt,0.5730753241758837,0.5335800987964598,0.6125705495553075,49,49,2,helico_oracle_budget_samples.csv,"[106, 117]",6,246
+8wrx_A,0,complete,ptm,gdt_ts,0.6308139534883721,0.6308139534883721,0.6308139534883721,0,44,1,helico_seed_completion_samples.csv,[85],4,88
+8wrx_A,0,complete,ptm,tm_score,0.7315102401497587,0.7315102401497587,0.7315102401497587,0,44,1,helico_seed_completion_samples.csv,[85],4,88
+8wrx_A,0,complete,ptm,lddt,0.6679716405209413,0.6679716405209413,0.6679716405209413,0,44,1,helico_seed_completion_samples.csv,[85],4,88
+8wrx_A,0,complete,ranking_score,gdt_ts,0.6366279069767442,0.6366279069767442,0.6366279069767442,0,44,1,helico_seed_completion_samples.csv,[86],4,88
+8wrx_A,0,complete,ranking_score,tm_score,0.7376766992478263,0.7376766992478263,0.7376766992478263,0,44,1,helico_seed_completion_samples.csv,[86],4,88
+8wrx_A,0,complete,ranking_score,lddt,0.6834070223471955,0.6834070223471955,0.6834070223471955,0,44,1,helico_seed_completion_samples.csv,[86],4,88
+8wrx_A,0,direct,ptm,gdt_ts,0.4767441860465116,0.4767441860465116,0.4767441860465116,0,0,1,helico_oracle_budget_samples.csv,[157],4,88
+8wrx_A,0,direct,ptm,tm_score,0.6394327797791782,0.6394327797791782,0.6394327797791782,0,0,1,helico_oracle_budget_samples.csv,[157],4,88
+8wrx_A,0,direct,ptm,lddt,0.6408030560899808,0.6408030560899808,0.6408030560899808,0,0,1,helico_oracle_budget_samples.csv,[157],4,88
+8wrx_A,0,direct,ranking_score,gdt_ts,0.622093023255814,0.622093023255814,0.622093023255814,0,0,1,helico_oracle_budget_samples.csv,[158],4,88
+8wrx_A,0,direct,ranking_score,tm_score,0.7013023799299334,0.7013023799299334,0.7013023799299334,0,0,1,helico_oracle_budget_samples.csv,[158],4,88
+8wrx_A,0,direct,ranking_score,lddt,0.6462164237087464,0.6462164237087464,0.6462164237087464,0,0,1,helico_oracle_budget_samples.csv,[158],4,88
+8wrx_A,10,complete,ptm,gdt_ts,0.7674418604651163,0.6976744186046512,0.8372093023255813,10,44,2,helico_seed_completion_samples.csv,"[94, 98]",4,88
+8wrx_A,10,complete,ptm,tm_score,0.8809450849954836,0.8583755415617059,0.9035146284292612,10,44,2,helico_seed_completion_samples.csv,"[94, 98]",4,88
+8wrx_A,10,complete,ptm,lddt,0.8048169953381679,0.7989307384934142,0.8107032521829215,10,44,2,helico_seed_completion_samples.csv,"[94, 98]",4,88
+8wrx_A,10,complete,ranking_score,gdt_ts,0.7281976744186047,0.6976744186046512,0.7587209302325582,10,44,2,helico_seed_completion_samples.csv,"[95, 98]",4,88
+8wrx_A,10,complete,ranking_score,tm_score,0.8578792595196607,0.8573829774776154,0.8583755415617059,10,44,2,helico_seed_completion_samples.csv,"[95, 98]",4,88
+8wrx_A,10,complete,ranking_score,lddt,0.7951614991860294,0.7913922598786445,0.7989307384934142,10,44,2,helico_seed_completion_samples.csv,"[95, 98]",4,88
+8wrx_A,10,direct,ptm,gdt_ts,0.6758720930232558,0.6424418604651163,0.7093023255813953,10,10,2,helico_oracle_budget_samples.csv,"[136, 149]",4,88
+8wrx_A,10,direct,ptm,tm_score,0.8046181405106314,0.793818758167607,0.8154175228536557,10,10,2,helico_oracle_budget_samples.csv,"[136, 149]",4,88
+8wrx_A,10,direct,ptm,lddt,0.7482344698090869,0.7310335577919196,0.7654353818262543,10,10,2,helico_oracle_budget_samples.csv,"[136, 149]",4,88
+8wrx_A,10,direct,ranking_score,gdt_ts,0.6758720930232558,0.6424418604651163,0.7093023255813953,10,10,2,helico_oracle_budget_samples.csv,"[136, 149]",4,88
+8wrx_A,10,direct,ranking_score,tm_score,0.8046181405106314,0.793818758167607,0.8154175228536557,10,10,2,helico_oracle_budget_samples.csv,"[136, 149]",4,88
+8wrx_A,10,direct,ranking_score,lddt,0.7482344698090869,0.7310335577919196,0.7654353818262543,10,10,2,helico_oracle_budget_samples.csv,"[136, 149]",4,88
+8wrx_A,5,complete,ptm,gdt_ts,0.7979651162790697,0.7645348837209303,0.8313953488372093,5,44,2,helico_seed_completion_samples.csv,"[88, 91]",4,88
+8wrx_A,5,complete,ptm,tm_score,0.8799216706153195,0.8642846881023364,0.8955586531283026,5,44,2,helico_seed_completion_samples.csv,"[88, 91]",4,88
+8wrx_A,5,complete,ptm,lddt,0.8000696037442652,0.7869570445463964,0.8131821629421341,5,44,2,helico_seed_completion_samples.csv,"[88, 91]",4,88
+8wrx_A,5,complete,ranking_score,gdt_ts,0.808139534883721,0.805232558139535,0.811046511627907,5,44,2,helico_seed_completion_samples.csv,"[89, 92]",4,88
+8wrx_A,5,complete,ranking_score,tm_score,0.8640094057850138,0.8584586486674664,0.8695601629025612,5,44,2,helico_seed_completion_samples.csv,"[89, 92]",4,88
+8wrx_A,5,complete,ranking_score,lddt,0.7981052057125944,0.7970692430072518,0.7991411684179369,5,44,2,helico_seed_completion_samples.csv,"[89, 92]",4,88
+8wrx_A,5,direct,ptm,gdt_ts,0.8023255813953488,0.7441860465116279,0.8604651162790697,5,5,2,helico_oracle_budget_samples.csv,"[134, 146]",4,88
+8wrx_A,5,direct,ptm,tm_score,0.8522047376378635,0.8049621571172046,0.8994473181585224,5,5,2,helico_oracle_budget_samples.csv,"[134, 146]",4,88
+8wrx_A,5,direct,ptm,lddt,0.7666667437472251,0.7137991157318336,0.8195343717626166,5,5,2,helico_oracle_budget_samples.csv,"[134, 146]",4,88
+8wrx_A,5,direct,ranking_score,gdt_ts,0.8023255813953488,0.7441860465116279,0.8604651162790697,5,5,2,helico_oracle_budget_samples.csv,"[134, 146]",4,88
+8wrx_A,5,direct,ranking_score,tm_score,0.8522047376378635,0.8049621571172046,0.8994473181585224,5,5,2,helico_oracle_budget_samples.csv,"[134, 146]",4,88
+8wrx_A,5,direct,ranking_score,lddt,0.7666667437472251,0.7137991157318336,0.8195343717626166,5,5,2,helico_oracle_budget_samples.csv,"[134, 146]",4,88
+8wrx_A,L5,complete,ptm,gdt_ts,0.7936046511627907,0.7441860465116279,0.8430232558139534,17,44,2,helico_seed_completion_samples.csv,"[100, 103]",4,88
+8wrx_A,L5,complete,ptm,tm_score,0.8763664373305169,0.8526051391377792,0.9001277355232545,17,44,2,helico_seed_completion_samples.csv,"[100, 103]",4,88
+8wrx_A,L5,complete,ptm,lddt,0.7955812028266982,0.7866772421192837,0.8044851635341128,17,44,2,helico_seed_completion_samples.csv,"[100, 103]",4,88
+8wrx_A,L5,complete,ranking_score,gdt_ts,0.7601744186046512,0.7558139534883721,0.7645348837209303,17,44,2,helico_seed_completion_samples.csv,"[101, 104]",4,88
+8wrx_A,L5,complete,ranking_score,tm_score,0.854463569758828,0.8534222081704016,0.8555049313472544,17,44,2,helico_seed_completion_samples.csv,"[101, 104]",4,88
+8wrx_A,L5,complete,ranking_score,lddt,0.7840653673967738,0.7839324034334765,0.7841983313600711,17,44,2,helico_seed_completion_samples.csv,"[101, 104]",4,88
+8wrx_A,L5,direct,ptm,gdt_ts,0.7194767441860465,0.5348837209302325,0.9040697674418604,17,17,2,helico_oracle_budget_samples.csv,"[139, 152]",4,88
+8wrx_A,L5,direct,ptm,tm_score,0.7951055650479357,0.6752998186451719,0.9149113114506996,17,17,2,helico_oracle_budget_samples.csv,"[139, 152]",4,88
+8wrx_A,L5,direct,ptm,lddt,0.7423089018795324,0.6414990935326328,0.8431187102264319,17,17,2,helico_oracle_budget_samples.csv,"[139, 152]",4,88
+8wrx_A,L5,direct,ranking_score,gdt_ts,0.757267441860465,0.6104651162790697,0.9040697674418604,17,17,2,helico_oracle_budget_samples.csv,"[140, 152]",4,88
+8wrx_A,L5,direct,ranking_score,tm_score,0.8084616431208734,0.7020119747910473,0.9149113114506996,17,17,2,helico_oracle_budget_samples.csv,"[140, 152]",4,88
+8wrx_A,L5,direct,ranking_score,lddt,0.7555682995412165,0.6680178888560012,0.8431187102264319,17,17,2,helico_oracle_budget_samples.csv,"[140, 152]",4,88

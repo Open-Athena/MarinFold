@@ -57,7 +57,7 @@ def archive_structured() -> bytes:
 def archive_oracle_budget(stems: list[str], map_names: list[str], phase: str = "oracle_budget") -> bytes:
     """Archive every frozen budget map and all three diffusion structures."""
     volume.reload()
-    if phase not in ("oracle_budget", "oracle_l2"):
+    if phase not in ("oracle_budget", "oracle_l2", "seed_completion"):
         raise ValueError(phase)
     root = Path("/results") / f"exp325-exp277-step266344-{phase}-v1"
     if {path.name for path in root.iterdir()} != set(stems):
@@ -78,12 +78,12 @@ def archive_oracle_budget(stems: list[str], map_names: list[str], phase: str = "
 
 
 @app.local_entrypoint()
-def run(structured: bool = False, oracle_budget: bool = False, oracle_l2: bool = False) -> None:
+def run(structured: bool = False, oracle_budget: bool = False, oracle_l2: bool = False, seed_completion: bool = False) -> None:
     """Save the public raw-artifact payload without loading a predictor."""
-    if sum((structured, oracle_budget, oracle_l2)) > 1:
+    if sum((structured, oracle_budget, oracle_l2, seed_completion)) > 1:
         raise ValueError("Choose exactly one archive phase")
-    if oracle_budget or oracle_l2:
-        phase = "oracle_l2" if oracle_l2 else "oracle_budget"
+    if oracle_budget or oracle_l2 or seed_completion:
+        phase = "seed_completion" if seed_completion else ("oracle_l2" if oracle_l2 else "oracle_budget")
         root = Path(__file__).resolve().parent.parent
         protocol = json.loads((root / f"data/{phase}_protocol.json").read_text())
         destination = root / f"scratch/{phase}_coordinates.tar.gz"

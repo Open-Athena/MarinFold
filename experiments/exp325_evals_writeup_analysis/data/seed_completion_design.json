@@ -1,0 +1,29 @@
+{
+  "cohort": "Five natural FoldBench eval-test proteins with MSA depth <10",
+  "checkpoint": "contacts-v1-exp277-m2-p06-full-epoch-1.5B-step-266344",
+  "raw_training_tokens": 248583762834,
+  "budgets": [
+    "0",
+    "5",
+    "10",
+    "L/5"
+  ],
+  "n_targets": 5,
+  "n_cases": 35,
+  "rollouts_per_case": 100,
+  "seed_subsets": 2,
+  "generation": "100 randomized sequence serializations; append the same known contact pairs in random order/orientation; temperature=1, top_p=.95, top_k=-1, per-rollout seed=0..99",
+  "continuation": "Generate full continuations (up to 6L+128 tokens); only normally terminated rollouts vote. Each new pair votes at most once per rollout.",
+  "completion": "Keep all n seeds, add floor(L/2)-n highest-vote distinct pairs. Require separation>=6 in prompt and mapped Helico indices. Break ties by sequence (i,j). Never fill with zero-vote pairs.",
+  "truth_use": "Ground truth supplies the seed pairs and evaluation labels only. Completion selection receives no truth labels.",
+  "direct": "Reuse exact random subsets and Helico predictions from oracle_budget; n=0 has one map, other budgets two nested random subsets",
+  "helico": "Same MSA-free step6000 model, seed42, six recycles, three diffusion samples/map; primary ranking_score, pTM sensitivity",
+  "length": "L_exp245 frozen sequence length; completion count includes seed contacts",
+  "input_sha256": {
+    "8ii8_A": "fc5a51ff485f6938216a407e6dc49a973ade96661103ffbdb6c2197de8a6701e",
+    "8qoh_A": "f8258672ed720956465c6b2a0129c5570b787c02e7756758eb0411447a929887",
+    "8wrx_A": "ade6145a667dd9c4dbd58e43c717be3a94ee3be3481982c564547952ac08b9cd",
+    "8oxk_A": "181dff326df85595c9180759a1b70257de2be1acc5c09b696c4a41d303a984ed",
+    "8ux2_A": "6ec3683979a1295c395eb7c3d98ded2c72ff22c44fc505697b6d208a596d0ece"
+  }
+}

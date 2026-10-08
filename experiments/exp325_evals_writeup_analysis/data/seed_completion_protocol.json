@@ -1,0 +1,61 @@
+{
+  "cohort": "Five natural FoldBench eval-test proteins with MSA depth <10",
+  "checkpoint": "contacts-v1-exp277-m2-p06-full-epoch-1.5B-step-266344",
+  "raw_training_tokens": 248583762834,
+  "budgets": [
+    "0",
+    "5",
+    "10",
+    "L/5"
+  ],
+  "n_targets": 5,
+  "n_cases": 35,
+  "rollouts_per_case": 100,
+  "seed_subsets": 2,
+  "generation": "100 randomized sequence serializations; append the same known contact pairs in random order/orientation; temperature=1, top_p=.95, top_k=-1, per-rollout seed=0..99",
+  "continuation": "Generate full continuations (up to 6L+128 tokens); only normally terminated rollouts vote. Each new pair votes at most once per rollout.",
+  "completion": "Keep all n seeds, add floor(L/2)-n highest-vote distinct pairs. Require separation>=6 in prompt and mapped Helico indices. Break ties by sequence (i,j). Never fill with zero-vote pairs.",
+  "truth_use": "Ground truth supplies the seed pairs and evaluation labels only. Completion selection receives no truth labels.",
+  "direct": "Reuse exact random subsets and Helico predictions from oracle_budget; n=0 has one map, other budgets two nested random subsets",
+  "helico": "Same MSA-free step6000 model, seed42, six recycles, three diffusion samples/map; primary ranking_score, pTM sensitivity",
+  "length": "L_exp245 frozen sequence length; completion count includes seed contacts",
+  "input_sha256": {
+    "8ii8_A": "fc5a51ff485f6938216a407e6dc49a973ade96661103ffbdb6c2197de8a6701e",
+    "8qoh_A": "f8258672ed720956465c6b2a0129c5570b787c02e7756758eb0411447a929887",
+    "8wrx_A": "ade6145a667dd9c4dbd58e43c717be3a94ee3be3481982c564547952ac08b9cd",
+    "8oxk_A": "181dff326df85595c9180759a1b70257de2be1acc5c09b696c4a41d303a984ed",
+    "8ux2_A": "6ec3683979a1295c395eb7c3d98ded2c72ff22c44fc505697b6d208a596d0ece"
+  },
+  "phase": "seed_completion",
+  "files_sha256": {
+    "8ii8_A": {
+      "maps_sha256": "93e2ccd43914ce18a77dc6e4acc62261bb979d3e4a5c12900c73b9649a73f9b2",
+      "gt_sha256": "9209e1e9fbfe14b01e7d4f8bf6482d2812d377d7d76bae21d349a393431ba93b"
+    },
+    "8qoh_A": {
+      "maps_sha256": "25c762d375bd26e15694148ebef6de127c4206622b2143798c794f1190690e08",
+      "gt_sha256": "e660966e2fcde7cb0451ffbaf9f29d105cc09ec419d1c145be789c9803874697"
+    },
+    "8wrx_A": {
+      "maps_sha256": "f3e95844f0e3b869853fbec9f8eafd535535541f62bedc039c34cb3f475a5be3",
+      "gt_sha256": "47f16df440a10209e8cff433f8cbb0826390abf6d1b84edaa10d9a0d27dd71f0"
+    },
+    "8oxk_A": {
+      "maps_sha256": "6b07b5362492cb8942662772206c986995cb6f64fef5fc7801aac460d361b05d",
+      "gt_sha256": "9fcdcea6ca750fac29139227ba6b94bc2919e98bda76d3f0d5d20c1491be8a6b"
+    },
+    "8ux2_A": {
+      "maps_sha256": "e95384e6208ffce35a90c6478c55072eda29010485894fdbb1704be3ebe6f5a1",
+      "gt_sha256": "0fb548b86b03513f11e3d27da6c6f3030a0d5472f083cd258e5dc05f076d3f0d"
+    }
+  },
+  "map_keys": [
+    "complete_0-0",
+    "complete_5-0",
+    "complete_5-1",
+    "complete_10-0",
+    "complete_10-1",
+    "complete_L5-0",
+    "complete_L5-1"
+  ]
+}

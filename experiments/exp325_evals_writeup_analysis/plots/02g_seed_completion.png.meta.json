@@ -1,0 +1,5 @@
+{
+  "script": "render.py",
+  "args": [],
+  "caption": "Same five natural eval-test proteins with MSA depth <10. Both arms receive identical random subsets of 0, 5, 10 or floor(L/5) ground-truth contacts. Direct: Helico sees only those pairs. Completion: the fixed 248B-token MarinFold model receives those pairs in its prompt, then 100 resampled rollouts vote on additions; keep every seed and fill to floor(L/2) total contacts. Unselected pairs stay unknown. Helico uses no MSA, six recycles and three diffusion samples/map. Primary selection uses ranking_score, matching the sparse-oracle comparison; menus also expose pTM. Average two subsets within protein (one map at zero seeds). Hollow points show subsets; cohort intervals bootstrap five proteins. Menus expose all proteins, GDT-TS, TM-score and lDDT. This is an exploratory oracle-seeded diagnostic, not sequence-only prediction. See SEED_COMPLETION.md."
+}

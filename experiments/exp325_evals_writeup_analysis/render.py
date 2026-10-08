@@ -25,6 +25,7 @@ from poster_style import save_poster_vectors
 from render_af3_sampling import main as render_af3_sampling
 from render_af3_context import main as render_af3_context
 from render_oracle_budget import main as render_oracle_budget
+from render_seed_completion import main as render_seed_completion
 from theme import CAPTIONS, COHORTS, FONT, GRID, INK, METHODS, METRICS, ORDER, PALETTE, PAPER, TIERS, TITLES
 
 HERE = Path(__file__).resolve().parent
@@ -510,6 +511,12 @@ def preview(names: list[str]) -> None:
                        'Contact extraction: <a href="../data/structured_decoy_maps.csv">seeds, map/structure hashes and contact counts</a>. ')
         elif name == "03_method":
             lineage = 'Training inventory: <a href="../data/training_sources.csv">training_sources.csv</a>. '
+        elif name in ("02g_seed_completion", "02h_seed_contact_precision"):
+            lineage = ('Data: <a href="../data/seed_completion_per_protein.csv">paired protein scores and source rows</a>; '
+                       '<a href="../data/seed_completion_selected.csv">selected diffusion samples</a>; '
+                       '<a href="../data/seed_completion_pairs.csv">exact seed and predicted contact pairs</a>; '
+                       '<a href="../data/seed_completion_deltas.csv">paired differences and intervals</a>; '
+                       '<a href="../SEED_COMPLETION.md">protocol and results</a>. ')
         elif name in ("02e_oracle_budget", "02f_oracle_budget_context"):
             lineage = ('Data: <a href="../data/oracle_budget_summary.csv">five-protein means and intervals</a>; '
                        '<a href="../data/oracle_budget_per_protein.csv">per-protein values and original sample rows</a>; '
@@ -536,6 +543,8 @@ def preview(names: list[str]) -> None:
             manifest = "pl5_analysis.json"
         if name in ("02e_oracle_budget", "02f_oracle_budget_context"):
             manifest = "oracle_budget_analysis.json"
+        if name in ("02g_seed_completion", "02h_seed_contact_precision"):
+            manifest = "seed_completion_analysis.json"
         sections.append(f'<section id="section-{name}"><p class="number">FIGURE {name[:2]}</p>'
                         f'<h2>{html.escape(TITLES[name])}</h2><div class="frame"><div id="{name}" class="chart"></div></div>'
                         f'<p class="caption">{html.escape(CAPTIONS[name])}</p>'
@@ -599,6 +608,11 @@ def main() -> None:
     export_plotly(sampling_figure(pl5_summary, pl5_rows, "06_sampling_pl5", "p_at_l5", poster_dir=poster_dir), "06_sampling_pl5")
     export_plotly(sampling_figure(pl5_summary, pl5_rows, "06_sampling_pl5", "p_at_l5_long", poster_dir=poster_dir), "06_sampling_pl5_long")
     names = list(TITLES)
+    if (DATA / "seed_completion_analysis.json").exists():
+        render_seed_completion(poster_dir=poster_dir)
+    else:
+        names.remove("02g_seed_completion")
+        names.remove("02h_seed_contact_precision")
     if (DATA / "oracle_budget_analysis.json").exists():
         render_oracle_budget(poster_dir=poster_dir)
     else:

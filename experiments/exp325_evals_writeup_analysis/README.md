@@ -86,6 +86,13 @@ Mean GDT-TS is **0.906 / 0.841 / 0.853 / 0.839** across the four depth tiers,
 **0.843** overall. This ground-truth diagnostic has different contact/inference
 budgets from MarinFold.
 
+[Seeded contact completion](SEED_COMPLETION.md) tests the same five low-depth
+proteins with 0, 5, 10 and L/5 oracle seed contacts. MarinFold retains the seeds
+and fills to L/2 with 100-rollout consensus. Mean GDT-TS rises from **0.362 to
+0.469 at 10 seeds** (three improve, two worsen), and **0.622 to 0.747 at L/5**
+(all five improve). This exploratory follow-up includes 3,500 rollouts and
+105 newly folded structures, with exact direct-arm map/prediction reuse.
+
 The separate confidence study retains the **full ground-truth three-state map**,
 including true non-contacts. Figure 02b compares it with all 100
 seeded ESMFold2 maps for each of the five low-depth natural proteins. Full

@@ -1,0 +1,22 @@
+{
+  "marinfold_app": "https://modal.com/apps/open-athena/main/ap-9uwfstRpUzZ3jwh1xnRrT4",
+  "helico_app": "https://modal.com/apps/open-athena/main/ap-BZMGhNo1YUzMyEBLw3gPI6",
+  "region": "us-east",
+  "n_rollouts": 3500,
+  "n_completed_maps": 35,
+  "n_new_structures": 105,
+  "marinfold_inference_seconds": 149.24789102900002,
+  "helico_inference_seconds": 354.1222167169999,
+  "code_and_model_identity_sha256": {
+    "generation/seed_completion_worker.py": "4b8b7c69f49ac54988bbf2615ffe35eb0caa6a2af47a100bf0afb607e0893d4f",
+    "generation/prepare_seed_completion.py": "2f5e9d0746cfd20f93bdd739ca21704e9713ab49e270b91915f0ef18fb68a550",
+    "generation/run_seed_completion.py": "3ca7099cbbf07ea8263ad165016253ecb73a0d8f8948ee7f1eb68209136b6831",
+    "generation/seed_completion.py": "f8678915b700fc779331a68b748ecdd4bb3945fbeff7e2ca46e87357adc163fd",
+    "generation/audit_seed_completion.py": "80c79b327ffa8a4a793ba57742890ae5e8c94196ae6b182ff3c589bc91af55c2",
+    "generation/test_seed_completion.py": "733820d3609828cebd4b487bf4077bd296b0e9ae83317b160131ce9e6ae7dffc",
+    "generation/run_helico.py": "c3c0af8816cc02b8fbb600789b7515433026d45e10fc98f1a4844504ff2adf1c",
+    "generation/score_rollout_worker.py": "ecdf07f92e9e0194aa3a57285e7c8dcad37fe2eeaa6b74839e238dfbf2a29efb",
+    "generation/checkpoint_manifest.json": "18935bcec81aeb7430c491fcbdb0696d6275b987ea2ed6d02f53719f61358b17"
+  },
+  "note": "Pure measured inference sums; model loading, compilation, scoring, volume I/O and startup are additional. n=0 uses a fresh rollout pool at total L/2."
+}

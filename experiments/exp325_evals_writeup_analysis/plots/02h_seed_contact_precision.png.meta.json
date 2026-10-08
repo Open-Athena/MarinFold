@@ -1,0 +1,5 @@
+{
+  "script": "render.py",
+  "args": [],
+  "caption": "Precision of MarinFold additions alone versus the complete L/2 contact set including guaranteed-correct seeds. Pairs are selected solely by votes from normally terminated rollouts, with valid residue mappings and separation >=6; ties break by sequence indices. Ground truth is consulted for scoring only after selecting additions. Two random subsets are averaged per protein, then proteins receive equal weight. n=0 has one map. Each point traces to seed_completion_contact_precision.csv; exact selected pairs, votes and correctness labels are in seed_completion_pairs.csv."
+}
