@@ -74,7 +74,7 @@ done
 if [ -z "$PY" ]; then echo "[exp335] FATAL: no Python imports torch"; exit 3; fi
 echo "[exp335] python=$PY torch=$($PY -c 'import torch; print(torch.__version__)')"
 
-"$PY" -m pip install --quiet --no-cache-dir \
+"$PY" -m pip install --quiet --no-cache-dir --break-system-packages \
   "cuequivariance-torch=={CUEQUIVARIANCE_VERSION}" \
   "cuequivariance-ops-torch-cu12=={CUEQUIVARIANCE_VERSION}" \
   {requirements}
@@ -120,6 +120,7 @@ def build_request(
         processes_per_task=1,
         max_retries_failure=2,
         max_retries_preemption=100,
+        max_task_failures=2,
     )
 
 
