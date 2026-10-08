@@ -45,3 +45,8 @@ being distributed across 96 independent CoreWeave H100 jobs with resumable
 32-candidate parts. Workers reuse the model and target tokenization while
 preserving the pilot's same-seed-per-candidate protocol. Expected ideal wall
 time is about 4.5 inference hours, plus startup and scheduling.
+
+Both pre-launch smokes passed, including the 223-residue maximum-length target.
+All 180,212 candidates are retained. A systematic extra N-terminal lysine in
+1,000 `1iib` decoys is uniquely mapped and explicitly removed rather than
+silently shifting indices or excluding candidates.

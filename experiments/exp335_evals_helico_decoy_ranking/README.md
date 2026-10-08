@@ -143,6 +143,23 @@ working outputs live under
 will be consolidated into the public `open-athena/MarinFold` Hugging Face
 bucket after completion.
 
+Full-set preparation retains all 180,212 candidates. Exactly 1,000 decoys from
+target `1iib` contain one additional N-terminal lysine: in every case the full
+102-residue target sequence occurs uniquely and contiguously at candidate
+offset one. The preparation code therefore projects those candidates onto the
+target indices, drops the extra residue and any incident contacts, and records
+the mapping per candidate. Any substitution, internal indel, ambiguous match,
+or missing C-alpha remains a hard error. All other 179,212 candidates use an
+identity sequence map, and all 225 pilot maps and coordinates match the full
+payloads exactly.
+
+Two 32-candidate CoreWeave smokes passed before the full release. The
+pilot-overlap `1aaj` part reproduced pilot pTM within `5.8e-4`; the 223-residue
+maximum-length `1ugh` part completed without OOM at 7.36 seconds/candidate mean
+inference. The production jobs are the batch-priority Iris roots
+`/bizon/exp335-helico-full-s000-of-096-v1` through
+`/bizon/exp335-helico-full-s095-of-096-v1`.
+
 ## Conclusion
 
 Interim pilot conclusion: candidate-derived contact maps contain enough signal
