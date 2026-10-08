@@ -23,15 +23,21 @@ def write_csv(path: Path, rows: list[dict]) -> None:
 
 
 def load_expected_parts(
-    input_dir: Path, tasks: list[dict]
-) -> list[tuple[dict, list[str]]]:
+    input_dir: Path, tasks: list[dict], *, allow_remote_only_inputs: bool
+) -> list[tuple[dict, list[str] | None]]:
     """Load expected candidate IDs while parsing each target payload only once."""
     candidate_ids_by_path: dict[str, list[str]] = {}
     expected = []
     for task in tasks:
         relative_path = task["relative_path"]
+        input_path = input_dir / relative_path
+        if not input_path.is_file():
+            if not allow_remote_only_inputs:
+                raise FileNotFoundError(input_path)
+            expected.append((task, None))
+            continue
         if relative_path not in candidate_ids_by_path:
-            with gzip.open(input_dir / relative_path, "rt") as stream:
+            with gzip.open(input_path, "rt") as stream:
                 payload = json.load(stream)
             candidate_ids_by_path[relative_path] = [
                 candidate["decoy_id"] for candidate in payload["candidates"]
@@ -46,7 +52,7 @@ def load_expected_parts(
 
 
 def fetch_part(
-    fs, task: dict, candidate_ids: list[str]
+    fs, task: dict, candidate_ids: list[str] | None
 ) -> tuple[list[dict], list[dict]]:
     """Fetch and fully validate a metrics/timing object pair."""
     metrics_uri, timing_uri = output_uris(task)
@@ -56,6 +62,13 @@ def fetch_part(
     metrics_sha256 = hashlib.sha256(compressed).hexdigest()
     payload = json.loads(gzip.decompress(compressed))
     timing = json.loads(fs.cat_file(timing_path))
+    observed_candidate_ids = payload.get("candidate_ids")
+    if not isinstance(observed_candidate_ids, list):
+        raise ValueError(f"{metrics_uri}: missing candidate IDs")
+    if candidate_ids is None:
+        candidate_ids = observed_candidate_ids
+    if len(candidate_ids) != task["end"] - task["start"]:
+        raise ValueError(f"{metrics_uri}: candidate count mismatch")
     expected = {
         "run_fingerprint": RUN_FINGERPRINT,
         "target_input_sha256": task["input_sha256"],
@@ -84,6 +97,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--num-shards", type=int, default=96)
     parser.add_argument("--workers", type=int, default=32)
     parser.add_argument("--kubeconfig", type=Path, default=DEFAULT_KUBECONFIG)
+    parser.add_argument(
+        "--allow-remote-only-inputs",
+        action="store_true",
+        help="derive candidate IDs from fingerprinted result objects when local target payloads are absent",
+    )
     return parser.parse_args()
 
 
@@ -94,7 +112,11 @@ def main() -> None:
     tasks = [
         task for shard in assign_tasks(manifest, args.num_shards) for task in shard
     ]
-    expected = load_expected_parts(args.input_dir, tasks)
+    expected = load_expected_parts(
+        args.input_dir,
+        tasks,
+        allow_remote_only_inputs=args.allow_remote_only_inputs,
+    )
     fs = coreweave_s3(args.kubeconfig)
     result_parts = []
     timing_parts = []

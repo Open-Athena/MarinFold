@@ -184,8 +184,8 @@ H100-hours and 320.92 H100-hours including attributed model, target, and output
 overheads; mean inference time was 6.28 seconds/candidate. At the planning rate
 of $3.95/H100-hour, the accounted compute is $1,267.64. The complete
 180,212-row timing record is committed as [`data/timings.csv`](data/timings.csv);
-the earlier Modal pilot timings remain in
-[`data/pilot_timings.csv`](data/pilot_timings.csv).
+the matching 225-candidate pilot subset from the corrected CoreWeave rerun is
+in [`data/pilot_timings.csv`](data/pilot_timings.csv).
 
 The immutable run fingerprint is
 `c1452eb91e1cfc03aa445d14c88084defda53b7c20593f39170152ab72efa09d`.

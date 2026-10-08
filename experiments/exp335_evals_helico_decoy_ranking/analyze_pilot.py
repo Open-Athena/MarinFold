@@ -2,6 +2,7 @@
 
 import csv
 import json
+import math
 import random
 import shutil
 import statistics
@@ -231,9 +232,23 @@ def main() -> None:
     for source, destination in (
         (RESULTS / "candidate_metrics_full.csv", DATA / "pilot_candidate_metrics.csv"),
         (RESULTS / "sample_metrics_full.csv", DATA / "pilot_sample_metrics.csv"),
-        (RESULTS / "timings_full.csv", DATA / "pilot_timings.csv"),
     ):
         write_csv(destination, load_csv(source))
+    timing_rows = load_csv(RESULTS / "timings_full.csv")
+    if all(
+        math.isclose(
+            float(row["total_seconds"]),
+            float(row["elapsed_seconds"]) + float(row["model_load_seconds"]),
+            rel_tol=0.0,
+            abs_tol=1e-9,
+        )
+        for row in timing_rows
+    ):
+        raise ValueError(
+            "pilot timing rows use the legacy elapsed-plus-load total; rerun the "
+            "corrected predictor wrapper before publishing them"
+        )
+    write_csv(DATA / "pilot_timings.csv", timing_rows)
     shutil.copyfile(
         RESULTS / "run_manifest_full.json", DATA / "pilot_run_manifest.json"
     )

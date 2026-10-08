@@ -1,13 +1,88 @@
 """Publish consolidated exp335 results to the public MarinFold HF bucket."""
 
 import argparse
+import hashlib
 import json
 import subprocess
+import sys
 from pathlib import Path
+
+from stage_full_cw import DEFAULT_KUBECONFIG, INPUT_PREFIX, coreweave_s3
 
 DESTINATION = (
     "hf://buckets/open-athena/MarinFold/data/evals/exp335_helico_decoy_ranking/full-v1"
 )
+HERE = Path(__file__).resolve().parent
+REFERENCE_CSV_SHA256 = (
+    "ddb3b91c27561212fa9152df4a4a436b9d01990cfe801569d7adc7f925fb75c9"
+)
+REFERENCE_CSV_REMOTE = f"{INPUT_PREFIX}/reference/rosetta_gapseq.csv"
+
+
+def task_path(path: Path) -> Path:
+    """Resolve a CLI path relative to the experiment directory."""
+    return path if path.is_absolute() else HERE / path
+
+
+def download_verified(fs, remote: str, destination: Path, expected: str) -> None:
+    """Download one rebuild input and verify its SHA-256."""
+    payload = fs.cat_file(remote)
+    observed = hashlib.sha256(payload).hexdigest()
+    if observed != expected:
+        raise ValueError(f"s3://{remote}: digest {observed} != {expected}")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_suffix(destination.suffix + ".tmp")
+    temporary.write_bytes(payload)
+    temporary.replace(destination)
+
+
+def rebuild_public_artifacts(args: argparse.Namespace) -> None:
+    """Rebuild the consolidated tables and figures from durable S3 results."""
+    fs = coreweave_s3(args.kubeconfig)
+    manifest_remote = f"{INPUT_PREFIX}/manifest.json"
+    manifest_digest = fs.cat_file(f"{manifest_remote}.sha256").decode().strip()
+    download_verified(
+        fs,
+        manifest_remote,
+        args.input_dir / "manifest.json",
+        manifest_digest,
+    )
+    download_verified(
+        fs,
+        REFERENCE_CSV_REMOTE,
+        args.af2rank_csv,
+        REFERENCE_CSV_SHA256,
+    )
+    commands = [
+        [
+            sys.executable,
+            str(HERE / "fetch_full_cw.py"),
+            "--input-dir",
+            str(args.input_dir),
+            "--output-dir",
+            str(args.results_dir),
+            "--num-shards",
+            str(args.num_shards),
+            "--kubeconfig",
+            str(args.kubeconfig),
+            "--allow-remote-only-inputs",
+        ],
+        [
+            sys.executable,
+            str(HERE / "analyze_full.py"),
+            "--results-dir",
+            str(args.results_dir),
+            "--af2rank-csv",
+            str(args.af2rank_csv),
+            "--output-dir",
+            str(args.data_dir),
+        ],
+        [sys.executable, str(HERE / "plot_full.py")],
+        [sys.executable, str(HERE / "build_summary.py")],
+    ]
+    for command in commands:
+        print(" ".join(command), flush=True)
+        subprocess.run(command, cwd=HERE, check=True)
 
 
 def parse_args() -> argparse.Namespace:
@@ -18,6 +93,19 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--data-dir", type=Path, default=Path("data"))
     parser.add_argument("--plots-dir", type=Path, default=Path("plots"))
+    parser.add_argument("--input-dir", type=Path, default=Path("scratch/full_inputs"))
+    parser.add_argument(
+        "--af2rank-csv",
+        type=Path,
+        default=Path("scratch/reference/rosetta_gapseq.csv"),
+    )
+    parser.add_argument("--kubeconfig", type=Path, default=DEFAULT_KUBECONFIG)
+    parser.add_argument("--num-shards", type=int, default=96)
+    parser.add_argument(
+        "--skip-rebuild",
+        action="store_true",
+        help="upload already-rebuilt artifacts without reading the durable S3 run",
+    )
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
 
@@ -31,6 +119,14 @@ def main() -> None:
     orgs = whoami.get("orgs", "")
     if "open-athena" not in orgs:
         raise PermissionError("active Hugging Face token lacks open-athena access")
+    args.results_dir = task_path(args.results_dir)
+    args.data_dir = task_path(args.data_dir)
+    args.plots_dir = task_path(args.plots_dir)
+    args.input_dir = task_path(args.input_dir)
+    args.af2rank_csv = task_path(args.af2rank_csv)
+    args.kubeconfig = task_path(args.kubeconfig)
+    if not args.skip_rebuild:
+        rebuild_public_artifacts(args)
     paths = [
         args.results_dir / "candidate_metrics.csv",
         args.results_dir / "sample_metrics.csv",
