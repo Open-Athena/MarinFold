@@ -25,7 +25,7 @@ EXPECTED_AF2RANK_SHA256 = (
 )
 EXPECTED_TARGETS = 133
 EXPECTED_DECOYS = 180_079
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 _ROTAMER_LIBRARY = None
 
@@ -61,6 +61,73 @@ def deterministic_gzip_write(path: Path, payload: bytes) -> None:
     ):
         stream.write(payload)
     temporary.replace(path)
+
+
+def project_candidate_to_target(
+    target_sequence: str,
+    candidate_sequence: str,
+    present_pairs: list[list[int]],
+    candidate_ca: list[list[float]],
+) -> tuple[list[list[int]], list[list[float]], dict]:
+    """Project a terminally extended candidate onto exact target indices.
+
+    The Rosetta archive contains at least one decoy with an extra resolved
+    terminal residue. We retain it only when the complete target sequence occurs
+    exactly once as a contiguous candidate substring. This gives a unique index
+    map without inventing coordinates or silently accepting substitutions.
+    """
+    if len(candidate_ca) != len(candidate_sequence):
+        raise ValueError(
+            f"{len(candidate_ca)} C-alpha coordinates for "
+            f"{len(candidate_sequence)} candidate residues"
+        )
+    if candidate_sequence == target_sequence:
+        return (
+            present_pairs,
+            candidate_ca,
+            {
+                "method": "identity",
+                "candidate_residues": len(candidate_sequence),
+                "target_start": 0,
+                "target_end": len(target_sequence),
+                "dropped_candidate_residues": 0,
+                "dropped_present_contacts": 0,
+            },
+        )
+
+    starts = []
+    offset = candidate_sequence.find(target_sequence)
+    while offset >= 0:
+        starts.append(offset)
+        offset = candidate_sequence.find(target_sequence, offset + 1)
+    if len(starts) != 1:
+        raise ValueError(
+            "candidate sequence is not a unique contiguous extension of the target "
+            f"(candidate={len(candidate_sequence)}, target={len(target_sequence)}, "
+            f"matches={starts})"
+        )
+    start = starts[0]
+    end = start + len(target_sequence)
+    projected_pairs = sorted(
+        [left - start, right - start]
+        for left, right in present_pairs
+        if start <= left < end and start <= right < end
+    )
+    if len(projected_pairs) != len({tuple(pair) for pair in projected_pairs}):
+        raise ValueError("projection created duplicate contact pairs")
+    return (
+        projected_pairs,
+        candidate_ca[start:end],
+        {
+            "method": "unique_contiguous_target_subsequence",
+            "candidate_residues": len(candidate_sequence),
+            "target_start": start,
+            "target_end": end,
+            "dropped_candidate_residues": len(candidate_sequence)
+            - len(target_sequence),
+            "dropped_present_contacts": len(present_pairs) - len(projected_pairs),
+        },
+    )
 
 
 def validate_existing(
@@ -109,26 +176,23 @@ def prepare_target(task: dict) -> dict:
     for decoy_id in candidate_ids:
         path = candidate_path(decoy_dir, target, decoy_id)
         structure = gemmi.read_structure(str(path))
-        observed_sequence, pairs = contact_pairs(structure, _ROTAMER_LIBRARY)
-        candidate_ca = ca_coordinates(structure)
-        if len(candidate_ca) != len(observed_sequence):
-            raise ValueError(
-                f"{target}/{decoy_id}: {len(candidate_ca)} CA atoms for "
-                f"{len(observed_sequence)} residues"
-            )
+        observed_sequence, observed_pairs = contact_pairs(structure, _ROTAMER_LIBRARY)
+        observed_ca = ca_coordinates(structure)
         if sequence is None:
             sequence = observed_sequence
-        elif observed_sequence != sequence:
-            raise ValueError(
-                f"{target}/{decoy_id}: sequence differs from native "
-                f"({len(observed_sequence)} vs {len(sequence)} residues)"
+        try:
+            pairs, candidate_ca, index_mapping = project_candidate_to_target(
+                sequence, observed_sequence, observed_pairs, observed_ca
             )
+        except ValueError as error:
+            raise ValueError(f"{target}/{decoy_id}: {error}") from error
         candidates.append(
             {
                 "decoy_id": decoy_id,
                 "present_pairs": pairs,
                 "candidate_ca": candidate_ca,
-                "contact_map_sha256": map_digest(observed_sequence, pairs),
+                "contact_map_sha256": map_digest(sequence, pairs),
+                "index_mapping": index_mapping,
             }
         )
 
@@ -152,6 +216,14 @@ def prepare_target(task: dict) -> dict:
         "file_sha256": sha256_file(payload_path),
         "file_bytes": payload_path.stat().st_size,
         "relative_path": str(payload_path.relative_to(output_dir)),
+        "projected_candidates": sum(
+            candidate["index_mapping"]["method"] != "identity"
+            for candidate in candidates
+        ),
+        "dropped_candidate_residues": sum(
+            candidate["index_mapping"]["dropped_candidate_residues"]
+            for candidate in candidates
+        ),
     }
     metadata_path.write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n")
     return metadata
@@ -215,6 +287,10 @@ def main() -> None:
                     "min_contact_degree": 0.001,
                     "min_sequence_separation": 6,
                 },
+                "candidate_index_mapping": (
+                    "identity, or a unique contiguous target-sequence substring "
+                    "within a terminally extended candidate"
+                ),
             },
             separators=(",", ":"),
             sort_keys=True,
@@ -254,6 +330,10 @@ def main() -> None:
         "pyconfind_version": pyconfind_version,
         "n_targets": len(metadata),
         "n_candidates": sum(item["n_candidates"] for item in metadata),
+        "projected_candidates": sum(item["projected_candidates"] for item in metadata),
+        "dropped_candidate_residues": sum(
+            item["dropped_candidate_residues"] for item in metadata
+        ),
         "targets": metadata,
     }
     manifest_path = args.output_dir / "manifest.json"

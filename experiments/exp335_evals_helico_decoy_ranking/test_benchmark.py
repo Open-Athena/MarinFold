@@ -5,6 +5,7 @@ import unittest
 
 from benchmark import af2rank_composite, rankdata, spearman_correlation
 from full_worker_cw import PART_SIZE, assign_tasks
+from prepare_full import project_candidate_to_target
 from select_pilot import quantile_indices, select_targets
 
 
@@ -69,6 +70,33 @@ class BenchmarkTest(unittest.TestCase):
         }
         self.assertEqual(len(covered), 3 * PART_SIZE + 1)
         self.assertEqual(sum(len(shard) for shard in first), 4)
+
+    def test_terminal_extension_projection_is_explicit(self) -> None:
+        pairs, coordinates, mapping = project_candidate_to_target(
+            "KHI",
+            "KKHI",
+            [[0, 3], [1, 3]],
+            [
+                [0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0],
+                [2.0, 0.0, 0.0],
+                [3.0, 0.0, 0.0],
+            ],
+        )
+        self.assertEqual(pairs, [[0, 2]])
+        self.assertEqual(
+            coordinates,
+            [[1.0, 0.0, 0.0], [2.0, 0.0, 0.0], [3.0, 0.0, 0.0]],
+        )
+        self.assertEqual(mapping["method"], "unique_contiguous_target_subsequence")
+        self.assertEqual(mapping["dropped_candidate_residues"], 1)
+        self.assertEqual(mapping["dropped_present_contacts"], 1)
+
+    def test_noncontiguous_or_ambiguous_projection_is_rejected(self) -> None:
+        with self.assertRaises(ValueError):
+            project_candidate_to_target("AAA", "AAAA", [], [[0.0, 0.0, 0.0]] * 4)
+        with self.assertRaises(ValueError):
+            project_candidate_to_target("ABC", "AXBC", [], [[0.0, 0.0, 0.0]] * 4)
 
 
 if __name__ == "__main__":
