@@ -159,7 +159,7 @@ def write_json(data: dict, uri: str) -> None:
 
 
 def load_targets(path: str) -> list[dict]:
-    """Load and length-sort the immutable exp89 evaluation units."""
+    """Load and length-sort the frozen complex evaluation units."""
 
     records = read_parquet(path).to_pylist()
     records.sort(key=lambda record: (record["L"], record["dataset"], record["stem"]))
@@ -286,6 +286,17 @@ def rollout_position_map(document) -> dict[int, int]:
     return mapping
 
 
+def remove_linker_positions(
+    mapping: dict[int, int], boundary: int, linker_length: int = 10
+) -> dict[int, int]:
+    """Drop linker tokens and restore original A+B coordinates."""
+    return {
+        token: index if index < boundary else index - linker_length
+        for token, index in mapping.items()
+        if not boundary <= index < boundary + linker_length
+    }
+
+
 def parse_arguments() -> argparse.Namespace:
     """Parse one worker invocation."""
 
@@ -295,6 +306,9 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--targets", required=True)
     parser.add_argument("--out", required=True)
     parser.add_argument("--label", required=True)
+    parser.add_argument(
+        "--input-mode", choices=("multichain", "linker10"), default="multichain"
+    )
     parser.add_argument("--shard", required=True, help="i/n")
     parser.add_argument("--n-rollouts", type=int, default=100)
     parser.add_argument("--temperature", type=float, default=1.0)
@@ -407,9 +421,12 @@ def main() -> int:
 
         for record in group:
             residues = []
-            for chain_id, sequence in zip(
-                record["chain_ids"], record["chain_sequences"], strict=True
-            ):
+            chains = list(
+                zip(record["chain_ids"], record["chain_sequences"], strict=True)
+            )
+            if arguments.input_mode == "linker10":
+                chains = [("A", ("G" * 10).join(record["chain_sequences"]))]
+            for chain_id, sequence in chains:
                 for residue in residues_from_sequence(sequence, chain=chain_id):
                     residues.append(replace(residue, seq_index=len(residues)))
             first = len(prompts)
@@ -426,7 +443,12 @@ def main() -> int:
                 prompts.append(
                     document.document[: document.document.index(BEGIN) + len(BEGIN)]
                 )
-                position_maps.append(rollout_position_map(document))
+                mapping = rollout_position_map(document)
+                if arguments.input_mode == "linker10":
+                    mapping = remove_linker_positions(
+                        mapping, record["chain_lengths"][0]
+                    )
+                position_maps.append(mapping)
             prompt_tokens = len(
                 tokenizer(prompts[first], add_special_tokens=False).input_ids
             )
@@ -510,7 +532,9 @@ def main() -> int:
                             "dataset": record["dataset"],
                             "stem": record["stem"],
                             "rollout": rollout,
-                            "sampling_seed": arguments.seed * 1_000_003 + first + rollout,
+                            "sampling_seed": arguments.seed * 1_000_003
+                            + first
+                            + rollout,
                             "finish_reason": sample.finish_reason,
                             "generated_tokens": len(sample.token_ids),
                             "parsed_contacts": n_parsed,
@@ -543,7 +567,7 @@ def main() -> int:
                     "stem": record["stem"],
                     "n_residues": length,
                     "n_pairs": candidate_pair_count(chain_lengths),
-                    "mode": "rollout_resample",
+                    "mode": "rollout_resample_" + arguments.input_mode,
                     "elapsed_seconds": inference_seconds,
                     "model_load_seconds": model_load_seconds,
                     "total_seconds": model_stage_seconds

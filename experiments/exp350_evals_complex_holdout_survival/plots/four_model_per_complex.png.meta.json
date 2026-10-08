@@ -1,0 +1,5 @@
+{
+  "script": "plot_four_model_eval.py",
+  "args": [],
+  "caption": "Every test complex, ordered by total sequence length; all cells share a 0\u2013100% color scale."
+}

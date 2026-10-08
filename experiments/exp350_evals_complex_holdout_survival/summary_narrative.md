@@ -115,3 +115,19 @@ The 16-page contact_prediction_atlas.pdf compares experimental contacts with fre
 Of 17,000 attempts: **20.3% emit no inter-chain contacts**, **1.4% emit only unscorable pairs**, **61.6% emit scorable contacts but get none correct**, and **16.7% include at least one correct pair**. Eight attempts are unfinished.
 
 Failure patterns differ: 8cqm's selected contact endpoints miss both interface regions; 7ytu samples 35/37 true pairs but ranks none in top-R; 8smq often selects real interface residues but pairs them incorrectly. The atlas preserves missing-residue masks and shows false positives in every selected map.
+
+## Four models, the same complex predictions
+
+All four arms predict each complete dimer. Intra-chain scores use the two original partners from those same predictions; no monomer-only evaluation targets are used. The headline remains the fixed 17-target test split (13 homology groups).
+
+Test intra / inter R-precision: MarinFold multichain **44.3% / 2.6%**; current default + ten glycines **45.1% / 1.4%**; ESMFold2 **74.8% / 43.9%**; AlphaFold3 **76.7% / 52.9%**.
+
+MarinFold uses 100 rollouts per model. ESMFold2 uses native dimers without MSAs; AlphaFold3 uses ColabFold paired/unpaired MSAs and no templates. Both structure models select one of five samples using model confidence. Their training-data holdout has not been separately audited here.
+
+## Interface failure survives the linker control
+
+Joining the partners with ten glycines preserves similar within-chain accuracy but does not rescue the interface. The multichain model is stronger at inter-chain contacts than the linker control in point estimates, but both remain far behind the structure baselines.
+
+Ground truth and predicted structures use the same pyconfind contact operator. The native resolved mask is identical for all models. Intra-chain R pools contacts from both partners; separate per-chain and long-range scores are also saved. Ten-glycine linker residues are excluded from every score.
+
+The dedicated five-page four_model_comparison.pdf contains the aggregate plot, per-complex heatmaps, intra-versus-inter scatter plots, and per-partner accuracy. All plots use the same 17 test complexes. Error bars bootstrap the 13 homology groups.

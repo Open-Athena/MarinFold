@@ -1,0 +1,5 @@
+{
+  "script": "plot_four_model_eval.py",
+  "args": [],
+  "caption": "Same 17 test dimers in both contact classes and all four model arms; means and 95% group-bootstrap intervals."
+}

@@ -463,6 +463,98 @@ contains the PDF, page previews, input tables and hashes. Rebuild offline with
 `uv run python build_contact_atlas.py`; optional `--raw-root` regenerates the
 plot tables from the validated original rollout artifacts.
 
+### Four-model comparison on the same complexes
+
+The [five-page comparison PDF](plots/four_model_comparison.pdf) and figures below
+compare intra-chain and inter-chain R-precision on **the same 17 test complexes**.
+All four predictors receive the complete dimer. Intra-chain accuracy is computed
+on the original two partners of these predictions, with no monomer-only targets.
+The six development complexes are also retained in the result tables.
+
+| predictor | intra-chain R-precision | inter-chain R-precision |
+| --- | ---: | ---: |
+| MarinFold multichain, exp343 step 280154 | 44.3% [33.1, 51.6] | 2.6% [0.4, 4.5] |
+| MarinFold current default, exp277 step 266344, A + 10G + B | 45.1% [34.4, 51.8] | 1.4% [0.2, 3.5] |
+| ESMFold2, single-sequence native dimer | 74.8% [64.8, 81.5] | 43.9% [30.1, 63.6] |
+| AlphaFold3, native dimer with ColabFold MSAs | 76.7% [71.5, 83.5] | 52.9% [38.2, 72.7] |
+
+Values are means per complex; brackets are 95% bootstrap intervals over the 13
+homology groups. The default-model linker does not rescue interface prediction.
+Both MarinFold variants also trail the structure models within chains, but their
+interface accuracy falls much further. This is an exploratory follow-up on the
+already-read test split, not a new blinded model-selection result.
+
+![Matched-complex model comparison](plots/four_model_overview.png)
+
+The per-complex matrix shows that the interface gap is not uniform: all four
+models struggle on 8cqm, 8htd and 8smq, while ESMFold2/AF3 recover most contacts
+for several targets where MarinFold's top-R predictions recover none.
+
+![Per-complex comparison](plots/four_model_per_complex.png)
+
+The [paired scatter plot](plots/four_model_intra_inter_scatter.png) connects the
+two accuracy measures for each complex. The [per-chain matrices](plots/four_model_per_chain.png)
+score partners A and B separately, so the pooled intra-chain score does not hide
+which partner failed.
+
+**Scoring.** `prepare_four_model_eval.py` rebuilds native pyconfind contacts from
+the exact frozen experimental CIFs and verifies that all 23 inter-chain truth
+sets and resolved-residue mappings reproduce the original benchmark. A true
+contact has native-only degree >=0.001. Intra-chain candidates require sequence
+separation >=6 within an original chain; all resolved cross-chain pairs are
+eligible. Main intra-chain R-precision pools eligible pairs from both partners,
+with R equal to their combined native contact count. Per-partner and long-range
+(separation >=24) results are also saved. All models use the same native resolved
+mask, regardless of their own prediction confidence. Chain order follows the
+frozen input, including for homodimers; there is no truth-selected chain swap.
+
+MarinFold ranks consensus votes; structure models rank pyconfind contact degrees
+from the selected structure. The candidate universe includes zero scores, and
+stable descending sorting preserves canonical pair order at ties, matching the
+original inter-chain evaluation. The CSV also includes expected R-precision under
+random tie ordering; this does not materially change the comparison. Random
+expectations are 1.17% intra-chain and 0.28% inter-chain.
+
+**Predictor settings.** Both MarinFold models use 100 rollouts, temperature 1,
+top-p 0.95, no top-k truncation, and the full 8192-token context. The multichain
+arm reuses the original completed run. The current registry default was verified
+against `origin/main` on 2026-10-08: exp277 step 266344. Its new CoreWeave run joins
+the two canonical sequences with exactly ten glycines, parses contacts back into
+original A+B coordinates, and drops every linker endpoint. All 2,300 default-model
+rollouts finished normally. Job prefix: `/bizon/exp350-default-linker10-v1`.
+
+[ESMFold2](https://huggingface.co/biohub/ESMFold2) uses its cached exp78 image and
+native A/B inputs without MSAs: 20 loops, 100 diffusion steps, seeds 0–4, one
+sample each, selected by maximum 0.8 ipTM + 0.2 pTM. Model revision
+`8fc3ff471022fdce52c77030685eb775de0c00a3`, ESMC revision
+`45b0fa5d7fb06faefbd5e3b89bdcef35d564e79a`; exact Modal image/app IDs are in the
+manifest. Its original caller could not deserialize a TorchVersion metadata
+value after the predictions were saved. The saved structures, selection records
+and all sample timings were recovered and validated; no samples were dropped.
+The wrapper now returns a plain string for that metadata field.
+
+[AlphaFold3](https://github.com/google-deepmind/alphafold3) runs locally in the
+existing 3.0.1 Docker image with the official 2024-11-13 weights. Native A/B inputs
+use cached/generated ColabFold paired and unpaired MSAs, empty templates, ten
+recycles, seed 0 and five diffusion samples; AF3's own ranking_score chooses the
+structure. AlphaFold3 has MSA information, so these are comparisons of the named
+pipelines, not an isolated architectural comparison. This experiment does not
+establish training-set decontamination for either external baseline.
+AF3 reference: Abramson et al., *Nature* 630, 493–500 (2024),
+[doi:10.1038/s41586-024-07487-w](https://doi.org/10.1038/s41586-024-07487-w).
+
+**Artifacts and reproduction.** `data/four_model_v1/` contains the frozen full
+truth, per-target and aggregate scores, coverage, timings and source hashes.
+The [public four-model bundle](https://huggingface.co/buckets/open-athena/MarinFold/tree/main/data/evals/exp350_foldbench_pair_holdout/contact_eval_v1/four_model_v1)
+contains the structure predictions, AF3 MSA inputs, default-model raw rollouts,
+and plots. Rebuild figures offline with `uv run python plot_four_model_eval.py`.
+`score_four_model_eval.py` scores the saved predictions; the manifest records their
+source paths/hashes. `finalize_four_model_artifacts.py` checks complete coverage,
+input sequences, and confidence-based sample selection before publication via
+`publish_four_model_artifacts.py`. All inference wrappers persist timings at run
+time. Ground-truth reconstruction, parser/linker tests, and the full experiment
+test suite validate the coordinate and contact-class rules.
+
 ## Conclusion
 
 Use the frozen 30-target FoldBench set as the structural source benchmark under
@@ -490,3 +582,9 @@ not find mostly correct interface maps. Individual true contacts occur across
 many different rollouts, and consensus accuracy improves only modestly with ten
 times more samples. Ground-truth-free selection of the better maps remains
 unresolved.
+
+The matched-complex baseline comparison confirms a large interface-specific gap:
+MarinFold scores about 44–45% within-chain R-precision but only 1–3% between
+chains, versus 75% / 44% for single-sequence ESMFold2 and 77% / 53% for
+MSA-assisted AlphaFold3 on the same test dimers. Joining the partners with ten
+glycines does not resolve the failure.
