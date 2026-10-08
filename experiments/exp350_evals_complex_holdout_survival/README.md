@@ -426,6 +426,43 @@ uv run python build_summary.py
 uv run python publish_sampling_controls.py
 ```
 
+### Visual diagnosis: contact predictions versus experimental truth
+
+The [16-page contact-map atlas](plots/contact_prediction_atlas.pdf) shows six
+test complexes chosen to illustrate different observed failure patterns:
+8wk1, 8cqm, 7ytu, 8onf, 8jca and 8smq. Cohort summaries include all 17 test
+targets, so these purposeful case studies do not substitute for the full set.
+
+Across 17,000 attempted rollouts, **3,453 (20.3%) emit no inter-chain contacts**,
+**231 (1.4%) emit only inter-chain pairs outside the resolved scoring mask**,
+**10,477 (61.6%) emit scorable inter-chain contacts but none are correct**, and
+**2,831 (16.7%) include at least one correct contact**. Eight attempts are
+unfinished. These are mutually exclusive rollout categories; a rollout with
+one correct contact may still be mostly wrong.
+
+Each case contains experimental and aggregate-frequency heatmaps, exact-pair
+error maps for the highest-vote R pairs, per-chain contact-endpoint profiles,
+a typical individual rollout, an explicitly oracle-selected best@1000 map,
+and the distribution of counts across the full pool. Axes preserve full input
+sequence coordinates; unresolved positions are gray. Frequency maps share a
+logarithmic scale, and false positives remain visible in the oracle maps.
+
+The examples distinguish several problems. On 8wk1, 46.5% of rollouts emit no
+inter-chain contacts and another 50.8% have only wrong scorable contacts. On
+8cqm, the top-R endpoints miss the experimental interface on both chains.
+On 7ytu, 35/37 true pairs appear somewhere in the pool but none reach top-R.
+On 8smq, 69.8% and 73.7% of the selected endpoint residues fall on the true
+interface of chains A and B, respectively, but only 8.5% of the selected
+residue pairs are correct. Thus both interface localization and residue
+pairing can fail. Full prediction matrices also show that most contact
+emissions remain within chains; those panels do not score intra-chain accuracy.
+
+All plotting inputs are committed as compact CSVs in `data/contact_atlas_v1`.
+The [public atlas bundle](https://huggingface.co/buckets/open-athena/MarinFold/tree/main/data/evals/exp350_foldbench_pair_holdout/contact_eval_v1/contact_atlas_v1)
+contains the PDF, page previews, input tables and hashes. Rebuild offline with
+`uv run python build_contact_atlas.py`; optional `--raw-root` regenerates the
+plot tables from the validated original rollout artifacts.
+
 ## Conclusion
 
 Use the frozen 30-target FoldBench set as the structural source benchmark under

@@ -107,3 +107,11 @@ Against the per-residue-degree control, the paired best@1000 F1 advantage is **+
 The degree control preserves any learned localization of interface residues; it tests the additional pairing information. Its score is not solely an amino-acid-size effect.
 
 The sampler is approximate. Five times more shuffling yields 13.50% F1 versus 13.48%. Small-graph exact enumeration, degree/duplicate checks and source hashes validate the implementation. Absolute quality remains limited: no original sample reaches F1 50%.
+
+## Contact-map atlas: usually wrong, sometimes absent
+
+The 16-page contact_prediction_atlas.pdf compares experimental contacts with frequency heatmaps, top-R errors, typical samples and oracle samples for six contrasting test complexes. Cohort summaries include all 17 targets.
+
+Of 17,000 attempts: **20.3% emit no inter-chain contacts**, **1.4% emit only unscorable pairs**, **61.6% emit scorable contacts but get none correct**, and **16.7% include at least one correct pair**. Eight attempts are unfinished.
+
+Failure patterns differ: 8cqm's selected contact endpoints miss both interface regions; 7ytu samples 35/37 true pairs but ranks none in top-R; 8smq often selects real interface residues but pairs them incorrectly. The atlas preserves missing-residue masks and shows false positives in every selected map.
