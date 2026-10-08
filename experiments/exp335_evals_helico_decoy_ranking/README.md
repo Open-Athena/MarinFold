@@ -164,6 +164,15 @@ result: the Helico composite selects 51/133 natives (38.3%) and gives mean rank
 | Helico mean-sample pTM | 4/133 (3.0%) | 131.75 | 0.9106 |
 | Helico pTM | 4/133 (3.0%) | 130.34 | 0.9113 |
 
+Using the less stringent top-5 endpoint, the Helico composite recovers the
+native for 93/133 targets (69.9%) versus 84/133 (63.2%) for AF2Rank. The paired
+difference is +6.8 percentage points, but its 95% target-bootstrap interval
+[-3.8, 17.3] includes zero; an exact paired McNemar test likewise does not
+reject equality (`p = 0.281`; 32 Helico-only versus 23 AF2Rank-only successes).
+Thus the observed top-5 advantage is not statistically significant.
+
+![Complete native top-5 comparison](plots/full_native_top5.png)
+
 The paired Helico-composite minus AF2Rank differences are -0.75 percentage
 points for native top-1 [95% interval -11.3, 9.0], -4.64 native-rank positions
 [-26.55, 20.22], and +0.0032 AUROC [-0.0107, 0.0156]. None excludes zero.

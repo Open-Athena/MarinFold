@@ -3,6 +3,7 @@
 import argparse
 import csv
 import json
+import math
 import statistics
 from collections import defaultdict
 from collections.abc import Callable
@@ -80,12 +81,36 @@ def paired_comparisons(
     output = []
     for left_method, right_method in comparisons:
         for metric in metrics:
-            differences = [
+            left_values = [
                 float(by_method_target[(left_method, target)][metric])
-                - float(by_method_target[(right_method, target)][metric])
                 for target in targets
             ]
+            right_values = [
+                float(by_method_target[(right_method, target)][metric])
+                for target in targets
+            ]
+            differences = [
+                left - right
+                for left, right in zip(left_values, right_values, strict=True)
+            ]
             low, high = bootstrap_mean_interval(differences)
+            binary = all(value in (0.0, 1.0) for value in left_values + right_values)
+            left_only = (
+                sum(
+                    left == 1.0 and right == 0.0
+                    for left, right in zip(left_values, right_values, strict=True)
+                )
+                if binary
+                else ""
+            )
+            right_only = (
+                sum(
+                    left == 0.0 and right == 1.0
+                    for left, right in zip(left_values, right_values, strict=True)
+                )
+                if binary
+                else ""
+            )
             output.append(
                 {
                     "endpoint": endpoint,
@@ -96,9 +121,26 @@ def paired_comparisons(
                     "mean_left_minus_right": statistics.mean(differences),
                     "difference_ci_low": low,
                     "difference_ci_high": high,
+                    "discordant_left_only": left_only,
+                    "discordant_right_only": right_only,
+                    "mcnemar_exact_pvalue": (
+                        exact_mcnemar_pvalue(left_only, right_only) if binary else ""
+                    ),
                 }
             )
     return output
+
+
+def exact_mcnemar_pvalue(left_only: int, right_only: int) -> float:
+    """Return the two-sided exact McNemar p-value for paired binary outcomes."""
+    discordant = left_only + right_only
+    if discordant == 0:
+        return 1.0
+    tail = min(left_only, right_only)
+    probability = sum(math.comb(discordant, k) for k in range(tail + 1)) / (
+        2**discordant
+    )
+    return min(1.0, 2 * probability)
 
 
 def main() -> None:
@@ -178,6 +220,7 @@ def main() -> None:
                         "native_rank_percentile": (len(rows) - rank) / (len(rows) - 1),
                         "native_reciprocal_rank": 1 / rank,
                         "native_top1": int(rank == 1),
+                        "native_top5": int(rank <= 5),
                         "native_vs_decoy_auroc": auroc,
                     }
                 )
@@ -216,6 +259,7 @@ def main() -> None:
             "native_rank_percentile",
             "native_reciprocal_rank",
             "native_top1",
+            "native_top5",
             "native_vs_decoy_auroc",
         ):
             values = [float(row[metric]) for row in rows]
@@ -242,7 +286,7 @@ def main() -> None:
                 ("Helico pTM", "AF2Rank composite"),
                 ("Helico composite", "AF2Rank composite"),
             ],
-            ("native_top1", "native_rank", "native_vs_decoy_auroc"),
+            ("native_top1", "native_top5", "native_rank", "native_vs_decoy_auroc"),
             "native_selection",
         )
     )

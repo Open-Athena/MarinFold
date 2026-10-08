@@ -142,6 +142,8 @@ def main() -> None:
         PLOTS_DIR / "full_metric_comparison.png.meta.json",
         PLOTS_DIR / "full_native_selection.png",
         PLOTS_DIR / "full_native_selection.png.meta.json",
+        PLOTS_DIR / "full_native_top5.png",
+        PLOTS_DIR / "full_native_top5.png.meta.json",
         PLOTS_DIR / "summary.pdf",
     ]
     missing = [path for path in paths if not path.is_file()]

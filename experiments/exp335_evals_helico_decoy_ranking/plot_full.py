@@ -182,11 +182,98 @@ def plot_native_selection() -> None:
     plt.close(fig)
 
 
+def plot_native_top5() -> None:
+    """Compare native top-5 recovery with target-bootstrap uncertainty."""
+    rows = load_csv(DATA / "full_native_summary.csv")
+    comparisons = load_csv(DATA / "full_paired_comparisons.csv")
+    wanted = [
+        "Helico composite",
+        "AF2Rank composite",
+        "AF2 pTM",
+        "Helico pTM",
+        "Helico mean CA pLDDT",
+        "Helico mean-sample pTM",
+    ]
+    by_method = {row["method"]: row for row in rows}
+    values = [float(by_method[method]["mean_native_top5"]) for method in wanted]
+    lower = [
+        value - float(by_method[method]["native_top5_ci_low"])
+        for method, value in zip(wanted, values, strict=True)
+    ]
+    upper = [
+        float(by_method[method]["native_top5_ci_high"]) - value
+        for method, value in zip(wanted, values, strict=True)
+    ]
+    paired = next(
+        row
+        for row in comparisons
+        if row["endpoint"] == "native_selection"
+        and row["left_method"] == "Helico composite"
+        and row["right_method"] == "AF2Rank composite"
+        and row["metric"] == "native_top5"
+    )
+    colors = ["#0f5964", "#e07a2d", "#efaa70", "#157f8c", "#4aa5ad", "#2c919c"]
+    positions = list(range(len(wanted)))
+
+    fig, axis = plt.subplots(figsize=(9.2, 5.6))
+    bars = axis.barh(
+        positions,
+        [100 * value for value in values],
+        color=colors,
+        xerr=[
+            [100 * value for value in lower],
+            [100 * value for value in upper],
+        ],
+        capsize=4,
+    )
+    axis.set_yticks(positions, wanted)
+    axis.invert_yaxis()
+    axis.set_xlim(0, 90)
+    axis.set_xlabel("Targets with native ranked in top 5 (%)")
+    axis.grid(axis="x", alpha=0.22)
+    axis.set_title("Native top-5 recovery across all 133 AF2Rank targets")
+    for bar, value in zip(bars, values, strict=True):
+        percentage = 100 * value
+        axis.text(
+            percentage - 1.0,
+            bar.get_y() + bar.get_height() / 2,
+            f"{round(133 * value):d}/133",
+            ha="right",
+            va="center",
+            color="white",
+        )
+    difference = 100 * float(paired["mean_left_minus_right"])
+    difference_low = 100 * float(paired["difference_ci_low"])
+    difference_high = 100 * float(paired["difference_ci_high"])
+    pvalue = float(paired["mcnemar_exact_pvalue"])
+    fig.text(
+        0.5,
+        0.015,
+        f"Helico composite − AF2Rank: {difference:+.1f} percentage points "
+        f"(paired 95% bootstrap CI {difference_low:+.1f} to {difference_high:+.1f}); "
+        f"exact McNemar p={pvalue:.3f}.",
+        ha="center",
+        fontsize=9,
+    )
+    fig.subplots_adjust(left=0.28, right=0.98, bottom=0.16, top=0.9)
+    save_plot_with_meta(
+        fig,
+        PLOTS / "full_native_top5.png",
+        caption=(
+            "Fraction of targets whose native is ranked in the top five; error bars "
+            "are 95% target-bootstrap intervals. The Helico-versus-AF2Rank p-value "
+            "uses the exact paired McNemar test."
+        ),
+    )
+    plt.close(fig)
+
+
 def main() -> None:
     """Generate complete-benchmark figures."""
     PLOTS.mkdir(exist_ok=True)
     plot_metric_comparison()
     plot_native_selection()
+    plot_native_top5()
 
 
 if __name__ == "__main__":

@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from analyze_full import exact_mcnemar_pvalue
 from benchmark import af2rank_composite, rankdata, spearman_correlation
 from full_worker_cw import PART_SIZE, assign_tasks
 from prepare_full import digest_candidate_sources, project_candidate_to_target
@@ -22,6 +23,12 @@ class BenchmarkTest(unittest.TestCase):
     def test_af2rank_composite(self) -> None:
         row = {"plddt": "80", "ptm": "0.5", "tm_diff": "0.75"}
         self.assertEqual(af2rank_composite(row), 30.0)
+
+    def test_exact_mcnemar_pvalue(self) -> None:
+        expected = 0.2806097176983541
+        self.assertTrue(math.isclose(exact_mcnemar_pvalue(32, 23), expected))
+        self.assertTrue(math.isclose(exact_mcnemar_pvalue(23, 32), expected))
+        self.assertEqual(exact_mcnemar_pvalue(0, 0), 1.0)
 
     def test_quantile_indices_include_endpoints(self) -> None:
         self.assertEqual(quantile_indices(10, 4), [0, 3, 6, 9])
