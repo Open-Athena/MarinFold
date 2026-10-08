@@ -37,9 +37,11 @@ rank of 3.22 among 25 candidates. AF2Rank's composite is top-1 on 5/9; the
 Helico composite is top-1 on 7/9. Pure confidence is useful but does not by
 itself reliably identify the exact native.
 
-## Scale gate
+## Full CoreWeave run
 
 The pilot used 0.544 inference H100-hours. One-candidate-at-a-time extrapolation
-is about 436 H100-hours / $1,722 for all 180,212 candidates. Contact-map
-deduplication will not help (224/225 pilot maps were unique), so the next step is
-same-target batching to amortize trunk work before any full launch.
+is about 436 H100-hours / $1,722 for all 180,212 candidates. The complete run is
+being distributed across 96 independent CoreWeave H100 jobs with resumable
+32-candidate parts. Workers reuse the model and target tokenization while
+preserving the pilot's same-seed-per-candidate protocol. Expected ideal wall
+time is about 4.5 inference hours, plus startup and scheduling.

@@ -69,6 +69,23 @@ def source_sha() -> str:
     return sha
 
 
+def inference_fingerprint(map_mode: str) -> str:
+    """Fingerprint every input and setting that makes a partial reusable."""
+    payload = {
+        "tag": TAG,
+        "map_mode": map_mode,
+        "input_maps_sha256": sha256_file(MAPS),
+        "helico_source_sha": HELICO_SHA,
+        "checkpoint_sha256": CHECKPOINT_SHA256,
+        "n_samples": N_SAMPLES,
+        "n_cycles": N_CYCLES,
+        "seed": "first 32 bits of SHA-256(target), reset per candidate",
+    }
+    return hashlib.sha256(
+        json.dumps(payload, separators=(",", ":"), sort_keys=True).encode()
+    ).hexdigest()
+
+
 def load_maps() -> list[dict]:
     """Load the locally prepared, index-validated pilot contact maps."""
     if not MAPS.is_file():
@@ -218,8 +235,9 @@ class Predictor:
         }
 
     @modal.method()
-    def predict(self, candidate: dict, map_mode: str = "full") -> dict:
+    def predict(self, candidate: dict, map_mode: str, run_fingerprint: str) -> dict:
         """Predict one candidate with a paired target-level diffusion seed."""
+        call_started = time.monotonic()
         import numpy as np
         import torch
         from helico.bench import compute_tm_score, single_sequence_msa
@@ -286,6 +304,7 @@ class Predictor:
             dtype=torch.bfloat16,
             n_cycles=N_CYCLES,
         )
+        torch.cuda.synchronize()
         elapsed_seconds = time.monotonic() - started
 
         ptms = results["all_ptm"][0].cpu().float().tolist()
@@ -346,9 +365,7 @@ class Predictor:
             "mode": map_mode,
             "elapsed_seconds": round(elapsed_seconds, 3),
             "model_load_seconds": self.worker_meta["model_load_seconds"],
-            "total_seconds": round(
-                self.worker_meta["model_load_seconds"] + elapsed_seconds, 3
-            ),
+            "total_seconds": None,
             "model_nickname": "helico-contacts-msafree-01-step-6000",
             "runner_tag": "modal",
             "timestamp_utc": dt.datetime.now(dt.UTC).isoformat(),
@@ -358,11 +375,22 @@ class Predictor:
                 if key != "model_load_seconds"
             },
         }
-        payload = {"candidate": primary, "samples": sample_rows, "timing": timing}
-        key = hashlib.sha256(f"{map_mode}\t{target}\t{decoy_id}".encode()).hexdigest()
-        durable = Path("/results") / TAG / map_mode / target
+        payload = {
+            "run_fingerprint": run_fingerprint,
+            "candidate": primary,
+            "samples": sample_rows,
+            "timing": timing,
+        }
+        key = hashlib.sha256(
+            f"{run_fingerprint}\t{target}\t{decoy_id}".encode()
+        ).hexdigest()
+        durable = Path("/results") / TAG / run_fingerprint / target
         durable.mkdir(parents=True, exist_ok=True)
-        (durable / f"{key}.json").write_text(json.dumps(payload, separators=(",", ":")))
+        result_path = durable / f"{key}.json"
+        result_path.write_text(json.dumps(payload, separators=(",", ":")))
+        results_volume.commit()
+        timing["total_seconds"] = round(time.monotonic() - call_started, 3)
+        result_path.write_text(json.dumps(payload, separators=(",", ":")))
         results_volume.commit()
         return payload
 
@@ -386,12 +414,13 @@ def run(map_mode: str = "full") -> None:
         or int(os.environ.get("PILOT_CANDIDATE_LIMIT", "0"))
     )
     output_dir = RESULTS / "smoke" if limited else RESULTS / "pilot"
-    partial_dir = output_dir / f"partial-{map_mode}"
+    run_fingerprint = inference_fingerprint(map_mode)
+    partial_dir = output_dir / f"partial-{map_mode}-{run_fingerprint[:12]}"
     partial_dir.mkdir(parents=True, exist_ok=True)
 
     def result_key(candidate: dict) -> str:
         return hashlib.sha256(
-            f"{map_mode}\t{candidate['target']}\t{candidate['decoy_id']}".encode()
+            f"{run_fingerprint}\t{candidate['target']}\t{candidate['decoy_id']}".encode()
         ).hexdigest()
 
     expected_keys = {result_key(candidate) for candidate in candidates}
@@ -409,7 +438,7 @@ def run(map_mode: str = "full") -> None:
 
     failures = []
     predictor = Predictor()
-    inputs = [(candidate, map_mode) for candidate in pending]
+    inputs = [(candidate, map_mode, run_fingerprint) for candidate in pending]
     for result in predictor.predict.starmap(
         inputs,
         order_outputs=False,
@@ -420,9 +449,11 @@ def run(map_mode: str = "full") -> None:
             failures.append(repr(result))
             continue
         key = hashlib.sha256(
-            f"{map_mode}\t{result['candidate']['target']}\t"
+            f"{run_fingerprint}\t{result['candidate']['target']}\t"
             f"{result['candidate']['decoy_id']}".encode()
         ).hexdigest()
+        if result["run_fingerprint"] != run_fingerprint:
+            raise ValueError("candidate result has the wrong run fingerprint")
         if key not in expected_keys or (partial_dir / f"{key}.json").exists():
             raise ValueError(f"unexpected or duplicate candidate result: {key}")
         temporary = partial_dir / f".{key}.json.tmp"
@@ -455,6 +486,7 @@ def run(map_mode: str = "full") -> None:
     write_csv(output_dir / f"timings_{map_mode}.csv", timing_rows)
     manifest = {
         "tag": TAG,
+        "run_fingerprint": run_fingerprint,
         "map_mode": map_mode,
         "helico_source_sha": HELICO_SHA,
         "helico_checkpoint": CHECKPOINT,

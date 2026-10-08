@@ -4,6 +4,7 @@ import math
 import unittest
 
 from benchmark import af2rank_composite, rankdata, spearman_correlation
+from full_worker_cw import PART_SIZE, assign_tasks
 from select_pilot import quantile_indices, select_targets
 
 
@@ -35,6 +36,39 @@ class BenchmarkTest(unittest.TestCase):
         second = select_targets(rows, [0.1, 0.9])
         self.assertEqual(first, second)
         self.assertEqual(len({row["target"] for row in first}), 4)
+
+    def test_full_run_assignment_covers_each_candidate_once(self) -> None:
+        manifest = {
+            "targets": [
+                {
+                    "target": "short",
+                    "n_candidates": PART_SIZE + 1,
+                    "n_residues": 50,
+                    "input_sha256": "a",
+                    "file_sha256": "b",
+                    "relative_path": "targets/short.json.gz",
+                },
+                {
+                    "target": "long",
+                    "n_candidates": 2 * PART_SIZE,
+                    "n_residues": 200,
+                    "input_sha256": "c",
+                    "file_sha256": "d",
+                    "relative_path": "targets/long.json.gz",
+                },
+            ]
+        }
+        first = assign_tasks(manifest, 3)
+        second = assign_tasks(manifest, 3)
+        self.assertEqual(first, second)
+        covered = {
+            (task["target"], candidate)
+            for shard in first
+            for task in shard
+            for candidate in range(task["start"], task["end"])
+        }
+        self.assertEqual(len(covered), 3 * PART_SIZE + 1)
+        self.assertEqual(sum(len(shard) for shard in first), 4)
 
 
 if __name__ == "__main__":

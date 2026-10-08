@@ -1,4 +1,4 @@
-"""Plot the target-balanced Helico decoy-ranking pilot."""
+"""Plot the complete 133-target Helico decoy-ranking evaluation."""
 
 import csv
 from pathlib import Path
@@ -19,8 +19,8 @@ def load_csv(path: Path) -> list[dict[str, str]]:
 
 
 def plot_metric_comparison() -> None:
-    """Compare pilot target-macro Spearman correlations."""
-    rows = load_csv(DATA / "pilot_metric_summary.csv")
+    """Compare full-set target-macro rank correlations."""
+    rows = load_csv(DATA / "full_metric_summary.csv")
     wanted = [
         "Helico pTM",
         "Helico mean CA pLDDT",
@@ -39,97 +39,39 @@ def plot_metric_comparison() -> None:
         float(by_method[method]["spearman_tmscore_ci_high"]) - value
         for method, value in zip(wanted, values, strict=True)
     ]
+    colors = ["#157f8c", "#4aa5ad", "#0f5964", "#e07a2d", "#8a70b3", "#777777"]
 
     fig, axis = plt.subplots(figsize=(9, 5.2))
-    colors = ["#157f8c", "#4aa5ad", "#0f5964", "#e07a2d", "#8a70b3", "#777777"]
     bars = axis.bar(
         range(len(wanted)), values, color=colors, yerr=[lower, upper], capsize=4
     )
     axis.set_xticks(range(len(wanted)), wanted, rotation=24, ha="right")
     axis.set_ylabel("Mean target-wise Spearman correlation with TM-score")
-    axis.set_ylim(0.7, 1.0)
+    axis.set_ylim(0.65, 1.0)
     axis.grid(axis="y", alpha=0.25)
-    axis.set_title("AF2Rank Rosetta-decoy pilot: 9 targets x 24 TM-stratified decoys")
+    axis.set_title("Complete AF2Rank Rosetta-decoy benchmark: 133 targets")
     for bar, value in zip(bars, values, strict=True):
         axis.text(
             bar.get_x() + bar.get_width() / 2,
-            value + 0.008,
+            value + 0.009,
             f"{value:.3f}",
             ha="center",
         )
     fig.tight_layout()
     save_plot_with_meta(
         fig,
-        PLOTS / "pilot_spearman_comparison.png",
+        PLOTS / "full_metric_comparison.png",
         caption=(
-            "Mean target-wise Spearman correlation with reference TM-score; bars are "
-            "95% target-bootstrap intervals. Helico pTM is the primary score; the "
-            "Helico composite additionally uses candidate/output TM-score."
-        ),
-    )
-    plt.close(fig)
-
-
-def plot_ptm_scatter() -> None:
-    """Show Helico pTM across the reference TM-score range."""
-    predictions = load_csv(DATA / "pilot_candidate_metrics.csv")
-    truth = {
-        (row["target"], row["decoy_id"]): row
-        for row in load_csv(DATA / "pilot_candidates.csv")
-    }
-    targets = sorted({row["target"] for row in predictions})
-    color_map = plt.get_cmap("tab10")
-
-    fig, axis = plt.subplots(figsize=(8.2, 6.2))
-    for target_index, target in enumerate(targets):
-        rows = [row for row in predictions if row["target"] == target]
-        decoys = [row for row in rows if row["decoy_id"] != "native"]
-        native = next(row for row in rows if row["decoy_id"] == "native")
-        color = color_map(target_index)
-        axis.scatter(
-            [
-                float(truth[(row["target"], row["decoy_id"])]["tmscore"])
-                for row in decoys
-            ],
-            [float(row["max_ptm"]) for row in decoys],
-            s=24,
-            alpha=0.68,
-            color=color,
-            label=target,
-        )
-        axis.scatter(
-            [1.0],
-            [float(native["max_ptm"])],
-            s=105,
-            marker="*",
-            edgecolor="black",
-            linewidth=0.6,
-            color=color,
-        )
-    axis.set_xlabel("Candidate TM-score to native")
-    axis.set_ylabel("Helico pTM (best of 3 diffusion samples)")
-    axis.set_xlim(0.15, 1.02)
-    axis.set_ylim(0.25, 1.0)
-    axis.grid(alpha=0.22)
-    axis.legend(title="Target", ncol=3, fontsize=8, title_fontsize=9)
-    axis.set_title(
-        "Helico confidence tracks candidate quality, but natives are not always top-1"
-    )
-    fig.tight_layout()
-    save_plot_with_meta(
-        fig,
-        PLOTS / "pilot_ptm_vs_tmscore.png",
-        caption=(
-            "Each circle is a TM-stratified Rosetta decoy; stars are native structures. "
-            "Colors denote the nine length/count-stratified targets."
+            "Mean target-wise Spearman correlation across all 133 AF2Rank targets; "
+            "error bars are 95% target-bootstrap intervals."
         ),
     )
     plt.close(fig)
 
 
 def plot_native_selection() -> None:
-    """Compare how reliably each scored method identifies the native structure."""
-    rows = load_csv(DATA / "pilot_native_summary.csv")
+    """Compare complete-set native recovery and native rank."""
+    rows = load_csv(DATA / "full_native_summary.csv")
     wanted = [
         "Helico composite",
         "AF2Rank composite",
@@ -141,14 +83,6 @@ def plot_native_selection() -> None:
     by_method = {row["method"]: row for row in rows}
     top1 = [float(by_method[method]["mean_native_top1"]) for method in wanted]
     mean_rank = [float(by_method[method]["mean_native_rank"]) for method in wanted]
-    rank_lower = [
-        value - float(by_method[method]["native_rank_ci_low"])
-        for method, value in zip(wanted, mean_rank, strict=True)
-    ]
-    rank_upper = [
-        float(by_method[method]["native_rank_ci_high"]) - value
-        for method, value in zip(wanted, mean_rank, strict=True)
-    ]
     top1_lower = [
         value - float(by_method[method]["native_top1_ci_low"])
         for method, value in zip(wanted, top1, strict=True)
@@ -156,6 +90,14 @@ def plot_native_selection() -> None:
     top1_upper = [
         float(by_method[method]["native_top1_ci_high"]) - value
         for method, value in zip(wanted, top1, strict=True)
+    ]
+    rank_lower = [
+        value - float(by_method[method]["native_rank_ci_low"])
+        for method, value in zip(wanted, mean_rank, strict=True)
+    ]
+    rank_upper = [
+        float(by_method[method]["native_rank_ci_high"]) - value
+        for method, value in zip(wanted, mean_rank, strict=True)
     ]
     colors = ["#0f5964", "#e07a2d", "#4aa5ad", "#efaa70", "#2c919c", "#157f8c"]
     positions = list(range(len(wanted)))
@@ -175,19 +117,22 @@ def plot_native_selection() -> None:
     )
     top1_axis.set_yticks(positions, wanted)
     top1_axis.invert_yaxis()
-    top1_axis.set_xlim(0, 108)
+    top1_axis.set_xlim(0, 104)
     top1_axis.set_xlabel("Targets with native ranked #1 (%)")
     top1_axis.grid(axis="x", alpha=0.22)
     for bar, value in zip(top1_bars, top1, strict=True):
         top1_axis.text(
-            100 * value - 1.8,
+            100 * value - 1.0,
             bar.get_y() + bar.get_height() / 2,
-            f"{round(9 * value):d}/9",
+            f"{round(133 * value):d}/133",
             ha="right",
             va="center",
             color="white",
         )
 
+    rank_limit = max(
+        value + upper for value, upper in zip(mean_rank, rank_upper, strict=True)
+    )
     rank_bars = rank_axis.barh(
         positions,
         mean_rank,
@@ -195,21 +140,19 @@ def plot_native_selection() -> None:
         xerr=[rank_lower, rank_upper],
         capsize=4,
     )
-    rank_axis.set_xlim(0, 5.15)
-    rank_axis.set_xlabel("Mean native rank among 25 (lower is better)")
+    rank_axis.set_xlim(0, rank_limit * 1.12)
+    rank_axis.set_xlabel("Mean native rank (lower is better)")
     rank_axis.grid(axis="x", alpha=0.22)
     rank_axis.tick_params(axis="y", left=False, labelleft=False)
     for bar, value, upper in zip(rank_bars, mean_rank, rank_upper, strict=True):
         rank_axis.text(
-            value + upper + 0.08,
+            value + upper + 0.01 * rank_limit,
             bar.get_y() + bar.get_height() / 2,
-            f"{value:.2f}",
+            f"{value:.1f}",
             va="center",
         )
 
-    fig.suptitle(
-        "Native identification in the pilot: 9 targets, 24 decoys + native each"
-    )
+    fig.suptitle("Native identification across all 133 AF2Rank targets")
     fig.text(
         0.5,
         0.01,
@@ -221,22 +164,19 @@ def plot_native_selection() -> None:
     fig.subplots_adjust(left=0.25, right=0.98, bottom=0.16, top=0.88)
     save_plot_with_meta(
         fig,
-        PLOTS / "pilot_native_selection.png",
+        PLOTS / "full_native_selection.png",
         caption=(
-            "Native top-1 recovery and mean native rank across the nine-target pilot. "
-            "Each target contains its native and 24 TM-stratified decoys. DeepAccNet "
-            "and Rosetta cannot be scored for native recovery because their corrected "
-            "AF2Rank native rows contain -1 sentinels."
+            "Native top-1 recovery and mean native rank over the complete benchmark; "
+            "error bars are 95% target-bootstrap intervals."
         ),
     )
     plt.close(fig)
 
 
 def main() -> None:
-    """Generate all pilot figures."""
+    """Generate complete-benchmark figures."""
     PLOTS.mkdir(exist_ok=True)
     plot_metric_comparison()
-    plot_ptm_scatter()
     plot_native_selection()
 
 

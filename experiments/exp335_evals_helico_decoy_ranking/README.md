@@ -38,7 +38,7 @@ Interpret "confidence map" as the candidate-derived **contact map**, because tha
 2. **Convert candidates without silent index shifts.** Parse each candidate, align its resolved protein residues to the target/native sequence, require an unambiguous residue mapping, and derive Helico's three-state map with the pinned pyconfind geometry (`native_only=True`, 3.0 A contact distance, 25 A cutoff, 2.0 A clash distance, contact degree >=0.001, intra-chain sequence separation >=6, no assembly expansion). Preserve both PRESENT and ABSENT states for the primary full-map condition. Record every exclusion and reason. A present-only map is a preregistered sensitivity analysis because it matches the sparse deployment interface but throws away candidate non-contact information.
 3. **Pilot before scaling.** Select a deterministic, target-balanced pilot spanning short/median/long targets and low/median/high decoy counts, always including each native and decoys across the TM-score range. Verify map extraction, native reconstruction, deterministic reruns, adaptive batch size, and duplicate-map rate. Benchmark actual H100 seconds/candidate and publish the full-run cost projection.
 4. **Helico inference.** Use the MSA-free checkpoint, six trunk recycles, three diffusion samples, and a fixed target-derived seed shared across candidates. The primary candidate score is the maximum pTM among the three samples (identical to Helico's monomer ranking score). Also save mean pLDDT and all per-sample values. Preregistered secondary scores are mean sample pTM and an AF2Rank-analog composite `pTM * TM(candidate, Helico output)`; the latter is explicitly not a pure confidence metric. Capture per-candidate timings and worker metadata using the repository timing schema.
-5. **Full evaluation if the pilot is valid and affordable.** Run all 180,079 decoys plus the native for all 133 targets, resumably and batched within target. Do not launch the full run until the pilot reports measured cost: extrapolating exp311 one-candidate inference naively gives roughly 800 H100-hours, so batching and contact-map deduplication are material design requirements.
+5. **Full evaluation after the measured scale decision.** Run all 180,079 decoys plus the native for all 133 targets on CoreWeave H100s. Fixed 32-candidate parts are assigned across 96 independent Iris root jobs by a greedy length-squared work estimate. Each worker loads Helico once and reuses target tokenization, but candidates remain separate model calls so that every candidate within a target receives the exact same reset diffusion seed as in the pilot. Results and timing companions are written atomically to fingerprinted, co-located CoreWeave object storage; restarts validate both objects before skipping a part.
 6. **Compare on paired candidates.** Recompute AF2Rank's published composite from the corrected table and include DeepAccNet and sign-corrected Rosetta energy. Primary decoy-ranking endpoints are mean target-wise Spearman correlation with reference TM-score and mean TM-score of the top-ranked decoy, matching the paper. Native-discrimination endpoints are native rank percentile, top-1 native recovery, mean reciprocal native rank, and per-target native-vs-decoy AUROC. Also report top-1 GDT-TS/TM-score regret, bootstrap 95% target-level intervals, and candidate-level calibration plots without pooling targets for rank correlations.
 7. **Robustness and leakage checks.** Report full-map versus present-only maps, pTM versus mean pLDDT, one versus three samples on the pilot, performance by target length/decoy quality, and the unconditioned Helico confidence as a per-target negative control. Keep primary conclusions on the preregistered pTM score; label all secondary analyses.
 
@@ -120,21 +120,28 @@ scores for those methods.
 
 ![Helico pTM against candidate TM-score](plots/pilot_ptm_vs_tmscore.png)
 
-### A naive full run is too expensive without batching
+### Full CoreWeave run
 
-The 225 predictions used 0.544 inference H100-hours, equivalent to $2.15 at the
-planning rate of $3.95/H100-hour, excluding model load, startup and idle time.
-Mean inference time was 8.71 seconds/candidate. Direct extrapolation to 180,079
-decoys plus 133 natives is **436 H100-hours, about $1,722 of inference compute
-and 54.5 hours wall time at eight continuously busy H100s**. A target-bootstrap
-projection is 424--449 H100-hours; it still excludes startup and the benchmark's
-longest proteins because the pilot spans 61--150 residues.
+The 225 pilot predictions used 0.544 inference H100-hours, equivalent to $2.15
+at the planning rate of $3.95/H100-hour, excluding model load, startup and idle
+time. Mean inference time was 8.71 seconds/candidate. Direct extrapolation to
+180,079 decoys plus 133 natives is **436 H100-hours, about $1,722 of inference
+compute**. A target-bootstrap projection is 424--449 H100-hours; it still
+excludes startup and the benchmark's longest proteins because the pilot spans
+61--150 residues.
 
-The next engineering gate is therefore same-target batching: share tokenization
-and amortize trunk work across multiple contact maps while retaining all
-candidate-level outputs. The full run will not launch from the one-candidate
-runner. After batching is benchmarked, the full-run estimate and any remaining
-cost decision will be posted to issue #335.
+The full run is therefore distributed across 96 CoreWeave H100 root jobs,
+which projects to roughly 4.5 hours of inference at ideal balance. The worker
+keeps the pilot's paired-randomness protocol rather than batching contact maps
+into a larger model batch, because batching would assign different diffusion
+noise to candidates and change the scientific comparison. It still amortizes
+checkpoint loading and target tokenization and uses resumable 32-candidate
+parts. The immutable run fingerprint is
+`efbfe3df8519d16654d75b62d0819ca05e81c46db87fe993a8fb9c168a6111cd`;
+working outputs live under
+`s3://marin-us-east-02a/MarinFold/exp335/full-v1/results/<fingerprint>/` and
+will be consolidated into the public `open-athena/MarinFold` Hugging Face
+bucket after completion.
 
 ## Conclusion
 
@@ -142,6 +149,5 @@ Interim pilot conclusion: candidate-derived contact maps contain enough signal
 for Helico confidence to rank structural quality, but pure pTM is not yet as
 strong as AF2Rank and identifies the exact native only one-third of the time in
 this small target-balanced pilot. Candidate/output agreement is a promising
-secondary discriminator. Data access and provenance are fully resolved; the
-remaining blocker to the 133-target evaluation is efficient batched inference,
-not benchmark availability.
+secondary discriminator. Data access and provenance are fully resolved, and
+the complete 133-target CoreWeave evaluation is now in progress.
