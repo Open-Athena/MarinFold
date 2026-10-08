@@ -18,6 +18,10 @@ ASSET_PREFIX = f"{S3_ROOT}/assets"
 INPUT_PREFIX = f"{S3_ROOT}/full-v1/inputs"
 HELICO_SHA = "b10385d736673c81b10e70d1099962af6f2573c0"
 CHECKPOINT_SHA256 = "779d540e5bb45cd26bb970188da2f1937ed3079942923a1356c29d06f20fe644"
+REFERENCE_CSV_SHA256 = (
+    "ddb3b91c27561212fa9152df4a4a436b9d01990cfe801569d7adc7f925fb75c9"
+)
+REFERENCE_CSV_REMOTE = f"{INPUT_PREFIX}/reference/rosetta_gapseq.csv"
 SOURCE_ARCHIVE_SHA256 = (
     "28db5ab75a21424c3ea977eb61152e60d33758d04cf798f49c1bce3ba1a276f2"
 )
@@ -137,6 +141,11 @@ def parse_args() -> argparse.Namespace:
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--input-dir", type=Path, default=Path("scratch/full_inputs"))
+    parser.add_argument(
+        "--af2rank-csv",
+        type=Path,
+        default=Path("scratch/reference/rosetta_gapseq.csv"),
+    )
     parser.add_argument("--helico-repo", type=Path, required=True)
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument(
@@ -183,6 +192,17 @@ def main() -> None:
     if not args.assets_only:
         manifest_path = args.input_dir / "manifest.json"
         manifest = json.loads(manifest_path.read_text())
+        reference_record = upload_one(
+            fs,
+            args.af2rank_csv,
+            REFERENCE_CSV_REMOTE,
+            REFERENCE_CSV_SHA256,
+        )
+        records.append(reference_record)
+        print(
+            f"{reference_record['status']}: {reference_record['remote']} "
+            f"({reference_record['bytes']} bytes)"
+        )
         targets = manifest["targets"]
         with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as pool:
             futures = {

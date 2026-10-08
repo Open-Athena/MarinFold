@@ -7,7 +7,13 @@ import subprocess
 import sys
 from pathlib import Path
 
-from stage_full_cw import DEFAULT_KUBECONFIG, INPUT_PREFIX, coreweave_s3
+from stage_full_cw import (
+    DEFAULT_KUBECONFIG,
+    INPUT_PREFIX,
+    REFERENCE_CSV_REMOTE,
+    REFERENCE_CSV_SHA256,
+    coreweave_s3,
+)
 
 DESTINATION = (
     "hf://buckets/open-athena/MarinFold/data/evals/exp335_helico_decoy_ranking/full-v1"
@@ -15,10 +21,6 @@ DESTINATION = (
 HERE = Path(__file__).resolve().parent
 DATA_DIR = HERE / "data"
 PLOTS_DIR = HERE / "plots"
-REFERENCE_CSV_SHA256 = (
-    "ddb3b91c27561212fa9152df4a4a436b9d01990cfe801569d7adc7f925fb75c9"
-)
-REFERENCE_CSV_REMOTE = f"{INPUT_PREFIX}/reference/rosetta_gapseq.csv"
 
 
 def task_path(path: Path) -> Path:
