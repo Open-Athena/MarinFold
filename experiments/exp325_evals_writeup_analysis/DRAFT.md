@@ -16,11 +16,23 @@ AlphaFold2, AlphaFold3 and Boltz-2 use the shared benchmark MSAs here, with temp
 
 ![Existing predictors across MSA depths](plots/01_predictors.png)
 
-More AF3 sampling rescues one difficult protein: 8oxk_A reaches TM-score 0.947
-in 1,000 full runs, and pTM selects it. Two other low-depth proteins remain
-below 0.8. [Details and per-protein plots](AF3_SAMPLING.md).
+More AF3 sampling brings 8oxk_A from TM 0.472 to 0.947, close to ESMFold2’s
+existing 0.940. Two low-depth proteins remain below 0.8 after 1,000 runs.
+These AF3 runs use ten recycles and fixed benchmark MSAs without templates;
+the baseline is five seeds × five samples, the expansion 1,000 seeds × one.
+[Protocol and per-protein plots](AF3_SAMPLING.md).
 
 ![AlphaFold3 sampling at low MSA depth](plots/01b_af3_sampling.png)
+
+ESMFold2 still has the higher mean TM on these five proteins: 0.854 versus
+0.719 for pTM-selected AF3 at 1,000 runs (0.681 with official ranking).
+
+![AF3 sampling versus the other predictors](plots/01c_af3_context.png)
+
+The existing AF3 baseline is stronger than ESMFold2 in the three deeper MSA
+bins. Extra sampling has only been tested in the shallowest bin.
+
+![TM-score across MSA depths](plots/01d_af3_depth_context.png)
 
 Helico does much better when we give it the answer: the ground-truth contact map, including non-contacts. This is an information upper bound.
 

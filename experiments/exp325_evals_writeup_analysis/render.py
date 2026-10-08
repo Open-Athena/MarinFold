@@ -22,6 +22,7 @@ from plotly.subplots import make_subplots
 
 from build_summary import save_plot_with_meta
 from render_af3_sampling import main as render_af3_sampling
+from render_af3_context import main as render_af3_context
 from theme import CAPTIONS, COHORTS, FONT, GRID, INK, METHODS, METRICS, ORDER, PALETTE, PAPER, TIERS, TITLES
 
 HERE = Path(__file__).resolve().parent
@@ -490,7 +491,13 @@ def preview(names: list[str]) -> None:
             lineage = ('Each dot: <a href="../data/af3_sampling_samples.csv">per-seed accuracy, pTM and structure hashes</a>. '
                        'Curves: <a href="../data/af3_sampling_curves.csv">prefix budgets and selected seeds</a>. '
                        '<a href="../AF3_SAMPLING.md">Protocol, results and reproduction commands</a>. ')
+        elif name in ("01c_af3_context", "01d_af3_depth_context"):
+            lineage = ('Each cell: <a href="../data/af3_context_rows.csv">source-traced TM scores</a>. '
+                       'Means and uncertainty: <a href="../data/af3_context_summary.csv">protein aggregates</a>. '
+                       '<a href="../AF3_SAMPLING.md">Sampling and standard AF3 recipe comparison</a>. ')
         manifest = "af3_sampling_analysis.json" if name == "01b_af3_sampling" else "manifest.json"
+        if name in ("01c_af3_context", "01d_af3_depth_context"):
+            manifest = "af3_context_analysis.json"
         sections.append(f'<section id="section-{name}"><p class="number">FIGURE {name[:2]}</p>'
                         f'<h2>{html.escape(TITLES[name])}</h2><div class="frame"><div id="{name}" class="chart"></div></div>'
                         f'<p class="caption">{html.escape(CAPTIONS[name])}</p>'
@@ -539,8 +546,11 @@ def main() -> None:
     names = list(TITLES)
     if (DATA / "af3_sampling_samples.csv").exists():
         render_af3_sampling()
+        render_af3_context()
     else:
         names.remove("01b_af3_sampling")
+        names.remove("01c_af3_context")
+        names.remove("01d_af3_depth_context")
     if (DATA / "structured_confidence_ranks.csv").exists():
         export_plotly(confidence_figure(), "02b_confidence")
         export_plotly(accuracy_confidence_figure(), "02c_accuracy_confidence")

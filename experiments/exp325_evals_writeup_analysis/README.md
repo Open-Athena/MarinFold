@@ -240,9 +240,9 @@ This distinction is explicit in the manifest and figure captions.
 Small tables and figures live on this branch. `publish_to_hf.py` packages raw
 completions, votes, diffusion coordinates, conditioning maps, scores and timings
 for the [public artifact prefix](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking).
-Twenty-two analysis checks pass, including source-row round trips and fixed
+Twenty-six analysis checks pass, including source-row round trips and fixed
 confidence selection. Desktop and mobile previews were checked in Chromium,
-including the test-split menus; the PDF has five narrative and twenty-one plot pages, including five separate AF3 sampling pages. The accuracy–confidence section has
+including the test-split menus; the PDF has six narrative and twenty-three plot pages, including five separate AF3 sampling pages and two TM-score context panels. The accuracy–confidence section has
 one page per protein, with original ESMFold2 and reconstructed Helico TM-score versus pTM,
 its oracle rank, and the cached within-protein correlations.
 
@@ -260,3 +260,16 @@ Additional AF3 sampling recovers an accurate 8oxk_A fold: TM 0.947 after 1,000
 independent full runs, selected by pTM; 20 / 1,000 reach TM ≥0.8. Two other
 low-depth proteins remain below that threshold after 1,000 runs. This separates
 the presence of rare accurate candidates from the ability to rank them.
+
+
+The [AF3 context analysis](AF3_SAMPLING.md#context-the-other-predictors) compares
+the same five proteins and all four MSA bins on the TM-score scale. ESMFold2
+already reaches 0.940 on 8oxk_A, versus AF3's 0.947 at 1,000 runs. Across the
+five, ESMFold2 averages 0.854; AF3 averages 0.603 at the original budget,
+0.681 with official ranking at 1,000, and 0.719 with pTM at 1,000. The original
+AF3 baseline exceeds ESMFold2 in the three deeper bins. The extended study
+has only been run at depth <10. Default recycles/samples, user-chosen seed
+counts, native search versus shared-MSA inputs, and selection rules are
+explicitly separated in the protocol comparison. `prepare_af3_context.py`
+caches the matched tables and protein-bootstrap intervals;
+`render_af3_context.py` renders both static and interactive comparisons.

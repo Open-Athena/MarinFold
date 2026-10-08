@@ -12,6 +12,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 from build_summary import save_plot_with_meta
+from render_af3_context import load_tables
 from theme import GRID, INK, PALETTE, PAPER
 
 matplotlib.use("Agg")
@@ -37,7 +38,7 @@ def save(fig: plt.Figure, name: str, caption: str, *, include: bool = True) -> N
     plt.close(fig)
 
 
-def interactive(samples: pd.DataFrame, curves: pd.DataFrame, protocol: dict) -> None:
+def interactive(samples: pd.DataFrame, curves: pd.DataFrame, protocol: dict, context: pd.DataFrame) -> None:
     """Expose exact seeds and scores in an interactive per-protein view."""
     fig = make_subplots(rows=1, cols=2, horizontal_spacing=0.14)
     stems = sorted(samples.stem.unique())
@@ -60,11 +61,18 @@ def interactive(samples: pd.DataFrame, curves: pd.DataFrame, protocol: dict) -> 
                           marker=dict(color=color, size=15, symbol=symbol), customdata=[[int(seed)]],
                           hovertemplate="Seed %{customdata[0]}<br>pTM %{x:.4f}<br>TM %{y:.4f}<extra>%{fullData.name}</extra>"), row=1, col=1)
         for metric, seed_column, color, label in [("best_tm", "best_seed", INK, "Oracle best TM"),
-                                                ("ptm_selected_tm", "ptm_selected_seed", PALETTE[3], "pTM selected")]:
+                                                ("ptm_selected_tm", "ptm_selected_seed", PALETTE[3], "pTM selected"),
+                                                ("ranking_selected_tm", "ranking_selected_seed", PALETTE[1], "Official rank selected")]:
             fig.add_trace(go.Scatter(x=curve.budget.tolist(), y=curve[metric].tolist(), mode="lines", name=label,
-                          showlegend=False, line=dict(color=color, shape="hv"),
+                          showlegend=metric == "ranking_selected_tm", line=dict(color=color, shape="hv"),
                           customdata=curve[[seed_column]].values.tolist(),
                           hovertemplate="Budget %{x}<br>Seed %{customdata[0]}<br>TM %{y:.4f}<extra>%{fullData.name}</extra>"), row=1, col=2)
+        for method, label, color in [("af3", "AF3 baseline (25)", "#817970"),
+                                     ("esmfold2", "ESMFold2 baseline", PALETTE[2])]:
+            baseline = context[(context.stem == stem) & (context.method == method)].iloc[0]
+            fig.add_trace(go.Scatter(x=[1, int(curve.budget.max())], y=[baseline.tm_score] * 2,
+                          name=label, mode="lines", line=dict(color=color, dash="dot"),
+                          hovertemplate="TM %{y:.4f}<extra>%{fullData.name}</extra>"), row=1, col=2)
         groups.append((start, len(fig.data)))
         for trace in fig.data[start:]:
             trace.visible = index == 0
@@ -109,8 +117,9 @@ def main() -> None:
     curves = pd.read_csv(HERE / "data/af3_sampling_curves.csv")
     summary = pd.read_csv(HERE / "data/af3_sampling_summary.csv")
     original = pd.read_csv(HERE / "data/af3_sampling_original.csv")
+    context, _ = load_tables()
     threshold = protocol["accuracy_threshold_tm"]
-    interactive(samples, curves, protocol)
+    interactive(samples, curves, protocol, context)
     for stem, frame in samples.groupby("stem", sort=True):
         curve = curves[curves.stem == stem]
         final = curve.iloc[-1]
@@ -139,11 +148,14 @@ def main() -> None:
         axes[0].legend(loc="upper left", bbox_to_anchor=(-0.02, -0.18), frameon=False, ncol=2, fontsize=9)
         axes[1].step(curve.budget, curve.best_tm, where="post", color=INK, lw=2, label="Oracle best TM")
         axes[1].step(curve.budget, curve.ptm_selected_tm, where="post", color=PALETTE[3], lw=1.8, label="Selected by pTM")
+        axes[1].step(curve.budget, curve.ranking_selected_tm, where="post", color=PALETTE[1], lw=1.2, label="Official rank selected")
         axes[1].axhline(old_selected.tm_score, color="#817970", ls=":", lw=1.5, label="Original AF3 selection (25)")
+        esmfold2 = context[(context.stem == stem) & (context.method == "esmfold2")].iloc[0]
+        axes[1].axhline(esmfold2.tm_score, color=PALETTE[2], ls="--", lw=1.5, label=f"ESMFold2 baseline ({esmfold2.tm_score:.3f})")
         axes[1].set(xscale="log", xlim=(1, len(frame)), xlabel="Number of full AF3 runs", ylabel="TM-score")
         ticks = [n for n in [1, 10, 100, 1000] if n <= len(frame)]
         axes[1].set_xticks(ticks, labels=[f"{n:,}" for n in ticks])
-        axes[1].legend(loc="upper left", bbox_to_anchor=(-0.02, -0.18), frameon=False, fontsize=9)
+        axes[1].legend(loc="upper left", bbox_to_anchor=(-0.02, -0.18), frameon=False, fontsize=8, ncol=2)
         fig.text(0.07, 0.045, f"TM ≥ {threshold:.1f}: {int(final.hits_tm_80)}/{len(frame):,} runs   |   "
                  f"Best TM {final.best_tm:.3f}   |   pTM-selected TM {final.ptm_selected_tm:.3f}", fontsize=11)
         caption = (f"{stem}: each point is one independent AF3 trunk + diffusion run, seeds starting at 10000, ten recycles, "
@@ -151,7 +163,9 @@ def main() -> None:
                    "Oracle best TM uses truth only for this diagnostic. Dashed line: prespecified TM >=0.8. "
                    "Curves use the ascending-seed prefix; original dotted baseline selected among five seeds x five samples "
                    "by official ranking_score. Data: af3_sampling_samples.csv and af3_sampling_curves.csv; "
-                   "original baseline: af3_sampling_original.csv. All are in data/; preprocessing: prepare_af3_sampling.py.")
+                   "original baseline: af3_sampling_original.csv. ESMFold2 baseline: af3_context_rows.csv. "
+                   "Official ranking_score selection is shown separately from pTM. All are in data/; "
+                   "preprocessing: prepare_af3_sampling.py and prepare_af3_context.py.")
         save(fig, f"01b_af3_sampling_{stem}", caption)
     fig, ax = plt.subplots(figsize=(10.4, 5.4), facecolor=PAPER)
     fig.subplots_adjust(left=0.13, right=0.96, top=0.77, bottom=0.27)

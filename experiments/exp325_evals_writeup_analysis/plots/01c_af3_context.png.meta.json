@@ -1,0 +1,5 @@
+{
+  "script": "render_af3_context.py",
+  "args": [],
+  "caption": "TM-score for the same five natural test proteins with MSA depth <10. Top block: archived predictor entries, including the 248B-token MarinFold top-L contacts through Helico. Middle: 100 or 1,000 fresh AF3 full runs, one diffusion sample per seed, selected by official ranking_score or pTM. Bottom: ground-truth diagnostics, oracle best AF3 TM and Helico conditioned on the oracle map. ESMFold2 is the archived baseline, not a selected member or average of the 100-contact-map decoy pool. AF3 baseline uses five seeds times five diffusion samples, ten recycles, shared archived MSAs and no templates. Expanded runs retain the same inputs and recycles. Compute budgets differ. Hover identifies the exact source CSV cell."
+}

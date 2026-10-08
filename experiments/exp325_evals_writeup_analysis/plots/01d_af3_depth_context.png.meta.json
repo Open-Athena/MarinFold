@@ -1,0 +1,5 @@
+{
+  "script": "render_af3_context.py",
+  "args": [],
+  "caption": "Mean TM-score on the same 305 natural proteins as the main structural figures: 5, 20, 60 and 220 proteins across the four MSA bins. All archived predictors cover exactly this population; each protein receives equal weight. Hover shows 95% protein-bootstrap intervals and success counts; the prepared CSV retains every contributing row. The 1,000-run AF3 study covers only the five <10 proteins; other cells are not run. Stars mark ground-truth diagnostics. Different bins contain different proteins, so this does not estimate the causal effect of adding MSA sequences. All AF3 results use shared benchmark MSAs and no templates, not the native search pipeline. Budgets and training data differ between predictors."
+}

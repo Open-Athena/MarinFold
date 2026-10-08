@@ -279,3 +279,24 @@ figures with `uv run python render_af3_sampling.py`; regenerate the complete
 interactive draft with `uv run python render.py`, and assemble all per-protein
 pages with `uv run python build_summary.py`. None of these rendering commands
 runs a predictor or recomputes structural accuracy.
+
+## AF3 context: other predictors and MSA depths
+
+```bash
+uv run python prepare_af3_context.py
+# Repeat only these commands for appearance changes:
+uv run python render_af3_context.py
+uv run python render_af3_sampling.py
+uv run python -c 'from render import preview; from theme import TITLES; preview(list(TITLES))'
+uv run python build_summary.py
+uv run pytest -q
+uv run python publish_af3_sampling.py --upload
+```
+
+This adds no predictor runs. Preprocessing joins the existing 305-protein
+population to archived TM-scores and the five 1,000-seed pools, then computes
+protein-level means and bootstrap intervals. The renderers consume only the
+cached CSVs. The AF3 public package includes `context_sources/` with the original
+tables under repository-relative paths; copy those into a checkout root before
+rerunning context preprocessing. Protocol and interpretation:
+[AF3_SAMPLING.md](AF3_SAMPLING.md#what-is-standard-af3-inference-here).

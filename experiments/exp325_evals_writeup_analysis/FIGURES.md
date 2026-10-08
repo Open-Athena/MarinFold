@@ -109,3 +109,24 @@ prepared CSVs and verifies their hashes. Scatter points map to `(stem, seed)` in
 source row, and every seed has a structure path and checksum. The interactive
 view selects a protein and exposes exact seed/pTM/TM values on hover. See
 [AF3_SAMPLING.md](AF3_SAMPLING.md) for the frozen protocol, interpretation and commands.
+
+AF3 context adds `01c_af3_context` (each of the five proteins) and
+`01d_af3_depth_context` (the same 305 natural proteins as Figure 01, using
+TM-score throughout). `prepare_af3_context.py` writes `af3_context_rows.csv`:
+every cell retains the original `source`, zero-based `source_row` and
+`source_column`, plus its row in `targets.csv`. Extended AF3 rows identify
+the selected seed, budget and selector. `af3_context_summary.csv` records
+means, 95% protein-bootstrap intervals, n, stems and contributing `context_rows`.
+Only the <10 tier has extended AF3 results. Missing cells mean not run.
+`af3_context_low_depth.csv` retains paired deltas from the original AF3 baseline.
+The ESMFold2 comparator uses the archived baseline, not the 100-map decoy pool.
+MarinFold→Helico uses exp277 step266344 at the fixed top-L cut, selected by
+confidence, matching Figure 05. Oracle rows are ground-truth diagnostics.
+
+`render_af3_context.py` checks the prepared file hashes and writes PNG/PDF/SVG
+and interactive matrices. Hover reveals each source cell or aggregate interval.
+The individual AF3 sampling pages now add official-ranking selection and
+horizontal AF3-25 and ESMFold2 baseline references; all three selection curves
+still refer to the same frozen fresh-seed pool. Figure rendering never runs a
+predictor, structural metric, or bootstrap. AF3's official default settings and
+the differences in our MSA/template inputs are documented in AF3_SAMPLING.md.

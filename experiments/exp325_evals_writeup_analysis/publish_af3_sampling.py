@@ -26,17 +26,26 @@ def main() -> None:
     with (HERE / "data/af3_sampling_samples.csv").open() as stream:
         references = {row["stem"]: row["ground_truth_file"] for row in csv.DictReader(stream)}
     paths = [HERE / name for name in ["AF3_SAMPLING.md", "prepare_af3_sampling.py", "render_af3_sampling.py",
+             "prepare_af3_context.py", "render_af3_context.py", "prepare.py", "test_af3_context.py",
              "publish_af3_sampling.py", "theme.py", "build_summary.py", "summary_narrative.md",
              "pyproject.toml", "uv.lock", "generation/run_af3_sampling.py", "generation/run_af_baselines.py",
              "generation/alphafold_worker.py", "generation/score_af3_sampling.py", "generation/score_alphafold.py",
              "generation/pyproject.toml", "generation/uv.lock", "plots/summary.pdf", "test_af3_sampling.py"]]
     for pattern in ["data/af3_sampling*", "plots/01b_af3_sampling*", "site/01b_af3_sampling*",
+                    "data/af3_context*", "plots/01c_af3_context*", "plots/01d_af3_depth_context*",
+                    "site/01c_af3_context*", "site/01d_af3_depth_context*",
                     "data/inputs/Lato-*.ttf", "data/af3_*terms*", "data/af3_notice.txt"]:
         paths.extend(p for p in HERE.glob(pattern) if p.name != "af3_sampling_publication.json")
     for path in sorted(set(paths)):
         destination = stage / path.relative_to(HERE)
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(path, destination)
+    context = json.loads((HERE / "data/af3_context_analysis.json").read_text())
+    for relative in context["sources"]:
+        source = HERE.parents[1] / relative
+        destination = stage / "context_sources" / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, destination)
     raw = stage / "raw"
     raw.mkdir(exist_ok=True)
     for record in protocol["targets"]:
@@ -63,7 +72,8 @@ def main() -> None:
     manifest = dict(destination=DESTINATION, files=inventory,
                     extraction="Extract raw/<stem>.tar.gz into scratch/af3_sampling/results/; "
                     "extract original_af3_5x5.tar.gz into scratch/alphafold/results/af3/. "
-                    "Per-sample CSVs contain relative paths and checksums. MSA and reference structures are under raw/.")
+                    "Per-sample CSVs contain relative paths and checksums. MSA and reference structures are under raw/. "
+                    "Copy context_sources/ into a MarinFold checkout root to restore all source tables for prepare_af3_context.py.")
     (stage / "publication_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     (HERE / "data/af3_sampling_publication.json").write_text(json.dumps(manifest, indent=2) + "\n")
     print(f"{len(inventory)} artifacts, {sum(r['bytes'] for r in inventory.values()) / 1e6:.1f} MB → {DESTINATION}")

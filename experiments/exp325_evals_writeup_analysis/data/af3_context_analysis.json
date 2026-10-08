@@ -1,0 +1,64 @@
+{
+  "preprocessor": "prepare_af3_context.py",
+  "preprocessor_sha256": "bd8b60809e8f566625199e6db33b3a76a5168071c463a815afda9877bb6c33ef",
+  "sources": {
+    "experiments/exp325_evals_writeup_analysis/data/targets.csv": {
+      "sha256": "16079908b54d9a913c14b9fa18a24e24d7bb44379d736077f3f653283ac4a23c",
+      "bytes": 13853
+    },
+    "experiments/exp325_evals_writeup_analysis/data/figure_rows.csv": {
+      "sha256": "35a551c403cab4f12c5701ec880ccecb0f2ff8b8795ad01aad4a146a5fd90901",
+      "bytes": 3892253
+    },
+    "experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv": {
+      "sha256": "d1080049e66a6a4235206ab150638d9ddfb7460987eac3c23f152fbb23c00d50",
+      "bytes": 538118
+    },
+    "experiments/exp325_evals_writeup_analysis/data/af2_structure_metrics.csv": {
+      "sha256": "0adb0b68518c094b48ce447d397c7dd241227f553fb9135212d5458b33e21b7f",
+      "bytes": 99049
+    },
+    "experiments/exp325_evals_writeup_analysis/data/af3_structure_metrics.csv": {
+      "sha256": "5098b5b83f83eff224074b669babdd5aad7e4ef297eb1913d04e43b6314bbe5b",
+      "bytes": 102987
+    },
+    "experiments/exp325_evals_writeup_analysis/data/boltz2_structure_metrics.csv": {
+      "sha256": "511fb0e4b0d6f27833071037cc0e392d6533ecf124422a383d205f1dacd825fd",
+      "bytes": 103917
+    },
+    "experiments/exp311_evals_helico_exp277_contact_count_sweep/data/per_target_selection.csv": {
+      "sha256": "3c2304af93055b69fbb15d0a36cbd3c116ee2622e9f70c1d9d14078f0d669c07",
+      "bytes": 80124
+    },
+    "experiments/exp325_evals_writeup_analysis/data/helico_folding_samples.csv": {
+      "sha256": "39f3524d5859e1c27fad737ac96e2e8e54b91f3bdbc452f99825fee2210205e7",
+      "bytes": 242085
+    },
+    "experiments/exp325_evals_writeup_analysis/data/af3_sampling_samples.csv": {
+      "sha256": "00b8dcc8b679b9214ce86a622146c1253fba05d6aae9e4de005c5cd8c56f1c20",
+      "bytes": 2682625
+    }
+  },
+  "files": {
+    "af3_context_rows.csv": "1cac7221ec17cd4cab308c39a5757c77cc99a649756380275dcee474c06ed4b0",
+    "af3_context_summary.csv": "49e0c379d9d5391cfeb43ce8125bb72c03cf356538fc0f139d3c4635f1150a67",
+    "af3_context_low_depth.csv": "a5d5cd597928ccb9563889e5293873999eb8a9b440d4b67b27190b8b6cc6b355"
+  },
+  "matched_natural_proteins": 305,
+  "msa_bin_counts": {
+    "100\u2013999": 60,
+    "10\u201399": 20,
+    "<10": 5,
+    "\u22651000": 220
+  },
+  "metric": "TM-score; archived reference-normalized protein scores; higher is better",
+  "uncertainty": "95% percentile intervals, 5000 protein bootstraps, seed 325",
+  "limits": [
+    "Different MSA bins contain different proteins; this is not an MSA intervention.",
+    "Extended AF3 exists only at depth <10; missing cells mean not run.",
+    "AF3 baseline is shared archived MSA/no templates, not the native search pipeline.",
+    "Predictor budgets and training data differ; this is not matched compute.",
+    "ESMFold2 entries are archived baseline predictions, not the 100-map decoy pool.",
+    "Oracle rows use ground truth and are diagnostic, not deployable selectors."
+  ]
+}

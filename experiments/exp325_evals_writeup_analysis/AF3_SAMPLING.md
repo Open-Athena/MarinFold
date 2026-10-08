@@ -54,6 +54,108 @@ proteins remain five biological examples; 5,000 draws do not enlarge the
 benchmark population. A failure to observe TM ≥0.8 does not show that AF3 can
 never generate an accurate structure.
 
+## Context: the other predictors
+
+The 8oxk_A recovery is substantial relative to AF3's original prediction, but
+ESMFold2 already achieves TM **0.940** on this protein. AF3's pTM-selected
+1,000-run result reaches **0.947**. This is AF3 catching up on this case.
+
+Across these five proteins, mean TM is **0.603** for original AF3, **0.681**
+for official-ranking selection from 1,000 runs, **0.719** for pTM selection,
+and **0.780** for oracle best-of-1,000. The archived ESMFold2 baseline averages
+**0.854**. At the prespecified TM ≥0.8 threshold, the original AF3 prediction
+succeeds on 2/5 proteins, either 1,000-run confidence selector on 3/5, and
+ESMFold2 on 4/5. These are descriptive results on five proteins, with wide
+protein-bootstrap intervals retained in the prepared table.
+
+| Protein | AF3 baseline: 25, official rank | AF3: 1,000, official rank | AF3: 1,000, pTM | ESMFold2 | Protenix-v2 + MSA |
+|---|---:|---:|---:|---:|---:|
+| 8ii8_A | 0.861 | 0.849 | 0.849 | 0.849 | 0.672 |
+| 8oxk_A | 0.472 | 0.947 | 0.947 | 0.940 | 0.324 |
+| 8qoh_A | 0.428 | 0.394 | 0.472 | 0.882 | 0.467 |
+| 8ux2_A | 0.361 | 0.318 | 0.434 | 0.708 | 0.740 |
+| 8wrx_A | 0.895 | 0.895 | 0.895 | 0.894 | 0.757 |
+
+ESMFold2 reaches 0.882 on 8qoh_A, compared with AF3's best-of-1,000 of 0.502.
+On 8ux2_A, Protenix-v2 + MSA reaches 0.740 and ESMFold2 0.708, versus AF3's
+best-of-1,000 of 0.635. More AF3 sampling does not close these gaps here.
+Its aggregate gain is driven mainly by 8oxk_A; confidence-selected accuracy
+need not increase with budget, as the individual curves show.
+
+![AF3 and other predictors on each low-depth protein](plots/01c_af3_context.png)
+
+These ESMFold2 entries are the archived predictor baseline, **not** the mean,
+median or oracle-selected member of the later 100-prediction decoy pool.
+The figure also includes the current 248B-token MarinFold top-L contacts through
+Helico. Helico with the oracle map and oracle best AF3 use experimental truth
+and are explicitly diagnostic rows. Budgets and training data differ across
+predictors; this is not a matched-compute comparison.
+
+## Context: other MSA depths
+
+The same **305 matched natural proteins** used in the main structural panels
+are used here, with **TM-score throughout**. Each protein has equal weight.
+The main panels' GDT-TS/lDDT numbers should not be directly compared with these
+TM-scores. The four bins contain 5, 20, 60 and 220 proteins, respectively.
+
+| Predictor / selector | <10 (n=5) | 10–99 (n=20) | 100–999 (n=60) | ≥1000 (n=220) |
+|---|---:|---:|---:|---:|
+| AF3 baseline: 25, official rank | 0.603 | 0.891 | 0.932 | 0.955 |
+| AlphaFold2 + MSA | 0.457 | 0.889 | 0.921 | 0.954 |
+| Boltz-2 + MSA | 0.535 | 0.886 | 0.928 | 0.955 |
+| Protenix-v2 + MSA | 0.592 | 0.900 | 0.926 | 0.957 |
+| ESMFold2 | 0.854 | 0.691 | 0.874 | 0.944 |
+| ESMFold | 0.698 | 0.624 | 0.829 | 0.925 |
+| Protenix-v2 single sequence | 0.504 | 0.545 | 0.489 | 0.451 |
+| Helico + MarinFold (248B) | 0.545 | 0.570 | 0.648 | 0.796 |
+| AF3: 1,000, official rank | 0.681 | not run | not run | not run |
+| AF3: 1,000, pTM | 0.719 | not run | not run | not run |
+
+ESMFold2 is strongest among the archived predictors in the <10 bin, while the
+existing AF3 baseline has higher mean TM than ESMFold2 in all three deeper
+bins. These bins contain different proteins: this is **not** evidence for a
+causal MSA-depth effect or a controlled MSA downsampling experiment.
+The 1,000-run AF3 study has **not been run at higher depths**.
+
+![Predictor TM-score across the four MSA depth bins](plots/01d_af3_depth_context.png)
+
+## What is standard AF3 inference here?
+
+The pinned official implementation defaults to **ten recycles and five diffusion
+samples per seed**. Seed count is supplied by the user; five full seeds is our
+chosen baseline budget, not a universal CLI default. See the
+[official runner at the evaluated revision](https://github.com/google-deepmind/alphafold3/blob/3c89cc7b89aa7042b72885af9016a45b262da008/run_alphafold.py).
+
+| Setting | Native AF3 pipeline / inference defaults | Our archived baseline | Our expanded sampling |
+|---|---|---|---|
+| Full seeds | User specifies | 5 (42–46) | 100, then 1,000 (10000–10999) |
+| Diffusion samples / seed | 5 | 5 | 1 |
+| Predicted structures / protein | 5 × chosen seeds | 25 | 100, then 1,000 |
+| Recycles | 10 | 10 | 10 |
+| MSA and templates | Native searches when omitted | Fixed archived ColabFold A3M; no templates | Same fixed A3M; no templates |
+| Final selection | Official ranking_score | Official ranking_score | pTM and official ranking_score reported separately |
+| Evaluated population here | Full native pipeline not evaluated | All 305 matched natural proteins | Five depth <10 proteins only |
+
+AF3 documents both automatic MSA/template searches and custom input overrides.
+We explicitly supply `unpairedMsa`, set `pairedMsa` to an empty string and
+`templates` to an empty list. Therefore neither set of our results measures
+the complete native search pipeline. See the
+[official input documentation](https://github.com/google-deepmind/alphafold3/blob/3c89cc7b89aa7042b72885af9016a45b262da008/docs/input.md).
+
+For these single-chain inputs, official ranking_score is
+`pTM + 0.5 × fraction_disordered − 100 × has_clash`, whereas pTM selection
+uses only pTM. These are distinct selectors even on monomers, as the
+[official confidence implementation](https://github.com/google-deepmind/alphafold3/blob/3c89cc7b89aa7042b72885af9016a45b262da008/src/alphafold3/model/confidences.py)
+shows. The official-rank rows keep the selector consistent between 25 and
+1,000 predictions; the pTM rows report the alternative requested for this post.
+Oracle best TM uses the experimental reference and is not a deployable ranker.
+
+The 1,000-run study generates **40× as many structures but 200× as many full
+trunk evaluations** as the five-seed baseline. Neither ratio is a measured
+runtime multiplier. We retained input evidence while spending more inference
+on independent full seeds; this does not test additional MSA evidence, templates,
+multimer context, or an equal-compute tradeoff between seeds and diffusion samples.
+
 ## Reproduce and trace each point
 
 Run commands from this experiment directory:
@@ -66,7 +168,10 @@ uv run python prepare_af3_sampling.py
 AF_VARIANT=af3 uv run --project generation modal run generation/run_af3_sampling.py --budget 1000
 uv run --project /home/bizon/git/helico --no-sync --with scikit-learn python generation/score_af3_sampling.py --budget 1000
 uv run python prepare_af3_sampling.py
+# Build the matched-predictor TM tables once (no new inference):
+uv run python prepare_af3_context.py
 # Aesthetics-only iteration, with no inference or structural scoring:
+uv run python render_af3_context.py
 uv run python render_af3_sampling.py
 uv run python build_summary.py
 uv run python publish_af3_sampling.py --upload
@@ -84,6 +189,8 @@ metric implementation. Parameter files are excluded from exported artifacts.
 | Best / pTM-selected curve at budget N | `data/af3_sampling_curves.csv`, `(stem, budget)` | `prepare_af3_sampling.py`; selected seed IDs on the same row |
 | 100 / 1,000 comparison and hit counts | `data/af3_sampling_summary.csv` | Fixed prefix rows from the same curves |
 | Original selected baseline | `data/af3_sampling_original.csv` | Highest official ranking_score among the original 25 candidates |
+| Predictor comparison cell / horizontal reference | `data/af3_context_rows.csv`, `(stem, method)` | `prepare_af3_context.py`; original file, zero-based row and column retained |
+| MSA-tier mean / hover interval | `data/af3_context_summary.csv`, `(method, tier)` | Same script; contributing `context_rows`, protein bootstrap |
 | Per-run timing and hardware | `data/af3_sampling_timings.csv` | Captured at inference; model setup is shared across seeds and reported separately |
 
 Raw structures, confidences, timings, input MSAs and reference CIFs are

@@ -44,6 +44,23 @@ Per-protein plots separate oracle best-of-N from pTM-selected TM.
 The first 100 runs are unchanged; original baseline scores reproduce.
 Five biological examples, fixed generation settings, no model tuning.
 
+## AF3 sampling in predictor and MSA-depth context
+
+8oxk_A: ESMFold2 already reaches TM 0.940; AF3 at 1,000 reaches 0.947.
+Five low-depth proteins, mean TM: ESMFold2 0.854; AF3 baseline 0.603;
+AF3 at 1,000: 0.681 with official ranking, 0.719 with pTM, 0.780 oracle best.
+TM >=0.8: ESMFold2 4/5; original AF3 2/5; expanded AF3 3/5.
+
+At depths 10–99 / 100–999 / >=1000, baseline AF3 means: 0.891 / 0.932 / 0.955.
+ESMFold2: 0.691 / 0.874 / 0.944. Same 305 proteins; bin n=5 / 20 / 60 / 220.
+Different proteins occupy each bin; extended sampling only exists at depth <10.
+
+Official defaults: ten recycles, five diffusion samples per user-specified seed.
+Our baseline: 5 full seeds x 5 samples; expanded: 1,000 full seeds x 1 sample.
+Both use fixed archived MSAs and no templates, not the native search pipeline.
+40x structures, 200x trunk evaluations; neither is a measured runtime ratio.
+Official ranking includes disorder/clash terms; pTM ranking is shown separately.
+
 ## Useful diversity is the open question
 
 314 proteins × 100 samples: consensus R-precision 0.561; oracle best individual map 0.528.
