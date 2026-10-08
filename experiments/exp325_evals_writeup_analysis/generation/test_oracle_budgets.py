@@ -30,6 +30,9 @@ def test_sparse_maps_reveal_only_exact_true_contacts() -> None:
     assert np.array_equal(maps["oracle-0"], oracle)
     repeat = build_maps(oracle, "protein-a", 30)
     assert all(np.array_equal(state, repeat[key]) for key, state in maps.items())
+    l2_only = build_maps(oracle, "protein-a", 30, budgets=("random_L2",), controls=())
+    assert set(l2_only) == {"random_L2-0", "random_L2-1"}
+    assert all(np.array_equal(state, maps[key]) for key, state in l2_only.items())
 
 
 def test_fixed_budget_fails_but_relative_budget_caps() -> None:
@@ -41,3 +44,5 @@ def test_fixed_budget_fails_but_relative_budget_caps() -> None:
     oracle[0, 9:12] = oracle[9:12, 0] = 0
     with pytest.raises(ValueError, match="requests 10 contacts"):
         build_maps(oracle, "too-few", 100)
+    l2_only = build_maps(oracle, "too-few", 100, budgets=("random_L2",), controls=())
+    assert all(np.triu(state == 2, 1).sum() == 8 for state in l2_only.values())

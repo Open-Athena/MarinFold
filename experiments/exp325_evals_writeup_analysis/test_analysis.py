@@ -229,6 +229,23 @@ def test_added_baseline_preserves_original_populations() -> None:
         assert (x.groupby(["method", "metric"]).stem.nunique() == expected).all()
 
 
+def test_depth_oracle_points_use_two_l2_subsets_and_no_negatives() -> None:
+    rows = pd.read_csv(DATA / "figure_rows.csv")
+    samples = pd.read_csv(DATA / "helico_oracle_l2_samples.csv")
+    assert len(samples) == 1830 and samples.arm.eq("random_L2").all()
+    assert samples.n_absent.eq(0).all()
+    selected = samples.sort_values(["ranking_score", "sample_idx"], ascending=[False, True]).drop_duplicates(["stem", "map_seed"])
+    means = selected.groupby("stem")[["gdt_ts", "lddt"]].mean()
+    for figure in ("02_oracle", "05_folding"):
+        panel = rows[rows.figure == figure]
+        assert "oracle" not in set(panel.method)
+        assert panel.designed.eq(0).all()
+        for metric in ("gdt_ts", "lddt"):
+            dots = panel[(panel.method == "oracle_L2") & (panel.metric == metric)].set_index("stem")
+            assert len(dots) == 305
+            np.testing.assert_allclose(dots.value, means.loc[dots.index, metric], atol=1e-12, rtol=0)
+
+
 def test_boltz2_fixed_recipe_and_recorded_msa_processing() -> None:
     protocol = json.loads((DATA / "boltz2_inputs.json").read_text())
     assert (protocol["seed"], protocol["diffusion_samples"], protocol["recycling_steps"]) == (42, 25, 10)

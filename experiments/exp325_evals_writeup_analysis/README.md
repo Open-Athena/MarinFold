@@ -77,9 +77,17 @@ unknown. Confidence selects one of three diffusion samples at the fixed cut.
 Benchmark entities, including non-protein entities where present, are retained.
 GDT-TS and lDDT remain distinct metrics.
 
-The oracle supplies the **full ground-truth three-state map**, including true
-non-contacts. It is an information upper bound, not a deployable predictor or
-a matched-count comparison with MarinFold. Figure 02b compares it with all 100
+The main depth panels (Figures 02 and 05) use **L/2 randomly sampled true contacts**
+as the oracle point, with no non-contacts or MSA. Two subsets are averaged within
+each of the same 305 natural proteins after selecting among three diffusion
+samples per subset by `ranking_score`. One target has 109 positives versus a
+110-contact request. See [the exact protocol and results](ORACLE_L2.md).
+Mean GDT-TS is **0.906 / 0.841 / 0.853 / 0.839** across the four depth tiers,
+**0.843** overall. This ground-truth diagnostic has different contact/inference
+budgets from MarinFold.
+
+The separate confidence study retains the **full ground-truth three-state map**,
+including true non-contacts. Figure 02b compares it with all 100
 seeded ESMFold2 maps for each of the five low-depth natural proteins. Full
 predictor contact/non-contact maps share the oracle eligible-pair mask and
 three-sample Helico budget; their contact counts may vary. The earlier matched
@@ -240,7 +248,7 @@ This distinction is explicit in the manifest and figure captions.
 Small tables and figures live on this branch. `publish_to_hf.py` packages raw
 completions, votes, diffusion coordinates, conditioning maps, scores and timings
 for the [public artifact prefix](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking).
-Thirty-three analysis checks pass, including source-row round trips and fixed
+Thirty-four analysis checks pass, including source-row round trips and fixed
 confidence selection. Desktop and mobile previews were checked in Chromium,
 including the test-split menus; the PDF includes five separate AF3 sampling pages, two TM-score context panels, and the new low-depth sparse-oracle GDT-TS/lDDT comparisons. The accuracy–confidence section has
 one page per protein, with original ESMFold2 and reconstructed Helico TM-score versus pTM,

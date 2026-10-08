@@ -6,7 +6,8 @@
     "helico_oracle_budget_samples.csv": "82701f7a9bb2400836f70826918ee3348b58c3cc339820f0ef8c00dfc62b5f1b",
     "helico_oracle_budget_timings.csv": "86d67ca3027fc3a5d3f49e6b7a07b9d42e532e68c516a5fc79064ef0422c3166",
     "helico_oracle_budget_run.json": "59c79bb7df7295736307af8aa428b0e4de48be4c138d9be55eb876f4740a19d8",
-    "figure_rows.csv": "35a551c403cab4f12c5701ec880ccecb0f2ff8b8795ad01aad4a146a5fd90901"
+    "figure_rows.csv": "99cae2ea4e5584ea4aa522a00b2e25539f9b9781a13b2495977783ef01561987",
+    "experiments/exp250_evals_exploration_notebook/figures/data/3_structure_accuracy/per_target.csv": "d1080049e66a6a4235206ab150638d9ddfb7460987eac3c23f152fbb23c00d50"
   },
   "protocol": {
     "phase": "oracle_budget",

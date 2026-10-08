@@ -54,10 +54,12 @@ def archive_structured() -> bytes:
 
 @app.function(image=modal.Image.debian_slim(python_version="3.12"),
               volumes={"/results": volume}, region="us-east", cpu=4, memory=4096, timeout=1800)
-def archive_oracle_budget(stems: list[str], map_names: list[str]) -> bytes:
+def archive_oracle_budget(stems: list[str], map_names: list[str], phase: str = "oracle_budget") -> bytes:
     """Archive every frozen budget map and all three diffusion structures."""
     volume.reload()
-    root = Path("/results/exp325-exp277-step266344-oracle_budget-v1")
+    if phase not in ("oracle_budget", "oracle_l2"):
+        raise ValueError(phase)
+    root = Path("/results") / f"exp325-exp277-step266344-{phase}-v1"
     if {path.name for path in root.iterdir()} != set(stems):
         raise ValueError("Oracle-budget target inventory differs")
     expected = {f"{key}.{extension}" for key in map_names for extension in ("json", "npz")}
@@ -69,22 +71,23 @@ def archive_oracle_budget(stems: list[str], map_names: list[str]) -> bytes:
     buffer = io.BytesIO()
     with ThreadPoolExecutor(max_workers=24) as pool, tarfile.open(fileobj=buffer, mode="w:gz") as archive:
         for path, content in zip(paths, pool.map(Path.read_bytes, paths), strict=True):
-            info = tarfile.TarInfo(str(Path("oracle_budget") / path.relative_to(root)))
+            info = tarfile.TarInfo(str(Path(phase) / path.relative_to(root)))
             info.size = len(content)
             archive.addfile(info, io.BytesIO(content))
     return buffer.getvalue()
 
 
 @app.local_entrypoint()
-def run(structured: bool = False, oracle_budget: bool = False) -> None:
+def run(structured: bool = False, oracle_budget: bool = False, oracle_l2: bool = False) -> None:
     """Save the public raw-artifact payload without loading a predictor."""
-    if structured and oracle_budget:
+    if sum((structured, oracle_budget, oracle_l2)) > 1:
         raise ValueError("Choose exactly one archive phase")
-    if oracle_budget:
+    if oracle_budget or oracle_l2:
+        phase = "oracle_l2" if oracle_l2 else "oracle_budget"
         root = Path(__file__).resolve().parent.parent
-        protocol = json.loads((root / "data/oracle_budget_protocol.json").read_text())
-        destination = root / "scratch/oracle_budget_coordinates.tar.gz"
-        destination.write_bytes(archive_oracle_budget.remote(list(protocol["files_sha256"]), protocol["map_keys"]))
+        protocol = json.loads((root / f"data/{phase}_protocol.json").read_text())
+        destination = root / f"scratch/{phase}_coordinates.tar.gz"
+        destination.write_bytes(archive_oracle_budget.remote(list(protocol["files_sha256"]), protocol["map_keys"], phase))
         print(f"Recovered {destination.stat().st_size / 1e6:.1f} MB to {destination}")
         return
     filename = "structured_decoys/helico_coordinates.tar.gz" if structured else "helico_coordinates.tar.gz"

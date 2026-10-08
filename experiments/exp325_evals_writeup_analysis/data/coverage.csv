@@ -332,25 +332,25 @@ figure,stem,eval_set,tier,available,reason
 01_predictors,8eb9_A,eval-val,10–99,True,
 01_predictors,8ec3_A,eval-val,10–99,True,
 01_predictors,8eo5_A,eval-val,≥1000,True,
-02_oracle,5sbj_A,eval-denovo,<10,True,
-02_oracle,7ur7_A,eval-denovo,<10,True,
-02_oracle,8ah9_A,eval-denovo,<10,True,
-02_oracle,8eov_A,eval-denovo,<10,True,
-02_oracle,8fjf_A,eval-denovo,<10,True,
-02_oracle,8gac_A,eval-denovo,<10,True,
-02_oracle,8ju8_A,eval-denovo,<10,True,
-02_oracle,8k7o_A,eval-denovo,10–99,True,
-02_oracle,8k7z_A,eval-denovo,<10,True,
-02_oracle,8k83_A,eval-denovo,<10,True,
-02_oracle,8k84_A,eval-denovo,100–999,True,
-02_oracle,8kcj_A,eval-denovo,<10,True,
-02_oracle,8ka7_A,eval-denovo,<10,True,
-02_oracle,8kac_A,eval-denovo,100–999,True,
-02_oracle,8oys_A,eval-denovo,<10,True,
-02_oracle,8oyy_A,eval-denovo,<10,True,
-02_oracle,8qkd_A,eval-denovo,<10,True,
-02_oracle,8qup_A,eval-denovo,100–999,True,
-02_oracle,8vc8_A,eval-denovo,<10,True,
+02_oracle,5sbj_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+02_oracle,7ur7_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+02_oracle,8ah9_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+02_oracle,8eov_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+02_oracle,8fjf_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+02_oracle,8gac_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+02_oracle,8ju8_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+02_oracle,8k7o_A,eval-denovo,10–99,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+02_oracle,8k7z_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+02_oracle,8k83_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+02_oracle,8k84_A,eval-denovo,100–999,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+02_oracle,8kcj_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+02_oracle,8ka7_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+02_oracle,8kac_A,eval-denovo,100–999,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+02_oracle,8oys_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+02_oracle,8oyy_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+02_oracle,8qkd_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+02_oracle,8qup_A,eval-denovo,100–999,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+02_oracle,8vc8_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
 02_oracle,8es6_A,eval-test,≥1000,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
 02_oracle,8ev4_A,eval-test,≥1000,True,
 02_oracle,8ew1_A,eval-test,≥1000,True,
@@ -998,25 +998,25 @@ figure,stem,eval_set,tier,available,reason
 04_contacts,8eb9_A,eval-val,10–99,True,
 04_contacts,8ec3_A,eval-val,10–99,True,
 04_contacts,8eo5_A,eval-val,≥1000,True,
-05_folding,5sbj_A,eval-denovo,<10,True,
-05_folding,7ur7_A,eval-denovo,<10,True,
-05_folding,8ah9_A,eval-denovo,<10,True,
-05_folding,8eov_A,eval-denovo,<10,True,
-05_folding,8fjf_A,eval-denovo,<10,True,
-05_folding,8gac_A,eval-denovo,<10,True,
-05_folding,8ju8_A,eval-denovo,<10,True,
-05_folding,8k7o_A,eval-denovo,10–99,True,
-05_folding,8k7z_A,eval-denovo,<10,True,
-05_folding,8k83_A,eval-denovo,<10,True,
-05_folding,8k84_A,eval-denovo,100–999,True,
-05_folding,8kcj_A,eval-denovo,<10,True,
-05_folding,8ka7_A,eval-denovo,<10,True,
-05_folding,8kac_A,eval-denovo,100–999,True,
-05_folding,8oys_A,eval-denovo,<10,True,
-05_folding,8oyy_A,eval-denovo,<10,True,
-05_folding,8qkd_A,eval-denovo,<10,True,
-05_folding,8qup_A,eval-denovo,100–999,True,
-05_folding,8vc8_A,eval-denovo,<10,True,
+05_folding,5sbj_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+05_folding,7ur7_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+05_folding,8ah9_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+05_folding,8eov_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+05_folding,8fjf_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+05_folding,8gac_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+05_folding,8ju8_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+05_folding,8k7o_A,eval-denovo,10–99,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+05_folding,8k7z_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+05_folding,8k83_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+05_folding,8k84_A,eval-denovo,100–999,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+05_folding,8kcj_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+05_folding,8ka7_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+05_folding,8kac_A,eval-denovo,100–999,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+05_folding,8oys_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+05_folding,8oyy_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+05_folding,8qkd_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+05_folding,8qup_A,eval-denovo,100–999,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
+05_folding,8vc8_A,eval-denovo,<10,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
 05_folding,8es6_A,eval-test,≥1000,False,Excluded by verified-coordinate or matched-structure coverage; see structure_exclusions.csv and helico_folding_inputs.json
 05_folding,8ev4_A,eval-test,≥1000,True,
 05_folding,8ew1_A,eval-test,≥1000,True,

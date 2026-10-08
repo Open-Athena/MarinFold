@@ -43,9 +43,9 @@ STRUCTURE_NAMES = {
 }
 FIGURES = {
     "01_predictors": ["af3", "af2", "boltz2", "protenix_msa", "esmfold2", "esmfold", "protenix_ss"],
-    "02_oracle": ["oracle", "af3", "af2", "boltz2", "protenix_msa", "no_contacts"],
+    "02_oracle": ["oracle_L2", "af3", "af2", "boltz2", "protenix_msa", "esmfold2", "esmfold", "protenix_ss", "no_contacts"],
     "04_contacts": ["af3", "af2", "boltz2", "protenix_msa", "esmfold2", "esmfold", "marinfold", "knn", "protenix_ss"],
-    "05_folding": ["af3", "af2", "boltz2", "protenix_msa", "esmfold2", "esmfold", "marinfold_helico", "protenix_ss", "no_contacts"],
+    "05_folding": ["oracle_L2", "af3", "af2", "boltz2", "protenix_msa", "esmfold2", "esmfold", "marinfold_helico", "protenix_ss", "no_contacts"],
     "06_sampling": ["single", "consensus", "best100"],
 }
 
@@ -162,7 +162,17 @@ def prepare_structure(sources: Sources, targets: pd.DataFrame) -> tuple[pd.DataF
             id_vars=["stem", "method", "mean_plddt", "source", "source_row"],
             value_vars=["gdt_ts", "lddt"], var_name="metric", value_name="value")
         base = pd.concat([base, additional], ignore_index=True)
-    return annotate(base, targets), exclusions
+    oracle_manifest = json.loads((DATA / "oracle_l2_analysis.json").read_text())
+    for name, expected in oracle_manifest["files"].items():
+        if sha256(DATA / name) != expected:
+            raise ValueError(f"Stale L/2 analysis: {name}")
+    sparse = sources.csv(DATA / "oracle_l2_per_protein.csv")
+    sparse = sparse[(sparse.selector == "ranking_score") & sparse.metric.isin(["gdt_ts", "lddt"])]
+    expected = set(targets.loc[(targets.designed == 0) & targets.stem.isin(complete), "stem"])
+    if set(sparse.stem) != expected or len(sparse) != 2 * len(expected):
+        raise ValueError("L/2 analysis does not cover the matched natural comparison cohort")
+    sparse = sparse[["stem", "method", "metric", "value", "source", "source_row"]].assign(mean_plddt=np.nan)
+    return annotate(pd.concat([base, sparse], ignore_index=True), targets), exclusions
 
 
 def prepare_contacts(sources: Sources, targets: pd.DataFrame) -> pd.DataFrame:
@@ -221,7 +231,7 @@ def prepare_folding(sources: Sources, targets: pd.DataFrame, structure: pd.DataF
         selected = selected.assign(method=selected.arm.map({"top_L": "marinfold_helico", "top_0": "no_contacts"}))
         selected = selected.melt(id_vars=["stem", "method", "source", "source_row"], value_vars=["gdt_ts", "lddt"], var_name="metric", value_name="value")
         parts.append(annotate(selected, targets))
-    baselines = structure[structure.method.isin(["af2", "af3", "boltz2", "protenix_msa", "protenix_ss", "esmfold", "esmfold2"])]
+    baselines = structure[structure.method.isin(["oracle_L2", "af2", "af3", "boltz2", "protenix_msa", "protenix_ss", "esmfold", "esmfold2"])]
     combined = pd.concat([baselines, *parts], ignore_index=True)
     counts = combined.groupby(["stem", "metric"]).method.nunique()
     complete = counts[counts == len(FIGURES["05_folding"])].reset_index()[["stem", "metric"]]
@@ -296,7 +306,7 @@ def summarize(rows: pd.DataFrame) -> pd.DataFrame:
 
 def paired_deltas(rows: pd.DataFrame) -> pd.DataFrame:
     """Bootstrap within-protein differences, rather than subtracting unpaired intervals."""
-    contrasts = [("02_oracle", "oracle", "protenix_msa"),
+    contrasts = [("02_oracle", "oracle_L2", "protenix_msa"),
                  ("04_contacts", "marinfold", "knn"),
                  ("05_folding", "marinfold_helico", "no_contacts"),
                  ("05_folding", "marinfold_helico", "protenix_ss"),
@@ -469,6 +479,8 @@ def main() -> None:
     rows = []
     for figure, methods in FIGURES.items():
         base = {"04_contacts": contacts, "05_folding": folding, "06_sampling": sampling}.get(figure, structure)
+        if figure == "02_oracle":
+            base = base[base.designed == 0]
         rows.append(base[base.method.isin(methods)].assign(figure=figure))
     rows = pd.concat(rows, ignore_index=True)
     if not np.isfinite(rows.value).all() or not rows.value.between(0, 1).all():
@@ -514,9 +526,9 @@ def main() -> None:
         "main_recipe": "exp277 fixed exp82 rollout+resample; 100 rollouts, T=1, top_p=0.95, top_k=-1; votes only",
         "sampling_checkpoint": "contacts-v1-exp277-m2-p06-full-epoch-1.5B-step-266344",
         "sampling_recipe": "exp321 ordinary iid control, N=100, on 97 eval-val proteins plus new 217 publication test proteins. Same pool within protein. Consensus uses all parsed maps; unfinished/malformed individual rollouts score zero. Main contact panel follows exp277 and omits unfinished maps from votes.",
-        "oracle_contacts": "Full ground-truth three-state map, including non-contacts; information upper bound, not a predictor",
+        "oracle_contacts": "305 natural proteins: two random subsets of floor(L/2) true contacts, capped at available positives; every unselected pair unknown, no non-contacts. Highest ranking_score among three samples per subset, then mean of the two subset accuracies per protein. Ground-truth diagnostic, not a predictor. Full-map controls remain in separate confidence and low-depth budget diagnostics.",
         "sampling_oracle": "Max correct contacts among first R emitted pairs / R; short sets retain denominator R. Ground-truth selection.",
-        "scope": "Publication reanalysis plus explicitly authorized inference on the fixed eval-test split; no model, cut-count, or sampling-setting selection on test.",
+        "scope": "Publication reanalysis plus explicitly authorized inference on the fixed eval-test split. Checkpoints remain fixed. The user selected the L/2 oracle budget after inspecting the five low-depth test proteins; the follow-up is an exploratory ground-truth conditioning diagnostic, not an untouched held-out confirmation.",
         "confidence_control": {"status": "complete", "selection": "All five natural proteins at MSA depth <10; oracle plus 100 seeded ESMFold2 maps, three diffusion samples per map; select and rank by highest pTM, with sample_idx breaking within-map ties. No ipTM or clash penalty. Historical random controls and other structural benchmark panels retain their original selection protocols.", "scatter": "Measured protein CA TM-score versus selected Helico pTM; separate original ESMFold2 and reconstructed Helico views; oracle source TM-score is one by definition."},
         "alphafold_protocol": json.loads((DATA / "alphafold_inputs.json").read_text()),
         "boltz2_protocol": json.loads((DATA / "boltz2_inputs.json").read_text()),

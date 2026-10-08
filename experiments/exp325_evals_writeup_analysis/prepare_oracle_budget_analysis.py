@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 
 from generation.oracle_budgets import BUDGETS, REPLICATES, map_keys
-from prepare import TIERS, bootstrap
+from prepare import FIG250, REPO, TIERS, bootstrap
 
 HERE = Path(__file__).resolve().parent
 DATA = HERE / "data"
@@ -114,8 +114,13 @@ def main() -> None:
     pd.DataFrame(deltas).to_csv(DATA / "oracle_budget_paired_deltas.csv", index=False)
     # Fresh full-map and zero-contact controls expose stochastic/protocol drift
     # relative to the archived Figure 02 curves instead of hiding it in a join.
-    old = original[(original.figure == "02_oracle") & original.stem.isin(targets.stem) &
-                   original.method.isin(["oracle", "no_contacts"])][["stem", "method", "metric", "value"]]
+    reference_path = REPO / FIG250 / "3_structure_accuracy/per_target.csv"
+    sources[str(reference_path.relative_to(REPO))] = hashlib.sha256(reference_path.read_bytes()).hexdigest()
+    old = pd.read_csv(reference_path)
+    old = old[old.target_id.isin(targets.stem) & old.arm.isin(["oracle", "off"])].copy()
+    old["stem"] = old.target_id
+    old["method"] = old.arm.map({"oracle": "oracle", "off": "no_contacts"})
+    old = old.melt(id_vars=["stem", "method"], value_vars=["gdt_ts", "lddt"], var_name="metric", value_name="value")
     control = per_protein[(per_protein.selector == "ranking_score") & per_protein.method.isin(["oracle", "no_contacts"])]
     control = control.merge(old, on=["stem", "method", "metric"], suffixes=("_fresh", "_archived"), validate="one_to_one")
     control["delta"] = control.value_fresh - control.value_archived

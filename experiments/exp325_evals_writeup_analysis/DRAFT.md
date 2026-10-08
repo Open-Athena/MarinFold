@@ -34,7 +34,8 @@ bins. Extra sampling has only been tested in the shallowest bin.
 
 ![TM-score across MSA depths](plots/01d_af3_depth_context.png)
 
-Helico does much better when we give it the answer: the ground-truth contact map, including non-contacts. This is an information upper bound.
+Helico does much better with just L/2 randomly sampled true contacts. All other pairs stay unknown; Helico receives no MSA.
+Mean GDT-TS is 0.906 / 0.841 / 0.853 / 0.839 across the four MSA-depth tiers.
 
 ![Helico with oracle contacts](plots/02_oracle.png)
 

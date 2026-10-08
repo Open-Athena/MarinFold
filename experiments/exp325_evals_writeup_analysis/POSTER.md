@@ -6,7 +6,8 @@
 The complete collection includes every static plot and metric variant, including
 all individual-protein pages, new P@L/5 figures, focused KNN comparisons and
 the four sparse-oracle GDT-TS/lDDT figures for the five proteins at MSA depth <10
-(38 static figures total).
+(38 static figures total). Figures 02 and 05 now use the
+[L/2 oracle-contact protocol](ORACLE_L2.md) across all four MSA-depth tiers.
 Every poster PDF, SVG and PNG has a **plain white background**, including the
 plot areas, annotation boxes and schematic boxes.
 

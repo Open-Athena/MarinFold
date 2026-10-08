@@ -89,6 +89,16 @@ See TRAINING_SOURCE_SEARCH.md and data/training_source_depths.csv for details.
 Offline reduction: uv run python generation/search_training_sources.py prepare
 
 
+## L/2 oracle contacts across all MSA depths
+
+The oracle dots in Figures 02 and 05 now use L/2 randomly sampled true contacts.
+Same 305 natural proteins: 5 / 20 / 60 / 220 across the four MSA tiers.
+Mean GDT-TS: 0.906 / 0.841 / 0.853 / 0.839; overall 0.843 versus full-map oracle 0.893.
+No MSA or negative contacts. Average two subsets per protein after three-sample confidence selection.
+610 maps and 1,830 structures complete; exact low-depth results reused.
+One protein has 109 available positives versus 110 requested.
+Source: ORACLE_L2.md; oracle_l2_per_protein.csv → helico_oracle_l2_samples.csv.
+
 ## Sparse oracle contacts at very low MSA depth
 
 All five natural proteins with MSA depth <10; Helico receives no MSA.

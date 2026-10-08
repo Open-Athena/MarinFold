@@ -42,8 +42,8 @@
       "bytes": 417979
     },
     "experiments/exp325_evals_writeup_analysis/data/figure_rows.csv": {
-      "sha256": "35a551c403cab4f12c5701ec880ccecb0f2ff8b8795ad01aad4a146a5fd90901",
-      "bytes": 3892253
+      "sha256": "99cae2ea4e5584ea4aa522a00b2e25539f9b9781a13b2495977783ef01561987",
+      "bytes": 4197060
     },
     "experiments/exp325_evals_writeup_analysis/data/pl5_sampling_per_protein.csv": {
       "sha256": "87f2b9e879259ad3d05bbaff0596af8505e2f9a93b41881c4fc32de24e39d176",
@@ -1312,7 +1312,7 @@
     }
   },
   "files": {
-    "pl5_figure_rows.csv": "875fd3de3a9e0f4fd93b7be31cce6b27232514e6feccc2f6227da075d2b42c1b",
+    "pl5_figure_rows.csv": "7832f14858f0cc2d272b842d5b0a04b4e593810a493dd9251e10d3cd9770aa24",
     "pl5_summary.csv": "df7aed102f84d57554a35ebf31459a3f12bd63be33c9c20428c77fd602ca048b",
     "pl5_paired_deltas.csv": "e94173714a60385da493adf2ab582f2a9c4f9740d089e10bce587362018ca508",
     "pl5_sampling_per_protein.csv": "87f2b9e879259ad3d05bbaff0596af8505e2f9a93b41881c4fc32de24e39d176",

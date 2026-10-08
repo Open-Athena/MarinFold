@@ -24,6 +24,7 @@ METHODS = {
     "marinfold_helico": ("Helico + MarinFold top-L", PALETTE[3], "o"),
     "knn": ("Sequence KNN · decontaminated", PALETTE[5], "^"),
     "oracle": ("Helico + oracle map*", INK, "D"),
+    "oracle_L2": ("Helico + L/2 oracle contacts*", INK, "D"),
     "no_contacts": ("Helico · no contacts", "#817970", "s"),
     "single": ("Mean single rollout", PALETTE[1], "s"),
     "consensus": ("Consensus of 100", PALETTE[3], "o"),
@@ -31,11 +32,11 @@ METHODS = {
 }
 ORDER = {
     "01_predictors": ["af3", "af2", "boltz2", "protenix_msa", "esmfold2", "esmfold", "protenix_ss"],
-    "02_oracle": ["oracle", "af3", "af2", "boltz2", "protenix_msa", "no_contacts"],
+    "02_oracle": ["oracle_L2", "af3", "af2", "boltz2", "protenix_msa", "esmfold2", "esmfold", "protenix_ss", "no_contacts"],
     "04_contacts": ["af3", "af2", "boltz2", "protenix_msa", "esmfold2", "esmfold", "marinfold", "knn", "protenix_ss"],
     "04_contacts_pl5": ["af3", "af2", "boltz2", "protenix_msa", "esmfold2", "esmfold", "marinfold", "knn", "protenix_ss"],
     "04b_knn": ["marinfold", "knn"],
-    "05_folding": ["af3", "af2", "boltz2", "protenix_msa", "esmfold2", "esmfold", "marinfold_helico", "protenix_ss", "no_contacts"],
+    "05_folding": ["oracle_L2", "af3", "af2", "boltz2", "protenix_msa", "esmfold2", "esmfold", "marinfold_helico", "protenix_ss", "no_contacts"],
     "06_sampling": ["single", "consensus", "best100"],
     "06_sampling_pl5": ["single", "consensus", "best100"],
 }
@@ -44,7 +45,7 @@ TITLES = {
     "01b_af3_sampling": "Does more AlphaFold3 sampling recover accurate folds?",
     "01c_af3_context": "Extra AF3 sampling in predictor context",
     "01d_af3_depth_context": "The low-depth comparison changes at greater depth",
-    "02_oracle": "What if we already knew the contact map?",
+    "02_oracle": "What if we knew L/2 true contacts?",
     "02e_oracle_budget": "How many true contacts does Helico need at low MSA depth?",
     "02f_oracle_budget_context": "Sparse oracle contacts at low MSA depth: predictor context",
     "02b_confidence": "Where does the oracle rank among plausible maps?",
@@ -69,10 +70,10 @@ CAPTIONS = {
     "02c_accuracy_confidence": "TM-score versus Helico pTM for five natural proteins with MSA depth <10. Each protein has 100 ESMFold2 predictions; their extracted maps each receive three Helico samples. Highest pTM selects the Helico sample and ranks maps, without ipTM or a clash penalty. The horizontal coordinate is selected Helico pTM. The menu switches the vertical coordinate between original ESMFold2 TM-score and reconstructed Helico TM-score, and can isolate each protein. Diamonds mark oracle contacts; original oracle TM-score is 1 because its source is the experimental reference. TM-score uses matched protein CA atoms; pTM retains all input tokens. Every map is retained. These are five biological examples, not 500 independent proteins.",
     "02b_confidence": "All five natural FoldBench proteins with MSA depth <10 (test split). Each dot is one of 100 single-sequence ESMFold2 predictions, converted to a full contact/non-contact map and folded by Helico; diamonds use the ground-truth oracle map. Every map has the same eligible-pair mask and three Helico diffusion samples. Highest pTM selects a sample per map; that pTM also ranks the 101 maps. No ipTM term, clash penalty or map filtering is used. Contact counts may vary. Rank 1 is highest pTM; ties are shown as rank intervals. Vertical jitter only separates points. These 500 decoys represent five proteins.",
     "01_predictors": "Natural FoldBench monomers; the same 305 proteins in every structural arm. Points are protein means; bars are 95% protein-bootstrap intervals. MSA depth counts sequences, including the query, in the alignment used by Protenix-v2 + MSA.",
-    "02_oracle": "*Oracle = ground-truth contacts AND non-contacts supplied to Helico without an MSA. This is an information upper bound, not a competing predictor or a matched-count true-contact experiment. Same 305 natural proteins as Figure 1.",
+    "02_oracle": "*Oracle = two random subsets of floor(L/2) true contacts per protein; every unselected pair is unknown and no non-contacts are supplied. L is the frozen input sequence length; counts cap at available positives (see ORACLE_L2.md). Three diffusion samples/subset, highest ranking_score selection, then average both subset accuracies within protein. Helico receives no MSA. Same 305 natural proteins as Figure 1, with all seven archived predictors and no-contact Helico; 95% protein-bootstrap intervals. This uses ground truth and is not a deployable predictor. The full-map oracle remains in separate confidence/budget diagnostics.",
     "03_method": "Schematic; arrow widths do not encode amounts. Exp277 step 266,344: a scratch-trained 1.47B-parameter Qwen3, one epoch over 232,090,905 contact documents, totaling 248,583,762,834 raw tokens. Native and ProteinMPNN-redesigned sequences use AFDB / ESM Atlas source structures from the decontaminated corpus. Raw tokens differ from padded training slots.",
     "04_contacts": "Exp277 step 266,344, the 248.584B-raw-token model. All-range R-precision on 314 natural monomers (97 validation + 217 test); 100 resampled rollouts and vote ranking. R is the true-contact count in the resolved candidate universe. KNN indexes the native decontaminated corpus, not the additional redesign sequences. Only five natural proteins have depth <10. The menu also exposes long-range R-precision and separate split/design views.",
-    "05_folding": "The 248B-token model through Helico: request the top-L predicted contacts, generate three diffusion samples, select by highest Helico confidence at that fixed cut; no MSA. Helico drops pairs closer than six residues after coordinate mapping; requested and effective counts are saved. Same 305 natural proteins in every arm (95 validation + 210 test). GDT-TS and lDDT are separate metrics. See coverage.csv for exclusions.",
+    "05_folding": "The 248B-token model through Helico: request top-L predicted contacts, generate three diffusion samples, select by highest ranking_score; no MSA. Helico drops pairs closer than six residues after coordinate mapping; requested/effective counts are saved. *Oracle supplies two random subsets of floor(L/2) ground-truth contacts with all other pairs unknown, selects one of three diffusion samples per subset by ranking_score, then averages both subset accuracies per protein. Oracle counts cap at available positives; no non-contacts or MSA. Same 305 natural proteins in every arm (95 validation + 210 test), 95% protein-bootstrap intervals. Oracle is a ground-truth diagnostic; inference/contact budgets differ. See ORACLE_L2.md and coverage.csv.",
     "06_sampling": "Exp277 step 266,344, 314 natural proteins (97 validation + 217 test), 100 iid rollouts per protein. Consensus and oracle use the same sample pool within each protein. Individual maps are ranked by emission order; short maps retain denominator R, and malformed or unfinished individual maps score zero. The diagnostic consensus uses all parsed maps, following exp321. Oracle selection uses ground truth. This measures contact accuracy, not distinct folds. Scatter colors identify MSA tiers in the interactive view.",
 }
 METRICS = {"gdt_ts": "GDT-TS", "lddt": "lDDT", "r_precision": "R-precision",

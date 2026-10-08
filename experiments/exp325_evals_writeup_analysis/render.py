@@ -75,8 +75,9 @@ def static_depth(summary: pd.DataFrame, figure: str, metric: str, cohort: str = 
     frame = summary[(summary.figure == figure) & (summary.metric == metric) &
                     (summary.cohort == cohort) & summary.tier.isin(TIERS)]
     crowded = len(ORDER[figure]) > 6
+    sparse_oracle = figure in ("02_oracle", "05_folding")
     fig, ax = plt.subplots(figsize=(10.4, 6.8 if crowded else 6.0), facecolor=PAPER)
-    fig.subplots_adjust(left=0.09, right=0.98, bottom=0.36 if crowded else 0.33, top=0.79)
+    fig.subplots_adjust(left=0.09, right=0.98, bottom=0.40 if sparse_oracle else (0.36 if crowded else 0.33), top=0.79)
     fig.text(0.09, 0.945, TITLES[figure], fontsize=20, color=INK, weight="bold")
     population = "Natural FoldBench monomers" if figure in {"01_predictors", "02_oracle"} else "Natural FoldBench · 248B-token model"
     fig.text(0.09, 0.887, f"{population}  ·  mean and 95% interval", fontsize=11, color=INK)
@@ -99,8 +100,11 @@ def static_depth(summary: pd.DataFrame, figure: str, metric: str, cohort: str = 
     ax.set_ylabel(METRICS[metric], labelpad=12)
     ax.set_xlabel("MSA depth (sequences)", labelpad=13)
     handles, labels = ax.get_legend_handles_labels()
-    fig.legend(handles, labels, loc="lower left", bbox_to_anchor=(0.075, 0.016),
+    fig.legend(handles, labels, loc="lower left", bbox_to_anchor=(0.075, 0.065 if sparse_oracle else 0.016),
                ncol=2, frameon=False, fontsize=10, columnspacing=2.5)
+    if sparse_oracle:
+        fig.text(0.09, 0.025, "*Oracle: L/2 random true contacts; other pairs unknown. Two subsets averaged per protein; no MSA.",
+                 fontsize=9, color=INK)
     suffix = {"lddt": "_lddt", "r_precision_long": "_long", "p_at_l5_long": "_long"}.get(metric, "")
     if figure == "04b_knn" and metric.startswith("r_precision"):
         suffix = "_r_precision" + ("_long" if metric.endswith("long") else "")
@@ -494,6 +498,11 @@ def preview(names: list[str]) -> None:
         mobile_specs[name] = json.loads((SITE / f"{name}-mobile.json").read_text())
         lineage = (f'Data: <a href="../data/summary.csv">summary.csv</a> filtered by figure = {name}; '
                    'underlying proteins and original row IDs: <a href="../data/figure_rows.csv">figure_rows.csv</a>. ')
+        if name in ("02_oracle", "05_folding"):
+            lineage += ('L/2 oracle: <a href="../data/oracle_l2_per_protein.csv">subset-averaged protein scores</a>; '
+                        '<a href="../data/oracle_l2_selected.csv">selected diffusion samples</a>; '
+                        '<a href="../data/oracle_l2_maps.csv">contact counts and map hashes</a>; '
+                        '<a href="../ORACLE_L2.md">protocol and results</a>. ')
         if name in ("02b_confidence", "02c_accuracy_confidence"):
             lineage = ('Each dot: <a href="../data/structured_confidence_per_map.csv">selected map scores and source rows</a>. '
                        'Accuracy/confidence join: <a href="../data/structured_accuracy_confidence.csv">paired measurements</a>. '

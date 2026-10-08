@@ -26,7 +26,9 @@ def random_seed(stem: str, replicate: int) -> int:
     return int.from_bytes(value[:8], "little")
 
 
-def build_maps(oracle: np.ndarray, stem: str, length: int) -> dict[str, np.ndarray]:
+def build_maps(oracle: np.ndarray, stem: str, length: int, *,
+               budgets: tuple[str, ...] = BUDGETS,
+               controls: tuple[str, ...] = CONTROLS) -> dict[str, np.ndarray]:
     """Sample true contacts without replacement; all other pairs stay unknown.
 
     A single random permutation per protein/replicate supplies nested prefixes
@@ -43,7 +45,7 @@ def build_maps(oracle: np.ndarray, stem: str, length: int) -> dict[str, np.ndarr
     output = {}
     for replicate in range(REPLICATES):
         shuffled = np.random.default_rng(random_seed(stem, replicate)).permutation(pairs)
-        for arm in BUDGETS:
+        for arm in budgets:
             k = requested_count(arm, length)
             if k > len(pairs) and arm in ("random_5", "random_10"):
                 raise ValueError(f"{stem}: {arm} requests {k} contacts but only {len(pairs)} exist")
@@ -53,7 +55,10 @@ def build_maps(oracle: np.ndarray, stem: str, length: int) -> dict[str, np.ndarr
             state[chosen[:, 0], chosen[:, 1]] = 2
             state[chosen[:, 1], chosen[:, 0]] = 2
             output[f"{arm}-{replicate}"] = state
-    output["top_0-0"] = np.zeros_like(oracle)
-    output["positive_all-0"] = np.where(oracle == 2, 2, 0).astype(oracle.dtype)
-    output["oracle-0"] = oracle.copy()
+    if "top_0" in controls:
+        output["top_0-0"] = np.zeros_like(oracle)
+    if "positive_all" in controls:
+        output["positive_all-0"] = np.where(oracle == 2, 2, 0).astype(oracle.dtype)
+    if "oracle" in controls:
+        output["oracle-0"] = oracle.copy()
     return output
