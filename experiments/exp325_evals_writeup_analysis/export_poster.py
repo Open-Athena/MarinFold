@@ -1,6 +1,7 @@
 """Package every static figure as vector PDF/SVG and a poster-size PNG.
 
-Rasterize the freshly rendered vector PDFs, never upscale the web PNGs.
+Regenerate native vectors on plain white paper from the prepared tables, then
+rasterize those PDFs, never upscale the web PNGs. No analysis is rerun.
 Default: 7,200 pixels wide, tagged 300 dpi (24 inches / 61 cm wide).
 Large exports stay in scratch and the public bucket; the inventory stays in git.
 """
@@ -10,6 +11,7 @@ import hashlib
 import json
 import shutil
 import subprocess
+import sys
 import zipfile
 from pathlib import Path
 
@@ -39,13 +41,21 @@ def main() -> None:
     if stage.exists():
         shutil.rmtree(stage)
     bundle.mkdir(parents=True)
+    vectors = HERE / "scratch/poster_vectors"
+    if vectors.exists():
+        shutil.rmtree(vectors)
+    subprocess.run([sys.executable, str(HERE / "render.py"), "--poster-dir", str(vectors)],
+                   cwd=HERE, check=True)
+    names = {source.stem for source in (HERE / "plots").glob("*.png")}
+    for extension in ("pdf", "svg"):
+        actual = {source.stem for source in vectors.glob(f"*.{extension}")}
+        if actual != names:
+            raise ValueError(f"Poster {extension} inventory differs: missing={names - actual}, extra={actual - names}")
     records = []
     for source in sorted((HERE / "plots").glob("*.png")):
         name = source.stem
         for extension in ("pdf", "svg"):
-            vector = source.with_suffix(f".{extension}")
-            if not vector.exists():
-                raise FileNotFoundError(f"Rerun render.py; missing native vector: {vector}")
+            vector = vectors / f"{name}.{extension}"
             output = bundle / extension / vector.name
             output.parent.mkdir(exist_ok=True)
             shutil.copyfile(vector, output)
@@ -53,7 +63,7 @@ def main() -> None:
         png.parent.mkdir(exist_ok=True)
         subprocess.run(["pdftocairo", "-png", "-singlefile", "-r", str(args.print_dpi),
                         "-scale-to-x", str(args.width_px), "-scale-to-y", "-1",
-                        str(source.with_suffix(".pdf")), str(png.with_suffix(""))], check=True)
+                        str(bundle / "pdf" / f"{name}.pdf"), str(png.with_suffix(""))], check=True)
         with Image.open(png) as raster:
             width, height = raster.size
             raster.save(png, dpi=(args.print_dpi, args.print_dpi))
@@ -61,6 +71,8 @@ def main() -> None:
         record = dict(name=name, width_px=width, height_px=height, dpi=args.print_dpi,
                       print_width_inches=width / args.print_dpi, print_height_inches=height / args.print_dpi,
                       source_pdf_sha256=digest(source.with_suffix(".pdf")),
+                      poster_pdf_sha256=digest(bundle / "pdf" / f"{name}.pdf"),
+                      poster_svg_sha256=digest(bundle / "svg" / f"{name}.svg"),
                       png_sha256=digest(png), **metadata)
         records.append(record)
         print(f"{name}: {width} × {height}", flush=True)
@@ -71,6 +83,9 @@ def main() -> None:
     for filename in ("POSTER.md", "FIGURES.md", "PL5_ANALYSIS.md"):
         shutil.copyfile(HERE / filename, bundle / filename)
     manifest = dict(destination=DESTINATION, generator="export_poster.py", width_px=args.width_px,
+                    background="white", background_hex="#FFFFFF",
+                    vector_render_command="uv run python render.py --poster-dir scratch/poster_vectors",
+                    poster_style="poster_style.py:save_poster_vectors",
                     print_dpi=args.print_dpi, figure_count=len(records), figures=records)
     (bundle / "poster_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     (HERE / "data/poster_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
@@ -82,7 +97,7 @@ def main() -> None:
     # make the baseline joins reproducible; large rollout pools already live at
     # the durable public URLs in pl5_analysis.json.
     for pattern in ("data/pl5*", "data/inputs/pl5*", "*pl5*.py", "export_poster.py", "render*.py",
-                    "prepare.py", "theme.py", "build_summary.py", "pyproject.toml", "uv.lock",
+                    "prepare.py", "theme.py", "poster_style.py", "build_summary.py", "pyproject.toml", "uv.lock",
                     "generation/score_contacts.py", "plots/summary.pdf", "site/*.json",
                     "site/index.html", "site/plotly.min.js", "DRAFT.md", "summary_narrative.md"):
         for path in HERE.glob(pattern):

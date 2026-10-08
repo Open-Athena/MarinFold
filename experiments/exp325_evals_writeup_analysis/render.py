@@ -21,6 +21,7 @@ from plotly.offline import get_plotlyjs
 from plotly.subplots import make_subplots
 
 from build_summary import save_plot_with_meta
+from poster_style import save_poster_vectors
 from render_af3_sampling import main as render_af3_sampling
 from render_af3_context import main as render_af3_context
 from theme import CAPTIONS, COHORTS, FONT, GRID, INK, METHODS, METRICS, ORDER, PALETTE, PAPER, TIERS, TITLES
@@ -52,9 +53,14 @@ def style_axes(ax: plt.Axes) -> None:
     ax.tick_params(colors=INK, length=0, pad=9)
 
 
-def save(fig: plt.Figure, figure: str, caption: str, suffix: str = "", *, include_in_summary: bool = True) -> None:
+def save(fig: plt.Figure, figure: str, caption: str, suffix: str = "", *, include_in_summary: bool = True,
+         poster_dir: Path | None = None) -> None:
     """Save vector/raster artwork and its source-table metadata."""
     name = figure + suffix
+    if poster_dir is not None:
+        save_poster_vectors(fig, poster_dir, name)
+        plt.close(fig)
+        return
     save_plot_with_meta(fig, PLOTS / f"{name}.png", caption=caption,
                         script="render.py", args=[], include_in_summary=include_in_summary, dpi=180)
     fig.savefig(PLOTS / f"{name}.svg", bbox_inches="tight")
@@ -62,7 +68,8 @@ def save(fig: plt.Figure, figure: str, caption: str, suffix: str = "", *, includ
     plt.close(fig)
 
 
-def static_depth(summary: pd.DataFrame, figure: str, metric: str, cohort: str = "natural") -> None:
+def static_depth(summary: pd.DataFrame, figure: str, metric: str, cohort: str = "natural", *,
+                 poster_dir: Path | None = None) -> None:
     """Draw the default matched-population view from summary rows."""
     frame = summary[(summary.figure == figure) & (summary.metric == metric) &
                     (summary.cohort == cohort) & summary.tier.isin(TIERS)]
@@ -96,7 +103,7 @@ def static_depth(summary: pd.DataFrame, figure: str, metric: str, cohort: str = 
     suffix = {"lddt": "_lddt", "r_precision_long": "_long", "p_at_l5_long": "_long"}.get(metric, "")
     if figure == "04b_knn" and metric.startswith("r_precision"):
         suffix = "_r_precision" + ("_long" if metric.endswith("long") else "")
-    save(fig, figure, CAPTIONS[figure], suffix)
+    save(fig, figure, CAPTIONS[figure], suffix, poster_dir=poster_dir)
 
 
 def plotly_layout(metric: str) -> dict:
@@ -154,7 +161,7 @@ def export_depth(summary: pd.DataFrame, figure: str, metrics: list[str] | None =
     return fig
 
 
-def method_figure(training: pd.DataFrame) -> go.Figure:
+def method_figure(training: pd.DataFrame, *, poster_dir: Path | None = None) -> go.Figure:
     """Draw a source-linked method schematic, with no quantitative flow widths."""
     fig, ax = plt.subplots(figsize=(10.4, 5.6), facecolor=PAPER)
     ax.set(xlim=(0, 10), ylim=(0, 5.2))
@@ -181,7 +188,7 @@ def method_figure(training: pd.DataFrame) -> go.Figure:
     inventory = " · ".join(f"{row.corpus}: {row.documents / 1e6:.1f}M docs" for row in training.itertuples())
     ax.text(0.1, 2.58, inventory, fontsize=10, color=INK)
     fig.suptitle(TITLES["03_method"], x=0.135, ha="left", fontsize=20, weight="bold")
-    save(fig, "03_method", CAPTIONS["03_method"])
+    save(fig, "03_method", CAPTIONS["03_method"], poster_dir=poster_dir)
     # Plotly keeps the same diagram portable to the site's native figure shortcode.
     result = go.Figure(layout=dict(template="none", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                                    font=dict(family=FONT, color=INK), height=470, margin=dict(l=10, r=10, t=10, b=10),
@@ -200,7 +207,7 @@ def method_figure(training: pd.DataFrame) -> go.Figure:
 
 
 def sampling_figure(summary: pd.DataFrame, rows: pd.DataFrame, figure: str = "06_sampling",
-                    metric: str = "r_precision") -> go.Figure:
+                    metric: str = "r_precision", *, poster_dir: Path | None = None) -> go.Figure:
     """Pair a mean comparison with the underlying per-protein scatter."""
     subset = summary[(summary.figure == figure) & (summary.cohort == "natural") &
                      (summary.tier == "All depths") & (summary.metric == metric)].set_index("method")
@@ -225,7 +232,7 @@ def sampling_figure(summary: pd.DataFrame, rows: pd.DataFrame, figure: str = "06
     axes[1].scatter(paired.consensus, paired.best100, color=PALETTE[3], s=20, alpha=0.65, linewidth=0)
     axes[1].set(xlim=(0, 1), xlabel="Consensus of 100", ylabel="Oracle best of 100*")
     axes[1].text(0.02, 0.96, "Above line: oracle wins", fontsize=10, va="top")
-    save(fig, figure, CAPTIONS[figure], "_long" if metric.endswith("long") else "")
+    save(fig, figure, CAPTIONS[figure], "_long" if metric.endswith("long") else "", poster_dir=poster_dir)
     interactive = make_subplots(rows=1, cols=2, horizontal_spacing=0.16)
     layout = plotly_layout(metric)
     layout.pop("xaxis")
@@ -256,7 +263,7 @@ def sampling_figure(summary: pd.DataFrame, rows: pd.DataFrame, figure: str = "06
     return interactive
 
 
-def confidence_figure() -> go.Figure:
+def confidence_figure(*, poster_dir: Path | None = None) -> go.Figure:
     """Show each map's maximum pTM and the cached oracle rank."""
     maps = pd.read_csv(DATA / "structured_confidence_per_map.csv")
     ranks = pd.read_csv(DATA / "structured_confidence_ranks.csv").set_index("stem")
@@ -305,7 +312,7 @@ def confidence_figure() -> go.Figure:
     ax.set_xlabel("Helico pTM (highest of three samples per map)")
     ax.text(1.03, 1.08, "Oracle rank", transform=ax.transAxes, fontsize=10)
     fig.legend(*ax.get_legend_handles_labels(), loc="lower left", bbox_to_anchor=(0.12, 0.015), frameon=False, ncol=2)
-    save(fig, "02b_confidence", CAPTIONS["02b_confidence"])
+    save(fig, "02b_confidence", CAPTIONS["02b_confidence"], poster_dir=poster_dir)
     interactive.update_layout(template="none", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         font=dict(family=FONT, color=INK), height=530, margin=dict(l=145,r=105,t=65,b=100),
         xaxis=dict(title="Helico pTM (highest of three samples per map)", range=[0,1.02], gridcolor=GRID, zeroline=False),
@@ -324,7 +331,7 @@ def ptm_limits(values: pd.Series) -> tuple[float, float]:
     return max(0, float(values.min()) - padding), min(1.01, float(values.max()) + padding)
 
 
-def accuracy_confidence_figure() -> go.Figure:
+def accuracy_confidence_figure(*, poster_dir: Path | None = None) -> go.Figure:
     """Separate original and reconstructed TM-score against selected Helico pTM."""
     table = pd.read_csv(DATA / "structured_accuracy_confidence.csv")
     stems = sorted(table.stem.unique())
@@ -360,7 +367,7 @@ def accuracy_confidence_figure() -> go.Figure:
         ax.set(xlim=ptm_limits(table.ptm), ylim=(0, 1.035), xlabel="Helico pTM", ylabel=axis_label)
         fig.legend(*ax.get_legend_handles_labels(), loc="lower center", bbox_to_anchor=(0.53, 0.01), ncol=3, frameon=False)
         save(fig, "02c_accuracy_confidence", CAPTIONS["02c_accuracy_confidence"],
-             suffix="" if view_index == 0 else "_tm_score", include_in_summary=False)
+             suffix="" if view_index == 0 else "_tm_score", include_in_summary=False, poster_dir=poster_dir)
         if view_index == 0:
             interactive.add_traces(view_traces)
         buttons.append(dict(label=label, method="update", args=[
@@ -384,7 +391,7 @@ def accuracy_confidence_figure() -> go.Figure:
     return interactive
 
 
-def per_protein_accuracy_figures() -> None:
+def per_protein_accuracy_figures(*, poster_dir: Path | None = None) -> None:
     """Render two TM-versus-pTM panels per protein from cached analysis tables."""
     table = pd.read_csv(DATA / "structured_accuracy_confidence.csv")
     summaries = pd.read_csv(DATA / "structured_accuracy_summary.csv").set_index(["stem", "metric"])
@@ -417,7 +424,8 @@ def per_protein_accuracy_figures() -> None:
              "Highest pTM selects one of three Helico samples for every map; pTM also ranks the 101 maps. "
              "Left: original ESMFold2 TM-score (oracle reference = 1). Right: selected Helico reconstruction TM-score. "
              "Diamonds identify oracle contacts; correlations use only the 100 ESMFold2 maps. "
-             "TM-score uses matched protein CA atoms; pTM retains all Helico input tokens. No ipTM or clash penalty.")
+             "TM-score uses matched protein CA atoms; pTM retains all Helico input tokens. No ipTM or clash penalty.",
+             poster_dir=poster_dir)
 
 
 def export_plotly(fig: go.Figure, name: str) -> None:
@@ -538,7 +546,11 @@ for(const [name,spec] of Object.entries(specs)){
 
 def main() -> None:
     """Render default panels, metric alternatives, native site assets and preview."""
-    argparse.ArgumentParser(description=__doc__).parse_args()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--poster-dir", type=Path,
+                        help="Write white-background PDF/SVG variants here instead of the blog static plots")
+    args = parser.parse_args()
+    poster_dir = args.poster_dir
     verify_data()
     for font in (DATA / "inputs").glob("Lato-*.ttf"):
         font_manager.fontManager.addfont(font)
@@ -551,10 +563,10 @@ def main() -> None:
     for figure in ["01_predictors", "02_oracle", "04_contacts", "05_folding"]:
         metrics = ["r_precision", "r_precision_long"] if figure == "04_contacts" else ["gdt_ts", "lddt"]
         for metric in metrics:
-            static_depth(summary, figure, metric)
+            static_depth(summary, figure, metric, poster_dir=poster_dir)
         export_plotly(export_depth(summary, figure), figure)
-    export_plotly(method_figure(pd.read_csv(DATA / "training_sources.csv")), "03_method")
-    export_plotly(sampling_figure(summary, rows), "06_sampling")
+    export_plotly(method_figure(pd.read_csv(DATA / "training_sources.csv"), poster_dir=poster_dir), "03_method")
+    export_plotly(sampling_figure(summary, rows, poster_dir=poster_dir), "06_sampling")
     pl5_manifest = json.loads((DATA / "pl5_analysis.json").read_text())
     for name, expected in pl5_manifest["files"].items():
         if hashlib.sha256((DATA / name).read_bytes()).hexdigest() != expected:
@@ -564,27 +576,30 @@ def main() -> None:
     for figure, metrics in [("04_contacts_pl5", ["p_at_l5", "p_at_l5_long"]),
                              ("04b_knn", ["p_at_l5", "p_at_l5_long", "r_precision", "r_precision_long"])]:
         for metric in metrics:
-            static_depth(pl5_summary, figure, metric)
+            static_depth(pl5_summary, figure, metric, poster_dir=poster_dir)
         export_plotly(export_depth(pl5_summary, figure, metrics), figure)
-    export_plotly(sampling_figure(pl5_summary, pl5_rows, "06_sampling_pl5", "p_at_l5"), "06_sampling_pl5")
-    export_plotly(sampling_figure(pl5_summary, pl5_rows, "06_sampling_pl5", "p_at_l5_long"), "06_sampling_pl5_long")
+    export_plotly(sampling_figure(pl5_summary, pl5_rows, "06_sampling_pl5", "p_at_l5", poster_dir=poster_dir), "06_sampling_pl5")
+    export_plotly(sampling_figure(pl5_summary, pl5_rows, "06_sampling_pl5", "p_at_l5_long", poster_dir=poster_dir), "06_sampling_pl5_long")
     names = list(TITLES)
     if (DATA / "af3_sampling_samples.csv").exists():
-        render_af3_sampling()
-        render_af3_context()
+        render_af3_sampling(poster_dir=poster_dir)
+        render_af3_context(poster_dir=poster_dir)
     else:
         names.remove("01b_af3_sampling")
         names.remove("01c_af3_context")
         names.remove("01d_af3_depth_context")
     if (DATA / "structured_confidence_ranks.csv").exists():
-        export_plotly(confidence_figure(), "02b_confidence")
-        export_plotly(accuracy_confidence_figure(), "02c_accuracy_confidence")
-        per_protein_accuracy_figures()
+        export_plotly(confidence_figure(poster_dir=poster_dir), "02b_confidence")
+        export_plotly(accuracy_confidence_figure(poster_dir=poster_dir), "02c_accuracy_confidence")
+        per_protein_accuracy_figures(poster_dir=poster_dir)
     else:
         names.remove("02b_confidence")
         names.remove("02c_accuracy_confidence")
     preview(names)
-    print(f"Rendered {len(names)} figures, SVG/PNG, Plotly JSON, and {SITE / 'index.html'}")
+    if poster_dir is not None:
+        print(f"Rendered white poster vectors to {poster_dir}")
+    else:
+        print(f"Rendered {len(names)} figures, SVG/PNG, Plotly JSON, and {SITE / 'index.html'}")
 
 
 if __name__ == "__main__":

@@ -13,6 +13,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from build_summary import save_plot_with_meta
+from poster_style import save_poster_vectors
 from theme import CAPTIONS, INK, METHODS, PAPER, TIERS, TITLES
 
 matplotlib.use("Agg")
@@ -39,7 +40,8 @@ def load_tables() -> tuple[pd.DataFrame, pd.DataFrame]:
 
 
 def panel(frame: pd.DataFrame, name: str, methods: list[str], columns: list[str],
-          xlabels: list[str], column: str, value: str, subtitle: str) -> None:
+          xlabels: list[str], column: str, value: str, subtitle: str, *,
+          poster_dir: Path | None = None) -> None:
     """Draw a shared-scale matrix and interactive cell-level provenance."""
     matrix = frame.pivot(index="method", columns=column, values=value).reindex(index=methods, columns=columns)
     cmap = LinearSegmentedColormap.from_list("athena_tm", [color for _, color in COLORS])
@@ -85,10 +87,13 @@ def panel(frame: pd.DataFrame, name: str, methods: list[str], columns: list[str]
     cax.spines[:].set_visible(False)
     fig.text(0.035, 0.075, "*Uses ground truth: diagnostic only. Predictor budgets differ. All AF3 runs use shared MSAs and no templates.", fontsize=10)
     fig.text(0.035, 0.035, "MSA tiers contain different proteins. Extended sampling covers only the five proteins at depth <10.", fontsize=10)
-    save_plot_with_meta(fig, HERE / "plots" / f"{name}.png", caption=CAPTIONS[name],
-                        script="render_af3_context.py", args=[], dpi=180)
-    for extension in ("pdf", "svg"):
-        fig.savefig(HERE / "plots" / f"{name}.{extension}", bbox_inches="tight")
+    if poster_dir is not None:
+        save_poster_vectors(fig, poster_dir, name)
+    else:
+        save_plot_with_meta(fig, HERE / "plots" / f"{name}.png", caption=CAPTIONS[name],
+                            script="render_af3_context.py", args=[], dpi=180)
+        for extension in ("pdf", "svg"):
+            fig.savefig(HERE / "plots" / f"{name}.{extension}", bbox_inches="tight")
     plt.close(fig)
 
     chart = go.Figure(go.Heatmap(z=matrix.where(matrix.notna(), None).to_numpy(dtype=object).tolist(),
@@ -109,7 +114,7 @@ def panel(frame: pd.DataFrame, name: str, methods: list[str], columns: list[str]
         (HERE / "site" / f"{name}{suffix}.json").write_text(json.dumps(payload, separators=(",", ":"), allow_nan=False) + "\n")
 
 
-def main() -> None:
+def main(*, poster_dir: Path | None = None) -> None:
     """Build two context panels from source-traced TM-score tables."""
     rows, summary = load_tables()
     for font in (HERE / "data/inputs").glob("Lato-*.ttf"):
@@ -122,11 +127,11 @@ def main() -> None:
     depths = low.drop_duplicates("stem").set_index("stem").msa_depth
     panel(low, "01c_af3_context", BASELINES + EXTRA + DIAGNOSTICS, stems,
           [f"{stem}\ndepth {int(depths[stem])}" for stem in stems], "stem", "tm_score",
-          "Five low-depth proteins · archived predictor entries versus 100 / 1,000 fresh AF3 runs")
+          "Five low-depth proteins · archived predictor entries versus 100 / 1,000 fresh AF3 runs", poster_dir=poster_dir)
     counts = summary[summary.method == "af3"].set_index("tier").n
     panel(summary, "01d_af3_depth_context", BASELINES + EXTRA[2:] + DIAGNOSTICS, TIERS,
           [f"{tier}\nn={counts[tier]}" for tier in TIERS], "tier", "mean",
-          "Mean TM-score · 305 matched natural proteins · same 0–1 scale in every cell")
+          "Mean TM-score · 305 matched natural proteins · same 0–1 scale in every cell", poster_dir=poster_dir)
 
 
 if __name__ == "__main__":

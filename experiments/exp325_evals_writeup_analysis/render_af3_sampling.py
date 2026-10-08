@@ -12,6 +12,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 from build_summary import save_plot_with_meta
+from poster_style import save_poster_vectors
 from render_af3_context import load_tables
 from theme import GRID, INK, PALETTE, PAPER
 
@@ -29,8 +30,13 @@ def style(ax: plt.Axes) -> None:
     ax.set_ylim(0, 1)
 
 
-def save(fig: plt.Figure, name: str, caption: str, *, include: bool = True) -> None:
+def save(fig: plt.Figure, name: str, caption: str, *, include: bool = True,
+         poster_dir: Path | None = None) -> None:
     """Write independently usable raster and vector plots with provenance."""
+    if poster_dir is not None:
+        save_poster_vectors(fig, poster_dir, name)
+        plt.close(fig)
+        return
     save_plot_with_meta(fig, HERE / "plots" / f"{name}.png", caption=caption,
                         script="render_af3_sampling.py", args=[], include_in_summary=include, dpi=180)
     fig.savefig(HERE / "plots" / f"{name}.pdf", bbox_inches="tight")
@@ -101,7 +107,7 @@ def interactive(samples: pd.DataFrame, curves: pd.DataFrame, protocol: dict, con
         (HERE / "site" / f"01b_af3_sampling{suffix}.json").write_text(json.dumps(payload, separators=(",", ":")) + "\n")
 
 
-def main() -> None:
+def main(*, poster_dir: Path | None = None) -> None:
     """Draw one page per protein plus a compact blog comparison."""
     manifest = json.loads((HERE / "data/af3_sampling_analysis.json").read_text())
     for name, expected in manifest["files"].items():
@@ -166,7 +172,7 @@ def main() -> None:
                    "original baseline: af3_sampling_original.csv. ESMFold2 baseline: af3_context_rows.csv. "
                    "Official ranking_score selection is shown separately from pTM. All are in data/; "
                    "preprocessing: prepare_af3_sampling.py and prepare_af3_context.py.")
-        save(fig, f"01b_af3_sampling_{stem}", caption)
+        save(fig, f"01b_af3_sampling_{stem}", caption, poster_dir=poster_dir)
     fig, ax = plt.subplots(figsize=(10.4, 5.4), facecolor=PAPER)
     fig.subplots_adjust(left=0.13, right=0.96, top=0.77, bottom=0.27)
     ax.set_facecolor(PAPER)
@@ -194,7 +200,8 @@ def main() -> None:
     fig.text(0.08, 0.87, "Five proteins with MSA depth <10 · fixed MSAs · independent full runs", fontsize=12)
     save(fig, "01b_af3_sampling", f"Best of 100 and {max_budget:,} independent AF3 runs versus highest-pTM selection at {max_budget:,}. "
          "Only five biological examples. Oracle best uses the reference; pTM selection does not. "
-         "Dashed line: prespecified TM >=0.8. Source: data/af3_sampling_summary.csv.", include=False)
+         "Dashed line: prespecified TM >=0.8. Source: data/af3_sampling_summary.csv.", include=False,
+         poster_dir=poster_dir)
 
 
 if __name__ == "__main__":
