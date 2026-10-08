@@ -8,4 +8,4 @@ dependencies = ["numpy>=2.2", "pandas>=2.2", "matplotlib>=3.9", "plotly>=6.0", "
 package = false
 
 [tool.pytest.ini_options]
-testpaths = ["test_analysis.py", "test_af3_sampling.py", "test_af3_context.py", "test_pl5.py", "generation/test_training_source_search.py"]
+testpaths = ["test_analysis.py", "test_af3_sampling.py", "test_af3_context.py", "test_pl5.py", "test_oracle_budget_analysis.py", "generation/test_training_source_search.py", "generation/test_oracle_budgets.py"]

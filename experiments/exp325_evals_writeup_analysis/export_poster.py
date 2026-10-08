@@ -80,7 +80,7 @@ def main() -> None:
         output = bundle / "fonts" / font.name
         output.parent.mkdir(exist_ok=True)
         shutil.copyfile(font, output)
-    for filename in ("POSTER.md", "FIGURES.md", "PL5_ANALYSIS.md"):
+    for filename in ("POSTER.md", "FIGURES.md", "PL5_ANALYSIS.md", "ORACLE_BUDGET.md"):
         shutil.copyfile(HERE / filename, bundle / filename)
     manifest = dict(destination=DESTINATION, generator="export_poster.py", width_px=args.width_px,
                     background="white", background_hex="#FFFFFF",
@@ -97,6 +97,8 @@ def main() -> None:
     # make the baseline joins reproducible; large rollout pools already live at
     # the durable public URLs in pl5_analysis.json.
     for pattern in ("data/pl5*", "data/inputs/pl5*", "*pl5*.py", "export_poster.py", "render*.py",
+                    "data/oracle_budget*", "data/helico_oracle_budget*", "*oracle_budget*.py",
+                    "generation/*oracle_budget*.py", "generation/run_helico.py",
                     "prepare.py", "theme.py", "poster_style.py", "build_summary.py", "pyproject.toml", "uv.lock",
                     "generation/score_contacts.py", "plots/summary.pdf", "site/*.json",
                     "site/index.html", "site/plotly.min.js", "DRAFT.md", "summary_narrative.md"):

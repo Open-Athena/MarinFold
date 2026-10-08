@@ -27,6 +27,8 @@ rather than re-filtering a curated benchmark
 
 | 12 | 2026-10-08 | #325 P@L/5 reanalysis: fixed exp277 step266344 (248B tokens), eight archived contact baselines, and the same 100-rollout pools | Explicit user request for P@L/5 counterparts and KNN comparison in the publication; test split already authorized. No new inference, model selection or tuning. k=max(1,floor(input sequence length/5)); same resolved candidate universe. | 217 test proteins. All-range P@L/5: MarinFold **0.836871**, decontaminated KNN **0.663146**, AF3 **0.912618**, ESMFold2 **0.867718**. Sampling consensus **0.836871**, newly selected oracle individual **0.611430**. All original R-precision cells reproduce before reanalysis. Source rows, raw hashes and per-rollout scores in exp325 `data/pl5_*`. |
 
+| 13 | 2026-10-08 | #325 sparse oracle contacts through Helico `contacts-msafree-01-step-6000`; one-protein validation on `8ii8_A` | User-requested oracle-budget diagnostic for the publication, with test-split use previously authorized. Budgets 5, 10, L/5 and L/2, two random subsets each; three diffusion samples/map, six recycles, seed42. Inputs frozen for 305 natural proteins before the smoke run; full sweep pending cost approval. No recipe/arm selection based on accuracy. | **GDT-TS on 8ii8_A only:** no contacts 0.422222; random 5 / 10 / L/5 / L/2 = **0.410000 / 0.720000 / 0.786111 / 0.964444**; all positives with unknown remainder 0.961111; full positive/negative oracle 0.958889. Sparse values average two subsets after ranking-score diffusion selection. Not a tier-level estimate. Exact maps, all 33 samples and timings are recorded in exp325 `data/oracle_budget_*`. |
+
 ## What a read costs
 
 Nothing in compute — 217 units is ~3 minutes on twelve single-H100 CoreWeave

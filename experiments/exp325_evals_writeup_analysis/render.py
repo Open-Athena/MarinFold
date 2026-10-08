@@ -24,6 +24,7 @@ from build_summary import save_plot_with_meta
 from poster_style import save_poster_vectors
 from render_af3_sampling import main as render_af3_sampling
 from render_af3_context import main as render_af3_context
+from render_oracle_budget import main as render_oracle_budget
 from theme import CAPTIONS, COHORTS, FONT, GRID, INK, METHODS, METRICS, ORDER, PALETTE, PAPER, TIERS, TITLES
 
 HERE = Path(__file__).resolve().parent
@@ -581,6 +582,11 @@ def main() -> None:
     export_plotly(sampling_figure(pl5_summary, pl5_rows, "06_sampling_pl5", "p_at_l5", poster_dir=poster_dir), "06_sampling_pl5")
     export_plotly(sampling_figure(pl5_summary, pl5_rows, "06_sampling_pl5", "p_at_l5_long", poster_dir=poster_dir), "06_sampling_pl5_long")
     names = list(TITLES)
+    if (DATA / "oracle_budget_analysis.json").exists():
+        render_oracle_budget(poster_dir=poster_dir)
+    else:
+        names.remove("02e_oracle_budget")
+        names.remove("02f_oracle_budget_context")
     if (DATA / "af3_sampling_samples.csv").exists():
         render_af3_sampling(poster_dir=poster_dir)
         render_af3_context(poster_dir=poster_dir)

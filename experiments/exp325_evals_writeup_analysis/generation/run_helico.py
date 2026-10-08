@@ -27,12 +27,13 @@ import modal
 import numpy as np
 
 from plan_missing import randomized_map
+from oracle_budgets import BUDGETS, map_keys, requested_count
 
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 PHASE = os.environ.get("WRITEUP_PHASE", "confidence")
-if PHASE not in ("confidence", "folding", "structured"):
+if PHASE not in ("confidence", "folding", "structured", "oracle_budget"):
     raise ValueError(PHASE)
 TARGETS = Path("/root/sweep/data") if Path("/root/sweep/data/targets.csv").exists() else ROOT / "scratch" / "helico" / PHASE
 RESULTS = ROOT / "scratch" / "helico_results" / PHASE
@@ -44,7 +45,7 @@ N_SAMPLES = 3
 N_CYCLES = 6
 SEED = 42
 MAX_TOKENS = 2048
-N_WORKERS = 8
+N_WORKERS = 16 if PHASE == "oracle_budget" else 8
 TAG = f"exp325-exp277-step266344-{PHASE}-v1"
 
 
@@ -71,18 +72,30 @@ def estimate() -> tuple[int, float]:
     """Apply Helico's dry-run cost gate to the complete sweep."""
     with (TARGETS / "targets.csv").open() as stream:
         targets = list(csv.DictReader(stream))
-    if len(targets) != {"confidence": 20, "folding": 211, "structured": 5}[PHASE]:
+    if len(targets) != {"confidence": 20, "folding": 211, "structured": 5, "oracle_budget": 305}[PHASE]:
         raise ValueError(f"unexpected target count: {len(targets)}")
     limit = int(os.environ.get("SWEEP_TARGET_LIMIT", "0"))
     if limit:
         targets = targets[:limit]
-    expected_cuts = len(targets) * {"confidence": 11, "folding": 2, "structured": 101}[PHASE]
-    estimated_gpu_hours = expected_cuts * 11.0 * 1.7 / 3600 + N_WORKERS * 0.1
+    expected_cuts = len(targets) * {"confidence": 11, "folding": 2, "structured": 101,
+                                   "oracle_budget": len(map_keys())}[PHASE]
+    seconds_per_cut = 11.0
+    if PHASE == "oracle_budget":
+        with (ROOT / "data/helico_folding_timings.csv").open() as stream:
+            measured = [float(row["elapsed_seconds"]) for row in csv.DictReader(stream)]
+        seconds_per_cut = sum(measured) / len(measured)
+    estimated_gpu_hours = expected_cuts * seconds_per_cut * 1.7 / 3600 + min(N_WORKERS, len(targets)) * 0.1
     estimated_usd = estimated_gpu_hours * 3.95
+    if PHASE == "oracle_budget":
+        # Modal's current narrow-region premium is 1.75x. Keep the weights in
+        # their existing us-east placement; add 10% for CPU/memory alongside GPU.
+        # https://modal.com/docs/guide/region-selection (checked 2026-10-08).
+        estimated_usd *= 1.75 * 1.10
     print(f"{len(targets)} targets, {expected_cuts} cuts, {expected_cuts * N_SAMPLES} samples")
     print(f"conservative estimate: {estimated_gpu_hours:.1f} H100-hours, ${estimated_usd:.2f}")
-    if estimated_usd >= 100:
-        raise RuntimeError("estimate reaches Helico's $100 cost gate; obtain explicit approval")
+    approved_budget = float(os.environ.get("HELICO_APPROVED_BUDGET_USD", "100"))
+    if estimated_usd >= approved_budget:
+        raise RuntimeError(f"estimate reaches Helico's ${approved_budget:g} cost gate; obtain explicit approval")
     return expected_cuts, estimated_usd
 
 
@@ -105,6 +118,7 @@ IMAGE = (
     .env({"WRITEUP_PHASE": PHASE})
     .add_local_dir(str(TARGETS), remote_path="/root/sweep/data")
     .add_local_file(str(ROOT / "plan_missing.py"), remote_path="/root/plan_missing.py")
+    .add_local_file(str(HERE / "oracle_budgets.py"), remote_path="/root/oracle_budgets.py")
     .add_local_dir(str(HELICO_REPO / "src"), remote_path="/root/helico/src")
     .add_local_file(str(HELICO_REPO / "pyproject.toml"), remote_path="/root/helico/pyproject.toml")
 )
@@ -166,6 +180,7 @@ class Predictor:
         self.model.load_state_dict(checkpoint["model_state_dict"])
         self.ccd = parse_ccd()
         self.rankings = json.loads(Path("/root/sweep/data/ranked_pairs.json").read_text())
+        self.protocol = json.loads(Path("/root/sweep/data/protocol.json").read_text()) if PHASE == "oracle_budget" else None
         properties = torch.cuda.get_device_properties(0)
         self.worker_meta = {
             "model_load_seconds": round(time.monotonic() - started, 3),
@@ -203,7 +218,29 @@ class Predictor:
             raise ValueError(f"{stem}: too many tokens")
         length = int(target["L_exp245"])
         maps = []
-        if PHASE == "structured":
+        if PHASE == "oracle_budget":
+            pins = self.protocol["files_sha256"][stem]
+            map_path = Path("/root/sweep/data/maps") / f"{stem}.npz"
+            if sha256(map_path) != pins["maps_sha256"] or sha256(Path("/root/sweep/data/gt") / f"{stem}.cif.gz") != pins["gt_sha256"]:
+                raise ValueError(f"{stem}: frozen input digest changed")
+            with np.load(map_path) as saved:
+                if set(saved.files) != set(self.protocol["map_keys"]):
+                    raise ValueError(f"{stem}: incomplete budget maps")
+                maps = [(arm, replicate, saved[f"{arm}-{replicate}"]) for arm, replicate in map_keys()]
+            oracle = oracle_contact_state(gt, tokenized, load_rotamer_library())
+            if oracle is None or not np.array_equal(maps[-1][2], oracle.cpu().numpy()):
+                raise ValueError(f"{stem}: frozen and runtime oracle differ")
+            for arm, _, state in maps:
+                if state.shape != (tokenized.n_tokens, tokenized.n_tokens) or not np.array_equal(state, state.T):
+                    raise ValueError(f"{stem}: invalid map shape/symmetry")
+                if np.any((state == 2) & (maps[-1][2] != 2)):
+                    raise ValueError(f"{stem}: non-oracle positive contact")
+                if arm != "oracle" and np.any(state == 1):
+                    raise ValueError(f"{stem}: sparse map supplies non-contacts")
+                expected = min(requested_count(arm, length), int(np.triu(maps[-1][2] == 2, 1).sum())) if arm in BUDGETS else None
+                if arm in BUDGETS and int(np.triu(state == 2, 1).sum()) != expected:
+                    raise ValueError(f"{stem}: wrong sparse budget")
+        elif PHASE == "structured":
             with np.load(Path("/root/sweep/data/maps") / f"{stem}.npz") as saved:
                 if set(saved.files) != {"oracle-0", *(f"esmfold2-{seed}" for seed in range(100))}:
                     raise ValueError(f"{stem}: expected oracle plus exactly 100 ESMFold2 maps")
@@ -238,7 +275,7 @@ class Predictor:
                 raise ValueError(f"{stem}: unexpected loss of mapped contacts")
             maps = [("top_0", 0, np.zeros_like(top_l)), ("top_L", 0, top_l)]
         sample_rows, timing_rows = [], []
-        if PHASE == "structured":
+        if PHASE in ("structured", "oracle_budget") and "map_start" in target:
             maps = maps[int(target["map_start"]):int(target["map_stop"])]
         durable = Path("/results") / TAG / stem
         durable.mkdir(parents=True, exist_ok=True)
@@ -247,6 +284,8 @@ class Predictor:
             result_path = durable / f"{key}.json"
             if result_path.exists():
                 saved = json.loads(result_path.read_text())
+                if PHASE == "oracle_budget" and saved.get("state_sha256") != hashlib.sha256(state.tobytes()).hexdigest():
+                    raise ValueError(f"{stem}/{key}: resumed result has different conditioning")
                 sample_rows.extend(saved["samples"])
                 timing_rows.append(saved["timing"])
                 continue
@@ -285,7 +324,7 @@ class Predictor:
                 sample_rows.append({
                     "stem": stem, "eval_set": target["eval_set"], "arm": arm, "map_seed": map_seed,
                     "sample_idx": si, "L": length, "n_present": n_present,
-                    "requested_contacts": length if arm == "top_L" else n_present,
+                    "requested_contacts": requested_count(arm, length) if PHASE == "oracle_budget" and arm in BUDGETS else (length if arm == "top_L" else n_present),
                     "dropped_short_after_mapping": length - n_present if arm == "top_L" else 0,
                     "n_absent": n_absent, "n_unknown": n_unknown,
                     "ranking_score": float(ranks[si]), "ptm": float(ptms[si]), "iptm": float(iptms[si]),
@@ -304,7 +343,8 @@ class Predictor:
             timing_rows.append(timing)
             np.savez_compressed(durable / f"{key}.npz", coords=prediction["all_coords"][0].cpu().float().numpy(),
                                 contact_state=state)
-            result_path.write_text(json.dumps({"samples": sample_rows[-N_SAMPLES:], "timing": timing}))
+            result_path.write_text(json.dumps({"samples": sample_rows[-N_SAMPLES:], "timing": timing,
+                                              "state_sha256": hashlib.sha256(state.tobytes()).hexdigest()}))
             results_volume.commit()
             print(f"[{PHASE}] {stem} {key}: {elapsed:.1f}s", flush=True)
         return {"stem": stem, "task_id": target.get("task_id", stem), "samples": sample_rows, "timings": timing_rows}
@@ -365,11 +405,12 @@ def run() -> None:
         "helico_checkpoint": CHECKPOINT, "helico_checkpoint_step": 6000,
         "helico_checkpoint_sha256": CHECKPOINT_SHA256,
         "contact_checkpoint": "contacts-v1-exp277-m2-p06-full-epoch-1.5B-step-266344" if PHASE == "folding" else None,
-        "conditioning_source": {"folding": "MarinFold votes", "confidence": "ground-truth oracle and randomized three-state maps", "structured": "ground-truth oracle and 100 seeded ESMFold2 full three-state maps per low-depth protein"}[PHASE],
+        "conditioning_source": {"folding": "MarinFold votes", "confidence": "ground-truth oracle and randomized three-state maps", "structured": "ground-truth oracle and 100 seeded ESMFold2 full three-state maps per low-depth protein", "oracle_budget": "Frozen uniform random true-contact subsets plus zero, all-positive and full-map controls"}[PHASE],
         "n_targets": len(targets), "n_cuts": expected_cuts, "n_samples": len(samples),
         "n_diffusion_samples_per_cut": N_SAMPLES, "n_trunk_recycles": N_CYCLES,
         "seed_per_map": SEED, "phase": PHASE, "selection": "highest ranking_score among three diffusion samples per map", "max_tokens": MAX_TOKENS,
         "single_sequence": True, "msa": False,
+        "oracle_budget_protocol_sha256": sha256(TARGETS / "protocol.json") if PHASE == "oracle_budget" else None,
         "completed_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
     }
     (output_dir / "run_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
