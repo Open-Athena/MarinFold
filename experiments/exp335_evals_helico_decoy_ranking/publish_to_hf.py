@@ -38,11 +38,14 @@ def main() -> None:
         args.results_dir / "manifest.json",
         args.data_dir / "full_metric_summary.csv",
         args.data_dir / "full_native_summary.csv",
+        args.data_dir / "full_paired_comparisons.csv",
         args.data_dir / "full_per_target_metrics.csv",
         args.data_dir / "full_native_ranking.csv",
         args.data_dir / "full_run_manifest.json",
         args.plots_dir / "full_metric_comparison.png",
+        args.plots_dir / "full_metric_comparison.png.meta.json",
         args.plots_dir / "full_native_selection.png",
+        args.plots_dir / "full_native_selection.png.meta.json",
         args.plots_dir / "summary.pdf",
     ]
     missing = [path for path in paths if not path.is_file()]

@@ -22,15 +22,27 @@ def write_csv(path: Path, rows: list[dict]) -> None:
         writer.writerows(rows)
 
 
-def load_candidate_ids(input_dir: Path, task: dict) -> list[str]:
-    """Load the exact expected candidate IDs for a result part."""
-    path = input_dir / task["relative_path"]
-    with gzip.open(path, "rt") as stream:
-        payload = json.load(stream)
-    return [
-        candidate["decoy_id"]
-        for candidate in payload["candidates"][task["start"] : task["end"]]
-    ]
+def load_expected_parts(
+    input_dir: Path, tasks: list[dict]
+) -> list[tuple[dict, list[str]]]:
+    """Load expected candidate IDs while parsing each target payload only once."""
+    candidate_ids_by_path: dict[str, list[str]] = {}
+    expected = []
+    for task in tasks:
+        relative_path = task["relative_path"]
+        if relative_path not in candidate_ids_by_path:
+            with gzip.open(input_dir / relative_path, "rt") as stream:
+                payload = json.load(stream)
+            candidate_ids_by_path[relative_path] = [
+                candidate["decoy_id"] for candidate in payload["candidates"]
+            ]
+        expected.append(
+            (
+                task,
+                candidate_ids_by_path[relative_path][task["start"] : task["end"]],
+            )
+        )
+    return expected
 
 
 def fetch_part(
@@ -82,7 +94,7 @@ def main() -> None:
     tasks = [
         task for shard in assign_tasks(manifest, args.num_shards) for task in shard
     ]
-    expected = [(task, load_candidate_ids(args.input_dir, task)) for task in tasks]
+    expected = load_expected_parts(args.input_dir, tasks)
     fs = coreweave_s3(args.kubeconfig)
     result_parts = []
     timing_parts = []

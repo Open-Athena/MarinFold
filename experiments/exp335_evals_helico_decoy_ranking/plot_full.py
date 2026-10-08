@@ -120,14 +120,23 @@ def plot_native_selection() -> None:
     top1_axis.set_xlim(0, 104)
     top1_axis.set_xlabel("Targets with native ranked #1 (%)")
     top1_axis.grid(axis="x", alpha=0.22)
-    for bar, value in zip(top1_bars, top1, strict=True):
+    for bar, value, upper in zip(top1_bars, top1, top1_upper, strict=True):
+        percentage = 100 * value
+        if percentage >= 15:
+            label_x = percentage - 1.0
+            label_alignment = "right"
+            label_color = "white"
+        else:
+            label_x = percentage + 100 * upper + 1.5
+            label_alignment = "left"
+            label_color = "black"
         top1_axis.text(
-            100 * value - 1.0,
+            label_x,
             bar.get_y() + bar.get_height() / 2,
             f"{round(133 * value):d}/133",
-            ha="right",
+            ha=label_alignment,
             va="center",
-            color="white",
+            color=label_color,
         )
 
     rank_limit = max(

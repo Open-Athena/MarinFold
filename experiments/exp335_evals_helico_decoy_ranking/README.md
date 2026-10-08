@@ -107,7 +107,7 @@ remain labelled separately.
 
 ![Pilot Spearman comparison](plots/pilot_spearman_comparison.png)
 
-### Native identification is harder than ranking decoy quality
+### Pilot native identification is harder than ranking decoy quality
 
 Pure Helico pTM ranks the native first for 3/9 targets, with mean native rank
 3.22 of 25, mean reciprocal rank 0.532, and mean native-vs-decoy AUROC 0.907.
@@ -120,51 +120,107 @@ scores for those methods.
 
 ![Helico pTM against candidate TM-score](plots/pilot_ptm_vs_tmscore.png)
 
-### Full CoreWeave run
+### Complete 133-target decoy-ranking result
 
-The 225 pilot predictions used 0.544 inference H100-hours, equivalent to $2.15
-at the planning rate of $3.95/H100-hour, excluding model load, startup and idle
-time. Mean inference time was 8.71 seconds/candidate. Direct extrapolation to
-180,079 decoys plus 133 natives is **436 H100-hours, about $1,722 of inference
-compute**. A target-bootstrap projection is 424--449 H100-hours; it still
-excludes startup and the benchmark's longest proteins because the pilot spans
-61--150 residues.
+The complete run covers all 180,079 decoys and 133 natives. On the paper's
+target-macro endpoints, pure Helico pTM has a strong structural-quality signal
+but does not match AF2Rank and only partially meets the preregistered Rosetta
+comparison:
 
-The full run is therefore distributed across 96 CoreWeave H100 root jobs,
-which projects to roughly 4.5 hours of inference at ideal balance. The worker
-keeps the pilot's paired-randomness protocol rather than batching contact maps
-into a larger model batch, because batching would assign different diffusion
-noise to candidates and change the scientific comparison. It still amortizes
-checkpoint loading and target tokenization and uses resumable 32-candidate
-parts. The immutable run fingerprint is
-`c1452eb91e1cfc03aa445d14c88084defda53b7c20593f39170152ab72efa09d`;
-working outputs live under
-`s3://marin-us-east-02a/MarinFold/exp335/full-v1/results/<fingerprint>/` and
-will be consolidated into the public `open-athena/MarinFold` Hugging Face
-bucket after completion.
+| ranking metric | mean Spearman with TM-score | mean top-1 TM-score |
+|---|---:|---:|
+| Helico pTM (primary pure confidence) | 0.8408 [0.8226, 0.8579] | 0.8795 [0.8611, 0.8959] |
+| Helico mean-sample pTM | 0.8405 [0.8224, 0.8577] | 0.8826 [0.8652, 0.8983] |
+| Helico mean CA pLDDT | 0.8235 [0.8053, 0.8405] | 0.8910 [0.8781, 0.9027] |
+| **Helico composite** | **0.8735 [0.8568, 0.8891]** | **0.9357 [0.9284, 0.9422]** |
+| AF2Rank composite | 0.9253 [0.9147, 0.9350] | 0.9328 [0.9248, 0.9399] |
+| AF2 pTM | 0.8565 [0.8338, 0.8754] | 0.8872 [0.8686, 0.9028] |
+| DeepAccNet | 0.8308 [0.8104, 0.8488] | 0.9167 [0.9065, 0.9258] |
+| Rosetta energy | 0.7590 [0.7303, 0.7852] | 0.9010 [0.8884, 0.9123] |
+
+Intervals are deterministic 95% target-bootstrap intervals. In paired
+target-level comparisons, Helico pTM improves rank correlation over Rosetta by
+0.0818 [0.0598, 0.1043], but its selected decoy is lower in TM-score by 0.0215
+[0.0057, 0.0384]. The secondary Helico composite remains 0.0518 [0.0394,
+0.0652] below AF2Rank in rank correlation. Its mean top-1 TM-score is 0.0028
+higher, but the paired interval [-0.0035, 0.0093] includes zero.
+
+![Complete decoy-ranking comparison](plots/full_metric_comparison.png)
+
+### Complete native-versus-decoy result
+
+Pure confidence is a poor exact-native selector despite its useful correlation
+with decoy quality. Helico pTM ranks the native first for only 4/133 targets
+(3.0%) and gives mean native rank 130.3. Candidate/output agreement changes the
+result: the Helico composite selects 51/133 natives (38.3%) and gives mean rank
+26.5, essentially matching AF2Rank's 52/133 (39.1%) and mean rank 31.1.
+
+| ranking metric | native top-1 | mean native rank | mean native-vs-decoy AUROC |
+|---|---:|---:|---:|
+| Helico composite | 51/133 (38.3%) | 26.47 | 0.9829 |
+| AF2Rank composite | 52/133 (39.1%) | 31.11 | 0.9797 |
+| AF2 pTM | 14/133 (10.5%) | 88.23 | 0.9403 |
+| Helico mean CA pLDDT | 4/133 (3.0%) | 114.58 | 0.9219 |
+| Helico mean-sample pTM | 4/133 (3.0%) | 131.75 | 0.9106 |
+| Helico pTM | 4/133 (3.0%) | 130.34 | 0.9113 |
+
+The paired Helico-composite minus AF2Rank differences are -0.75 percentage
+points for native top-1 [95% interval -11.3, 9.0], -4.64 native-rank positions
+[-26.55, 20.22], and +0.0032 AUROC [-0.0107, 0.0156]. None excludes zero.
+DeepAccNet and Rosetta are omitted from this endpoint because their AF2Rank
+native rows contain `-1` sentinel scores. Both panels below include 95%
+target-bootstrap error bars, including the mean-rank panel on the right.
+
+![Complete native identification comparison](plots/full_native_selection.png)
+
+### CoreWeave execution and provenance
+
+The full evaluation ran as 96 independent batch-priority CoreWeave H100 Iris
+jobs, `/bizon/exp335-helico-full-s000-of-096-v1` through
+`/bizon/exp335-helico-full-s095-of-096-v1`. All 96 succeeded without a
+production retry. The run completed 5,698 resumable parts in 3 hours 35 minutes
+of wall time. Per-candidate timing records account for 314.45 inference
+H100-hours and 320.92 H100-hours including attributed model, target, and output
+overheads; mean inference time was 6.28 seconds/candidate. At the planning rate
+of $3.95/H100-hour, the accounted compute is $1,267.64.
+
+The immutable run fingerprint is
+`c1452eb91e1cfc03aa445d14c88084defda53b7c20593f39170152ab72efa09d`.
+Raw working outputs remain under
+`s3://marin-us-east-02a/MarinFold/exp335/full-v1/results/<fingerprint>/`; the
+consolidated candidates, samples, timings, summaries, and figures are published
+under `hf://buckets/open-athena/MarinFold/data/evals/exp335_helico_decoy_ranking/full-v1/`.
 
 Full-set preparation retains all 180,212 candidates. Exactly 1,000 decoys from
 target `1iib` contain one additional N-terminal lysine: in every case the full
 102-residue target sequence occurs uniquely and contiguously at candidate
-offset one. The preparation code therefore projects those candidates onto the
-target indices, drops the extra residue and any incident contacts, and records
-the mapping per candidate. Any substitution, internal indel, ambiguous match,
-or missing C-alpha remains a hard error. All other 179,212 candidates use an
-identity sequence map, and all 225 pilot maps and coordinates match the full
-payloads exactly.
+offset one. The preparation code projects those candidates onto target indices,
+drops the extra residue and incident contacts, and records the mapping per
+candidate. Any substitution, internal indel, ambiguous match, or missing
+C-alpha is a hard error. All other 179,212 candidates use an identity sequence
+map, and all 225 pilot maps and coordinates match the full payloads exactly.
 
-Two 32-candidate CoreWeave smokes passed before the full release. The
-pilot-overlap `1aaj` part reproduced pilot pTM within `5.8e-4`; the 223-residue
-maximum-length `1ugh` part completed without OOM at 7.36 seconds/candidate mean
-inference. The production jobs are the batch-priority Iris roots
-`/bizon/exp335-helico-full-s000-of-096-v1` through
-`/bizon/exp335-helico-full-s095-of-096-v1`.
+Two 32-candidate smokes passed before release. The pilot-overlap `1aaj` part
+reproduced pilot pTM within `5.8e-4`; the maximum-length, 223-residue `1ugh`
+part completed without OOM. The committed
+[`full_run_manifest.json`](data/full_run_manifest.json) pins coverage, Helico
+and checkpoint revisions, package versions, inference settings, timings, and
+the worker-script fingerprint.
 
 ## Conclusion
 
-Interim pilot conclusion: candidate-derived contact maps contain enough signal
-for Helico confidence to rank structural quality, but pure pTM is not yet as
-strong as AF2Rank and identifies the exact native only one-third of the time in
-this small target-balanced pilot. Candidate/output agreement is a promising
-secondary discriminator. Data access and provenance are fully resolved, and
-the complete 133-target CoreWeave evaluation is now in progress.
+Candidate-derived contact maps do contain enough signal for Helico confidence
+to rank decoy quality: pure pTM reaches 0.841 mean target-wise correlation and
+clearly exceeds Rosetta's 0.759 correlation. It does not, however, select as
+high-quality a top decoy as Rosetta and is not a useful exact-native selector
+on its own (4/133 natives top-ranked). The original confidence-only hypothesis
+is therefore only partially supported.
+
+The non-confidence-only Helico composite is the practically interesting
+result. It gives the best point estimate for top-1 decoy TM-score (0.936, tied
+with AF2Rank within paired uncertainty) and matches AF2Rank on native recovery
+and native rank within uncertainty, although its full rank correlation remains
+substantially lower. Helico confidence should not be used alone for true-versus-
+decoy selection; combining confidence with candidate/output structural
+agreement is competitive and merits follow-up validation on independent decoy
+sets.

@@ -45,6 +45,39 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def paired_comparisons(
+    rows: list[dict],
+    comparisons: list[tuple[str, str]],
+    metrics: tuple[str, ...],
+    endpoint: str,
+) -> list[dict]:
+    """Compute paired target-bootstrap intervals for method differences."""
+    by_method_target = {(str(row["method"]), str(row["target"])): row for row in rows}
+    targets = sorted({str(row["target"]) for row in rows})
+    output = []
+    for left_method, right_method in comparisons:
+        for metric in metrics:
+            differences = [
+                float(by_method_target[(left_method, target)][metric])
+                - float(by_method_target[(right_method, target)][metric])
+                for target in targets
+            ]
+            low, high = bootstrap_mean_interval(differences)
+            output.append(
+                {
+                    "endpoint": endpoint,
+                    "left_method": left_method,
+                    "right_method": right_method,
+                    "metric": metric,
+                    "n_targets": len(differences),
+                    "mean_left_minus_right": statistics.mean(differences),
+                    "difference_ci_low": low,
+                    "difference_ci_high": high,
+                }
+            )
+    return output
+
+
 def main() -> None:
     """Join predictions to truth and compute target-macro endpoints."""
     args = parse_args()
@@ -169,6 +202,28 @@ def main() -> None:
             summary[f"{metric}_ci_high"] = high
         native_summary.append(summary)
 
+    comparison_rows = paired_comparisons(
+        per_target,
+        [
+            ("Helico pTM", "Rosetta energy"),
+            ("Helico pTM", "AF2Rank composite"),
+            ("Helico composite", "AF2Rank composite"),
+        ],
+        ("spearman_tmscore", "top1_tmscore"),
+        "decoy_ranking",
+    )
+    comparison_rows.extend(
+        paired_comparisons(
+            native_rows,
+            [
+                ("Helico pTM", "AF2Rank composite"),
+                ("Helico composite", "AF2Rank composite"),
+            ],
+            ("native_top1", "native_rank", "native_vs_decoy_auroc"),
+            "native_selection",
+        )
+    )
+
     inference_hours = sum(float(row["elapsed_seconds"]) for row in timings) / 3600
     accounted_hours = sum(float(row["total_seconds"]) for row in timings) / 3600
     timing_summary = {
@@ -205,6 +260,7 @@ def main() -> None:
     write_csv(args.output_dir / "full_metric_summary.csv", summary_rows)
     write_csv(args.output_dir / "full_native_ranking.csv", native_rows)
     write_csv(args.output_dir / "full_native_summary.csv", native_summary)
+    write_csv(args.output_dir / "full_paired_comparisons.csv", comparison_rows)
     (args.output_dir / "full_run_manifest.json").write_text(
         json.dumps(run_manifest, indent=2, sort_keys=True) + "\n"
     )

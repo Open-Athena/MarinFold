@@ -1,0 +1,47 @@
+{
+  "config": {
+    "ccd_sha256": "8531c4b72693d3afddfe4242c56a257be578445a32b25d260d2deb676715da04",
+    "checkpoint_sha256": "779d540e5bb45cd26bb970188da2f1937ed3079942923a1356c29d06f20fe644",
+    "cuequivariance_version": "0.8.1",
+    "helico_source_sha": "b10385d736673c81b10e70d1099962af6f2573c0",
+    "map_mode": "full",
+    "msa": false,
+    "n_diffusion_samples": 3,
+    "n_trunk_recycles": 6,
+    "part_size": 32,
+    "python_package_versions": {
+      "biopython": "1.86",
+      "fsspec": "2026.9.0",
+      "huggingface-hub": "1.5.0",
+      "numpy": "2.4.4",
+      "pyyaml": "6.0.3",
+      "requests": "2.33.1",
+      "s3fs": "2026.9.0",
+      "scipy": "1.17.0",
+      "tmtools": "0.3.0",
+      "tqdm": "4.67.3"
+    },
+    "schema_version": 1,
+    "seed": "first 32 bits of SHA-256(target), reset per candidate",
+    "single_sequence": true,
+    "source_archive_sha256": "28db5ab75a21424c3ea977eb61152e60d33758d04cf798f49c1bce3ba1a276f2",
+    "torch_version": "2.13.0+cu130",
+    "worker_script_sha256": "9ef81804cf5fa8bde296415a28464b8304c159b3ca2806527106c407cbbd2eaf"
+  },
+  "coverage": {
+    "candidates": 180212,
+    "decoys": 180079,
+    "natives": 133,
+    "targets": 133
+  },
+  "run_fingerprint": "c1452eb91e1cfc03aa445d14c88084defda53b7c20593f39170152ab72efa09d",
+  "timing": {
+    "accounted_h100_hours": 320.9221325952778,
+    "inference_h100_hours": 314.4506181069445,
+    "mean_inference_seconds": 6.281614016741393,
+    "mean_total_seconds": 6.410892045718376,
+    "median_inference_seconds": 6.249247,
+    "n_candidates": 180212,
+    "planning_cost_at_3_95_usd_per_h100_hour": 1267.6424237513472
+  }
+}
