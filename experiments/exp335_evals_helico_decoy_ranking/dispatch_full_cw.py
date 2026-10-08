@@ -21,6 +21,7 @@ from fray.types import (
 
 from full_worker_cw import (
     CUEQUIVARIANCE_VERSION,
+    PYTHON_PACKAGE_VERSIONS,
     RUN_FINGERPRINT,
     TORCH_VERSION,
 )
@@ -37,6 +38,14 @@ WORK_DIR = "/tmp/exp335_dispatch"
 WORKER_LOCAL = f"{WORK_DIR}/full_worker_cw.py"
 
 
+def pinned_python_requirements() -> str:
+    """Return the complete lightweight worker dependency set."""
+    return " ".join(
+        shlex.quote(f"{name}=={version}")
+        for name, version in PYTHON_PACKAGE_VERSIONS.items()
+    )
+
+
 def build_bootstrap(
     *,
     shard: int,
@@ -47,6 +56,7 @@ def build_bootstrap(
 ) -> str:
     """Build a self-contained worker bootstrap for a foreign CUDA image."""
     worker_b64 = base64.b64encode(worker_bytes).decode()
+    requirements = pinned_python_requirements()
     limit_arg = f" --limit-parts {limit_parts}" if limit_parts else ""
     target_arg = f" --target {shlex.quote(target)}" if target else ""
     return f"""
@@ -67,9 +77,7 @@ echo "[exp335] python=$PY torch=$($PY -c 'import torch; print(torch.__version__)
 "$PY" -m pip install --quiet --no-cache-dir \
   "cuequivariance-torch=={CUEQUIVARIANCE_VERSION}" \
   "cuequivariance-ops-torch-cu12=={CUEQUIVARIANCE_VERSION}" \
-  "biopython>=1.80" "numpy>=2.0" scipy "pyyaml>=6.0" \
-  "huggingface_hub>=0.20" requests tqdm "pyconfind>=0.6" tmtools \
-  fsspec s3fs
+  {requirements}
 
 exec "$PY" {WORKER_LOCAL} --shard {shard} --num-shards {num_shards}{target_arg}{limit_arg}
 """.strip()

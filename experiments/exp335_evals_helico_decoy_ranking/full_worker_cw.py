@@ -30,6 +30,18 @@ SOURCE_ARCHIVE_SHA256 = (
 CCD_SHA256 = "8531c4b72693d3afddfe4242c56a257be578445a32b25d260d2deb676715da04"
 TORCH_VERSION = "2.13.0+cu130"
 CUEQUIVARIANCE_VERSION = "0.8.1"
+PYTHON_PACKAGE_VERSIONS = {
+    "biopython": "1.86",
+    "fsspec": "2026.9.0",
+    "huggingface-hub": "1.5.0",
+    "numpy": "2.4.4",
+    "pyyaml": "6.0.3",
+    "requests": "2.33.1",
+    "s3fs": "2026.9.0",
+    "scipy": "1.17.0",
+    "tmtools": "0.3.0",
+    "tqdm": "4.67.3",
+}
 N_SAMPLES = 3
 N_CYCLES = 6
 PART_SIZE = 32
@@ -53,6 +65,7 @@ CONFIG = {
     "ccd_sha256": CCD_SHA256,
     "torch_version": TORCH_VERSION,
     "cuequivariance_version": CUEQUIVARIANCE_VERSION,
+    "python_package_versions": PYTHON_PACKAGE_VERSIONS,
     "n_diffusion_samples": N_SAMPLES,
     "n_trunk_recycles": N_CYCLES,
     "map_mode": MAP_MODE,
@@ -219,6 +232,15 @@ def setup_model() -> tuple[object, object, dict, float]:
         raise ValueError(
             f"cuequivariance-torch {cue_version} != pinned {CUEQUIVARIANCE_VERSION}"
         )
+    observed_packages = {
+        distribution: importlib.metadata.version(distribution)
+        for distribution in PYTHON_PACKAGE_VERSIONS
+    }
+    if observed_packages != PYTHON_PACKAGE_VERSIONS:
+        raise ValueError(
+            f"Python package versions {observed_packages} != pinned "
+            f"{PYTHON_PACKAGE_VERSIONS}"
+        )
     checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
     if "model_state_dict" not in checkpoint or checkpoint.get("step") != 6000:
         raise ValueError("unexpected Helico checkpoint payload")
@@ -243,6 +265,7 @@ def setup_model() -> tuple[object, object, dict, float]:
         "platform": platform.platform(),
         "torch_version": str(torch.__version__),
         "cuequivariance_torch_version": cue_version,
+        "python_package_versions": json.dumps(observed_packages, sort_keys=True),
     }
     return model, ccd, worker_metadata, time.monotonic() - setup_started
 
