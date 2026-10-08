@@ -120,3 +120,10 @@ finite epoch). Validation loss had improved to 1.02085 during cooldown, versus
 placed immediately on 4×4 GB200, restored the complete temporary checkpoint at
 step 197,598, and resumed from step 197,599 at approximately 2.6 seconds/update.
 About 9.3 hours of uninterrupted compute remained at restart.
+
+The finite epoch completed successfully on 2026-10-07 at step 210,491. W&B
+reports `run_progress=1`, final train loss 0.72673, final validation loss
+0.97659, LR 1.0002e-4, 402,864 tokens/s, and 2.603 seconds/update. All four
+workers subsequently rediscovered and loaded the final native checkpoint at
+`checkpoints/step-210491`; the final checkpoint save completed before both the
+child gang and a06 root driver reached `succeeded`.
