@@ -54,11 +54,25 @@ Our current 1.47B-parameter model saw 248.584B raw tokens. Here is its contact a
 
 ![Contact R-precision](plots/04_contacts.png)
 
+The top-L/5 view emphasizes the highest-ranked contacts.
+
+![Contact precision at L/5](plots/04_contacts_pl5.png)
+
+MarinFold also clears the decontaminated sequence-KNN baseline.
+
+![MarinFold versus KNN](plots/04b_knn.png)
+
 ![From predicted contacts to structures](plots/05_folding.png)
 
 Low-depth proteins remain the challenge. Consensus R-precision is 0.561; oracle selection of an individual sample gives 0.528. The maps are distinct, but useful whole-map alternatives remain limited.
 
 ![Consensus versus oracle selection](plots/06_sampling.png)
+
+The same comparison at P@L/5 again favors consensus.
+
+![Consensus versus oracle selection at L/5](plots/06_sampling_pl5.png)
+
+[Analysis details and long-range variants](PL5_ANALYSIS.md) · [Poster-ready files](POSTER.md).
 
 Next: better candidate diversity, inference-time search, and post-training.
 

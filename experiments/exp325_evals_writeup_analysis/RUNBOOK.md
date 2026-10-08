@@ -300,3 +300,14 @@ cached CSVs. The AF3 public package includes `context_sources/` with the origina
 tables under repository-relative paths; copy those into a checkout root before
 rerunning context preprocessing. Protocol and interpretation:
 [AF3_SAMPLING.md](AF3_SAMPLING.md#what-is-standard-af3-inference-here).
+
+
+## P@L/5 and poster exports
+
+[PL5_ANALYSIS.md](PL5_ANALYSIS.md#provenance-and-reproduction) gives the input
+recovery and preprocessing commands. Run `uv run python prepare_pl5.py` once
+when source predictions change. Run `uv run python render.py` and
+`uv run python build_summary.py` to iterate on figures. Then run
+`uv run python export_poster.py --width-px 7200 --print-dpi 300 --upload`
+for native vector PDFs/SVGs and raster print files. It never reruns inference
+or metric analysis. The package and sizes are described in [POSTER.md](POSTER.md).

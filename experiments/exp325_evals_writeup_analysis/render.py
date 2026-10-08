@@ -58,6 +58,7 @@ def save(fig: plt.Figure, figure: str, caption: str, suffix: str = "", *, includ
     save_plot_with_meta(fig, PLOTS / f"{name}.png", caption=caption,
                         script="render.py", args=[], include_in_summary=include_in_summary, dpi=180)
     fig.savefig(PLOTS / f"{name}.svg", bbox_inches="tight")
+    fig.savefig(PLOTS / f"{name}.pdf", bbox_inches="tight")
     plt.close(fig)
 
 
@@ -92,7 +93,9 @@ def static_depth(summary: pd.DataFrame, figure: str, metric: str, cohort: str = 
     handles, labels = ax.get_legend_handles_labels()
     fig.legend(handles, labels, loc="lower left", bbox_to_anchor=(0.075, 0.016),
                ncol=2, frameon=False, fontsize=10, columnspacing=2.5)
-    suffix = {"lddt": "_lddt", "r_precision_long": "_long"}.get(metric, "")
+    suffix = {"lddt": "_lddt", "r_precision_long": "_long", "p_at_l5_long": "_long"}.get(metric, "")
+    if figure == "04b_knn" and metric.startswith("r_precision"):
+        suffix = "_r_precision" + ("_long" if metric.endswith("long") else "")
     save(fig, figure, CAPTIONS[figure], suffix)
 
 
@@ -110,10 +113,11 @@ def plotly_layout(metric: str) -> dict:
                 hovermode="closest")
 
 
-def export_depth(summary: pd.DataFrame, figure: str) -> go.Figure:
+def export_depth(summary: pd.DataFrame, figure: str, metrics: list[str] | None = None) -> go.Figure:
     """Export selectable precomputed populations and metrics, including mobile layout."""
     frame = summary[(summary.figure == figure) & summary.tier.isin(TIERS)]
-    metrics = ["r_precision", "r_precision_long"] if figure == "04_contacts" else ["gdt_ts", "lddt"]
+    if metrics is None:
+        metrics = ["r_precision", "r_precision_long"] if figure == "04_contacts" else ["gdt_ts", "lddt"]
     fig = go.Figure(layout=plotly_layout(metrics[0]))
     states = []
     for cohort in COHORTS:
@@ -135,7 +139,7 @@ def export_depth(summary: pd.DataFrame, figure: str) -> go.Figure:
                                         error_y=dict(type="data", array=(part.ci_high - part["mean"]).tolist(),
                                                      arrayminus=(part["mean"] - part.ci_low).tolist(), width=3),
                                         visible=visible, legendgroup=method, customdata=custom,
-                                        hovertemplate="%{fullData.name}<br>Depth %{customdata[0]} · n=%{customdata[1]}<br>Mean %{y:.3f}<br>95% CI [%{customdata[2]:.3f}, %{customdata[3]:.3f}]<br><br>summary.csv key:<br>%{customdata[4]} / %{customdata[5]}<br>%{customdata[6]} / %{customdata[7]}<extra></extra>"))
+                                        hovertemplate="%{fullData.name}<br>Depth %{customdata[0]} · n=%{customdata[1]}<br>Mean %{y:.3f}<br>95% CI [%{customdata[2]:.3f}, %{customdata[3]:.3f}]<br><br>Prepared-table key:<br>%{customdata[4]} / %{customdata[5]}<br>%{customdata[6]} / %{customdata[7]}<extra></extra>"))
             states.append((cohort, metric, start, len(fig.data), counts))
     buttons = []
     for cohort, metric, start, end, counts in states:
@@ -195,19 +199,20 @@ def method_figure(training: pd.DataFrame) -> go.Figure:
     return result
 
 
-def sampling_figure(summary: pd.DataFrame, rows: pd.DataFrame) -> go.Figure:
+def sampling_figure(summary: pd.DataFrame, rows: pd.DataFrame, figure: str = "06_sampling",
+                    metric: str = "r_precision") -> go.Figure:
     """Pair a mean comparison with the underlying per-protein scatter."""
-    subset = summary[(summary.figure == "06_sampling") & (summary.cohort == "natural") &
-                     (summary.tier == "All depths") & (summary.metric == "r_precision")].set_index("method")
-    paired = rows[(rows.figure == "06_sampling") & (rows.metric == "r_precision")].pivot(
+    subset = summary[(summary.figure == figure) & (summary.cohort == "natural") &
+                     (summary.tier == "All depths") & (summary.metric == metric)].set_index("method")
+    paired = rows[(rows.figure == figure) & (rows.metric == metric)].pivot(
         index="stem", columns="method", values="value")
     fig, axes = plt.subplots(1, 2, figsize=(10.4, 5.8), facecolor=PAPER)
     fig.subplots_adjust(left=0.09, right=0.98, bottom=0.19, top=0.77, wspace=0.4)
-    fig.text(0.09, 0.945, TITLES["06_sampling"], fontsize=19, weight="bold")
+    fig.text(0.09, 0.945, TITLES[figure], fontsize=17 if figure.endswith("pl5") else 19, weight="bold")
     fig.text(0.09, 0.884, f"248B-token model · step 266,344 · {len(paired)} natural proteins", fontsize=11)
     for ax in axes:
         style_axes(ax)
-    for i, method in enumerate(ORDER["06_sampling"]):
+    for i, method in enumerate(ORDER[figure]):
         record = subset.loc[method]
         label, color, marker = METHODS[method]
         axes[0].errorbar(i, record["mean"], yerr=[[record["mean"] - record.ci_low], [record.ci_high - record["mean"]]],
@@ -215,26 +220,26 @@ def sampling_figure(summary: pd.DataFrame, rows: pd.DataFrame) -> go.Figure:
         axes[0].text(i, record.ci_high + 0.05, f"{record['mean']:.3f}", ha="center", fontsize=12, color=color)
     axes[0].set_xticks([0, 1, 2], ["Mean\nsingle", "Consensus\nof 100", "Oracle\nbest of 100*"])
     axes[0].set_xlim(-0.5, 2.5)
-    axes[0].set_ylabel("R-precision")
+    axes[0].set_ylabel(METRICS[metric])
     axes[1].plot([0, 1], [0, 1], color=INK, linewidth=1, linestyle="--", alpha=0.6)
     axes[1].scatter(paired.consensus, paired.best100, color=PALETTE[3], s=20, alpha=0.65, linewidth=0)
     axes[1].set(xlim=(0, 1), xlabel="Consensus of 100", ylabel="Oracle best of 100*")
     axes[1].text(0.02, 0.96, "Above line: oracle wins", fontsize=10, va="top")
-    save(fig, "06_sampling", CAPTIONS["06_sampling"])
+    save(fig, figure, CAPTIONS[figure], "_long" if metric.endswith("long") else "")
     interactive = make_subplots(rows=1, cols=2, horizontal_spacing=0.16)
-    layout = plotly_layout("r_precision")
+    layout = plotly_layout(metric)
     layout.pop("xaxis")
     layout.update(showlegend=True, margin=dict(l=60, r=20, t=50, b=120), legend=dict(orientation="h", y=-0.28, title="MSA depth"))
     interactive.update_layout(**layout)
-    for i, method in enumerate(ORDER["06_sampling"]):
+    for i, method in enumerate(ORDER[figure]):
         record = subset.loc[method]
         label, color, marker = METHODS[method]
         interactive.add_trace(go.Scatter(x=[i], y=[float(record["mean"])], mode="markers", name=label, showlegend=False,
                                         marker=dict(color=color, size=12),
                                         error_y=dict(type="data", array=[record.ci_high - record["mean"]],
                                                      arrayminus=[record["mean"] - record.ci_low]),
-                                        hovertemplate=f"{label}<br>R-precision %{{y:.3f}}<br>n={len(paired)}<extra></extra>"), row=1, col=1)
-    details = rows[(rows.figure == "06_sampling") & (rows.metric == "r_precision")].drop_duplicates("stem").set_index("stem")
+                                        hovertemplate=f"{label}<br>{METRICS[metric]} %{{y:.3f}}<br>n={len(paired)}<extra></extra>"), row=1, col=1)
+    details = rows[(rows.figure == figure) & (rows.metric == metric)].drop_duplicates("stem").set_index("stem")
     interactive.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode="lines", line=dict(color=INK, dash="dash"), hoverinfo="skip", showlegend=False), row=1, col=2)
     for i, tier in enumerate(TIERS):
         stems = paired.index.intersection(details.index[details.tier == tier])
@@ -431,7 +436,7 @@ def export_plotly(fig: go.Figure, name: str) -> None:
         mobile["layout"]["legend"].update(y=-0.28, font=dict(size=10))
     if "updatemenus" in mobile["layout"]:
         mobile["layout"]["updatemenus"][0]["font"]["size"] = 10
-    if name == "06_sampling":
+    if name.startswith("06_sampling"):
         mobile["layout"].update(height=760, margin=dict(l=55, r=15, t=20, b=90))
         mobile["layout"]["xaxis"]["domain"] = [0, 1]
         mobile["layout"]["xaxis2"]["domain"] = [0, 1]
@@ -487,6 +492,11 @@ def preview(names: list[str]) -> None:
                        'Contact extraction: <a href="../data/structured_decoy_maps.csv">seeds, map/structure hashes and contact counts</a>. ')
         elif name == "03_method":
             lineage = 'Training inventory: <a href="../data/training_sources.csv">training_sources.csv</a>. '
+        elif name in ("04_contacts_pl5", "04b_knn", "06_sampling_pl5"):
+            lineage = ('Data: <a href="../data/pl5_summary.csv">means and intervals</a>; '
+                       '<a href="../data/pl5_figure_rows.csv">protein scores and source rows</a>; '
+                       '<a href="../data/pl5_sampling_per_protein.csv">P@L/5 sampling selectors</a>; '
+                       '<a href="../data/pl5_paired_deltas.csv">paired differences</a>. ')
         elif name == "01b_af3_sampling":
             lineage = ('Each dot: <a href="../data/af3_sampling_samples.csv">per-seed accuracy, pTM and structure hashes</a>. '
                        'Curves: <a href="../data/af3_sampling_curves.csv">prefix budgets and selected seeds</a>. '
@@ -498,6 +508,8 @@ def preview(names: list[str]) -> None:
         manifest = "af3_sampling_analysis.json" if name == "01b_af3_sampling" else "manifest.json"
         if name in ("01c_af3_context", "01d_af3_depth_context"):
             manifest = "af3_context_analysis.json"
+        if name in ("04_contacts_pl5", "04b_knn", "06_sampling_pl5"):
+            manifest = "pl5_analysis.json"
         sections.append(f'<section id="section-{name}"><p class="number">FIGURE {name[:2]}</p>'
                         f'<h2>{html.escape(TITLES[name])}</h2><div class="frame"><div id="{name}" class="chart"></div></div>'
                         f'<p class="caption">{html.escape(CAPTIONS[name])}</p>'
@@ -531,7 +543,7 @@ def main() -> None:
     for font in (DATA / "inputs").glob("Lato-*.ttf"):
         font_manager.fontManager.addfont(font)
     plt.rcParams.update({"font.family": "Lato", "font.size": 11, "text.color": INK,
-                         "axes.labelcolor": INK, "svg.fonttype": "none", "savefig.facecolor": PAPER})
+                         "axes.labelcolor": INK, "svg.fonttype": "none", "pdf.fonttype": 42, "savefig.facecolor": PAPER})
     PLOTS.mkdir(exist_ok=True)
     SITE.mkdir(exist_ok=True)
     summary = pd.read_csv(DATA / "summary.csv")
@@ -543,6 +555,19 @@ def main() -> None:
         export_plotly(export_depth(summary, figure), figure)
     export_plotly(method_figure(pd.read_csv(DATA / "training_sources.csv")), "03_method")
     export_plotly(sampling_figure(summary, rows), "06_sampling")
+    pl5_manifest = json.loads((DATA / "pl5_analysis.json").read_text())
+    for name, expected in pl5_manifest["files"].items():
+        if hashlib.sha256((DATA / name).read_bytes()).hexdigest() != expected:
+            raise ValueError(f"Prepared P@L/5 data changed: {name}; run prepare_pl5.py")
+    pl5_summary = pd.read_csv(DATA / "pl5_summary.csv")
+    pl5_rows = pd.read_csv(DATA / "pl5_figure_rows.csv")
+    for figure, metrics in [("04_contacts_pl5", ["p_at_l5", "p_at_l5_long"]),
+                             ("04b_knn", ["p_at_l5", "p_at_l5_long", "r_precision", "r_precision_long"])]:
+        for metric in metrics:
+            static_depth(pl5_summary, figure, metric)
+        export_plotly(export_depth(pl5_summary, figure, metrics), figure)
+    export_plotly(sampling_figure(pl5_summary, pl5_rows, "06_sampling_pl5", "p_at_l5"), "06_sampling_pl5")
+    export_plotly(sampling_figure(pl5_summary, pl5_rows, "06_sampling_pl5", "p_at_l5_long"), "06_sampling_pl5_long")
     names = list(TITLES)
     if (DATA / "af3_sampling_samples.csv").exists():
         render_af3_sampling()

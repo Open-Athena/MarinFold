@@ -1,0 +1,1328 @@
+{
+  "preprocessor_sha256": "f80609f4b053f760810d78dd898acdc0bb14c05384b47495d07b023c4ad2673b",
+  "sources": {
+    "experiments/exp78_evals_esmfold_contacts/data/contact_precision_all.csv": {
+      "sha256": "cc9eb8f4788e3d7e8ff6868cef7479481d4e4e6983f909deafab12db37aee8db",
+      "bytes": 6355899
+    },
+    "experiments/exp325_evals_writeup_analysis/data/inputs/pl5_exp226_esm_precision.csv": {
+      "sha256": "453522f786924a4376338004cc4ab9b169c87479f8ef3679702ec48e5798d90c",
+      "bytes": 69558
+    },
+    "experiments/exp325_evals_writeup_analysis/data/inputs/pl5_exp226_protenix_precision.csv": {
+      "sha256": "eb7e3c885e625cd500ac0ed7663e3c25daed84788b66bd045ea0098b486d2915",
+      "bytes": 121259
+    },
+    "experiments/exp245_evals_foldbench_held_out_monomers/data/baseline_precision_new.csv.gz": {
+      "sha256": "7d45f5bff045a6ff6a1c54d3f168b4979edc6f4d56f011293a805925e3967568",
+      "bytes": 145845
+    },
+    "experiments/exp245_evals_foldbench_held_out_monomers/data/knn_precision_new.csv.gz": {
+      "sha256": "4afb33f2118d4d56580062a1d0282ec9e562a8f9308964aad99d2d1d1034360e",
+      "bytes": 182747
+    },
+    "experiments/exp277_models_single_mpnn_pilot/data/eval_rollout_v2/contact_precision_all.csv": {
+      "sha256": "f8dba35fc697e37e5a383567946efee613948e736607ce7d01486243d0c079c5",
+      "bytes": 2004396
+    },
+    "experiments/exp325_evals_writeup_analysis/data/test_contact_metrics.csv": {
+      "sha256": "12ac728c772b662f448bb0d614adcdfa43ccc5c95bab79e6abda5de31d451507",
+      "bytes": 321317
+    },
+    "experiments/exp325_evals_writeup_analysis/data/af2_contact_metrics.csv": {
+      "sha256": "cd07668bcf0cb6746e2efcfed444b5e89cbc5aae3664b4c16a8fc70aabff5460",
+      "bytes": 398323
+    },
+    "experiments/exp325_evals_writeup_analysis/data/af3_contact_metrics.csv": {
+      "sha256": "942c982215cc62187fd0b7929e2a1423673486da15eacf01c18ede9c874cdceb",
+      "bytes": 398097
+    },
+    "experiments/exp325_evals_writeup_analysis/data/boltz2_contact_metrics.csv": {
+      "sha256": "c9a5ed98fe8cd845062810a5ce57d20b0bf1e6f505bfc2c5e2779fd5e2331b58",
+      "bytes": 417979
+    },
+    "experiments/exp325_evals_writeup_analysis/data/figure_rows.csv": {
+      "sha256": "35a551c403cab4f12c5701ec880ccecb0f2ff8b8795ad01aad4a146a5fd90901",
+      "bytes": 3892253
+    },
+    "experiments/exp325_evals_writeup_analysis/data/pl5_sampling_per_protein.csv": {
+      "sha256": "87f2b9e879259ad3d05bbaff0596af8505e2f9a93b41881c4fc32de24e39d176",
+      "bytes": 121377
+    }
+  },
+  "raw_sources": {
+    "experiments/exp245_evals_foldbench_held_out_monomers/data/gt_universe_scored.jsonl": {
+      "sha256": "f30c23e3d2fbab245755fc01548388b41730ddfa45da87325539698cadb153e5"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7pv5_A.parquet": {
+      "sha256": "216a7846bfc043be7b74ba355f1877e7f8630c0df2ca92aa0373e8770ef7d706",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7pv5_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7qp5_A.parquet": {
+      "sha256": "9941d398d29d14573cfb8c9afbf405d3f642ecff32f6c5ec9f9c432ca9010fea",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7qp5_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7qsj_A.parquet": {
+      "sha256": "151f907d9ac843a4489d0fbcfecfc486dcce5a2a2a0b1cef8f894cc6818a1fa7",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7qsj_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7t9r_A.parquet": {
+      "sha256": "846c76c0e7f349d6489963d510b28d658d096441a35dbaddf47c830141f24c45",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7t9r_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7tjb_A.parquet": {
+      "sha256": "57fb7d9586b8effcae4e6b9a10caf0661bf520fbdeaedb6c6432cc4e674dceae",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7tjb_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7tlh_A.parquet": {
+      "sha256": "79545a12c41dc0048793fc2feace9c32d103562da8939cbd62233e2ada8dd7a6",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7tlh_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7uba_A.parquet": {
+      "sha256": "1e55bcb5c28e2f5690a7fe580715723a32d0af19d0c3060c1a916dfe048c7aec",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7uba_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7uk8_A.parquet": {
+      "sha256": "2ae6395bf60022bedc41a503dbd259ffa6bc74a86b5edad34f960724214b588b",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7uk8_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7ur2_A.parquet": {
+      "sha256": "cf72fe24bb30380aadecc897cf81f534a0349d4305e1254dc9535d752e17020c",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7ur2_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7urp_A.parquet": {
+      "sha256": "dc452fa3f5a089ddefc92bb624030e978f7836fa66de2c5a58713e12d5b0d212",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7urp_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7uvg_A.parquet": {
+      "sha256": "d9d2ce2b2365136fe14937c15de57423837ebb0e69574594a12fb8007fb1dd0c",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7uvg_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7uww_A.parquet": {
+      "sha256": "e0f21151322efef014b4376f8f2c1c25f59bc7e5906faa72f02a42416fed2bfe",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7uww_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7v3o_A.parquet": {
+      "sha256": "0ed2e5dd425d2c1eb19c9ebf7123224a6f807ef448adcf1940c24ad8c94e1e2f",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7v3o_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7w15_A.parquet": {
+      "sha256": "54813e2b6f90dbec7a3a37852723e7d1c22a9e409d69dec488929cff849a64e8",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7w15_A.parquet"
+    },
+    "scratch/contacts/results/rollouts/7wr2_A.json": {
+      "sha256": "4e3cbb818102b9c3e4514c27c54d9e3278b01d24e1fa8ead004547eaae8fe69d",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/7wu8_A.json": {
+      "sha256": "0ca657fa33efd1fefb1dd6e9ffa8ced7cd1c087f9ac896b152af7fbf9cbe1fe0",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7wz5_A.parquet": {
+      "sha256": "86e5c4ed246e7edda258fd9db6fdc14a2aa17a237e93bbc5d00b59df20f28ca3",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7wz5_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7wzm_A.parquet": {
+      "sha256": "9a3db094e7ce7a8c604d683c211d9d6286fa56d5da3753465e69c5b31c3ac894",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7wzm_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7x3h_A.parquet": {
+      "sha256": "344c1cec0aac092f8d720b3f5336dfdedb5b8fa7e0fe501f96b257ac0fbbc61e",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7x3h_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7x4p_A.parquet": {
+      "sha256": "0ca4a4d88bb70cbe5d0fdfd1c25450d19462b1832bef25802888a5fe608aad13",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7x4p_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7x8l_A.parquet": {
+      "sha256": "40f2f091735ffe8e6ca29b8b4769e67ab4ab5a8137357bc74a037ca46b047cc2",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7x8l_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7xcd_A.parquet": {
+      "sha256": "e69ee4db5ac4439ee0a0c632e4d52840f0dc8ef365d727573f631c1140800fd1",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7xcd_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7xg9_A.parquet": {
+      "sha256": "ef2d0f1ce23585b88f952c7ec366f1e52c48a51ad388cce0c217805f3654b83b",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7xg9_A.parquet"
+    },
+    "scratch/contacts/results/rollouts/7xhz_A.json": {
+      "sha256": "14450d19ba7e45711f913ed853bd629d71038e5b975797bac321b4d375f86745",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7xi5_A.parquet": {
+      "sha256": "e7eac164c715865168c0ecd219ee1306c36dda79ae8cfc5f3f0371ca990981aa",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7xi5_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7xjr_A.parquet": {
+      "sha256": "fa02eb10bbd84a18487ea436d658addba34c6461fee8ed16101545e266b026db",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7xjr_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7xlz_A.parquet": {
+      "sha256": "3dc18fb53e345b37e3fc44d84abe4adadea377d7f3224738b3ec4bffb86fd8ae",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7xlz_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7xp9_A.parquet": {
+      "sha256": "7dedafd453bacd82e832f82185bb6f4a16028a5632b677460a707d9e76db7003",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7xp9_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7xq4_A.parquet": {
+      "sha256": "7de4acc9314398fd6254bfa9e299576ad0030948bdb3402100c0fd65d938f997",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7xq4_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7xrx_A.parquet": {
+      "sha256": "77a257c0b55157c6a1b12227586acb8ea6831da0ffa3d985ad3cc6b23ac6490d",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7xrx_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7xyr_A.parquet": {
+      "sha256": "c7a82f80e46b5e981a60b135483f3acff86dfcabdda6390c02c821386377b0c5",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7xyr_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7xz3_A.parquet": {
+      "sha256": "a990698e9899928ee53aca08abf4145bfde6c0c0e0ea69936e1741c0597dbff9",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7xz3_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7y3h_A.parquet": {
+      "sha256": "1723ff90e97254dcde4c827fb2fef60bd910884f02f179bed4227164d73014f4",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7y3h_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7y4h_A.parquet": {
+      "sha256": "e663be12386c84dbb7d5b3011d0db33390b5d580624a9e396367e1e52d53b3f3",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7y4h_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7y54_A.parquet": {
+      "sha256": "9e1383315c0c2bd80dc51d9b8e7ca3307f32f776ce76e53359320bd3a1fed8b6",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7y54_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7y5j_A.parquet": {
+      "sha256": "d07a316f2ad9ff01758a79bbd8558742aa506b3ef5ac585bcd9c282dd6a97643",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7y5j_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7y5m_A.parquet": {
+      "sha256": "a41481d53fbe3428306cdc5ea627e48f8241ab6d5d1b6d5c21a6d4286b0318c7",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7y5m_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7y5r_A.parquet": {
+      "sha256": "31265a23b1ade88bb35c525ee47fe1e97a68adca95b9039df34cc5df0acccb6a",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7y5r_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7y8h_A.parquet": {
+      "sha256": "5e38ff4101706d9acd54fc4a85d9483ff5b4d3cc99176d4919dfa456066e16b1",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7y8h_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7y8i_A.parquet": {
+      "sha256": "87e968a0f5bdae2252492447c7742d1770a3387455b8e8e042036a4f5c66547d",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7y8i_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7yd4_A.parquet": {
+      "sha256": "dec656b254b3b0fb155fd3b37f1c5db0d6a6efde64d105ca9ce067a9e481f980",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7yd4_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7yhr_A.parquet": {
+      "sha256": "b5793d5451ada623f896d8ca00c097c97af6bdea2d4b91808a0ea9263049c3ff",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7yhr_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7ykm_A.parquet": {
+      "sha256": "071c6e5a71981904cb7036391982d8957711a6755e92301811028c5656dea00c",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7ykm_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7ylr_A.parquet": {
+      "sha256": "91cd3009442d4f0aee28b0ee6b071eeadb646279b142d11ead0fa7c6c14bd42c",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7ylr_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7yug_A.parquet": {
+      "sha256": "db3006c211c7c9caab81cc5d3c3d0b5b8162f7cb77b090013e3a436479439198",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7yug_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7yyg_A.parquet": {
+      "sha256": "e7c7780380359c0e516fd85c8f1775994491ef187002702e85c84ef0796058e9",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7yyg_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7z65_A.parquet": {
+      "sha256": "cebee96df57c1f4c4336c2833883d258b27af5018c1dd13d4a0d7723ab843ed9",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7z65_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7znz_A.parquet": {
+      "sha256": "d37a1a5617dc2613beccf1a0b70d33a4ed84d76f026ba7e047892e2a2514b171",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7znz_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7zoi_A.parquet": {
+      "sha256": "2f887a74a0c7ebb66183df1dd57f978577ed821005382f29ba9f9ef0d069af12",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7zoi_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7zs2_A.parquet": {
+      "sha256": "f1bebadc97c654c75685991a469fa4ef4e9af2ed8d0b0d2b62ddc58e5380b7c4",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7zs2_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7zu3_A.parquet": {
+      "sha256": "443dfe84e3f3d1e8f38ae78257b9ed7a9162cce7e90a7010e1982241089e2fd7",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7zu3_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/7zv1_A.parquet": {
+      "sha256": "9bdbb7368f3adc9de10afacba0564a304b1aec77335d904ad087eb8e12051c94",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/7zv1_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8adc_A.parquet": {
+      "sha256": "ced918af417968c1c9d92576853ce2c04184e32b31e445e5b3e04db97b109317",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8adc_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8add_A.parquet": {
+      "sha256": "0fe0c6c727d2e17791712aee5b0dc28fc73985d574ff2a164461455c58ff63be",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8add_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8ak2_A.parquet": {
+      "sha256": "c726570b828ee6b669290aa3633a85cf024e9a81ddbcdfdedc80b3ed10eebd92",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8ak2_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8akh_A.parquet": {
+      "sha256": "d1746cc83eecc025ccac9c29f6aa72ff5d8afb776f2e07718fc58d39bbf33570",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8akh_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8amo_A.parquet": {
+      "sha256": "6b70a9c8c07e9a8212b26caf5a8445392276b0f1a9fea76dab130fd9d22704fc",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8amo_A.parquet"
+    },
+    "scratch/contacts/results/rollouts/8an4_A.json": {
+      "sha256": "7cb1ed6134435ce971c01291e0d688e719200ff89e54d300b48e767908722463",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8arl_A.parquet": {
+      "sha256": "7385b8e5ebbf24fadf841f33077ecc952193edb156aa977428973dad553ea48a",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8arl_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8au6_A.parquet": {
+      "sha256": "4f583cda4a2b6d68969c8be3bce564f8eaccefd3b206fa62378aee35d5d7f50f",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8au6_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8axj_A.parquet": {
+      "sha256": "963b2930c570dc155d0bf6396d10db9d7947014f5b6940cda8531bf16e97ecb5",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8axj_A.parquet"
+    },
+    "scratch/contacts/results/rollouts/8axs_A.json": {
+      "sha256": "4599ea6e73d5b225f2ea5451c46cb257d0d9f80d992608bdfab0552262c9299e",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8azb_A.parquet": {
+      "sha256": "e372531707869a90d262394ef5aa2024c39a087830c166e6d5ce8dce60433450",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8azb_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8b2e_A.parquet": {
+      "sha256": "2c52c6087613a8263e917914cd67b7f5ec94b69e471850be1c8ed5ee42495a1a",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8b2e_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8b2g_A.parquet": {
+      "sha256": "ffb9a25d151341aa93e9ebd3ece7f9402c81b504935ee6678e3ebdb4a3237744",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8b2g_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8b2s_A.parquet": {
+      "sha256": "e2d2bceb96e1fe81f1ff31b9c6c58b7ec77f53330d39f5b7e047de1ed8a71db1",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8b2s_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8b4u_A.parquet": {
+      "sha256": "1051af96ddb86c3770d140a01a1d95681e2df7d08fd7c1d5173134e8548a7295",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8b4u_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8b5w_A.parquet": {
+      "sha256": "cb6a7caa13087118b0ebbefb9c540c9fb33e9db872b73ebc1f8f25c6a72e6bdb",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8b5w_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8b61_A.parquet": {
+      "sha256": "175b175a148bbdc85e7771678fdedf02ddc3d77d24120542a3e91fce91d25e68",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8b61_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8b6a_A.parquet": {
+      "sha256": "4a7337f885bf8ce53c43e817eb16916aa22b61246b9e508a6641c5b21794435d",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8b6a_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8b6e_A.parquet": {
+      "sha256": "1b806f265ffa1be389b0fcbfd3d6bd457cc396497cb28397199e3ffd69bcd239",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8b6e_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8baq_A.parquet": {
+      "sha256": "c248a2ea62d54c23af178161810529ea2275600b350107d2950a2cf55543e1ea",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8baq_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8bau_A.parquet": {
+      "sha256": "5cad8bb37b7001da1f2e6458c1bd609e72b75657858f0a9f593230f383620254",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8bau_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8bfy_A.parquet": {
+      "sha256": "617702eb3eb54baffeb721ef3d9bf49be5bd8d67ea8d4d2f87003034e9b3e1bc",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8bfy_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8bgb_A.parquet": {
+      "sha256": "310cc1587136a171219be3ccc983147868e7d5a6fa0ec09e4e2c82c33d48083d",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8bgb_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8bke_A.parquet": {
+      "sha256": "6e811399ea4fccba84abe2cd590c52b50e9d05325a7e78deb84eb5b2d5df52e2",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8bke_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8bsb_A.parquet": {
+      "sha256": "a59a5224409a2e788a20247fe8f59034c6d4112c876aed5fb8f19b820a93262d",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8bsb_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8bux_A.parquet": {
+      "sha256": "d70b9071f420f1a4a11fcb75545693199073fe84714238d283d53d4c70896b4d",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8bux_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8c4d_A.parquet": {
+      "sha256": "381f3d6efacfda521226eac80a171654ae516886917ee33d50d02885a6f6ba40",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8c4d_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8c4y_A.parquet": {
+      "sha256": "3e3024d79c424d642653480012d13bfadb5b4e238cd091b95451679aefd35880",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8c4y_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8cba_A.parquet": {
+      "sha256": "18a20aa52e3dece9e5171960c4ed53103228caecf26d056c5958eeb36769675d",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8cba_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8ci9_A.parquet": {
+      "sha256": "6b1f72ee67e9ba03cef5d39911451e704cbdf4a946391c1e185239b0415cf9e7",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8ci9_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8cih_A.parquet": {
+      "sha256": "df2145f9dd3176a3858e3ac14bc1c1bbce2526ac82b919125b9fe30246608ca9",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8cih_A.parquet"
+    },
+    "scratch/contacts/results/rollouts/8cjd_A.json": {
+      "sha256": "24968b7f82cc165651a61e595b345c677c5359a135b342e1cbbc27042aa23d95",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8cpk_A.parquet": {
+      "sha256": "c1f27ce072e761eafa2edcc6ae8dc18b7dc60e4f7da6b405accabef95d0939fb",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8cpk_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8cpn_A.parquet": {
+      "sha256": "37f229192ef64b31dd2616278a927c0d5327c454ee8b72f259683fa00b71d16f",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8cpn_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8d2z_A.parquet": {
+      "sha256": "2ecfa7a62ecf766e62ecf982aa696709ea671f776951bc670e848b982e7e2879",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8d2z_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8daj_A.parquet": {
+      "sha256": "265edf865c8167cf8ce7dff197a22458695ac7fca2a4a6bf63d01e847d7f939a",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8daj_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8dez_A.parquet": {
+      "sha256": "c64b8b4202c0305a4f0e7e40e651860519a1c5e5b1495ec9707469e0aa925394",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8dez_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8dge_A.parquet": {
+      "sha256": "e93174e5bc846746ada7247a5b050d783f557eb4536e0508be806aca734b7185",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8dge_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8dhj_A.parquet": {
+      "sha256": "5f1fcc9315013f4f3e490b2a1b664f71a7dbbad6c5573fbee8a4b714011bc9b6",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8dhj_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8dmu_A.parquet": {
+      "sha256": "4733af2c9b2c20f3f34ee4c67075bfd0d86dd6ecb3a4faad22aa3c3e573de607",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8dmu_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8dp9_A.parquet": {
+      "sha256": "a5c14df1e55b7b4cb79f346053966690fed169b89df504830d79f649d172d3c6",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8dp9_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8dqd_A.parquet": {
+      "sha256": "4eb55dcf2f351674fffdb291ce37fb8ed97ce3d5617fb936e4ad4f6d091ccee9",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8dqd_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8dx0_A.parquet": {
+      "sha256": "598da308e17afcaac84bb4dd9e1c3a2c397068e221adb3b0e5df0ed51d70423b",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8dx0_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8e0r_A.parquet": {
+      "sha256": "3db9edd2c14d03dc983a50c3e598a84ff08d1b300b61ef8100176c0600136e10",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8e0r_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8e5h_A.parquet": {
+      "sha256": "8666c748e0f774b40b4325ebfe2ae45c4cd3b90fcf25fb05778d760baee26de1",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8e5h_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8eb9_A.parquet": {
+      "sha256": "c6718fc333ae0dcea47b01a8d4d589c200b1dd3bde70badff5c8fe58ae9773a9",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8eb9_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8ec3_A.parquet": {
+      "sha256": "87c98ef3bf919b11d9f98973fb4f1d37545be2a3cb0a77a5db5c785ed13edefe",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8ec3_A.parquet"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8eo5_A.parquet": {
+      "sha256": "0847711d1e552bc5a4520d5634047be16b5b235c8c4886e4ce53604211e9bd2b",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8eo5_A.parquet"
+    },
+    "scratch/contacts/results/rollouts/8es6_A.json": {
+      "sha256": "f009dfdd4dc77517db4407ac8d29485900f07386eb7c082c59bd385717ed09ac",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8ev4_A.json": {
+      "sha256": "ec911dd91000bdab15829cb740d0d7dc903c041c37c6360babff10b1029dbf7a",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8ew1_A.json": {
+      "sha256": "55f9895a58a6022eba2a0a9b19c28ed119cc7241b1d410aad7ddae80db35ceb0",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8ew9_A.json": {
+      "sha256": "483bce3082638c99433810bbb1d5caecc5c502d25408a1680de7f524f9508f31",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8ey3_A.json": {
+      "sha256": "3a83b7d6687a26b7fc812f9faf428de36c554df619e42ca3b5432f37fc63a7c4",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8ez6_A.json": {
+      "sha256": "2db5a0eaafe7dc0094116a43c47308d53622fb1160450fc595df7ac7c7678e29",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8ezw_A.json": {
+      "sha256": "c4f8775e8847a07ac61360da2458020f8341a3d2dfa10e97486fcabac2bd9a76",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8f8n_A.json": {
+      "sha256": "5627efa353378d50cd90d706ef17bc60a42866296b88a4b89ccad31d7d63299f",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8f9o_A.json": {
+      "sha256": "b4c3bfe5b97a1cc74a4b3af0af6172fa263fd41fc510ba19de434034869c626c",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8fbc_A.json": {
+      "sha256": "1e27be07322eff19d984a602a62a0682323e1c4daf338ea134e99d9b8eb20d08",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8fib_A.json": {
+      "sha256": "5e956c3052cf62c371b2751902c0de23b6ff527728125c37b1d5a4d5ae956e81",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8fr5_A.json": {
+      "sha256": "18e8de0ff791ddfacaa989001676e9cd7df4e015f87b51850079364e0d2227fc",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8fty_A.json": {
+      "sha256": "3ed4a2e1a79ddf5521458f5de6cbc6ce753a4b086c2d0681d3a693649991ee4e",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8fz8_A.json": {
+      "sha256": "a039406e8e77538eb13b87464450a9ffaa3b8c22a999c41151c4ec4998cd7c49",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8fz9_A.json": {
+      "sha256": "e4b5125a42f353c53543c869c44c18d139cccbe8af1971b4c22ae6a6cab5c59b",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8g0n_A.json": {
+      "sha256": "23f38ae60a93060115febf12550a2f22d766fb25a8d747843cb04342a34afd77",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8g1l_A.json": {
+      "sha256": "b33f07a4af4467d3d3014a04c0e210ac062fa8d43f81ecb35b1da6833ad5ed1f",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8g1y_A.json": {
+      "sha256": "01f5c3688f8eeb0583b0d2dfab5dcf0b112f3349505e9d4541f880250e14babf",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8g32_A.json": {
+      "sha256": "d7f615317247bedc41799e50ee9c392a44b689ac9c718a1b312c1c835ed4e279",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8g52_A.json": {
+      "sha256": "bfb50240430ee2599b6537a22db23a6cb66054cb5f1f262bd390ff3b2f286599",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8g53_A.json": {
+      "sha256": "a301d1276ba4f97b86586fe61cc6e7400fec094782e82035fb0bb624eefcf277",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8g5u_A.json": {
+      "sha256": "d5e77b3d7a200ed82b0281628da6433328a388f07c697c9fafb23ab51d51fe96",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8g64_A.json": {
+      "sha256": "35e798f5c68a2831ba470c7d8ed640c71fde1ddf2dd89e997e4df716632143ed",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8gbe_A.json": {
+      "sha256": "3a6571ca9c072d966aa2521177178dd92352c2b8f96b855d6308d68f386a333c",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8gdl_A.json": {
+      "sha256": "1eee40e6dfc23a5efde2298d2107bc2eaa7482ec48ac38d2e1f816f57f2fc16d",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8gj9_A.json": {
+      "sha256": "37d6e18e1b45233d8261283153f2cabaffcb3059642bded8785c393029b4ca34",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8gjw_A.json": {
+      "sha256": "d2d0d20d369ceeaae8bfff2b6338706322483a9cb17f52c4b2136903aa80a2af",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8gjy_A.json": {
+      "sha256": "c4844d1cb376958cc5a4d0637cc73b2db37f9f54f2942bdb6acacbbac37ce0c2",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8gkd_A.json": {
+      "sha256": "fbc6bdc768c6085de44ed0e1e1da027a167f299acedcd280086870d3191a52b8",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8gm7_A.json": {
+      "sha256": "ef2f49000ff99a075a291acadd69cd9e9145c0e07f2f5bbe4bb9522fa824b31b",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8gmy_A.parquet": {
+      "sha256": "3136b3aee7ec303efcbab9fb7a01e60a630b530803bd7e7acdb5d1b642d4d9ad",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8gmy_A.parquet"
+    },
+    "scratch/contacts/results/rollouts/8gok_A.json": {
+      "sha256": "86592d94cab91b9feda9eea0a976449fca31bedc09e2ac12bb2bc6b390bca12d",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8gqq_A.json": {
+      "sha256": "7b841ed9c0e2bd8ad19b78a870c7407eeca78d15036c9f7de17280c261a7584f",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8gr7_A.json": {
+      "sha256": "abc334b2a84d13f83126a0ad79bbf2f7cecf8f94cd660dd1ba8a6f813af68aff",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8gsy_A.json": {
+      "sha256": "14d8589ba3c16c28e34015c26db01c293566f6f8f286cac82ee7dcf8788b8380",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8gtz_A.json": {
+      "sha256": "83bab922bdbf5c318370d9c16e9c3ef7371d5452a4b120efb5086028c657ea8c",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8h02_A.json": {
+      "sha256": "034780106db535a6a362851c41363040cb804324c5e6cd7172afad0cdf39adca",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8h2f_A.json": {
+      "sha256": "b4d2434136f3dde3caa1d26d8502c063d3016ad66ed422d86445909f5c6ee8db",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8h5s_A.json": {
+      "sha256": "31308d13f30f2a11c2c2fbaab66915358eea24f80661e0428a4f2127a858339d",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8hbt_A.json": {
+      "sha256": "a2c34d24fbb9ea66186ba20d4e37261744a6a72e5ecf5df1eb940988f7dca5bf",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8hd2_A.json": {
+      "sha256": "52157f37236f089b1ecc8843764681db6d944ad3eb604a8bcb6b54fcafd14605",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8he1_A.json": {
+      "sha256": "9d48521c2dbfc8af1f8282c7f7004aa640850c5b8f892330d87c207757c2c21a",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8hel_A.json": {
+      "sha256": "3c430fea55f01a009c0e8324da1d4f9a7bbe5aead39a9b5b278f4202721fcc6d",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8hic_A.json": {
+      "sha256": "d609509dc2bf8ed85b789824e7aef8f4b9f593922d1a9c22310b67bb8a84ba78",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8hnq_A.json": {
+      "sha256": "883a1d35fe663cbd184d3318dc908833509a6af338723352be24a3dfde5600e4",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8hvd_A.json": {
+      "sha256": "e2ff85c6e39a17f2b6120437024dff9fbc44141af52f6a2d603597908b6949e3",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8hw8_A.json": {
+      "sha256": "1c74c750f656b8798b5018beffee50a4a2d602819583518d3c48391435ecad90",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8hxs_A.json": {
+      "sha256": "3ce66ead453b8cf568e53ad54783724a4dd2bb187886b0133d186f04d7c63d72",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8ii8_A.json": {
+      "sha256": "41e4172c3208a4dd584d261bfecca081cc171f0796f7ab15ef8a852c03800067",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8ikx_A.json": {
+      "sha256": "bd02e9bf1d9fada23c6c11d5fb6d7e75a6b67f1bdc769e6cb5251a3201ec065c",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8ini_A.json": {
+      "sha256": "ef1f04f6c2d6652ca19e147bee53e74b7ffcd5f839400841f9e0e8b73d8e0e98",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8iqc_A.json": {
+      "sha256": "c7f7792cf25f3b4b94d0314b94d5110cbdf9f04a841555d050beafa1dc9cd6c9",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8irq_A.json": {
+      "sha256": "26856e2c99646187e87561e04cee927e664853b7b7e2c4485d7de227a32c0ab4",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8iym_A.json": {
+      "sha256": "d68058a453953c5619894bdda05b36558ede508a791e99f1e75e8343d2c08835",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8j2n_A.json": {
+      "sha256": "d000ba33326146169d3cb3c5873b277b0544698b81c642d470382840955fdc11",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8j2x_A.json": {
+      "sha256": "632f8bacd7f294b6f690e4b476a226fff86736e7de9e6c0d129f2e5b93250428",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8j8y_A.json": {
+      "sha256": "c6b0e0033d4ceb6b4b1e3ee8176a4d3cc87f3d00cd9fb62c665447333e21dcad",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8j9r_A.json": {
+      "sha256": "c559f3b1d6b79030810e895c7e056eb4548d80226d057d306333d9fadfaf7069",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8jb3_A.json": {
+      "sha256": "c59cfa8987e715799d7687291e26af1f65052d7531bd979c591abc74054f4ec2",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8jdg_A.json": {
+      "sha256": "31a82eec333fe63ffc8de8f0ad5a9fb44586dfcf909e4030d3f5805c1c4cc19e",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8jh8_A.json": {
+      "sha256": "97304e0fbd3c8e03744feaac0e15912ebf460dc74c42093eb8ac6039b303145b",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8jiy_A.json": {
+      "sha256": "f94c59cf1e40a88cd969fc95787b107342b40771ce3b3b797bea518cf600e55b",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8jjq_A.json": {
+      "sha256": "7cf663a9c6103793fef002109a426d9441164199c25902aef371a5750043c4e3",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8jmy_A.json": {
+      "sha256": "21f99adc9f4a1f6d63d9d822828852f00a649297308f5b8252cebb14f386dc1b",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8jn0_A.json": {
+      "sha256": "54cbd0850753ef1532b882471b64d4fc35cceb726b4ae2b439d16afc2f0ae81f",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8jup_A.json": {
+      "sha256": "70d978f5f237c7ba3dd654b39215b1932bf0d7d39e8bdd74d82a20decdd799db",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8jv2_A.json": {
+      "sha256": "9fe681e2da87435e8c542c64dd9179f37c7bdcb64d76740159d4762bf1f2a98d",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8jws_A.json": {
+      "sha256": "ccdd39305f8f370fb0379d85810fdc4a3f45da37fb9473dd7b719211703a61fd",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8k2g_A.json": {
+      "sha256": "a1c31135ca32957480f197f77f16c0313fc1093363d6527520ab25bc4d335fb6",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8k2k_A.json": {
+      "sha256": "4fc658508e74a58e18df318c23904c8d3c0a5d3534927c6b0b1bc1ce2dbae77e",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8k2m_A.json": {
+      "sha256": "b89b5e39b11ec916d46199b29c900c3b0692c22042786421fd7ac08207c1f980",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8k4m_A.json": {
+      "sha256": "578b6030609abc54e89557534dad359b722218bf0d7e673af307fc26dcb8cf74",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8k5j_A.json": {
+      "sha256": "da9d8a6cbee5e0f325c19cabc31909436d45634d70485fcffb33ad881edb2cf9",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8k7x_A.json": {
+      "sha256": "a70388447c2a92fd950b13edb1ae4ad1428c082811812d1a3694af32c56d8b9c",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8kbl_A.json": {
+      "sha256": "e290b791a6650ea0f25d5f229d7c66c21926d65a2fa94031e43fbe1d3eafcf73",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8kg4_A.json": {
+      "sha256": "1d82ef6aac76ed1eadba8b1a4a0e35be2bae2c5796548aca2dbb89659084b21c",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8khv_A.json": {
+      "sha256": "992a1269f1fb82c9db2b3160b5927749fd46f1584096866d41ec103f0569708b",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8kih_A.json": {
+      "sha256": "f99588b809b612831f9c9cdb0b1a53282690d7c49457ce1136a029765aee3a0d",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8ok3_A.json": {
+      "sha256": "838b753d57710e786853ffe6730f9ead346081a9ad4f302cae201bfb8ae775cc",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8oqh_A.json": {
+      "sha256": "5ba9c5425c63c58e4f39e36b0b487872a858f3991d10163d74586f49af80b1f1",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8ork_A.json": {
+      "sha256": "c98ed5c4d9433d4a6bb10fb544c38feec849b378ed888462ee6844f760cd3f5a",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8os2_A.json": {
+      "sha256": "f071b40c11a133e34321ce8de7113d5a5ff7dbfa24aba144aae8a067b6502842",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8osz_A.json": {
+      "sha256": "31d7bfc9ace4c17b9b04fae08680f7d25405f841e7115e76cfd8ca26e55698b0",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8ou1_A.json": {
+      "sha256": "658a6733eea2d035c6082e25df4351268e521e9b10eb5600490384ab1e5c9d9a",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8ovq_A.json": {
+      "sha256": "a971019f6da33324527bfd846bd70f67e2bcb490d411556f833ac7cb0131da54",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8ovu_A.json": {
+      "sha256": "dc4b2f4199b593e42a1e1cb61ed8f9215e75d489ee665c45bf96d5016c5c9916",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8ow8_A.json": {
+      "sha256": "f13c5c5433545ef2cd2778e1d61d42b136246a06ca040d8ab97fd40661e96020",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8owf_A.json": {
+      "sha256": "dc47640c9dadebadd797796261ef9123a0bf0c29df4e1552b319edb7868af058",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8oxk_A.json": {
+      "sha256": "9a688b64388af37cd1409895538934ea9fb581d7efc9370630de5ef7956738fa",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8oxl_A.json": {
+      "sha256": "9bb473f20d7aa6e64c187c3d0c6888b43261cafb1e1bc7e944c0e250b1b7dbf6",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8p0e_A.json": {
+      "sha256": "b4fc5b7b61390333fa65fa2ed441993f08a3f6107dbfa7db624d8b943cecc8e8",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8p2a_A.json": {
+      "sha256": "c4a3e89b7aa0051e623211ef78835677dc811fe58e777a4a699dad48fc8cf7c3",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8p5n_A.json": {
+      "sha256": "b4f7e28a9950475ecf001e52ad35170663c304561efe41aad68068f8a4e054c8",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8p5p_A.json": {
+      "sha256": "02cb4239fa08ebce748ad8c998599064ea941012292929ee6ff96eb0bf885d9a",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8pak_A.json": {
+      "sha256": "537323429d1d2e6bc6536eadd2dd21b693066a16b46ef51ed9d8f124764ac5d8",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8paq_A.json": {
+      "sha256": "2981b3d480e35aca2f91823cd0d6380c651c692834f9e593f1866f305d14c771",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8pb5_A.json": {
+      "sha256": "611c80b1f191426d3bbc6da3499fe294fc96a0d92613c572446c6ce902705b6d",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8por_A.json": {
+      "sha256": "52badd263b97515da94789a99e923fa78f7f06414dbd046fee2094aae95ea1d2",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8ptd_A.json": {
+      "sha256": "90c5ab880b58d2e070fe18d2a9ce86974c263ce43aea6210115d7fb7be0e28d1",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8pu2_A.json": {
+      "sha256": "ae066eac02b95875e4ae057cdb63d32322953d4d662870937aee7326d81bbccf",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8pvs_A.json": {
+      "sha256": "e1b02b65e93edec4a8968e25b601f229c00c7048c178ce8a7f194bb79417119c",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8pw2_A.json": {
+      "sha256": "5b8acea62da6d9585d47ec2042852ba93ba9b10dfd98377f7f04926e9d46afea",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8pxc_A.json": {
+      "sha256": "67f970755286b51466c6c8fa3014651b6b6d7956c5ff458162ac4dae05f390ef",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8pxu_A.json": {
+      "sha256": "a9a6820d30e9d4451c2779f4a756d04f0b0a32952214567b1776a4e5717faac7",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8q1v_A.json": {
+      "sha256": "921f0190199bfd7491e2b649d03ba0249cfdba0d2e499a564d126752a00eb27f",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8q79_A.json": {
+      "sha256": "f3b2e2cbf8e1f5246168100ddeb2d35bb66a711a82626101ac43e50f70d08e2c",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8q8i_A.parquet": {
+      "sha256": "e1604f550b7d6325036be6deb30ab9bf12fb720e92a269c7eac2919383c3bb3f",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8q8i_A.parquet"
+    },
+    "scratch/contacts/results/rollouts/8qb1_A.json": {
+      "sha256": "2562e663030f69ca4c9328942639c9fde48f3cef7fdce474d79649cd53c069de",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8qd8_A.json": {
+      "sha256": "c8950460db99323cfbaec950a34495dfef3e886972d9c70d6456cf2a58b6f62f",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8qjp_A.json": {
+      "sha256": "30a8927243ef3e09f1c8e2c24ebd03513bd5dd98a8eae1dd888e6f8dd2fa98d8",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8qlc_A.json": {
+      "sha256": "148b0b4aa6d7702a8d2fdddbb5cfec543b1eb0ca188d88cff2247e3d1f3d5837",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8qle_A.json": {
+      "sha256": "083c7d15b36ba6bb2bb2fd6895ce5b1e03e2d7935cce8546bed392a34f54a275",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8qnf_A.json": {
+      "sha256": "5d1a919cd1a5b45ff2bd285cc0fa69dbb25b519741b2140aa2893a25c09ee1a5",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8qoh_A.json": {
+      "sha256": "34117e25ae04638165224029db28218f6751a1035ddf9a1c771c38eac22d9cbd",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8qpj_A.json": {
+      "sha256": "d880733a35c316121b2ae1e9b3ee82a71a0d837b34f635edcd159d64f1df3fca",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8qq1_A.json": {
+      "sha256": "e4220213be847c5bf28244f09b73d6823cb11ef4ce59d88e7c860a76a32f2b1a",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8qx6_A.json": {
+      "sha256": "b51cbb81281b8c0a4aa42692775b04400b8a9fa58d889f391d0ac9bf424d76b6",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8r2c_A.json": {
+      "sha256": "e7649ed79b9ffe982dcf40d74272b59c0c166b513f9598992c6d3ac248db58fe",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8r5n_A.json": {
+      "sha256": "43b75ac7a00b5355779cceadf79cb5becfe8f79b93594d5734555a30446c0bc8",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8ra0_A.json": {
+      "sha256": "81e587ad4d3fa04bd11edd30b365d9058c76e4fc425874db03ed2cb68eb4a950",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8rcw_A.json": {
+      "sha256": "dcd6ae18e75d6a62a4c1d85086b63e5579d67250086faa018a8d4150a76f8698",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8rdd_A.json": {
+      "sha256": "e668c86472dd2ad5e02dbed266971e7062302764a464375e1d2741247169c770",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8re3_A.json": {
+      "sha256": "738b45aac37bbd993b4039f408339dca29103b9d49660b41a3145d0c7a90b885",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8rom_A.json": {
+      "sha256": "a539849bce570ecea800e9fb7c68c88fb1e7562b313be603121dbb9e1f071772",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8s5b_A.json": {
+      "sha256": "8ddef644e50e07e1201e5fe2f733796e5cebee4e0f1866e95003e3f358292f71",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8s9l_A.json": {
+      "sha256": "79e08b44956017f03a10d2091941fd72b802fb390118a573d25f2cfba319531b",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8sot_A.json": {
+      "sha256": "5ac155013a0e752436f0ffc040dabcc6b43139cd6f052a77cd32564dc5c56a91",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8spc_A.json": {
+      "sha256": "d1ce4ff5d360eedbf202f0676e500ffd89b183b9f2b3e4b16ec237f9bb83088e",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8suc_A.json": {
+      "sha256": "d8593b252912532ece422adfa5d84d8042cfbfc49bad4ee9532ea42d3cd21ba5",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8sv7_A.json": {
+      "sha256": "817e753c426f56f20f18b44f56918f94f041a976503443c3a5fb150d811e858a",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8sx0_A.json": {
+      "sha256": "bba31f4219cc18e35f569c6f16b951273230bb5afccc9d0d8ec0d3ed2e81fee5",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8sxs_A.json": {
+      "sha256": "e2f8bed24a59de41853efc5d9145f65a3b556c6f0f88a0117acfa99355c12ca4",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8t27_A.json": {
+      "sha256": "26832ea43573329268a2f2491c8d80964ee2e84a1edaa60f758e3e0df37e24db",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8t2j_A.json": {
+      "sha256": "cd3977c12dec96cba7374c356a2ecf509728198f12d71479a692780450d50bad",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8t41_A.json": {
+      "sha256": "cad3ce582dce64fff306ec3cf722923aed477b497ce5991132865f2245f4efb4",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8t4c_A.json": {
+      "sha256": "8af2b4f571057cf11df2d273427ff4b084dc3c86e0a436353f3f4059f58a8d64",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8t5t_A.json": {
+      "sha256": "e0eac965fe254798a365f7f73129b7a85aa43e41171416453fac5b5c9aa98b54",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8t8k_A.json": {
+      "sha256": "27efb164b5271a807ba4b06adb7b2a082fc353c9611f76e31f4b5e465a3a4017",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8t93_A.json": {
+      "sha256": "3f672c5afb9b358527dd03ebf62d2e0b9ac3564bf74769620f009ddbd85e1144",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8t9n_A.json": {
+      "sha256": "283a8c08e29b80e047f77daf88cbaea1237542637f4316e013001537f21c5952",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8te9_A.json": {
+      "sha256": "055083321dcfc71c873b605670702defcdfad9bf025afc7d61b5568e38032403",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8tfo_A.json": {
+      "sha256": "34be6b8f469009b84329529433ce6f8268cf2c78e2b44652a0ad6ccffd3e6499",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8tfs_A.json": {
+      "sha256": "f0b6cc550baf60563d36944c9770c78d957bb50bbb19fc81278ee3de331cd17a",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8ti5_A.json": {
+      "sha256": "7e16cd2202ab4ebaae345d3c923931681ab6539f3f3768eff161624ea3f087a6",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8tjg_A.json": {
+      "sha256": "b8555a292fd54e4cf8b9067a97568786cd4a2c0a0f3339351de826d369656342",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8tls_A.json": {
+      "sha256": "941dfc8517ffda1e790a369a80bcd1f2bceca11c08e42806d3a6bd9caeedcc04",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8tru_A.json": {
+      "sha256": "69a934d7a3c966046101f54c92b7e77a5c34cd654cb96ff2b61c6d56f7de5b2f",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8tse_A.json": {
+      "sha256": "eb14f9b19967eb72dff983762114a6b499959b11295c142db4bed190540e2a11",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8tuk_A.json": {
+      "sha256": "268c16d61337ca7531011cb03d070b1a504eb959d36c2dc14a1b3de5d06c791b",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8tw1_A.json": {
+      "sha256": "7e317f9997ea132559dd30ad17cd9e017c095619c921b39b8495d375dda38d2f",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8tyh_A.json": {
+      "sha256": "9f1175db9c52d98f02f40300b09992d2cd6f302c214030fb98550c20df4ca784",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8u0i_A.json": {
+      "sha256": "5dfb2d5e335b050b7eaf965d26e178a8e948e408f35736613ed7281c5168e3ee",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8u0x_A.json": {
+      "sha256": "6bdde61972e3faf94d156a7553c63742427519598aee012afa1067d872a13ed5",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8u2f_A.json": {
+      "sha256": "a9b4a6fdc56ff86ab33e6a7b3f3ae829900160b780ce59ce61c5e5c7ff780a86",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8ubs_A.json": {
+      "sha256": "a30831adf77b99e12464e13489c7944d2de305ae1522fdba5ec731f4cf3f5906",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8uds_A.json": {
+      "sha256": "522ba0b083c776607b2f53100f874fc7be303fdf54927b89a2cb0c9efcf1776f",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8ujw_A.json": {
+      "sha256": "b3f87a92f285339bb681ef5525d74c3ac43deccc5e78116fe3aa54393a950ec0",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8uk7_A.json": {
+      "sha256": "b4c8200c02f86477c3c23705ad37e8c1223dc0be7d2fdcec18095a0a465d4eaf",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8upi_A.json": {
+      "sha256": "e22a9b5cfb945e37eb9133a3b44a8a88efcf89ff265accec189fdc86a0e7684d",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8ux2_A.json": {
+      "sha256": "614b233a14740ef58aa0b10f0dd60edb4e21093f54b925f535158363fc08b2d2",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8v3m_A.json": {
+      "sha256": "9843909512709b7d8c7496a014236741b2804b3b478be046788459c4ce4721ea",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8v6t_A.json": {
+      "sha256": "2e126cfd3816cc5e33bc78977d407c6d5443bd6295528cd14c465af3cef94635",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8vcw_A.json": {
+      "sha256": "67c5f00cf80f027235055a2d4814b1f4504598acbcffa00b94666fada8fc3461",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8vh7_A.json": {
+      "sha256": "15c375562a67fd8128e06ac2f0fffddca6824fcaced61e527d5cd0643c52322e",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8vpo_A.json": {
+      "sha256": "173ff3e4b890e58b672f0e986a4f1330c29c27cfee0391afa3849d89d5a80c58",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8vqk_A.json": {
+      "sha256": "13d9aab1975f3031705f1449b73963e3d56893995cb91c0ee3207acb533ee639",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8w6v_A.json": {
+      "sha256": "b5a1b7e49bf3906b930cd70a6788a535464b8356ee738a1526085518edb014fb",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8w7p_A.json": {
+      "sha256": "16e8edf2db1f7dd9d1cf5db642ab0e9e827f26a5d6b95a4dad875abd3c0b6253",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8wac_A.json": {
+      "sha256": "bc65f8a219c40dce5741ccb7da5cdb7f03ff5fdd689ce317057afb69eedd9255",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8wae_A.json": {
+      "sha256": "f2f8b478ea2f95d7a9c5926cc50964630a7116154da35fee159f09b17d0abc20",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8wc1_A.json": {
+      "sha256": "cf676de4ae5d8c3fd8c4c2528e1000570a3353589bd13b17bad49cb842741c15",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8wcf_A.json": {
+      "sha256": "3f6d0a0607640b6ef2e95a0c1cb4151ee3363e27a4bfcb97fc77dd30d3c2900c",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8whj_A.json": {
+      "sha256": "ae30336b9eac3697c0021d6954f3c97761d7282146f1bdb7dc3b86826b6417a1",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8whn_A.json": {
+      "sha256": "b79f35b880fd4e4cba44de22329207405d5a44c7339324f5a836be5a36b9c723",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8wik_A.json": {
+      "sha256": "ebfa75ec77ad1d4d4009ca6adf72e9891bb30e46831cae87eca26282840f401b",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8wim_A.json": {
+      "sha256": "7a2740f6da91c22243b3047aa5d2f606f88e48e4771ec87b52f19c9d51257242",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8wj5_A.json": {
+      "sha256": "319f8bdbe391db991ba8b18455de7863039071f384e981795f6873471566a830",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8wnj_A.json": {
+      "sha256": "9288f74b96987d57dca42221482b4e36c109fd567c1e20689e9851ce8a4ef216",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8wqn_A.json": {
+      "sha256": "140634f2f04aa349108bae3b4b0259c2eb391f637225fc4e07c3e1a4c904b68f",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8wrx_A.json": {
+      "sha256": "0f241a87c6485f64b49d023954d73e950e62c315ca465a563656feb3f26c7ba4",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8wt3_A.json": {
+      "sha256": "1b3b65dd70657b72e6bc13fea4eb63e2238d5f48ce1e88d86eac0dd8cea04717",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8x7c_A.json": {
+      "sha256": "be5d9af8c00c07b31c9132b83bdcd090b0438d83843106237b7958af713ff803",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8xf9_A.json": {
+      "sha256": "34ed412c523dbd61b95e51b264dc38ebfc02f3a0dd63c126b58435e541e567aa",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8xif_A.json": {
+      "sha256": "6e5394ac8ab4d0baec6a5d62b64d8a0ca6636054fdcb1427fa3bd5224e194fbc",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8xjg_A.json": {
+      "sha256": "1e646d4da9ad27787563cf1c55fba6766429e7627e62a79bfbe4bfbec37f123b",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8xpk_A.json": {
+      "sha256": "6c3cdfca886c812b8e04c2e5397eee60db10a0c321dd7b18e2776770fd222ecf",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8xrh_A.json": {
+      "sha256": "aaf0783ed44b56498f4c306cdd15fee5e57aea52892d74a1601a9fa985bbd023",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8y9p_A.json": {
+      "sha256": "33b420be55d57987a3210bdef11dd9fd364315be7fd907a9f64c7abf3f25ec06",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/pl5/exp321/full_iid_single/eval-val/8ycm_A.parquet": {
+      "sha256": "1729bc20e9e36d694e6ee52cf686be72c115e35aef3aa6134512f1cbf5cda8c1",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val/8ycm_A.parquet"
+    },
+    "scratch/contacts/results/rollouts/8ye0_A.json": {
+      "sha256": "8c51198a36c7095f65a6f025c736618c30dbc82292a3732b2a56cf4043c50cd3",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8yxk_A.json": {
+      "sha256": "471d4a7b008d82476920061eb479e5d95e5d5ca1dd135c4a55a54013b0752189",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8z4q_A.json": {
+      "sha256": "5e0fb1cdd05eb989276b5eda78d0b3ad5ff72d1a9dad3e1216d2f89532817b84",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/8zqf_A.json": {
+      "sha256": "f8beec43a0788c4eff7cfc8633960847f0e107fb9dc98ff623c59b8427d9e3a9",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/9aue_A.json": {
+      "sha256": "4c385003136f841b831083515614030fd908bbdc79db03d97acb0398eba82758",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/9azz_A.json": {
+      "sha256": "715511fd833e303798a7391a0429f48f89adb63d2f5864f3c306223cf6af46ce",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/9b1u_A.json": {
+      "sha256": "5c372ec1e9bb6c3eef4f6a07bdf5fa9de968a76299a943949928833c4a7a5947",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/9b8e_A.json": {
+      "sha256": "c505289fc5fab3454942fdbc72b4023d9c63f3797be54a521b682d5b020b8452",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/9bjx_A.json": {
+      "sha256": "e9a1b2e8886aeac378167d1f28205c47a1bbe4854ad0987023efab9998b9f4fe",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/9bks_A.json": {
+      "sha256": "c6040baaecdcd9db6999d8ce9bb2d3adfcdbb950ca9257ed5bfeb3eda2296840",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/9cfj_A.json": {
+      "sha256": "e0f78f98c1ce985e08888975fe2c232dbc6e31a3e0b9a1b1bfb8df04a9d01aae",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/9crn_A.json": {
+      "sha256": "357c28e7cc69dc4cba8cf83e3039dc413c797b9054139dab4dbc04556066b649",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/9d91_A.json": {
+      "sha256": "4d577b37f64930dbe85c9fe4a4ddb73a3752b0101d766c61651d9122c230982b",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/9etn_A.json": {
+      "sha256": "3a8639b758f436903e32727cea431237b425eb50ba1f36a5a6f77d3704dabc30",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/9evq_A.json": {
+      "sha256": "1c4447e0471fbff34c39d323ee39b5e7e56d216e5549b6cc8ee512a7fb65d590",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/9f9u_A.json": {
+      "sha256": "12dfbfa91c716a24844c0a990e482889e4e25c7717bb7f312e1fa26338cc09d0",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/9fce_A.json": {
+      "sha256": "f1c1b9b7750133a1ad7004346bf95daad7dfcd7e584175716b10c7478cdc158c",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/9fgp_A.json": {
+      "sha256": "113ffefa9577c82828ae5dbfe927fc35a3b18d349324e3663e59391a83b5fda9",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/9fow_A.json": {
+      "sha256": "36d0fea5852305d8e42300e390cb5f52f8f51968968cce41de23de96067fa73a",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/9fym_A.json": {
+      "sha256": "8eed3e74120880b493141fb61275244df18d4559ecde7fdf97ba81ef51645877",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/9gso_A.json": {
+      "sha256": "bcc1711de29e4b6c83084461bb07d8444453c522bd18cb28ca944041100c313a",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/9ijc_A.json": {
+      "sha256": "a5c250064a62c30360c215b8abd8c0804915ec6f278368fdc10095e49a129fa2",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/9iuh_A.json": {
+      "sha256": "620b2a86072cf336ba3dd21e432836fce52573d61e3f8399b528f303c9d5051c",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/9j0v_A.json": {
+      "sha256": "33929b0e1875d1f0f6441303e7e518dbea600c2cbb829fa428a035e7bf53ac14",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    },
+    "scratch/contacts/results/rollouts/9jq9_A.json": {
+      "sha256": "92c3f380654e641c4890ab1cf9d386858e0edeb0317fe1cf54500ac32f84bdfd",
+      "public_source": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/exp277-step266344/v6-ptm-ranking/contact_rollouts.tar.gz"
+    }
+  },
+  "files": {
+    "pl5_figure_rows.csv": "875fd3de3a9e0f4fd93b7be31cce6b27232514e6feccc2f6227da075d2b42c1b",
+    "pl5_summary.csv": "df7aed102f84d57554a35ebf31459a3f12bd63be33c9c20428c77fd602ca048b",
+    "pl5_paired_deltas.csv": "e94173714a60385da493adf2ab582f2a9c4f9740d089e10bce587362018ca508",
+    "pl5_sampling_per_protein.csv": "87f2b9e879259ad3d05bbaff0596af8505e2f9a93b41881c4fc32de24e39d176",
+    "pl5_sampling_individual.csv.gz": "1d8868cd4dcc2daffa1ec9dfacc85a346ece609f44d43cb45a4ef7442f648946"
+  },
+  "cutoff": "k=max(1,floor(L/5)), capped only by candidate count; L=frozen input sequence length, not resolved-residue count",
+  "contact_definition": "pyconfind degree >=0.001; resolved pairs; sequence separation >=6 (all) or >=24 (long)",
+  "ranking": "Main consensus ranks votes; structural predictors rank contact degree; KNN uses archived transferred scores. Stable candidate-order ties, no truth tie break.",
+  "sampling": "Exact original first 100 iid maps. Individual maps rank by emission order; duplicates removed; unfilled ranks zero. Invalid/unfinished maps zero. Consensus uses all parsed maps; oracle reselected by P@L/5.",
+  "regression": "All 5994 archived predictor R scores and 1884 sampling R scores reproduced within 1e-12",
+  "knn": "k=10, native decontaminated corpus; does not index the additional ProteinMPNN redesign sequences",
+  "public_exp321": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1/full_iid_single/eval-val"
+}

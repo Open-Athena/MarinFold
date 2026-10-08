@@ -130,3 +130,13 @@ horizontal AF3-25 and ESMFold2 baseline references; all three selection curves
 still refer to the same frozen fresh-seed pool. Figure rendering never runs a
 predictor, structural metric, or bootstrap. AF3's official default settings and
 the differences in our MSA/template inputs are documented in AF3_SAMPLING.md.
+
+
+P@L/5 counterparts and the focused sequence-KNN panel are documented in
+[PL5_ANALYSIS.md](PL5_ANALYSIS.md). `prepare_pl5.py` computes the new metrics,
+paired deltas and protein-bootstrap intervals into independent `pl5_*` tables.
+`04_contacts_pl5{,_long}` includes all nine predictors; `04b_knn` includes
+P@L/5 and R-precision, each at both ranges; `06_sampling_pl5{,_long}` reselects
+the oracle sample at the new cutoff. Existing R-precision inputs are preserved.
+Every static plot now has a native PDF as well as SVG/PNG; [POSTER.md](POSTER.md)
+describes the print bundle and its manifest.

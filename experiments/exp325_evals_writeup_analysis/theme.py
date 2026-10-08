@@ -33,8 +33,11 @@ ORDER = {
     "01_predictors": ["af3", "af2", "boltz2", "protenix_msa", "esmfold2", "esmfold", "protenix_ss"],
     "02_oracle": ["oracle", "af3", "af2", "boltz2", "protenix_msa", "no_contacts"],
     "04_contacts": ["af3", "af2", "boltz2", "protenix_msa", "esmfold2", "esmfold", "marinfold", "knn", "protenix_ss"],
+    "04_contacts_pl5": ["af3", "af2", "boltz2", "protenix_msa", "esmfold2", "esmfold", "marinfold", "knn", "protenix_ss"],
+    "04b_knn": ["marinfold", "knn"],
     "05_folding": ["af3", "af2", "boltz2", "protenix_msa", "esmfold2", "esmfold", "marinfold_helico", "protenix_ss", "no_contacts"],
     "06_sampling": ["single", "consensus", "best100"],
+    "06_sampling_pl5": ["single", "consensus", "best100"],
 }
 TITLES = {
     "01_predictors": "Fewer relatives, less accurate structures",
@@ -46,10 +49,16 @@ TITLES = {
     "02c_accuracy_confidence": "Does pTM track TM-score?",
     "03_method": "From one sequence to a contact map",
     "04_contacts": "Contact prediction still tracks MSA depth",
+    "04_contacts_pl5": "Precision among the top L/5 contacts",
+    "04b_knn": "MarinFold versus sequence-neighbor contact transfer",
     "05_folding": "Predicted contacts help Helico fold natural proteins",
     "06_sampling": "Does a better contact map appear in the samples?",
+    "06_sampling_pl5": "Does a better top-L/5 contact set appear in the samples?",
 }
 CAPTIONS = {
+    "04_contacts_pl5": "P@L/5 on 314 natural FoldBench proteins, using k=max(1,floor(L/5)) and L equal to the frozen input sequence length, not the number of resolved residues. Same nine predictors and same archived predictions as the R-precision panel, including AF2, AF3, Boltz-2 and decontaminated sequence-KNN. Ground truth and eligible pairs are unchanged: pyconfind degree >=0.001, resolved residues, separation >=6 for all-range or >=24 for long-range. Structure contacts rank by degree, MarinFold by votes; stable candidate-order ties. Means and 95% protein-bootstrap intervals. The menu exposes both ranges and split/design views. Preprocessing reproduces every archived R-precision score before using its P@L/5 counterpart.",
+    "04b_knn": "Same 314 natural proteins and fixed 248B-token MarinFold checkpoint. Sequence-KNN transfers contacts from the ten nearest sequences in the native decontaminated training corpus; it does not index the additional ProteinMPNN redesign sequences. Points are protein means with 95% protein-bootstrap intervals. The menu exposes all-range and long-range P@L/5 and R-precision. Paired MarinFold-minus-KNN differences and their intervals are in pl5_paired_deltas.csv. This is a contact-prediction baseline, not a structure predictor.",
+    "06_sampling_pl5": "P@L/5 counterpart of the sampling diagnostic: the exact same 314 natural proteins and first 100 iid rollouts per protein. L is frozen input sequence length; k=max(1,floor(L/5)). Individual maps retain emission order after eligibility filtering and deduplication; unfilled ranks receive zero credit and invalid/unfinished maps score zero. Consensus ranks votes from all parsed maps, matching the original diagnostic. Oracle best-of-100 is reselected using P@L/5 and uses ground truth. The scatter pairs consensus with this newly selected oracle per protein. Main contact-panel votes instead omit unfinished maps. This measures contact accuracy, not distinct folds.",
     "01c_af3_context": "TM-score for the same five natural test proteins with MSA depth <10. Top block: archived predictor entries, including the 248B-token MarinFold top-L contacts through Helico. Middle: 100 or 1,000 fresh AF3 full runs, one diffusion sample per seed, selected by official ranking_score or pTM. Bottom: ground-truth diagnostics, oracle best AF3 TM and Helico conditioned on the oracle map. ESMFold2 is the archived baseline, not a selected member or average of the 100-contact-map decoy pool. AF3 baseline uses five seeds times five diffusion samples, ten recycles, shared archived MSAs and no templates. Expanded runs retain the same inputs and recycles. Compute budgets differ. Hover identifies the exact source CSV cell.",
     "01d_af3_depth_context": "Mean TM-score on the same 305 natural proteins as the main structural figures: 5, 20, 60 and 220 proteins across the four MSA bins. All archived predictors cover exactly this population; each protein receives equal weight. Hover shows 95% protein-bootstrap intervals and success counts; the prepared CSV retains every contributing row. The 1,000-run AF3 study covers only the five <10 proteins; other cells are not run. Stars mark ground-truth diagnostics. Different bins contain different proteins, so this does not estimate the causal effect of adding MSA sequences. All AF3 results use shared benchmark MSAs and no templates, not the native search pipeline. Budgets and training data differ between predictors.",
     "01b_af3_sampling": "Five natural FoldBench eval-test proteins with MSA depth <10. Every point is one full AF3 run with a fresh seed, one diffusion sample, ten recycles, the same archived MSA and no templates. The menu selects a protein; hover exposes the seed and exact scores. Full-precision pTM selects without ground truth; the oracle best TM is an offline diagnostic. Curves follow ascending-seed prefixes. The sampling panel also shows official ranking_score selection and horizontal archived AF3-25 and ESMFold2 references. Dashed line: the prespecified working accuracy threshold TM >=0.8. Five proteins remain five biological examples.",
@@ -63,7 +72,7 @@ CAPTIONS = {
     "06_sampling": "Exp277 step 266,344, 314 natural proteins (97 validation + 217 test), 100 iid rollouts per protein. Consensus and oracle use the same sample pool within each protein. Individual maps are ranked by emission order; short maps retain denominator R, and malformed or unfinished individual maps score zero. The diagnostic consensus uses all parsed maps, following exp321. Oracle selection uses ground truth. This measures contact accuracy, not distinct folds. Scatter colors identify MSA tiers in the interactive view.",
 }
 METRICS = {"gdt_ts": "GDT-TS", "lddt": "lDDT", "r_precision": "R-precision",
-           "r_precision_long": "Long-range R-precision"}
+           "r_precision_long": "Long-range R-precision", "p_at_l5": "P@L/5", "p_at_l5_long": "Long-range P@L/5"}
 COHORTS = {"natural": "Natural · all splits", "eval-val": "Natural · eval-val",
            "eval-test": "Natural · eval-test", "designed": "Designed",
            "viral": "Natural · viral", "nonviral": "Natural · nonviral"}

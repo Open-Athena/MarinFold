@@ -87,3 +87,21 @@ ESMC uses 70%-identity clustering; historical MGnify90 is the closer public sear
 Full historical MGnify and JGI are not yet searched. Complete training depth is unknown.
 See TRAINING_SOURCE_SEARCH.md and data/training_source_depths.csv for details.
 Offline reduction: uv run python generation/search_training_sources.py prepare
+
+
+## Precision at L/5 and the KNN comparison
+
+k=max(1,floor(L/5)); L is the input sequence length, not the resolved-residue count.
+Same 314 natural proteins, nine predictors, candidate pairs and archived predictions.
+All-range / long-range P@L/5: MarinFold 0.830 / 0.761; sequence-KNN 0.657 / 0.595.
+At depth <10 (five proteins): MarinFold 0.595; KNN 0.102; ESMFold2 0.727.
+KNN transfers from ten native decontaminated-corpus neighbors; no redesign index.
+
+Same 100-rollout pools: mean individual 0.400; consensus 0.829; oracle best 0.609.
+Oracle reselected by P@L/5. Emission order ranks individual maps; short maps retain k.
+Invalid individual maps receive zero. Consensus follows the original vote rules.
+All 5,994 predictor and 1,884 sampling R-precision cells reproduce before rescoring.
+
+Every static plot has native vector PDF/SVG and a 7,200-pixel-wide PNG.
+At 300 dpi the raster supports 24-inch-wide panels; vector PDFs scale further.
+POSTER.md links the public collection. Preprocessing remains separate from rendering.
