@@ -1,0 +1,125 @@
+"""Tests for AF2Rank benchmark metrics and pilot selection."""
+
+import math
+import tempfile
+import unittest
+from pathlib import Path
+
+from analyze_full import exact_mcnemar_pvalue
+from benchmark import af2rank_composite, rankdata, spearman_correlation
+from full_worker_cw import PART_SIZE, assign_tasks
+from prepare_full import digest_candidate_sources, project_candidate_to_target
+from select_pilot import quantile_indices, select_targets
+
+
+class BenchmarkTest(unittest.TestCase):
+    def test_rankdata_averages_ties(self) -> None:
+        self.assertEqual(rankdata([30.0, 10.0, 20.0, 20.0]), [4.0, 1.0, 2.5, 2.5])
+
+    def test_spearman_perfect_monotone_relationships(self) -> None:
+        self.assertTrue(math.isclose(spearman_correlation([1, 2, 3], [4, 5, 6]), 1.0))
+        self.assertTrue(math.isclose(spearman_correlation([1, 2, 3], [6, 5, 4]), -1.0))
+
+    def test_af2rank_composite(self) -> None:
+        row = {"plddt": "80", "ptm": "0.5", "tm_diff": "0.75"}
+        self.assertEqual(af2rank_composite(row), 30.0)
+
+    def test_exact_mcnemar_pvalue(self) -> None:
+        expected = 0.2806097176983541
+        self.assertTrue(math.isclose(exact_mcnemar_pvalue(32, 23), expected))
+        self.assertTrue(math.isclose(exact_mcnemar_pvalue(23, 32), expected))
+        self.assertEqual(exact_mcnemar_pvalue(0, 0), 1.0)
+
+    def test_quantile_indices_include_endpoints(self) -> None:
+        self.assertEqual(quantile_indices(10, 4), [0, 3, 6, 9])
+
+    def test_target_grid_is_unique_and_deterministic(self) -> None:
+        rows = [
+            {
+                "target": f"t{index}",
+                "n_native_residues": str(index),
+                "n_decoys": str(20 - index),
+            }
+            for index in range(1, 11)
+        ]
+        first = select_targets(rows, [0.1, 0.9])
+        second = select_targets(rows, [0.1, 0.9])
+        self.assertEqual(first, second)
+        self.assertEqual(len({row["target"] for row in first}), 4)
+
+    def test_full_run_assignment_covers_each_candidate_once(self) -> None:
+        manifest = {
+            "targets": [
+                {
+                    "target": "short",
+                    "n_candidates": PART_SIZE + 1,
+                    "n_residues": 50,
+                    "input_sha256": "a",
+                    "file_sha256": "b",
+                    "relative_path": "targets/short.json.gz",
+                },
+                {
+                    "target": "long",
+                    "n_candidates": 2 * PART_SIZE,
+                    "n_residues": 200,
+                    "input_sha256": "c",
+                    "file_sha256": "d",
+                    "relative_path": "targets/long.json.gz",
+                },
+            ]
+        }
+        first = assign_tasks(manifest, 3)
+        second = assign_tasks(manifest, 3)
+        self.assertEqual(first, second)
+        covered = {
+            (task["target"], candidate)
+            for shard in first
+            for task in shard
+            for candidate in range(task["start"], task["end"])
+        }
+        self.assertEqual(len(covered), 3 * PART_SIZE + 1)
+        self.assertEqual(sum(len(shard) for shard in first), 4)
+
+    def test_terminal_extension_projection_is_explicit(self) -> None:
+        pairs, coordinates, mapping = project_candidate_to_target(
+            "KHI",
+            "KKHI",
+            [[0, 3], [1, 3]],
+            [
+                [0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0],
+                [2.0, 0.0, 0.0],
+                [3.0, 0.0, 0.0],
+            ],
+        )
+        self.assertEqual(pairs, [[0, 2]])
+        self.assertEqual(
+            coordinates,
+            [[1.0, 0.0, 0.0], [2.0, 0.0, 0.0], [3.0, 0.0, 0.0]],
+        )
+        self.assertEqual(mapping["method"], "unique_contiguous_target_subsequence")
+        self.assertEqual(mapping["dropped_candidate_residues"], 1)
+        self.assertEqual(mapping["dropped_present_contacts"], 1)
+
+    def test_noncontiguous_or_ambiguous_projection_is_rejected(self) -> None:
+        with self.assertRaises(ValueError):
+            project_candidate_to_target("AAA", "AAAA", [], [[0.0, 0.0, 0.0]] * 4)
+        with self.assertRaises(ValueError):
+            project_candidate_to_target("ABC", "AXBC", [], [[0.0, 0.0, 0.0]] * 4)
+
+    def test_candidate_source_digest_changes_with_pdb_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "natives").mkdir()
+            (root / "target").mkdir()
+            (root / "natives" / "target.pdb").write_text("native\n")
+            decoy = root / "target" / "decoy.pdb"
+            decoy.write_text("first\n")
+            first = digest_candidate_sources(root, "target", ["native", "decoy.pdb"])
+            decoy.write_text("second\n")
+            second = digest_candidate_sources(root, "target", ["native", "decoy.pdb"])
+            self.assertNotEqual(first, second)
+
+
+if __name__ == "__main__":
+    unittest.main()

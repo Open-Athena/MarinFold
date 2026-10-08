@@ -1,0 +1,5 @@
+{
+  "script": "plot_pilot.py",
+  "args": [],
+  "caption": "Native top-1 recovery and mean native rank across the nine-target pilot. Each target contains its native and 24 TM-stratified decoys. DeepAccNet and Rosetta cannot be scored for native recovery because their corrected AF2Rank native rows contain -1 sentinels."
+}
