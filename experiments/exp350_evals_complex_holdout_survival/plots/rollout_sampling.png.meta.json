@@ -1,0 +1,5 @@
+{
+  "script": "plot_rollout_sampling.py",
+  "args": [],
+  "caption": "Exploratory follow-up on the frozen 17-target test split, 1000 attempted rollouts per target. Oracle curves average exact best-of-k expectations over subsets of each saved pool; shading is the 95% homology-group bootstrap interval. F1 and R-precision are maximized separately; single-map R-precision averages tied binary scores. Consensus uses fixed prefixes and the original stable top-R convention. The matched random F1 control preserves each sample contact count. Union recall pools contacts across samples and does not imply a single correct map. Unfinished attempts receive zero credit."
+}

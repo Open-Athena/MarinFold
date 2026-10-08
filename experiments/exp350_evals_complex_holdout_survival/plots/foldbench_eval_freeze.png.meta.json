@@ -1,0 +1,5 @@
+{
+  "script": "plot_foldbench_eval.py",
+  "args": [],
+  "caption": "The 35 MarinFold pair-clean FoldBench dimers yield 30 natural structural targets, of which 23 complete all 100 contact rollouts inside the model's 8,192-token context. The 6/17 contact split is grouped by chain homology and balances mean total length."
+}

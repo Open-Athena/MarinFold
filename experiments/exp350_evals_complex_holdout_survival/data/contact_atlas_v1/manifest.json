@@ -1,0 +1,36 @@
+{
+  "n_test_targets": 17,
+  "attempts_per_target": 1000,
+  "checkpoint": "contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+  "selected_cases": {
+    "8wk1-assembly1": "Often emits no interface contacts",
+    "8cqm-assembly1": "Almost always predicts the wrong interface",
+    "7ytu-assembly1": "Correct contacts appear, but lose the vote",
+    "8onf-assembly1": "Strongest consensus, still many wrong pairs",
+    "8jca-assembly1": "Best individual sample is still incomplete",
+    "8smq-assembly1": "Large interface; correct contacts are scattered"
+  },
+  "case_selection": "purposeful diagnostic cases, not a random sample",
+  "typical_selection": "completed map closest to median resolved inter-chain contact count; lowest index breaks ties",
+  "oracle_selection": "maximum experimental inter-chain F1; lowest index breaks ties",
+  "frequency_denominator": "all 1000 attempted rollouts, including unfinished attempts",
+  "source_manifest_sha256": "41832364095c1dfea53458206574cb7f1ae2194e7e3ad4d7cf8dc0a66453b676",
+  "source_public_prefix": "hf://buckets/open-athena/MarinFold/data/evals/exp350_foldbench_pair_holdout/contact_eval_v1/sampling_v1",
+  "targets_sha256": "544cf757921f4e798aef5a8d1866b7324a296dfdf8aef07ba01bf655e18901e0",
+  "csv_sha256": {
+    "7ytu-assembly1_examples.csv": "23dbdd89da40c611ff8957c941741f4dd6238571f6a70676da7c9c0771e7fda1",
+    "7ytu-assembly1_votes.csv": "12353fdb6d0b8661ffde83401edd0b371b7a10c230514581ea4f827e828cff4d",
+    "8cqm-assembly1_examples.csv": "0c50bdded9fde70e42426b085aa2629b5c3c98396f1aba3d9cb077160e3edf49",
+    "8cqm-assembly1_votes.csv": "448fb695bc6e4a391ad6538afb20b6eae25c53e4a5dda8eea8a5e5698244826d",
+    "8jca-assembly1_examples.csv": "8a743ff39cafbd42c0d92891506982442e6b0310ab35a8d839f678e8e160040e",
+    "8jca-assembly1_votes.csv": "01b4ef2bd23b02208289d881998489655eff8c4f0c71defec8e675ce473d8a86",
+    "8onf-assembly1_examples.csv": "27befd084271544aff5a4ab147d59c25b8879bc1e4be27b619fc75e49931dd6f",
+    "8onf-assembly1_votes.csv": "db369f6431178dfea2a1cd8c7cf4af0faa7fb4f7dfa8894d915e7e116e603c7e",
+    "8smq-assembly1_examples.csv": "2ce10cd417a3b463aa0ce5e0f484f55a05c3eeb783de6b3db87bd3768ce58e57",
+    "8smq-assembly1_votes.csv": "f5ce42243b99bad7d856394ec1e6fdd6ec0142166e012be789c33bb46ae7a151",
+    "8wk1-assembly1_examples.csv": "eebe6efa0a8cc1e9433ef1ac943465a0713d47c4047c42be0411dd2061f56187",
+    "8wk1-assembly1_votes.csv": "738f4abe5fea44e3a65fad5f308f9d6088d4148d2b310db051321299069d2969",
+    "rollout_counts.csv": "3bb457264bee094a25c6da0e1fbbf405c5634575f629be27e6d9f88412a499a9",
+    "summary.csv": "5e7ff3077b47080b1fa3029c56ffb61c58bb09ec14a5aeccb9dfe975676a48fb"
+  }
+}

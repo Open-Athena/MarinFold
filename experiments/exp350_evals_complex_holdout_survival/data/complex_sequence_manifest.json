@@ -1,0 +1,1362 @@
+[
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00000-of-00171.parquet",
+    "source_bytes": 113960697,
+    "fasta": "/data/exp350/complex_sequences/shard-00000-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23618,
+    "sha256": "38b5ff8207acffa6f36cf2ddb7dd24bd44be46ed4ea086dcdeebef878ceab2e8"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00001-of-00171.parquet",
+    "source_bytes": 114227462,
+    "fasta": "/data/exp350/complex_sequences/shard-00001-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23655,
+    "sha256": "746ec6821d73cb1debc70b50c693ad6e37eec2ae216c6cb29b8346f70cdff94c"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00002-of-00171.parquet",
+    "source_bytes": 114776736,
+    "fasta": "/data/exp350/complex_sequences/shard-00002-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23566,
+    "sha256": "96a9fef4d15103c5a3216eaeeffbb583eda944b97dd29280d649bfdbfc078e78"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00003-of-00171.parquet",
+    "source_bytes": 114534029,
+    "fasta": "/data/exp350/complex_sequences/shard-00003-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23593,
+    "sha256": "4f496c88c9a2f48db2ea937ffe0367a95d731b829f7e8ccca0e4078f84e7feed"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00004-of-00171.parquet",
+    "source_bytes": 113828899,
+    "fasta": "/data/exp350/complex_sequences/shard-00004-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23539,
+    "sha256": "fbdc2712fcd8693bac21df3b490c8dceb5159eee8ca5e968eb1e3bbe7ef3106a"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00005-of-00171.parquet",
+    "source_bytes": 114921693,
+    "fasta": "/data/exp350/complex_sequences/shard-00005-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23564,
+    "sha256": "5a6f767a5ba2d7ea1937be6e31514a752d3c8719e60091e405480a01ecd9bce3"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00006-of-00171.parquet",
+    "source_bytes": 113401950,
+    "fasta": "/data/exp350/complex_sequences/shard-00006-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23671,
+    "sha256": "337420805bc952670591189e7dc8e755095a1dd574372ba4f6e75a12c6b02caa"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00007-of-00171.parquet",
+    "source_bytes": 114049908,
+    "fasta": "/data/exp350/complex_sequences/shard-00007-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23606,
+    "sha256": "c4881207c5d1998efb973b75954fa3753a699f7479a876a93e10e121b22044ff"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00008-of-00171.parquet",
+    "source_bytes": 113790939,
+    "fasta": "/data/exp350/complex_sequences/shard-00008-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23566,
+    "sha256": "41bcc104a6a9dd7d423849d26305d572e5de8005262c8e549147cfacc2c7d1d8"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00009-of-00171.parquet",
+    "source_bytes": 114687317,
+    "fasta": "/data/exp350/complex_sequences/shard-00009-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23644,
+    "sha256": "68b1f3c5d0ac4c12bec48940fca23bc10e32b234cf9da4f3a4e0e443e093d116"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00010-of-00171.parquet",
+    "source_bytes": 113475434,
+    "fasta": "/data/exp350/complex_sequences/shard-00010-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23506,
+    "sha256": "10d9f3fafd470aaf741711f8bb28b6a3842c85b40dfa5b1999f9e6dc4bd5e7d4"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00011-of-00171.parquet",
+    "source_bytes": 114021955,
+    "fasta": "/data/exp350/complex_sequences/shard-00011-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23600,
+    "sha256": "7de8979c0e71164e9e3a995bea3a96443ba5d2e2ba57c94fdda40e7ee78a838d"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00012-of-00171.parquet",
+    "source_bytes": 113805848,
+    "fasta": "/data/exp350/complex_sequences/shard-00012-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23747,
+    "sha256": "295d049605057e793bbf4ebb8a8d8eda5eccc82ddddc0581401977649a3a1d63"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00013-of-00171.parquet",
+    "source_bytes": 114886355,
+    "fasta": "/data/exp350/complex_sequences/shard-00013-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23420,
+    "sha256": "df26c9099ed75a5cb98c186fdfb15aa2ae4646a512af0e07d78badc234c89488"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00014-of-00171.parquet",
+    "source_bytes": 114157890,
+    "fasta": "/data/exp350/complex_sequences/shard-00014-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23642,
+    "sha256": "9ecc117c5d9d2ca96f7011d5ea1961bdbf7ed0ec50ee3646ecc1f2d5c6f7d4a1"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00015-of-00171.parquet",
+    "source_bytes": 113855496,
+    "fasta": "/data/exp350/complex_sequences/shard-00015-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23679,
+    "sha256": "b7db06c3300f219b21b9a8b50fa0e3b2c2aaee9da5be883b65243aedb9aea179"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00016-of-00171.parquet",
+    "source_bytes": 113496485,
+    "fasta": "/data/exp350/complex_sequences/shard-00016-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23476,
+    "sha256": "5a41ce96caf5cf6fefcf9112d8440451d7301d01288982258bf78b78aa00d55c"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00017-of-00171.parquet",
+    "source_bytes": 114072396,
+    "fasta": "/data/exp350/complex_sequences/shard-00017-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23593,
+    "sha256": "dc41fc7cb3a5bda1aedf0a7d79c406144f67c21b53718b22ba56e78566922f31"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00018-of-00171.parquet",
+    "source_bytes": 114559623,
+    "fasta": "/data/exp350/complex_sequences/shard-00018-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23654,
+    "sha256": "88be66eb86476da0f9e249293fae7cfd564beeadda544b82367719050c1c5dcb"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00019-of-00171.parquet",
+    "source_bytes": 114265776,
+    "fasta": "/data/exp350/complex_sequences/shard-00019-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23517,
+    "sha256": "dc333dad5416dc4484387f4df23016736cef420c7d437f3b696a849ab27522ce"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00020-of-00171.parquet",
+    "source_bytes": 114492061,
+    "fasta": "/data/exp350/complex_sequences/shard-00020-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23660,
+    "sha256": "83b43f22011eb23a3910a1ae3ce02cdbcf8e64333de1dcd503ab45a690a43b45"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00021-of-00171.parquet",
+    "source_bytes": 114611877,
+    "fasta": "/data/exp350/complex_sequences/shard-00021-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23557,
+    "sha256": "5699d51f9d48c9b09b9456ae58276a727a92ef8a053896477056afd79eb62c4f"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00022-of-00171.parquet",
+    "source_bytes": 114855069,
+    "fasta": "/data/exp350/complex_sequences/shard-00022-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23611,
+    "sha256": "9b49f7cf21dd6d2175689468054abd9b793de0e0e68255abd649fc44dc14d147"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00023-of-00171.parquet",
+    "source_bytes": 113986332,
+    "fasta": "/data/exp350/complex_sequences/shard-00023-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23680,
+    "sha256": "f6cdf4c2f860601d681a39e87f3ff82b52477f477208fc3005aa16808f01701c"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00024-of-00171.parquet",
+    "source_bytes": 114629834,
+    "fasta": "/data/exp350/complex_sequences/shard-00024-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23453,
+    "sha256": "6601e3ab22900034814e9b32d32c0bf43090392e47f6cda28cb2227369d3def3"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00025-of-00171.parquet",
+    "source_bytes": 113796361,
+    "fasta": "/data/exp350/complex_sequences/shard-00025-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23607,
+    "sha256": "97cf40f2fb9cf163ddcd534452aee4ed3c841d84d465796bcf25b1f59e82dbd1"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00026-of-00171.parquet",
+    "source_bytes": 114956392,
+    "fasta": "/data/exp350/complex_sequences/shard-00026-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23575,
+    "sha256": "5afafc531c91b252716e2b37bd987b0ce64735313ac0acbd7cdfb82a0fd5ad7c"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00027-of-00171.parquet",
+    "source_bytes": 115084831,
+    "fasta": "/data/exp350/complex_sequences/shard-00027-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23544,
+    "sha256": "93ffcc679a7f08a55a3cb8a027ed64b24726889345258469944371db7d761155"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00028-of-00171.parquet",
+    "source_bytes": 114568955,
+    "fasta": "/data/exp350/complex_sequences/shard-00028-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23563,
+    "sha256": "9172cdfe68cfa087abe1b2b9c7bc3d0ac54f7916233abec40880b78106ad14a2"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00029-of-00171.parquet",
+    "source_bytes": 114530482,
+    "fasta": "/data/exp350/complex_sequences/shard-00029-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23646,
+    "sha256": "23cd7c07d677d8f30d969d18205659656762849cdaa8e2d8ffb2b305a5deea1b"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00030-of-00171.parquet",
+    "source_bytes": 114162833,
+    "fasta": "/data/exp350/complex_sequences/shard-00030-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23568,
+    "sha256": "c3bf4afe17b83d50b393a5b4a45f9121bd313d38d42c3022b48f31817fa4d214"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00031-of-00171.parquet",
+    "source_bytes": 114418109,
+    "fasta": "/data/exp350/complex_sequences/shard-00031-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23652,
+    "sha256": "2d382a5b8a02fef57ec5a96f6acacc03cc326e67c91ee05213b3b76522f92a46"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00032-of-00171.parquet",
+    "source_bytes": 115092599,
+    "fasta": "/data/exp350/complex_sequences/shard-00032-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23684,
+    "sha256": "1b019999a7b0031699901130d1a51e1e958574ab922dc1e393b0b0e5fdf2c142"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00033-of-00171.parquet",
+    "source_bytes": 114517032,
+    "fasta": "/data/exp350/complex_sequences/shard-00033-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23580,
+    "sha256": "f27cdbabc2e57645a45353f13827cb286cc20f7325824289451bb3535c63bfb1"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00034-of-00171.parquet",
+    "source_bytes": 114153669,
+    "fasta": "/data/exp350/complex_sequences/shard-00034-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23586,
+    "sha256": "9ca0854ca9fba85cfa6ffadd81467f8a8ff79aa24298e844d815be639ac16eac"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00035-of-00171.parquet",
+    "source_bytes": 114263953,
+    "fasta": "/data/exp350/complex_sequences/shard-00035-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23598,
+    "sha256": "332502a1ea3c5eab312fee63d5cc0017a659f7e7091f2a1285ddd9fc994912a8"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00036-of-00171.parquet",
+    "source_bytes": 114702493,
+    "fasta": "/data/exp350/complex_sequences/shard-00036-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23569,
+    "sha256": "67ffe141528b8077ae39a6dbf434e946beedbc9f5fa96df12d82cb4e0c60a76d"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00037-of-00171.parquet",
+    "source_bytes": 114685685,
+    "fasta": "/data/exp350/complex_sequences/shard-00037-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23586,
+    "sha256": "99e726ec428e1fd7cca78e34d9d307aace87b5e7af2a654e945686172f84936d"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00038-of-00171.parquet",
+    "source_bytes": 114449141,
+    "fasta": "/data/exp350/complex_sequences/shard-00038-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23525,
+    "sha256": "403059ae10723007ee73315be789fea55fd6b77d4aadb9f6f903eb9ea7a20884"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00039-of-00171.parquet",
+    "source_bytes": 114053070,
+    "fasta": "/data/exp350/complex_sequences/shard-00039-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23614,
+    "sha256": "da608e1ada8e8a433b4e21b5215774885cadd6a65d31094d98a69406cd8525a9"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00040-of-00171.parquet",
+    "source_bytes": 114904362,
+    "fasta": "/data/exp350/complex_sequences/shard-00040-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23532,
+    "sha256": "dec1c2d20c51a510234a0beff87e8f2bb449b4dc39a6f67a2bb9c46c8c8d748e"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00041-of-00171.parquet",
+    "source_bytes": 114520098,
+    "fasta": "/data/exp350/complex_sequences/shard-00041-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23609,
+    "sha256": "885388ef95f576da8c7ecdf9cde80130e0bda242afab3513d793a79f345b2fd6"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00042-of-00171.parquet",
+    "source_bytes": 113916606,
+    "fasta": "/data/exp350/complex_sequences/shard-00042-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23552,
+    "sha256": "d03a48e0125b6cb9eff3d4f6a8b970eaa24a5b3bfef86581e2f2eb1b7eff5443"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00043-of-00171.parquet",
+    "source_bytes": 113718500,
+    "fasta": "/data/exp350/complex_sequences/shard-00043-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23554,
+    "sha256": "7129696a4edc8f2fc8ef9b7df81632dfc30ebc0a5561dd0a9fe0c103dbf16d90"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00044-of-00171.parquet",
+    "source_bytes": 113729986,
+    "fasta": "/data/exp350/complex_sequences/shard-00044-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23537,
+    "sha256": "6a54906feb8afa7db6928c5e92dd49e72ae7a69ddd95888aabf24ac6d4a6710b"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00045-of-00171.parquet",
+    "source_bytes": 113996848,
+    "fasta": "/data/exp350/complex_sequences/shard-00045-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23634,
+    "sha256": "825c5e8e93f2b62ee201ed27c15c007d777d1457fa1a8389097cbb592ab415e2"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00046-of-00171.parquet",
+    "source_bytes": 114419014,
+    "fasta": "/data/exp350/complex_sequences/shard-00046-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23598,
+    "sha256": "b670eb1725607c8db7b4ec7d519d01695eaecba21af26b7326feaeb5a078b5f9"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00047-of-00171.parquet",
+    "source_bytes": 113169775,
+    "fasta": "/data/exp350/complex_sequences/shard-00047-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23762,
+    "sha256": "078f404d12e8d7b1733d53987f1ee3a1f4c2f1fecb6f43cf65d697487212a60c"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00048-of-00171.parquet",
+    "source_bytes": 114500510,
+    "fasta": "/data/exp350/complex_sequences/shard-00048-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23539,
+    "sha256": "8bbfd531db91e9730448296a9cb1b13fd4c5a9474cc4e0fee2dab1227efff947"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00049-of-00171.parquet",
+    "source_bytes": 114229736,
+    "fasta": "/data/exp350/complex_sequences/shard-00049-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23536,
+    "sha256": "ed04d6af03eb141ed8a741115e1753ec4dc0829a0b93c0eec96dbf4ab0a6a606"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00050-of-00171.parquet",
+    "source_bytes": 114790194,
+    "fasta": "/data/exp350/complex_sequences/shard-00050-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23550,
+    "sha256": "a2aeda7003a49e4aa9107f746857ee62e40a9f5783fec2c34c61505e767f841a"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00051-of-00171.parquet",
+    "source_bytes": 113540860,
+    "fasta": "/data/exp350/complex_sequences/shard-00051-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23602,
+    "sha256": "e4e0e4de5ee919b96f9ffc6c98111fac3a7d658c6f99ceb68e4034de2cbcdd42"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00052-of-00171.parquet",
+    "source_bytes": 114285812,
+    "fasta": "/data/exp350/complex_sequences/shard-00052-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23558,
+    "sha256": "1d90440e11f9a61f0079d9572658b173f82e2f028895d293e86e13b7dfbcfca0"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00053-of-00171.parquet",
+    "source_bytes": 114332366,
+    "fasta": "/data/exp350/complex_sequences/shard-00053-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23510,
+    "sha256": "6d2a98c9748f82592abcdf4b3352c7b05432530062f20f016e9275228059eda0"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00054-of-00171.parquet",
+    "source_bytes": 114271208,
+    "fasta": "/data/exp350/complex_sequences/shard-00054-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23624,
+    "sha256": "3b64cfe05126af0d9a70b400944fb7f88f9f2aad84b3d97c6345f938178c3d52"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00055-of-00171.parquet",
+    "source_bytes": 114528884,
+    "fasta": "/data/exp350/complex_sequences/shard-00055-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23586,
+    "sha256": "387f6a22d003fcb801551ebd38152c2e175c7d226da6d7632994020f0e5354a9"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00056-of-00171.parquet",
+    "source_bytes": 113665744,
+    "fasta": "/data/exp350/complex_sequences/shard-00056-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23631,
+    "sha256": "eede30bc0967c0a296d1cb3063febe21cb7f1415ecb9e24c695fd331fb8a8a12"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00057-of-00171.parquet",
+    "source_bytes": 114792168,
+    "fasta": "/data/exp350/complex_sequences/shard-00057-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23618,
+    "sha256": "50251041c03de097e8df10250f0d718164dd184e67a28796ac376d4564e7db57"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00058-of-00171.parquet",
+    "source_bytes": 114562026,
+    "fasta": "/data/exp350/complex_sequences/shard-00058-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23584,
+    "sha256": "094056f4f870b3757a6c5843242717ba719dd9b83daad3ca33e549775abcf6d1"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00059-of-00171.parquet",
+    "source_bytes": 114484933,
+    "fasta": "/data/exp350/complex_sequences/shard-00059-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23644,
+    "sha256": "3d4e0756ed8e8c5ec5e24c3c069f481ee9451330f5fa380c0f101e736548ec24"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00060-of-00171.parquet",
+    "source_bytes": 114254862,
+    "fasta": "/data/exp350/complex_sequences/shard-00060-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23589,
+    "sha256": "68087d5879e13c9fcb603d2eb09bc59973357c5771da563d6947ad9d8d4703fa"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00061-of-00171.parquet",
+    "source_bytes": 113438305,
+    "fasta": "/data/exp350/complex_sequences/shard-00061-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23584,
+    "sha256": "2defcf7ddbd0919b46390517602df3e2af813b19639feebe46c24998f8c3aa01"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00062-of-00171.parquet",
+    "source_bytes": 113788385,
+    "fasta": "/data/exp350/complex_sequences/shard-00062-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23618,
+    "sha256": "83e44b0d2a113e5b1d1b3fda11bd4edc2e88bcfd751fc52a76f3c942435d12c4"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00063-of-00171.parquet",
+    "source_bytes": 114895404,
+    "fasta": "/data/exp350/complex_sequences/shard-00063-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23601,
+    "sha256": "12a49ad57ef819596d7e80527b11acc3edbce59f86ac5f9a451a476be2dfac04"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00064-of-00171.parquet",
+    "source_bytes": 113764758,
+    "fasta": "/data/exp350/complex_sequences/shard-00064-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23574,
+    "sha256": "a868fa6662b526f06d90dd62c37662f4d80f36b4082ae5f9440b9ae9a61218a0"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00065-of-00171.parquet",
+    "source_bytes": 114079975,
+    "fasta": "/data/exp350/complex_sequences/shard-00065-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23649,
+    "sha256": "9009c2bdf323946f5ef83f050906521257dee6ee12e85c8778e379a697a9ad04"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00066-of-00171.parquet",
+    "source_bytes": 114629815,
+    "fasta": "/data/exp350/complex_sequences/shard-00066-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23549,
+    "sha256": "c51087c71851b381692362f45d23ba46d0258cd7897a75ae3a4ee538635705d5"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00067-of-00171.parquet",
+    "source_bytes": 114029807,
+    "fasta": "/data/exp350/complex_sequences/shard-00067-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23540,
+    "sha256": "81d9fcc9ccb107a89c34050c74ed16ab3b69654c9894ac362ce9a5f125daa127"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00068-of-00171.parquet",
+    "source_bytes": 114100198,
+    "fasta": "/data/exp350/complex_sequences/shard-00068-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23667,
+    "sha256": "ee10d616375c328900a1f23aec4056fb085f372d8b37c7970d0fb0476db5226f"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00069-of-00171.parquet",
+    "source_bytes": 114570062,
+    "fasta": "/data/exp350/complex_sequences/shard-00069-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23532,
+    "sha256": "2397cb89f74f64bb1325e9a5edf356b9abd685bcefd4d04573c85c293d5dbfac"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00070-of-00171.parquet",
+    "source_bytes": 114335207,
+    "fasta": "/data/exp350/complex_sequences/shard-00070-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23541,
+    "sha256": "7b52c9fa7d27ecfbf2e109127299c8e1077694ba8ba3a15799b333946b04bc2f"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00071-of-00171.parquet",
+    "source_bytes": 114176465,
+    "fasta": "/data/exp350/complex_sequences/shard-00071-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23610,
+    "sha256": "8e11eeb445db783c2157d3d85d9d407d200f2c559e25b636c2a9b6eb749818f5"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00072-of-00171.parquet",
+    "source_bytes": 113415775,
+    "fasta": "/data/exp350/complex_sequences/shard-00072-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23518,
+    "sha256": "7b45ce8df01bdbc83b91b8bfe2be6cf848eb696766dc17ac85c28093afd0d318"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00073-of-00171.parquet",
+    "source_bytes": 114225232,
+    "fasta": "/data/exp350/complex_sequences/shard-00073-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23623,
+    "sha256": "c1d39627cc69b09e62bb8176604d4fcee85cc3f923b9d90a97c091f6b2b591b4"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00074-of-00171.parquet",
+    "source_bytes": 114552672,
+    "fasta": "/data/exp350/complex_sequences/shard-00074-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23519,
+    "sha256": "258ab4577babd98d95f2d8890b0d878d91ab3b2574b9787217b742609e2d3305"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00075-of-00171.parquet",
+    "source_bytes": 113958736,
+    "fasta": "/data/exp350/complex_sequences/shard-00075-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23561,
+    "sha256": "f625a26209a2a7a5bb4db1ca40a3cd715e0d5813530be87df40af9d74494f349"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00076-of-00171.parquet",
+    "source_bytes": 113859507,
+    "fasta": "/data/exp350/complex_sequences/shard-00076-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23648,
+    "sha256": "b87a52d5b571053a4266b6aa63d71fd22dc810ca220ef68ceb517dbb8067213f"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00077-of-00171.parquet",
+    "source_bytes": 114051296,
+    "fasta": "/data/exp350/complex_sequences/shard-00077-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23611,
+    "sha256": "c0c6cee7f10000a5b0f03e34a8f538cf334fb2a2001da95764d29277655bdf31"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00078-of-00171.parquet",
+    "source_bytes": 114617377,
+    "fasta": "/data/exp350/complex_sequences/shard-00078-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23513,
+    "sha256": "0d6b6ff06ebb4e7bff178588e8e5dc88d1ef2923f2129f9a0cd852322134783b"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00079-of-00171.parquet",
+    "source_bytes": 113804951,
+    "fasta": "/data/exp350/complex_sequences/shard-00079-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23590,
+    "sha256": "1e0fd8ce319a77d3371c61c6ea070ffd269f7a62a4a905aba82020b3d15c3c58"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00080-of-00171.parquet",
+    "source_bytes": 114577125,
+    "fasta": "/data/exp350/complex_sequences/shard-00080-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23651,
+    "sha256": "baadf7480430863d70984ac8a84688725eae3fcc0a13ab0d81dde06b66d4e70c"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00081-of-00171.parquet",
+    "source_bytes": 113608229,
+    "fasta": "/data/exp350/complex_sequences/shard-00081-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23631,
+    "sha256": "4da15306847a695fd31199dfae0dc87a369e9cfa6e33a24df08d7f62ec214c60"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00082-of-00171.parquet",
+    "source_bytes": 114057562,
+    "fasta": "/data/exp350/complex_sequences/shard-00082-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23638,
+    "sha256": "2457c3685e7194d16e8096aa8de3836df012823ece47819c42c1a95586ec471f"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00083-of-00171.parquet",
+    "source_bytes": 114150141,
+    "fasta": "/data/exp350/complex_sequences/shard-00083-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23623,
+    "sha256": "f6b1d8f02976249cabbdb8c09a4ff3e744e48e6e0cacffb25a8282f23b13c45c"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00084-of-00171.parquet",
+    "source_bytes": 113989159,
+    "fasta": "/data/exp350/complex_sequences/shard-00084-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23555,
+    "sha256": "20969d1583ea6f51c6f9d4a8276275c639ba78be2a5bee629f9519d00521b871"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00085-of-00171.parquet",
+    "source_bytes": 113039931,
+    "fasta": "/data/exp350/complex_sequences/shard-00085-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23680,
+    "sha256": "6665b225b7e832bb0269db7b367ebbc67ed33fa79d26c592222b2c4e4f43d698"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00086-of-00171.parquet",
+    "source_bytes": 114661136,
+    "fasta": "/data/exp350/complex_sequences/shard-00086-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23591,
+    "sha256": "e61d4802afd5b5ad4ee092124c0b40a83899cc0fef433e5d7d7d2d39ec148898"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00087-of-00171.parquet",
+    "source_bytes": 114712594,
+    "fasta": "/data/exp350/complex_sequences/shard-00087-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23560,
+    "sha256": "758b41e82da82e62a4f856753ffc85f9df357a149550b6c0cbd66ba29e5f68e0"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00088-of-00171.parquet",
+    "source_bytes": 113965715,
+    "fasta": "/data/exp350/complex_sequences/shard-00088-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23602,
+    "sha256": "c88692828003bab2a75f50d7b88e8771b499238e5e106dc603fc362703108dc5"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00089-of-00171.parquet",
+    "source_bytes": 113693807,
+    "fasta": "/data/exp350/complex_sequences/shard-00089-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23672,
+    "sha256": "55273aa6f3c34c8a9970e7ddec98e640c34859c78a6d7e99e8ef5fabd322e2d5"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00090-of-00171.parquet",
+    "source_bytes": 114583420,
+    "fasta": "/data/exp350/complex_sequences/shard-00090-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23520,
+    "sha256": "a449067e572e9ac6565b96dd892963df7790320eb03ebd46cdcfe90e0e956a8c"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00091-of-00171.parquet",
+    "source_bytes": 113904325,
+    "fasta": "/data/exp350/complex_sequences/shard-00091-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23620,
+    "sha256": "64a7bd1a33a5a1abfdbdf16cb762ec855fe4fb83348196800e09952ddefc2117"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00092-of-00171.parquet",
+    "source_bytes": 114519223,
+    "fasta": "/data/exp350/complex_sequences/shard-00092-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23531,
+    "sha256": "090322b53fd16d8bc30cbbb59b88db8c61a77d08259bc9b21828486e86290b0a"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00093-of-00171.parquet",
+    "source_bytes": 113777454,
+    "fasta": "/data/exp350/complex_sequences/shard-00093-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23538,
+    "sha256": "e77c68a0d63f093db366fa71f8ddeb39857a285219e620451d0c24b9aa9cec0b"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00094-of-00171.parquet",
+    "source_bytes": 114587661,
+    "fasta": "/data/exp350/complex_sequences/shard-00094-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23440,
+    "sha256": "fa4525b311a2dd7c332be4bcdf431d123b6764569aec2d71aee24285754620fd"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00095-of-00171.parquet",
+    "source_bytes": 114565900,
+    "fasta": "/data/exp350/complex_sequences/shard-00095-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23622,
+    "sha256": "64c86c0700b278287a42e6adade279033271c33c747ecaefda7bf0a41e5e1e40"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00096-of-00171.parquet",
+    "source_bytes": 113930695,
+    "fasta": "/data/exp350/complex_sequences/shard-00096-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23577,
+    "sha256": "5a105029411bd88c9fbfbb95e5be6bb796b6b546993da05ca2efb7f2b995f140"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00097-of-00171.parquet",
+    "source_bytes": 114279266,
+    "fasta": "/data/exp350/complex_sequences/shard-00097-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23636,
+    "sha256": "d414c27af6cb0dd47c69915c1672e307f45d8d261c398bded7abdf40fba150e9"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00098-of-00171.parquet",
+    "source_bytes": 114251116,
+    "fasta": "/data/exp350/complex_sequences/shard-00098-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23487,
+    "sha256": "c1147f3c14037fc09c4f8e1ccaad52194347974b1c32ec23c64cd5b8486fea79"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00099-of-00171.parquet",
+    "source_bytes": 114503201,
+    "fasta": "/data/exp350/complex_sequences/shard-00099-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23644,
+    "sha256": "c66205ad74482488564149502c16bf6c278ac4928984be6b5c49eb7588f5f61d"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00100-of-00171.parquet",
+    "source_bytes": 114757909,
+    "fasta": "/data/exp350/complex_sequences/shard-00100-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23530,
+    "sha256": "4e0b08ce7e8a3bd8460fd583bd10ccef5b5729e82b5ee965ad8e90dde2676126"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00101-of-00171.parquet",
+    "source_bytes": 114667990,
+    "fasta": "/data/exp350/complex_sequences/shard-00101-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23570,
+    "sha256": "04e40655f302afbf1b21df0d2fcad666a7faa60477fdd2931ebb1eefb6d05e2d"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00102-of-00171.parquet",
+    "source_bytes": 114473317,
+    "fasta": "/data/exp350/complex_sequences/shard-00102-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23637,
+    "sha256": "64e7dbd31e49b686aedceee5a09557761bcf9bab653f996aea8c9b44c1000923"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00103-of-00171.parquet",
+    "source_bytes": 113244555,
+    "fasta": "/data/exp350/complex_sequences/shard-00103-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23658,
+    "sha256": "7219d680128704b9ca011a09d4819a6626f4e977a0f6f8ab1f78c1314ce858f3"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00104-of-00171.parquet",
+    "source_bytes": 114930706,
+    "fasta": "/data/exp350/complex_sequences/shard-00104-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23561,
+    "sha256": "fb42df0e200b85b2ea5f6d6072ac2771e50cb9f3ff65d4009f00348a5374bb91"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00105-of-00171.parquet",
+    "source_bytes": 114238076,
+    "fasta": "/data/exp350/complex_sequences/shard-00105-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23521,
+    "sha256": "e1494edfa8e5728f19aef1d39152301e0a1ab161bbcd6fa7b6f96b9b1dfee4a1"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00106-of-00171.parquet",
+    "source_bytes": 114284266,
+    "fasta": "/data/exp350/complex_sequences/shard-00106-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23573,
+    "sha256": "486411aacf0f4633db3a9ba24e2c75a915d4024c289e8067e55cb9255ac63bfc"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00107-of-00171.parquet",
+    "source_bytes": 114340292,
+    "fasta": "/data/exp350/complex_sequences/shard-00107-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23503,
+    "sha256": "bc3546bd2d3bf45ff9aeabc7b9eb6ec0d9354e8711e485880a13d37df90cd3a1"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00108-of-00171.parquet",
+    "source_bytes": 114433445,
+    "fasta": "/data/exp350/complex_sequences/shard-00108-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23663,
+    "sha256": "0475179445745909e1249e4c241d4c5d368ce6ed38b465dfdb9b2a2cd153a7b1"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00109-of-00171.parquet",
+    "source_bytes": 113586569,
+    "fasta": "/data/exp350/complex_sequences/shard-00109-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23668,
+    "sha256": "73ae049681d3c992f90a870cbd9da59ea5bf98aba39adaed1d608382bcc70d58"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00110-of-00171.parquet",
+    "source_bytes": 115006023,
+    "fasta": "/data/exp350/complex_sequences/shard-00110-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23574,
+    "sha256": "3e7464d4b5f71b71df912ab172cfa83e65f9d391aee5c2bca4568f68429c7241"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00111-of-00171.parquet",
+    "source_bytes": 114006204,
+    "fasta": "/data/exp350/complex_sequences/shard-00111-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23554,
+    "sha256": "6c3de39c3e1ef17562c4ab71380213050925054ea134f3e9427dfc056d24561f"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00112-of-00171.parquet",
+    "source_bytes": 114359900,
+    "fasta": "/data/exp350/complex_sequences/shard-00112-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23635,
+    "sha256": "41abc5570f4702114c35496ded6dcba22ae5ab969ab6be5fba9dd08d29296a8b"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00113-of-00171.parquet",
+    "source_bytes": 114876135,
+    "fasta": "/data/exp350/complex_sequences/shard-00113-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23586,
+    "sha256": "c895516b1cd52eb8ec4bd357f075b0243151330abd4160c4062a82c87e6b86df"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00114-of-00171.parquet",
+    "source_bytes": 115090327,
+    "fasta": "/data/exp350/complex_sequences/shard-00114-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23508,
+    "sha256": "ca38306a87600c2badf421d3de3d2fe1f7203d033734946335f2c8195c0ba7ee"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00115-of-00171.parquet",
+    "source_bytes": 114057926,
+    "fasta": "/data/exp350/complex_sequences/shard-00115-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23510,
+    "sha256": "33b65c95892da2e9971e88fc957a13871616c77fd0a113e409e80a9d134523b6"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00116-of-00171.parquet",
+    "source_bytes": 114351365,
+    "fasta": "/data/exp350/complex_sequences/shard-00116-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23586,
+    "sha256": "1265992f7cbf29b35ca53ad5734742db6315a9c152234aa8a75c0ace45874555"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00117-of-00171.parquet",
+    "source_bytes": 114431655,
+    "fasta": "/data/exp350/complex_sequences/shard-00117-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23596,
+    "sha256": "0433af00f6b79a3d1a817faa26e94b9bc5cbef8e5723a89c630518833ba616e9"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00118-of-00171.parquet",
+    "source_bytes": 114199650,
+    "fasta": "/data/exp350/complex_sequences/shard-00118-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23663,
+    "sha256": "7c01aa6552a0995f50c13b16d02695695ebb24889bee8d423394d9aa7f644b11"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00119-of-00171.parquet",
+    "source_bytes": 114387225,
+    "fasta": "/data/exp350/complex_sequences/shard-00119-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23623,
+    "sha256": "75292cb5dc5afc2dfe20c1ecbc64192d9ade2352f79021d6ce5f4cbb1eac0457"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00120-of-00171.parquet",
+    "source_bytes": 113485296,
+    "fasta": "/data/exp350/complex_sequences/shard-00120-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23520,
+    "sha256": "5072111ec612a7ffa55a0378dcc2ce2543079f137800c0bf05b49b2f363bf81b"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00121-of-00171.parquet",
+    "source_bytes": 114144072,
+    "fasta": "/data/exp350/complex_sequences/shard-00121-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23617,
+    "sha256": "599e60e0fc5153888112e2a733d0bfdbe6b7069b6ad5a299c7dfbcefe713bf55"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00122-of-00171.parquet",
+    "source_bytes": 114509691,
+    "fasta": "/data/exp350/complex_sequences/shard-00122-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23542,
+    "sha256": "93ce4bcee1082f239c618e6aa9c58650fcfb6781a44a58f9579978963418b40d"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00123-of-00171.parquet",
+    "source_bytes": 113315439,
+    "fasta": "/data/exp350/complex_sequences/shard-00123-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23585,
+    "sha256": "019828f87d27b4d0d4c79d5b84dda960cb3edcaacea5126724e376006c70011b"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00124-of-00171.parquet",
+    "source_bytes": 114205904,
+    "fasta": "/data/exp350/complex_sequences/shard-00124-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23474,
+    "sha256": "138c991b063beb6baca1a9f5983f8997b5f9c4d0321a87cbe202cc7954521556"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00125-of-00171.parquet",
+    "source_bytes": 114786455,
+    "fasta": "/data/exp350/complex_sequences/shard-00125-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23579,
+    "sha256": "ae106b46689d71486d63bc7c5a9462e5be1d504f49cfff922e8df614e89e4383"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00126-of-00171.parquet",
+    "source_bytes": 113825143,
+    "fasta": "/data/exp350/complex_sequences/shard-00126-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23432,
+    "sha256": "5a0c8f081864793fc7dd90f3ed0639e2c4af3c70dbdc8d1d9f3cf90b6f016460"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00127-of-00171.parquet",
+    "source_bytes": 114009164,
+    "fasta": "/data/exp350/complex_sequences/shard-00127-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23559,
+    "sha256": "d9f4e430265d73afec62b71d912fff85bd071566c26fd0ed3161b8c242742c1e"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00128-of-00171.parquet",
+    "source_bytes": 113612081,
+    "fasta": "/data/exp350/complex_sequences/shard-00128-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23658,
+    "sha256": "fb0c40f53064d50a4514fe4bab2dfd137b5e117d4cfae4d15481aa4091cd2fc1"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00129-of-00171.parquet",
+    "source_bytes": 114852009,
+    "fasta": "/data/exp350/complex_sequences/shard-00129-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23510,
+    "sha256": "3e6906307128b44a2c03392b926c1dcd822245df57962cc25333abfba2a39108"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00130-of-00171.parquet",
+    "source_bytes": 114247205,
+    "fasta": "/data/exp350/complex_sequences/shard-00130-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23494,
+    "sha256": "51c0a153f9c94142375fe0ffa0e1185910cbf755b383048cc8724b8ff7e9c9a8"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00131-of-00171.parquet",
+    "source_bytes": 114766544,
+    "fasta": "/data/exp350/complex_sequences/shard-00131-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23509,
+    "sha256": "e5733ad3ed6103a135834e78951a49a159f90c185dba89eccac3ede8b3d1b655"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00132-of-00171.parquet",
+    "source_bytes": 115471329,
+    "fasta": "/data/exp350/complex_sequences/shard-00132-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23557,
+    "sha256": "b31a3207c33e0809c3bbedee7d10a423be3e928b500168e0c216629933f5048b"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00133-of-00171.parquet",
+    "source_bytes": 114685495,
+    "fasta": "/data/exp350/complex_sequences/shard-00133-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23610,
+    "sha256": "ee4b7e5c7c5d9c6bab4465dc684be5a1ed3c51c1e8c00d05877fbd70af0a1aaa"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00134-of-00171.parquet",
+    "source_bytes": 114200518,
+    "fasta": "/data/exp350/complex_sequences/shard-00134-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23576,
+    "sha256": "a437b0b010dbae3edc1413c0eef68737e085aa36062bb154ff7b9653b0ad0d81"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00135-of-00171.parquet",
+    "source_bytes": 115126934,
+    "fasta": "/data/exp350/complex_sequences/shard-00135-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23696,
+    "sha256": "1d67a25c426930ab30d404743ef91d6b4d43303c0896b73342a962da6d0ae1f3"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00136-of-00171.parquet",
+    "source_bytes": 113591522,
+    "fasta": "/data/exp350/complex_sequences/shard-00136-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23629,
+    "sha256": "685d82b75b2eb9fbb69000cf2fce6917950ff9a1ae03b04c8887f658bc5d3962"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00137-of-00171.parquet",
+    "source_bytes": 114224232,
+    "fasta": "/data/exp350/complex_sequences/shard-00137-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23502,
+    "sha256": "e54a5b5beeb63de762441a1632055ab94ddf91d5075112cd8f3a19aeb89c51eb"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00138-of-00171.parquet",
+    "source_bytes": 114347096,
+    "fasta": "/data/exp350/complex_sequences/shard-00138-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23541,
+    "sha256": "390e5b1e1cb93444cbe85c40da6f56e9c2d677fbaab6476dc1bbddfeece24b46"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00139-of-00171.parquet",
+    "source_bytes": 113891085,
+    "fasta": "/data/exp350/complex_sequences/shard-00139-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23639,
+    "sha256": "0a0e6d71c315933fc5f7cb6b262800181555e5cb3795cf5a5a1688c32c62b83d"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00140-of-00171.parquet",
+    "source_bytes": 114641298,
+    "fasta": "/data/exp350/complex_sequences/shard-00140-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23598,
+    "sha256": "986596e916d6f1d2a1d1ea0225015d0928c296aaed014a07eb9a4c2f6ae3e999"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00141-of-00171.parquet",
+    "source_bytes": 114490324,
+    "fasta": "/data/exp350/complex_sequences/shard-00141-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23642,
+    "sha256": "9402b7806488bb83fe694060ac7d0c71b630d561e9a24059cb19af11b406583e"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00142-of-00171.parquet",
+    "source_bytes": 114844377,
+    "fasta": "/data/exp350/complex_sequences/shard-00142-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23549,
+    "sha256": "717b644296d02bdd9ad28ca0829f86b8865098de19c6fc7f2ea3ee8ec6022b71"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00143-of-00171.parquet",
+    "source_bytes": 114721957,
+    "fasta": "/data/exp350/complex_sequences/shard-00143-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23568,
+    "sha256": "c76e0e512cddf05e4d32d74b74f2af8c3bc870f3c2e6cda8570d510c65039060"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00144-of-00171.parquet",
+    "source_bytes": 113853548,
+    "fasta": "/data/exp350/complex_sequences/shard-00144-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23623,
+    "sha256": "6a97c644bb7277d0cb7e9336eb70d222550ceddfe727e1315fc2b1b50a137cdb"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00145-of-00171.parquet",
+    "source_bytes": 113119757,
+    "fasta": "/data/exp350/complex_sequences/shard-00145-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23539,
+    "sha256": "c0933a07eb775ae0772ce199e5192f06d99fad2fc238b219f6a82eb89fef21bd"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00146-of-00171.parquet",
+    "source_bytes": 113126462,
+    "fasta": "/data/exp350/complex_sequences/shard-00146-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23611,
+    "sha256": "e4212d9f1436cb8ec59ddd52024ae0d86c4f63dbc1b89060edfac7362d72f5ea"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00147-of-00171.parquet",
+    "source_bytes": 114374019,
+    "fasta": "/data/exp350/complex_sequences/shard-00147-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23576,
+    "sha256": "44537359b1ea25ad83242a6cc68df1c8a1ec8a5f59f5a783fb4f95d41d825646"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00148-of-00171.parquet",
+    "source_bytes": 113827509,
+    "fasta": "/data/exp350/complex_sequences/shard-00148-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23584,
+    "sha256": "c480090d44f2636c0c220c1e930252e6068ffbf6fcdf13f0e321643eda0df1d6"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00149-of-00171.parquet",
+    "source_bytes": 115029611,
+    "fasta": "/data/exp350/complex_sequences/shard-00149-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23659,
+    "sha256": "0fb54b61e9bdc0cdc0d72883fdc6186be7331038e0650c574dcbcb908f039d95"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00150-of-00171.parquet",
+    "source_bytes": 114125320,
+    "fasta": "/data/exp350/complex_sequences/shard-00150-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23638,
+    "sha256": "d12bc1eb8783f445949fbee4f7116bce06c7a2e7fdda5d308d624f2b6be6d519"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00151-of-00171.parquet",
+    "source_bytes": 113853006,
+    "fasta": "/data/exp350/complex_sequences/shard-00151-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23630,
+    "sha256": "faf4cb67aab988144ac3788df473c5de2f08b2acc7ff77be708ea653d93a7ce3"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00152-of-00171.parquet",
+    "source_bytes": 114011353,
+    "fasta": "/data/exp350/complex_sequences/shard-00152-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23635,
+    "sha256": "bc04a8c073b756bb5d2b78623f2e39f60b805fedf843eab08d703b819ae54ccb"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00153-of-00171.parquet",
+    "source_bytes": 114287742,
+    "fasta": "/data/exp350/complex_sequences/shard-00153-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23624,
+    "sha256": "a9ebdf4c434dc229b086ce10f9d8c2d1eea33f479a81e67b340a14859799fe06"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00154-of-00171.parquet",
+    "source_bytes": 113870428,
+    "fasta": "/data/exp350/complex_sequences/shard-00154-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23593,
+    "sha256": "8cfa2e43f259887eb4e715e159f6889ba6446372fe5be1363f1812d41bfec60f"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00155-of-00171.parquet",
+    "source_bytes": 115089511,
+    "fasta": "/data/exp350/complex_sequences/shard-00155-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23636,
+    "sha256": "c9d2ddf41f2eaa7ac963fac1f561c32e87bc5da8a3009e8edb5503ad6d604cf6"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00156-of-00171.parquet",
+    "source_bytes": 114217575,
+    "fasta": "/data/exp350/complex_sequences/shard-00156-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23608,
+    "sha256": "69891180413d115c88ba08ddc7df7c944773b8820cf3ffe8750416a4a64c86b8"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00157-of-00171.parquet",
+    "source_bytes": 114084406,
+    "fasta": "/data/exp350/complex_sequences/shard-00157-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23603,
+    "sha256": "5220712611f5a322edb1f035a6db7a8470bf98214b573126d9ec540392dda4ab"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00158-of-00171.parquet",
+    "source_bytes": 113887028,
+    "fasta": "/data/exp350/complex_sequences/shard-00158-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23582,
+    "sha256": "bd0a8c1e609ba68fd4eeb94768e250c8f86da1c8c8b4a8586efb6b84ad48e966"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00159-of-00171.parquet",
+    "source_bytes": 113948102,
+    "fasta": "/data/exp350/complex_sequences/shard-00159-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23548,
+    "sha256": "79d1689595abc3c6004334236351470d9fba6e2e8735ec24c5c54023327f3039"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00160-of-00171.parquet",
+    "source_bytes": 114489766,
+    "fasta": "/data/exp350/complex_sequences/shard-00160-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23633,
+    "sha256": "82d30b915e695ac395866f6c0ab75b5a321d96bf4797d89fe842c3932ea0cb0d"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00161-of-00171.parquet",
+    "source_bytes": 114814549,
+    "fasta": "/data/exp350/complex_sequences/shard-00161-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23556,
+    "sha256": "12eef919acb6bb075d6b13e0c383415c400af519da729043e6f3bcf7d8197663"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00162-of-00171.parquet",
+    "source_bytes": 114879796,
+    "fasta": "/data/exp350/complex_sequences/shard-00162-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23624,
+    "sha256": "b9218ce0a83a93b265eac81efc5e193a1ca5f39483481bfda14cc698f8f0f0a2"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00163-of-00171.parquet",
+    "source_bytes": 114753065,
+    "fasta": "/data/exp350/complex_sequences/shard-00163-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23573,
+    "sha256": "3a6292b56d5b41d9ef000f148f5ea12793a272e33b484dfd5af53a90b44ba091"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00164-of-00171.parquet",
+    "source_bytes": 115722308,
+    "fasta": "/data/exp350/complex_sequences/shard-00164-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23504,
+    "sha256": "7bf691a2f13c336bdc27b3702e7f035e8e1d55161b2203975c4359c8a1608658"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00165-of-00171.parquet",
+    "source_bytes": 114398205,
+    "fasta": "/data/exp350/complex_sequences/shard-00165-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23542,
+    "sha256": "7a152525a6dc804ea29ab9cb4dd9e091b0704afcd0a83929798af892e451ee17"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00166-of-00171.parquet",
+    "source_bytes": 114722435,
+    "fasta": "/data/exp350/complex_sequences/shard-00166-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23603,
+    "sha256": "db95ed8e56c3cfd7fa2aa68da9d2e01f94f4207a3264b44d9b4c109ffdc0f454"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00167-of-00171.parquet",
+    "source_bytes": 114329179,
+    "fasta": "/data/exp350/complex_sequences/shard-00167-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23628,
+    "sha256": "6609816634eccb181d0b02073d31a473bd7f4c0bc34f9d48a00bf933aeef3c8f"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00168-of-00171.parquet",
+    "source_bytes": 114443868,
+    "fasta": "/data/exp350/complex_sequences/shard-00168-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23536,
+    "sha256": "25e4e1af7e2b2d89afffd8e289cf5384d96b9ebee35b56ffca0688bcc75dee57"
+  },
+  {
+    "source": "/data/exp294_release/corpus/train/shard-00169-of-00171.parquet",
+    "source_bytes": 114731202,
+    "fasta": "/data/exp350/complex_sequences/shard-00169-of-00171.fasta",
+    "documents": 20000,
+    "unique_chains_per_document": 23556,
+    "sha256": "dde5c7f2bb1703fb27cbd5f5cb01f887c8a3e9ff875c3fd8a1b5b0318ebdfbc8"
+  }
+]
