@@ -57,7 +57,7 @@ def main() -> None:
         gpu_compute_capability=f'{gpu.major}.{gpu.minor}',hostname=socket.gethostname(),
         platform=platform.platform(),torch_version=torch.__version__)
     assess = tokenizer.convert_tokens_to_ids(ASSESSMENT)
-    summaries, timings, calibration = [], [], defaultdict(lambda:np.zeros(3,dtype=float))
+    summaries, timings, contact_scores, calibration = [], [], [], defaultdict(lambda:np.zeros(3,dtype=float))
     for batch in table.to_batches(max_chunksize=128):
         for row in batch.to_pylist():
             if row['entry_id'] not in mine:
@@ -92,6 +92,11 @@ def main() -> None:
                     count=max(1,round(len(q)*fraction))
                     stats[f'precision_retained_{fraction}']=float(y[np.argsort(-q,kind='stable')[:count]].mean())
                 summaries.append(stats)
+                if label == 'full':
+                    contact_scores.append(dict(identity=row['identity'], entry_id=row['entry_id'],
+                        group_id=row['group_id'], L=row['L'], gt_count=row['gt_count'],
+                        pairs=np.asarray(row['pairs'])[unique].tolist(), labels=y.tolist(),
+                        probabilities=q.tolist(), predicted_recall=float(recall[0])))
                 for probability, truth in zip(q,y,strict=True):
                     bucket=min(9,int(probability*10))
                     calibration[(label,bucket)] += [1,float(probability),float(truth)]
@@ -101,6 +106,7 @@ def main() -> None:
                     timestamp_utc=datetime.now(UTC).isoformat(),**worker))
     write_rows(summaries,args.out+f'/per_rollout-rank-{rank}.parquet')
     write_rows(timings,args.out+f'/timings-rank-{rank}.parquet')
+    write_rows(contact_scores,args.out+f'/contact_scores-rank-{rank}.parquet')
     write_rows([dict(prefix=k[0],bin=k[1],count=v[0],sum_probability=v[1],sum_truth=v[2]) for k,v in calibration.items()],
                args.out+f'/calibration-rank-{rank}.parquet')
     write_json(dict(rank=rank,world=world,proteins=len(mine),rows=len(summaries),checkpoint=args.checkpoint),

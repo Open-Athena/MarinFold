@@ -67,36 +67,38 @@ def main() -> None:
                 settings.append(SamplingParams(temperature=1.0, top_p=0.95, top_k=-1,
                     max_tokens=budget, stop_token_ids=[end_id], skip_special_tokens=False,
                     seed=stable_seed('sample:' + identity)))
+        # vLLM 0.9.2's V1 offline API returns metrics=None. Measure one protein's
+        # rollout batch directly so timings remain attributable to that protein.
+        # Durable files still group several proteins to amortize S3 writes.
+        results = []
+        per_target = {}
         inference_started = time.perf_counter()
-        results = llm.generate(prompts, settings, use_tqdm=False)
+        for index, target in enumerate(batch):
+            first = index * args.rollouts
+            last = first + args.rollouts
+            protein_started = time.perf_counter()
+            results.extend(llm.generate(prompts[first:last], settings[first:last], use_tqdm=False))
+            per_target[target['entry_id']] = time.perf_counter() - protein_started
         batch_seconds = time.perf_counter() - inference_started
         records, timing = [], []
-        per_target = {}
         for (target, identity, offset, prompt_ids), result in zip(work, results, strict=True):
             output = result.outputs[0]
             completion_ids = list(output.token_ids)
             tokens = tokenizer.convert_ids_to_tokens(completion_ids)
             parsed = parse_contacts(tokens, offset, target['L'], target['contacts'])
             finished = output.finish_reason == 'stop' and bool(completion_ids) and completion_ids[-1] == end_id
-            if result.metrics is None:
-                raise ValueError('vLLM request timing metrics are required')
-            metrics = result.metrics
-            if metrics.first_scheduled_time is None or metrics.finished_time is None:
-                raise ValueError('Incomplete request timing metrics')
-            per_target.setdefault(target['entry_id'], []).append((metrics.first_scheduled_time, metrics.finished_time))
             records.append(dict(identity=identity, entry_id=target['entry_id'], split=target['split'],
                 group_id=target['group_id'], L=target['L'], gt_count=len(target['contacts']),
                 prompt_ids=prompt_ids, completion_ids=completion_ids, finished=finished,
                 finish_reason=output.finish_reason, **parsed))
         total_seconds = time.perf_counter() - batch_started
         for target in batch:
-            intervals = per_target[target['entry_id']]
             timing.append(dict(stem=target['entry_id'], n_residues=target['L'], n_pairs=len(target['contacts']),
-                mode='rollout-supervision', elapsed_seconds=max(t[1] for t in intervals)-min(t[0] for t in intervals),
+                mode='rollout-supervision', elapsed_seconds=per_target[target['entry_id']],
                 model_load_seconds=load_seconds, total_seconds=total_seconds+load_seconds,
-                batch_elapsed_seconds=batch_seconds, timing_scope='per-protein engine scheduled-to-finished span',
+                batch_elapsed_seconds=batch_seconds, timing_scope='direct per-protein rollout-batch wall time',
                 total_scope='shared batch setup+inference+serialization, plus full worker load',
-                n_rollouts=args.rollouts, batch_size=len(work), batch_id=key,
+                n_rollouts=args.rollouts, batch_size=args.rollouts, batch_id=key,
                 timestamp_utc=datetime.now(UTC).isoformat(), **worker))
         write_rows(records, args.out + '/' + key + '.parquet')
         write_rows(timing, args.out + '/' + key + '.timings.parquet')

@@ -3,6 +3,7 @@ set -euo pipefail
 unset FSSPEC_S3_CONFIG_KWARGS
 export TOKENIZERS_PARALLELISM=false
 export OMP_NUM_THREADS=4
+export VLLM_LOGGING_LEVEL=ERROR
 VLLM_PY=""
 for candidate in /app/.venv/bin/python /usr/local/bin/python /usr/bin/python3 /opt/venv/bin/python python3 python; do
   if "$candidate" -c 'import torch, vllm' >/dev/null 2>&1; then VLLM_PY="$candidate"; break; fi
