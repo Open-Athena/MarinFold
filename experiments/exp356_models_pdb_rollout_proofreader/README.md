@@ -44,6 +44,8 @@ The early step-500 checkpoint is not release quality. The complete validation pa
 
 Training continues. On the fixed training-time validation sample, step 1,000 improves contact Brier from 0.235 at step 500 to 0.215, precision MAE from 0.273 to 0.239, and recall MAE from 0.077 to 0.051. These sample metrics are separate from the full evaluation above.
 
+A comparison preserves exp277's causal backbone as a frozen feature extractor and trains a four-layer, 512-wide bidirectional encoder over contact triples. Each triple contributes the backbone states of its three tokens; a global readout also receives the sequence-prompt boundary, the last supplied token and prefix-size features. This keeps pretrained causal features intact while still allowing later contacts to revise earlier judgments. Both architectures pass the 18-test suite, including attention behavior, frozen gradients, padding and save/load checks. The comparison is undergoing an eight-H100 optimizer-recovery smoke before a bounded training comparison on the same frozen corpus.
+
 Production inputs are frozen at `s3://marin-us-east-02a/MarinFold/exp356/data/v1/targets.parquet`; checksums and selection counts are in `data/targets_provenance.json`. The target parquet and provenance are also public under `hf://buckets/open-athena/MarinFold/data/exp356/`. The new held-out splits measure proofreading generalization; they do not establish absence from the backbone's pretraining corpus.
 
 ## Conclusion

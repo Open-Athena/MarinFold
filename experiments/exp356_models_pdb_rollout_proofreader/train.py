@@ -121,7 +121,8 @@ def checkpoint(model, tokenizer, optimizer, args, step: int, epoch: int, next_ba
         path = local_root / f'step-{step}'
         metadata = dict(architecture=model.architecture, step=step,
             epoch=epoch, next_batch=next_batch, data_fingerprint=data_hash,
-            generator=GENERATOR, assessment_token=ASSESSMENT, attention='bidirectional',
+            generator=GENERATOR, assessment_token=ASSESSMENT,
+            attention='causal_backbone_bidirectional_contact_encoder' if model.architecture==FROZEN_ARCHITECTURE else 'bidirectional',
             precision='mean unique-contact probabilities', config=vars(args), best_validation_loss=best_loss,
             code=json.loads(Path('code_manifest.json').read_text()))
         model.save(path, tokenizer, metadata)
@@ -227,6 +228,8 @@ def main() -> None:
         run = wandb.init(entity='open-athena', project='MarinFold', id=args.run_name,
             name=args.run_name, resume='allow', config={**vars(args), 'data_fingerprint':data_hash,
                 'code':json.loads(Path('code_manifest.json').read_text()),
+                'trainable_parameters':sum(p.numel() for p in model.parameters() if p.requires_grad),
+                'total_parameters':sum(p.numel() for p in model.parameters()),
                 'world_size':world, 'train_rollouts':len(train_table), 'steps_per_epoch':steps_per_epoch,
                 'max_steps':max_steps}, tags=['exp356', 'proofreader', 'experimental-pdb', 'bidirectional'])
         run.define_metric('optimizer_step')

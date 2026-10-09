@@ -1,8 +1,10 @@
-"""Bidirectional exp277 encoder with parallel contact and recall readouts.
+"""Whole-prefix proofreading with fully trained or frozen exp277 features.
 
 Qwen3Model's public precomputed-mask mapping bypasses causal mask creation.
 Passing is_causal=False also disables SDPA's implicit causal flag when an
 unpadded batch needs no explicit mask. No imported modules are monkey-patched.
+The comparison model retains causal backbone features and trains a separate
+bidirectional contact encoder, preserving the same future-evidence contract.
 """
 
 import json
