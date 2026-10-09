@@ -95,14 +95,19 @@ class Example:
     identity: str
 
 
-def make_example(row: dict, k: int, assessment_id: int) -> Example:
-    """Crop at a complete contact boundary; expose EOS only if genuinely seen."""
+def make_example(row: dict, k: int, assessment_id: int, *, include_end: bool = True) -> Example:
+    """Crop at a contact boundary, optionally retaining an observed final EOS.
+
+    Explicit prefixes use include_end=False even when their last contact happens
+    to be the final generated contact: the later EOS has not yet been observed.
+    Complete-rollout views may retain the generator's genuine end marker.
+    """
     count = len(row['contact_ends'])
     if not 1 <= k <= count:
         raise ValueError(f'Prefix {k} outside 1..{count}')
     end = row['contact_ends'][k-1] + 1
     completion = row['completion_ids'][:end]
-    if k == count and row['finished']:
+    if include_end and k == count and row['finished']:
         completion = row['completion_ids']
     prompt = row['prompt_ids']
     ids = prompt + completion + [assessment_id]

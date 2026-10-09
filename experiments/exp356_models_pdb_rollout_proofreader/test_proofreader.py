@@ -71,6 +71,17 @@ def test_duplicates_do_not_inflate_precision_or_recall():
     assert example.precision == example.recall == 0.5
 
 
+def test_single_contact_prefix_does_not_reveal_that_the_generator_will_stop():
+    row = dict(prompt_ids=[2,3],completion_ids=[4,5,6,1],contact_ends=[2],
+        labels=[1.],unique=[True],finished=True,gt_count=4,identity='protein:0')
+    prefix = make_example(row,1,20,include_end=False)
+    continuing = dict(row,completion_ids=[4,5,6,4,7,8,1],contact_ends=[2,5],
+        labels=[1.,0.],unique=[True,True])
+    assert prefix == make_example(continuing,1,20,include_end=False)
+    assert prefix.input_ids == [2,3,4,5,6,20]
+    assert make_example(row,1,20).input_ids == [2,3,4,5,6,1,20]
+
+
 def test_single_contact_and_variable_length_loss(reader):
     examples = [Example([2, 3, 4, 5], [2], [1.], [True], .2, 1., 'a'),
         Example([2, 3, 4, 5, 6, 7], [2, 5], [0., 1.], [True, True], .5, .5, 'b')]

@@ -148,12 +148,18 @@ def main() -> None:
             'precision','recall','precision_mae','recall_mae','brier','bce','auroc',
             'precision_retained_0.5','precision_emission_0.5','precision_gain_half') if part[key].notna().any()}
     first = frame[frame.prefix=='1'].set_index('identity')
-    full = frame[frame.prefix=='full'].set_index('identity')
-    paired = first[['entry_id','group_id','first_contact_label','first_contact_probability']].join(
-        full[['first_contact_probability']],rsuffix='_full',how='inner')
-    paired['brier_gain_from_context'] = (paired.first_contact_probability-paired.first_contact_label)**2-(
-        paired.first_contact_probability_full-paired.first_contact_label)**2
-    summary['context'] = interval(paired,'brier_gain_from_context')
+    context = {}
+    for prefix in ['2','4','8','16','32','64','full']:
+        later = frame[frame.prefix==prefix].set_index('identity')
+        if later.empty:
+            continue
+        paired = first[['entry_id','group_id','first_contact_label','first_contact_probability']].join(
+            later[['first_contact_probability']],rsuffix='_later',how='inner')
+        paired['brier_gain_from_context'] = (paired.first_contact_probability-paired.first_contact_label)**2-(
+            paired.first_contact_probability_later-paired.first_contact_label)**2
+        context[prefix] = interval(paired,'brier_gain_from_context')
+    summary['context'] = context['full']
+    summary['context_by_prefix'] = context
     contacts = []
     for path in sorted(local.glob('contact_scores-*.parquet')):
         contacts.extend(pq.read_table(path).to_pylist())

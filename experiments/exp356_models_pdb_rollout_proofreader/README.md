@@ -52,6 +52,8 @@ Production inputs are frozen at `s3://marin-us-east-02a/MarinFold/exp356/data/v1
 
 The frozen-backbone comparison wins the complete step-2,000 validation: full-rollout AUROC 0.763, Brier 0.167, precision MAE 0.096 and recall MAE 0.103. Its one-contact Brier is 0.179, and later context improves first-contact Brier by 0.0176 (95% group-bootstrap interval 0.0123–0.0224). Selecting the highest-scored half gives precision 0.570, versus 0.407 for the first half in emission order. Probability-weighted aggregation improves R-precision from 0.517 to 0.528 (gain interval 0.0078–0.0148); rollout selection improves precision from 0.409 to 0.452. These results select the frozen-backbone architecture for continued production training through the existing three-epoch schedule. Its optimizer resumes from step 2,000 in `/bizon/exp356-train-frozen-prod-a02`. Tables are in `data/frozen_validation_step2000_*`.
 
+Final evaluation tightens an explicit-prefix boundary case: it stops at the requested contact even when that contact happens to be the last in a completed rollout. Earlier evaluations also included the end marker in that case (75 of 12,394 validation rollouts matched one of the evaluated boundaries; three had one contact). Full-rollout metrics are unaffected. The 19-test suite now includes a single-contact example whose future continuation and end status cannot change the supplied prefix. Final reports also measure paired first-contact Brier improvement at each later prefix, including prefixes without end markers.
+
 ## Conclusion
 
 _(Fill in after results are in.)_

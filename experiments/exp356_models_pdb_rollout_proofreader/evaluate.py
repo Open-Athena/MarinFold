@@ -69,7 +69,7 @@ def main() -> None:
                 if label != 'full' and k > n:
                     continue
                 begun = time.perf_counter()
-                example = make_example(row,k,assess)
+                example = make_example(row,k,assess,include_end=label=='full')
                 tensors = {key:torch.from_numpy(value).to(device) for key,value in collate([example],tokenizer.pad_token_id).items()}
                 torch.cuda.synchronize()
                 infer = time.perf_counter()
@@ -115,6 +115,7 @@ def main() -> None:
                args.out+f'/calibration-rank-{rank}.parquet')
     write_json(dict(rank=rank,world=world,proteins=len(mine),rows=len(summaries),checkpoint=args.checkpoint,
                    split=args.split,data_fingerprint=data_hash,
+                   prefix_end_policy='contact_boundary_except_full_rollout',
                    expected_proteins=len(ids),expected_ids_sha256=hashlib.sha256(json.dumps(ids).encode()).hexdigest(),
                    code=json.loads(Path('code_manifest.json').read_text()),job_id=os.environ['EXP356_JOB_ID']),
                args.out+f'/rank-{rank}.complete.json')

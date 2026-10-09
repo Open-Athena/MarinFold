@@ -26,6 +26,7 @@ def model_card(release: dict, metadata: dict, metrics: dict) -> str:
         f"{metrics[prefix]['precision_mae']['mean']:.4f} | {metrics[prefix]['recall_mae']['mean']:.4f} |"
         for prefix in ['1','2','4','8','16','32','64','full'])
     context = metrics['context']
+    prefix_context = metrics['context_by_prefix']['64']
     return f'''# MarinFold experimental-PDB rollout proofreader
 
 This model predicts a probability of correctness for every proposed contact in a
@@ -66,6 +67,9 @@ their rollouts. Full-rollout contact AUROC is {full['auroc']['mean']:.4f}.
 
 Later contacts improve first-contact Brier by {context['mean']:.4f}
 (95% group-bootstrap interval {context['low']:.4f}–{context['high']:.4f}).
+At 64 supplied contacts, with the end marker excluded, the paired improvement
+over one contact is {prefix_context['mean']:.4f}
+({prefix_context['low']:.4f}–{prefix_context['high']:.4f}) among eligible rollouts.
 Keeping the highest-scored half yields precision
 {full['precision_retained_0.5']['mean']:.4f}, compared with
 {full['precision_emission_0.5']['mean']:.4f} for the first half in emission order.
@@ -146,6 +150,9 @@ def main() -> None:
         raise ValueError('Release evaluations must share a checkpoint and audited corpus')
     if (validation['split'], validation['proteins'], test['split'], test['proteins']) != ('validation',1552,'test',1473):
         raise ValueError('Release requires complete production validation and test coverage')
+    if any(rank['prefix_end_policy'] != 'contact_boundary_except_full_rollout'
+           for report in [validation,test] for rank in report['ranks']):
+        raise ValueError('Explicit release prefixes must exclude later end markers')
     metadata = remote_json(checkpoint+'/proofreader.json')
     if metadata['architecture'] != 'exp277-frozen-causal-contact-encoder-v2':
         raise ValueError('The release card describes the selected frozen-backbone architecture')
