@@ -60,6 +60,8 @@ def main() -> None:
     parser.add_argument("--num-shards", type=int, default=12)
     parser.add_argument("--shards", type=int, nargs="+")
     parser.add_argument("--target-cluster", default="cw-us-east-02a")
+    parser.add_argument("--gpu", default="H100")
+    parser.add_argument("--image", default="vllm/vllm-openai:v0.9.2")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     phase = "smoke" if args.smoke else "production"
@@ -84,16 +86,16 @@ def main() -> None:
             ])
             command = [IRIS, "--cluster=marin", "job", "run", "--target-cluster", args.target_cluster,
                 "--priority", "batch", "--enable-extra-resources", "--user", "bizon",
-                "--job-name", job_name, "--gpu", "H100x1", "--cpu", "8", "--memory", "64GB",
+                "--job-name", job_name, "--gpu", f"{args.gpu}x1", "--cpu", "8", "--memory", "64GB",
                 "--disk", "32GB", "--max-retries", "2", "--timeout", "7200", "--no-wait",
-                "--no-sync", "--task-image", "vllm/vllm-openai:v0.9.2",
+                "--no-sync", "--task-image", args.image,
                 "--", "bash", "-lc", shell]
             print(f"Submit {job_name}: {out}", flush=True)
             if not args.dry_run:
                 subprocess.run(command, cwd=bundle, check=True)
             jobs.append(f"/bizon/{job_name}")
         provenance.update(jobs=jobs, output_uri=out, target_cluster=args.target_cluster,
-                          num_shards=args.num_shards, phase=phase)
+                          num_shards=args.num_shards, phase=phase, gpu=args.gpu, image=args.image)
         destination = HERE / "data" / f"{args.run_id}-{phase}-submission.json"
         destination.parent.mkdir(exist_ok=True)
         destination.write_text(json.dumps(provenance, indent=2) + "\n")
