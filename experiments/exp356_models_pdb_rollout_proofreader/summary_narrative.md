@@ -20,7 +20,9 @@ Behavioral tests pass: later evidence affects earlier judgments, padding is invi
 
 The one-H100 smoke resumed from a durable step-6 checkpoint, reproduced validation metrics exactly, and trained through step 12. The eight-H100 smoke completed four steps with global batch 64; validation loss fell from 0.913 to 0.684. Its checkpoint also completed the evaluation/reporting pipeline. No production-quality claim yet.
 
-All 32 production generation shards completed: 3,328 batches, about 0.99 GB of rollout parquet. The final audit checks raw token/contact alignment, reference labels and full target coverage before training.
+All 32 production generation shards completed. The full audit passed: 423,371 retained trajectories across all 53,025 structures, with 109.3 million contact labels. Malformed and empty outputs were excluded; every structure retains usable trajectories.
+
+Production training is running on eight H100s: exp356-exp277-bidir-pdb50k-v1. Three epochs over 399,213 training rollouts, global batch 64, 18,714 steps. Validation selects the final checkpoint; no final held-out quality claim yet.
 
 ## Production data and validation
 
