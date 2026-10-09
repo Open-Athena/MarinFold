@@ -124,6 +124,8 @@ def main() -> None:
     calibration.to_csv(data/f'{args.label}_calibration.csv',index=False)
     read_pattern(local,'timings-*.parquet').to_csv(data/f'{args.label}_timings.csv.gz',index=False)
     fig, axes = plt.subplots(1,3,figsize=(15,4))
+    checkpoint=markers[0]['checkpoint'].split('/checkpoints/')[-1]
+    fig.suptitle(f'{args.label}: {checkpoint}',fontsize=10)
     for prefix in ['1','8','64','full']:
         part = calibration[calibration.prefix==prefix]
         axes[0].plot(part.predicted,part.observed,'o-',label=prefix)
@@ -140,7 +142,7 @@ def main() -> None:
     axes[2].set(ylabel='R-precision',title='Aggregation across eight rollouts',ylim=(0,1))
     fig.tight_layout()
     save_plot_with_meta(fig,HERE/'plots'/f'{args.label}_quality.png',
-        caption='Held-out protein means. Calibration bins pool contacts; confidence intervals in metrics JSON resample related groups.',dpi=150)
+        caption=f'{args.label}, {checkpoint}. Protein means; calibration bins pool contacts. Confidence intervals in metrics JSON resample related groups.',dpi=150)
     print(json.dumps({key:value for key,value in summary.items() if key in {'1','full','context','aggregation'}},indent=2))
 
 

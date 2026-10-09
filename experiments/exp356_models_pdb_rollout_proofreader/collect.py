@@ -3,22 +3,24 @@
 import argparse
 import hashlib
 import json
+import re
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pandas as pd
+import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-from storage import ROOT, filesystem, read_rows, upload_directory, write_json
+from storage import GENERATOR, ROOT, filesystem, read_rows, upload_directory, write_json
 
 HERE = Path(__file__).resolve().parent
 
 
-def inspect_file(task: tuple[str, str, dict]) -> tuple[dict, list[dict], list[dict]]:
+def inspect_file(task: tuple[str, str, dict, dict, np.ndarray]) -> tuple[dict, list[dict], list[dict]]:
     """Inspect one committed batch and its contemporaneous per-input timings."""
-    source, name, targets = task
+    source, name, targets, vocab, position_indices = task
     fs, root = filesystem(source)
     stem = name.removesuffix('.parquet')
     if not fs.exists(root + '/' + stem + '.done.json'):
@@ -29,6 +31,19 @@ def inspect_file(task: tuple[str, str, dict]) -> tuple[dict, list[dict], list[di
     audit = []
     for row in rows:
         target = targets[row['entry_id']]
+        ends = np.asarray(row['contact_ends'],dtype=int)
+        completion = np.asarray(row['completion_ids'],dtype=int)
+        if len(ends):
+            if np.any(completion[ends-2] != vocab['<contact>']):
+                raise ValueError(f"Readout is not attached to a contact triple: {row['identity']}")
+            raw = position_indices[completion[np.stack([ends-1,ends],axis=1)]]
+            if np.any((raw<0)|(raw>=2000)):
+                raise ValueError(f"Contact endpoint outside the residue ring: {row['identity']}")
+            prompt = row['prompt_ids']
+            offset = position_indices[prompt[prompt.index(vocab['<n-term>'])+1]]
+            decoded = np.sort((raw-offset)%2000,axis=1)
+            if not np.array_equal(decoded,np.asarray(row['pairs'])):
+                raise ValueError(f"Raw token/contact index mismatch: {row['identity']}")
         truth = {tuple(pair) for pair in target['contacts']}
         seen = set()
         for pair,label,unique in zip(row['pairs'],row['labels'],row['unique'],strict=True):
@@ -70,10 +85,17 @@ def main() -> None:
             raise ValueError('Shard generation configuration differs from the requested audit')
     targets = read_rows(args.targets)
     by_id = {r['entry_id']:r for r in targets}
+    tokenizer_fs,tokenizer_path = filesystem(GENERATOR+'/tokenizer.json')
+    vocab = json.loads(tokenizer_fs.cat(tokenizer_path))['model']['vocab']
+    position_indices = np.full(max(vocab.values())+1,-1,dtype=np.int32)
+    for token,token_id in vocab.items():
+        match = re.fullmatch(r'<p(\d+)>',token)
+        if match:
+            position_indices[token_id] = int(match[1])
     names = sorted(Path(p).name for p in fs.glob(root + '/shard-*-batch-*.parquet') if not p.endswith('.timings.parquet'))
     files, audit, timings = [], [], []
     with ThreadPoolExecutor(12) as pool:
-        for item, records, measured in pool.map(inspect_file, [(args.source,n,by_id) for n in names]):
+        for item, records, measured in pool.map(inspect_file, [(args.source,n,by_id,vocab,position_indices) for n in names]):
             files.append(item)
             audit.extend(records)
             timings.extend(measured)

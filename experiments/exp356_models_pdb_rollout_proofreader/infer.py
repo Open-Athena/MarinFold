@@ -28,6 +28,8 @@ def score_rollout(model, tokenizer, prompt_ids: list[int], completion_ids: list[
     prompt_tokens = tokenizer.convert_ids_to_tokens(prompt_ids)
     if not prompt_tokens or prompt_tokens[-1] != '<begin_statements>':
         raise ValueError('Prompt must end at <begin_statements>')
+    if prompt_tokens[0] != '<contacts-v1>' or prompt_tokens.count('<n-term>') != 1 or prompt_tokens.count('<c-term>') != 1:
+        raise ValueError('This checkpoint expects one protein chain in a contacts-v1 document')
     amino_tokens = {'<'+name+'>' for name in AA.values()}
     length = sum(token in amino_tokens for token in prompt_tokens)
     n_term = prompt_tokens.index('<n-term>')
