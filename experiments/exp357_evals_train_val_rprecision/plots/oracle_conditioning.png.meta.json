@@ -1,0 +1,5 @@
+{
+  "script": "analyze.py",
+  "args": [],
+  "caption": "Each line connects unconditioned and true-contact-conditioned predictions for the same 32 proteins, 100 rollouts each. Supplied pairs are removed from both candidate universes; oracle information cannot earn direct credit. This is a diagnostic, not a deployable accuracy estimate."
+}

@@ -1,0 +1,46 @@
+{
+  "experiment": 357,
+  "run_id": "v1",
+  "owner": "bizon",
+  "cluster": "cw-us-east-02a",
+  "job_id": "/bizon/exp357-v1-a02",
+  "submitted_utc": "2026-10-09T20:58:26Z",
+  "worker_image": "vllm/vllm-openai:v0.9.2",
+  "gpu": "H100",
+  "shards_per_checkpoint": 12,
+  "smoke_samples_per_checkpoint": {
+    "unconditioned": 1000,
+    "oracle": 100,
+    "unfinished": 0
+  },
+  "expected_units_per_checkpoint": 609,
+  "expected_production_samples": 313800,
+  "first_attempt": {
+    "job_id": "/bizon/exp357-v1-a01",
+    "submitted_utc": "2026-10-09T20:51:49Z",
+    "failure": "Linux single-argument limit exceeded before inference",
+    "recovery": "Stage worker ZIP on regional S3 instead of embedding it in shell argv"
+  },
+  "working_uri": "s3://marin-us-east-02a/MarinFold/exp357_evals_train_val_rprecision/v1",
+  "public_uri": "hf://buckets/open-athena/MarinFold/data/exp357-train-val-rprecision/v1",
+  "validation_reference": "exp277 eval_rollout_v2_epochs/subset_aggregate_metrics.csv, eval-val all and long R, absolute tolerance 0.005",
+  "status": "complete",
+  "repair_jobs": [
+    {
+      "job_id": "/bizon/exp357-v1-repair05",
+      "checkpoint": "exp277",
+      "shard": "5/12",
+      "reason": "EADDRINUSE during vLLM engine initialization; no inference outputs; retry unchanged code and seeds"
+    }
+  ],
+  "collection_job": "/bizon/exp357-v1-collect",
+  "production_collected_utc": "2026-10-09T21:28:28Z",
+  "cap_check_job": "/bizon/exp357-v1-capcheck-a01",
+  "cap_check_units": 3,
+  "cap_check_additional_samples": 2300,
+  "original_unfinished_samples": 3,
+  "final_unfinished_samples": 0,
+  "export_job": "/bizon/exp357-export-v1",
+  "final_report_uri": "hf://buckets/open-athena/MarinFold/data/exp357-train-val-rprecision/v1/report",
+  "original_coordinator_cancelled_after_all_outputs": true
+}

@@ -1,0 +1,5 @@
+{
+  "script": "analyze.py",
+  "args": [],
+  "caption": "Nested rollout budgets on 32 fixed diagnostic proteins per cohort. Same proteins at every budget; shaded 95% protein bootstrap intervals. Single-rollout rankings include ties and are distinct from sample F1."
+}
