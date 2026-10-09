@@ -31,3 +31,9 @@ Frozen: 50,000 training structures from 46,933 PDB entries, containing 34,894 di
 Every supplied residue is observed: canonical sequences or unique contiguous segments with at most 20 terminal residues omitted per end and at least 90% coverage. Internal gaps and truncated contact references are rejected. Benchmark homologs are excluded, and explicit searches check split boundaries.
 
 Test precision, recall and calibration from one contact through full rollouts. Measure whether later evidence improves the first contact's judgment and whether proofreading improves contact selection.
+
+## Early checkpoint: not ready for release
+
+At step 500, fixed-sample validation loss fell from 0.924 to 0.676, mainly through recall prediction. A preview on the first 128 sorted validation IDs (35 related groups) remains weak: mean full-rollout contact AUROC 0.531, Brier 0.232. Weighted aggregation R-precision is 0.442 versus 0.441 for frequency alone.
+
+Later contacts do not yet improve the first contact's judgment. This checkpoint is not a production-quality model. Training continues; the complete 1,552-structure validation split is being scored to avoid relying on this narrow preview.

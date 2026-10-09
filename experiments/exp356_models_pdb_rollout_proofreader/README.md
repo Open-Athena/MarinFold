@@ -40,6 +40,8 @@ All 32 production generation shards completed, writing 3,328 batches (about 0.99
 
 Production training is running as [exp356-exp277-bidir-pdb50k-v1](https://wandb.ai/open-athena/MarinFold/runs/exp356-exp277-bidir-pdb50k-v1), on eight H100s in CoreWeave US-East-02A. Three epochs over 399,213 retained training rollouts require 18,714 optimizer steps at global batch 64. Validation runs every 500 steps; model, tokenizer and optimizer checkpoints are committed to co-located storage before recovery pointers advance. Final held-out quality is not yet measured.
 
+The early step-500 preview is not release quality. On the first 128 validation IDs in sorted order (35 related groups), mean within-protein full-rollout AUROC is 0.531 and Brier score is 0.232. Probability-weighted aggregation gives R-precision 0.442 versus 0.441 for frequency alone; additional context worsens first-contact Brier by 0.014. This limited preview is diagnostic, not representative of the complete validation split. Training continues, and a full validation pass is checking the early checkpoint across all 1,552 validation structures. Detailed tables are under `data/preview_step500_*`.
+
 Production inputs are frozen at `s3://marin-us-east-02a/MarinFold/exp356/data/v1/targets.parquet`; checksums and selection counts are in `data/targets_provenance.json`. The target parquet and provenance are also public under `hf://buckets/open-athena/MarinFold/data/exp356/`. The new held-out splits measure proofreading generalization; they do not establish absence from the backbone's pretraining corpus.
 
 ## Conclusion
