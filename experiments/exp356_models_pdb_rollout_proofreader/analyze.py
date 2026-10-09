@@ -99,7 +99,7 @@ def plot_report(label: str) -> None:
     provenance = json.loads((data/f'{label}_evaluation.json').read_text())
     calibration = pd.read_csv(data/f'{label}_calibration.csv')
     fig, axes = plt.subplots(1,3,figsize=(15,4))
-    checkpoint=provenance['checkpoint'].split('/checkpoints/')[-1]
+    checkpoint='/'.join(provenance['checkpoint'].rstrip('/').split('/')[-2:])
     fig.suptitle(f'{label}: {checkpoint}',fontsize=10)
     for prefix in ['1','8','64','full']:
         part = calibration[calibration.prefix==prefix]

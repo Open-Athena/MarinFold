@@ -59,3 +59,11 @@ The complete validation comparison selects the frozen-backbone model: AUROC 0.76
 At step 2,000, later context improves first-contact Brier by 0.0176 (95% group-bootstrap interval 0.0123–0.0224). Keeping the highest-scored half gives precision 0.570, versus 0.407 for the first half in emission order. Weighted aggregation improves R-precision from 0.517 to 0.528; rollout selection improves precision from 0.409 to 0.452.
 
 The selected model resumes its existing three-epoch schedule from step 2,000. Full training, final validation, reserved test evaluation and publication remain in progress.
+
+## After one full epoch: better quality estimates
+
+Step 7,000 covers every training rollout at least once. Complete validation: full-rollout AUROC 0.782, Brier 0.152, precision MAE 0.0565 and recall MAE 0.0577. Keeping the highest-scored half gives precision 0.580 versus 0.407 for the first half. Weighted aggregation R-precision is 0.530 versus 0.517.
+
+Later contacts improve earlier judgments before an end marker is visible. First-contact Brier improves by 0.0070 after two contacts, 0.0142 after eight, and 0.0158 after 64 (95% interval 0.0131–0.0185). Explicit prefixes now exclude an end marker even at the final contact boundary. Contact calibration is close to the diagonal.
+
+Training continues through three epochs. The final checkpoint is selected using validation; the reserved test remains unread. Nineteen behavioral tests pass.

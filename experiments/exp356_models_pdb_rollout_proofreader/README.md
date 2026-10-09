@@ -54,6 +54,8 @@ The frozen-backbone comparison wins the complete step-2,000 validation: full-rol
 
 Final evaluation tightens an explicit-prefix boundary case: it stops at the requested contact even when that contact happens to be the last in a completed rollout. Earlier evaluations also included the end marker in that case (75 of 12,394 validation rollouts matched one of the evaluated boundaries; three had one contact). Full-rollout metrics are unaffected. The 19-test suite now includes a single-contact example whose future continuation and end status cannot change the supplied prefix. Final reports also measure paired first-contact Brier improvement at each later prefix, including prefixes without end markers.
 
+After the first complete training epoch, the step-7,000 checkpoint improves full validation further: AUROC 0.782, Brier 0.152, precision MAE 0.0565 and recall MAE 0.0577. The highest-scored half reaches precision 0.580 versus 0.407 for the first half in emission order. Weighted aggregation R-precision is 0.530 versus 0.517. Contact calibration is close to the diagonal across tested prefix lengths. Paired first-contact Brier improves by 0.0070 after two contacts, 0.0142 after eight and 0.0158 after 64 (64-contact 95% interval 0.0131–0.0185), with end markers excluded from these explicit prefixes. The complete-rollout gain is 0.0156. Tables are under `data/frozen_validation_step7000_*`. Training continues through the remaining epochs; the reserved test split remains unread.
+
 ## Conclusion
 
 _(Fill in after results are in.)_

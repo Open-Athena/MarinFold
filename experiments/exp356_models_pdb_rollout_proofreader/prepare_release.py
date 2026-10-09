@@ -43,7 +43,7 @@ judgments. A single contact is a supported input; no unseen continuation is supp
 - Training: 50,000 experimental PDB chain structures (46,933 PDB entries;
   34,894 distinct supplied sequences; 9,074 connected related groups).
 - 399,213 retained training rollouts; eight generator samples requested per structure.
-  Three completed epochs, global batch 64 on eight CoreWeave H100 GPUs.
+  The training run completed three epochs, global batch 64 on eight CoreWeave H100 GPUs.
 - Selected step: {metadata['step']}; training completed at step {release['training_completed_step']}.
 - [W&B]({release['wandb_url']}); [implementation and reports](https://github.com/Open-Athena/MarinFold/tree/{release['git_commit']}/experiments/exp356_models_pdb_rollout_proofreader).
 
@@ -59,7 +59,8 @@ only when the generator has actually emitted it.
 The final test covers 1,473 structures in 295 related groups. The 1,552-structure
 validation split selected the architecture and checkpoint; the reserved test was
 evaluated after selection. Values below are means over proteins after averaging
-their rollouts. Full-rollout contact AUROC is {full['auroc']['mean']:.4f}.
+their rollouts. Full-rollout contact AUROC is {full['auroc']['mean']:.4f};
+AUROC excludes rollouts containing only one reference class.
 
 | Contacts supplied | Contact Brier | Precision MAE | Recall MAE |
 | --- | ---: | ---: | ---: |
@@ -146,6 +147,9 @@ def main() -> None:
     validation = json.loads((HERE/'data'/f'{args.validation_label}_evaluation.json').read_text())
     test = json.loads((HERE/'data'/f'{args.test_label}_evaluation.json').read_text())
     checkpoint = validation['checkpoint']
+    selection = json.loads((HERE/'data/release_selection.json').read_text())
+    if selection['selected']['checkpoint'] != checkpoint or selection['reserved_test_evaluated']:
+        raise ValueError('Release must use the checkpoint frozen before reserved-test evaluation')
     if test['checkpoint'] != checkpoint or validation['data_fingerprint'] != test['data_fingerprint']:
         raise ValueError('Release evaluations must share a checkpoint and audited corpus')
     if (validation['split'], validation['proteins'], test['split'], test['proteins']) != ('validation',1552,'test',1473):
