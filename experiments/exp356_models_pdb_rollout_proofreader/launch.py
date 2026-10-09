@@ -7,6 +7,7 @@ import netrc
 import os
 import shlex
 import subprocess
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -37,6 +38,7 @@ def main() -> None:
         '--timeout', str(3*86400), '--max-retries', '2', '--task-image',
         GEN_IMAGE if args.kind == 'generate' else TRAIN_IMAGE,
         '--exclude', r'(^|/)(_cache|\.venv|wandb|data|plots|__pycache__)/']
+    command += ['-e','EXP356_JOB_ID','/bizon/'+args.name]
     if args.gpus:
         command += ['--gpu', f'H100x{args.gpus}']
     secret = None
@@ -77,7 +79,7 @@ def main() -> None:
         raise ValueError('Inspect Iris: submission did not confirm the expected job ID')
     state = dict(job_id=job_id, kind=args.kind, cluster=args.cluster, submitted_at=submitted,
                  resubmit_command=redacted, restart_count=0, monitoring_owner='exp356-root-agent',
-                 source=source_manifest)
+                 source=source_manifest,launcher_arguments=sys.argv[1:])
     path = HERE / '_cache/jobs'
     path.mkdir(parents=True, exist_ok=True)
     (path / f'{args.name}.json').write_text(json.dumps(state, indent=2))

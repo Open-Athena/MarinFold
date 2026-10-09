@@ -76,7 +76,8 @@ def validation(model, table, tokenizer, device, rank: int, world: int, limit: in
         writer = csv.DictWriter(output, fieldnames=list(timings[0]))
         writer.writeheader()
         writer.writerows(timings)
-        fs, key = filesystem(timing_uri+f'/rank-{rank}.csv')
+        measurement = datetime.now(UTC).strftime('%Y%m%dT%H%M%S%f')
+        fs, key = filesystem(timing_uri+f'/rank-{rank}-{measurement}.csv')
         fs.pipe(key, output.getvalue().encode())
     if world > 1:
         dist.all_reduce(counts)
@@ -228,7 +229,7 @@ def main() -> None:
         run.define_metric('optimizer_step')
         run.define_metric('train/*',step_metric='optimizer_step')
         run.define_metric('validation/*',step_metric='optimizer_step')
-        write_json(dict(wandb_url=run.url, wandb_name=args.run_name, job_id=os.getenv('IRIS_JOB_ID'),
+        write_json(dict(wandb_url=run.url, wandb_name=args.run_name, job_id=os.environ['EXP356_JOB_ID'],
             max_steps=max_steps, started_at=datetime.now(UTC).isoformat()), f'{args.out}/runs/{args.run_name}/started.json')
         print(f'[exp356] WANDB {run.url} max_steps={max_steps}', flush=True)
     assess = tokenizer.convert_tokens_to_ids(ASSESSMENT)

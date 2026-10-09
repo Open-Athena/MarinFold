@@ -122,7 +122,7 @@ def main() -> None:
     frame.to_csv(data/f'{args.label}_per_rollout.csv.gz',index=False)
     aggregated.to_csv(data/f'{args.label}_aggregation.csv',index=False)
     calibration.to_csv(data/f'{args.label}_calibration.csv',index=False)
-    read_pattern(local,'timings-*.parquet').to_csv(data/f'{args.label}_timings.csv',index=False)
+    read_pattern(local,'timings-*.parquet').to_csv(data/f'{args.label}_timings.csv.gz',index=False)
     fig, axes = plt.subplots(1,3,figsize=(15,4))
     for prefix in ['1','8','64','full']:
         part = calibration[calibration.prefix==prefix]

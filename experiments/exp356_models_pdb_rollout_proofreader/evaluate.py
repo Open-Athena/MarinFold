@@ -111,7 +111,8 @@ def main() -> None:
     write_rows(contact_scores,args.out+f'/contact_scores-rank-{rank}.parquet')
     write_rows([dict(prefix=k[0],bin=k[1],count=v[0],sum_probability=v[1],sum_truth=v[2]) for k,v in calibration.items()],
                args.out+f'/calibration-rank-{rank}.parquet')
-    write_json(dict(rank=rank,world=world,proteins=len(mine),rows=len(summaries),checkpoint=args.checkpoint),
+    write_json(dict(rank=rank,world=world,proteins=len(mine),rows=len(summaries),checkpoint=args.checkpoint,
+                   code=json.loads(Path('code_manifest.json').read_text()),job_id=os.environ['EXP356_JOB_ID']),
                args.out+f'/rank-{rank}.complete.json')
     if world > 1:
         dist.destroy_process_group()

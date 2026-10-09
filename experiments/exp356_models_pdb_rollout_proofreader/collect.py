@@ -104,7 +104,7 @@ def main() -> None:
     data = HERE / 'data'
     data.mkdir(exist_ok=True)
     (data / f'{args.label}_rollout_manifest.json').write_text(json.dumps(manifest,indent=2))
-    pd.DataFrame(timings).to_csv(data / f'{args.label}_timings.csv', index=False)
+    pd.DataFrame(timings).to_csv(data / f'{args.label}_timings.csv.gz', index=False)
     pd.DataFrame(audit).to_csv(data / f'{args.label}_rollout_audit.csv.gz', index=False)
     if args.report_out:
         upload_directory(data, args.report_out)
