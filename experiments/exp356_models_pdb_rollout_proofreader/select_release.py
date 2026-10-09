@@ -53,7 +53,7 @@ def main() -> None:
     selected = min(candidates,key=lambda item:(item['objective'],item['checkpoint']))
     result = dict(selected=selected,candidates=candidates,data_fingerprint=next(iter(fingerprints)),
         criterion='Mean over eight prefix lengths of protein-mean (contact BCE + recall squared error)',
-        reserved_test_evaluated=False,selected_at=datetime.now(UTC).isoformat())
+        reserved_test_evaluated_at_selection=False,selected_at=datetime.now(UTC).isoformat())
     (data/'release_selection.json').write_text(json.dumps(result,indent=2))
     print(json.dumps(result,indent=2))
 

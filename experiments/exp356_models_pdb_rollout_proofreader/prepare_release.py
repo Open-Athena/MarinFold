@@ -148,7 +148,7 @@ def main() -> None:
     test = json.loads((HERE/'data'/f'{args.test_label}_evaluation.json').read_text())
     checkpoint = validation['checkpoint']
     selection = json.loads((HERE/'data/release_selection.json').read_text())
-    if selection['selected']['checkpoint'] != checkpoint or selection['reserved_test_evaluated']:
+    if selection['selected']['checkpoint'] != checkpoint or selection['reserved_test_evaluated_at_selection']:
         raise ValueError('Release must use the checkpoint frozen before reserved-test evaluation')
     if test['checkpoint'] != checkpoint or validation['data_fingerprint'] != test['data_fingerprint']:
         raise ValueError('Release evaluations must share a checkpoint and audited corpus')
