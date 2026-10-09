@@ -1,6 +1,8 @@
 """Durable, co-located storage and provenance for the proofreader experiment."""
 
 import hashlib
+import csv
+import io
 import json
 import os
 import shutil
@@ -42,6 +44,18 @@ def write_json(value: dict, uri: str) -> None:
     """Write a JSON object, used last as the commit marker for grouped artifacts."""
     fs, path = filesystem(uri)
     fs.pipe_file(path, json.dumps(value, indent=2).encode())
+
+
+def write_csv(rows: list[dict], uri: str) -> None:
+    """Persist measured predictor timings in the repository's portable CSV format."""
+    if not rows:
+        raise ValueError('Cannot write an empty timing ledger')
+    buffer = io.StringIO()
+    writer = csv.DictWriter(buffer, fieldnames=list(rows[0]))
+    writer.writeheader()
+    writer.writerows(rows)
+    fs, path = filesystem(uri)
+    fs.pipe_file(path, buffer.getvalue().encode())
 
 
 def stage_directory(source: str, destination: Path) -> None:

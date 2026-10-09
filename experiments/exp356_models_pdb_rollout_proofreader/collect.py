@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from storage import ROOT, filesystem, read_rows, write_json
+from storage import ROOT, filesystem, read_rows, upload_directory, write_json
 
 HERE = Path(__file__).resolve().parent
 
@@ -47,6 +47,7 @@ def main() -> None:
     parser.add_argument('--shards', type=int, default=32)
     parser.add_argument('--rollouts', type=int, default=8)
     parser.add_argument('--label', default='production')
+    parser.add_argument('--report-out', help='Publish the small audit and timing ledgers from a cluster worker')
     args = parser.parse_args()
     fs, root = filesystem(args.source)
     missing = [i for i in range(args.shards) if not fs.exists(f'{root}/shard-{i:03d}.complete.json')]
@@ -90,6 +91,8 @@ def main() -> None:
     (data / f'{args.label}_rollout_manifest.json').write_text(json.dumps(manifest,indent=2))
     pd.DataFrame(timings).to_csv(data / f'{args.label}_timings.csv', index=False)
     pd.DataFrame(audit).to_csv(data / f'{args.label}_rollout_audit.csv.gz', index=False)
+    if args.report_out:
+        upload_directory(data, args.report_out)
     print(json.dumps(counts,indent=2))
 
 

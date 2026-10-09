@@ -1,13 +1,14 @@
-"""Select complete experimental chains and freeze homology-separated targets.
+"""Select fully observed experimental sequences and freeze separated targets.
 
 The source contacts are usable as complete references only when the serialized
-resolved sequence equals the deposited canonical entity sequence and the source
-contact list was not token-budget truncated. This intentionally excludes chains
-with unresolved residues instead of treating their missing contacts as negatives.
+resolved sequence equals the canonical sequence or one unambiguous contiguous
+segment after removing short terminal tails. Internal gaps and token-budget
+truncated references are excluded. Unobserved residues never become negatives.
 """
 
 import argparse
 import hashlib
+import gzip
 import json
 import random
 import re
@@ -87,6 +88,17 @@ def write_fasta(rows: list[dict], path: Path) -> None:
     path.write_text(''.join(f">{r['entry_id']}\n{r['sequence']}\n" for r in rows))
 
 
+def canonical_span(sequence: str, canonical: str, maximum_trim: int, minimum_coverage: float) -> tuple[int,int] | None:
+    """Accept only a unique contiguous sequence with bounded terminal omissions."""
+    if len(sequence) < minimum_coverage*len(canonical) or canonical.count(sequence) != 1:
+        return None
+    begin = canonical.find(sequence)
+    end = begin+len(sequence)
+    if begin < 0 or begin > maximum_trim or len(canonical)-end > maximum_trim:
+        return None
+    return begin,end
+
+
 def command(args: list[str], log: Path) -> None:
     """Run an audited external program, preserving its complete output."""
     print(' '.join(args), flush=True)
@@ -96,11 +108,15 @@ def command(args: list[str], log: Path) -> None:
 
 def homology_search(query: Path, target: Path, out: Path, threads: int) -> set[tuple[str, str]]:
     """Find >=30% identity hits covering >=50% of the shorter sequence."""
-    if not out.exists():
-        command([str(MMSEQS), 'easy-search', str(query), str(target), str(out), str(out) + '.tmp',
+    digest = hashlib.sha256(query.read_bytes() + b'\0' + target.read_bytes()).hexdigest()
+    stamp = out.with_suffix('.sha256')
+    if not out.exists() or not stamp.exists() or stamp.read_text() != digest:
+        out.unlink(missing_ok=True)
+        command([str(MMSEQS), 'easy-search', str(query), str(target), str(out), str(out) + f'.{digest[:12]}.tmp',
                  '--min-seq-id', '0.3', '-c', '0', '-s', '7.5', '--max-seqs', '10000',
                  '--threads', str(threads), '--format-output', 'query,target,fident,alnlen,qlen,tlen',
                  '--alignment-mode', '3'], out.with_suffix('.log'))
+        stamp.write_text(digest)
     hits = set()
     with out.open() as handle:
         for line in handle:
@@ -132,7 +148,9 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('--source', type=Path, default=Path('/data/exp222_pdb_curation/docs/monomers'))
     parser.add_argument('--cif-dir', default='/data/tim/af3-db/mmcif_files')
-    parser.add_argument('--out', type=Path, default=HERE / '_cache/prepared')
+    parser.add_argument('--out', type=Path, default=HERE / '_cache/prepared-v2')
+    parser.add_argument('--max-terminal-crop', type=int, default=20)
+    parser.add_argument('--minimum-coverage', type=float, default=0.9)
     parser.add_argument('--threads', type=int, default=24)
     parser.add_argument('--train-count', type=int, default=50000)
     parser.add_argument('--validation-count', type=int, default=1500)
@@ -140,8 +158,13 @@ def main() -> None:
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
     eligible_path = args.out / 'eligible.parquet'
+    eligibility_config = dict(version=2,source=str(args.source),cif_dir=args.cif_dir,
+        max_terminal_crop=args.max_terminal_crop,minimum_coverage=args.minimum_coverage)
+    config_path = args.out / 'eligibility_config.json'
     counts = Counter()
     if eligible_path.exists():
+        if json.loads(config_path.read_text()) != eligibility_config:
+            raise ValueError('Eligibility settings changed; use a new output directory')
         rows = pq.read_table(eligible_path).to_pylist()
         counts.update(json.loads((args.out / 'eligibility_counts.json').read_text()))
     else:
@@ -151,6 +174,10 @@ def main() -> None:
         # Keep multiple genuinely different structures, with at most one equivalent
         # ASU chain per entry/family. Family balancing happens after completeness QC.
         candidates = {}
+        metadata = pq.read_table(args.source.parents[1]/'metadata/entries.parquet',
+            columns=['pdb_id','protein_entity_ids','protein_entity_lengths']).to_pylist()
+        entity_lengths = {(r['pdb_id'],entity):length for r in metadata
+            for entity,length in zip(r['protein_entity_ids'],r['protein_entity_lengths'],strict=True)}
         for shard in sorted(args.source.glob('*.parquet')):
             for row in pq.read_table(shard, columns=columns).to_pylist():
                 counts['source_chains'] += 1
@@ -168,6 +195,10 @@ def main() -> None:
                     continue
                 if row['num_chains'] != 1 or len(row['entity_ids']) != 1:
                     raise ValueError(f"Unexpected monomer schema {row['entry_id']}")
+                canonical_length = entity_lengths[(row['pdb_id'],row['entity_ids'][0])]
+                if not args.minimum_coverage*canonical_length <= row['seq_len'] <= canonical_length or canonical_length-row['seq_len'] > 2*args.max_terminal_crop:
+                    counts['insufficient_sequence_coverage'] += 1
+                    continue
                 sequence, contacts = decode_document(row)
                 if 'X' in sequence:
                     counts['unknown_residues'] += 1
@@ -186,15 +217,23 @@ def main() -> None:
         print(f'Checking canonical completeness in {len(pdb_ids)} entries', flush=True)
         with ProcessPoolExecutor(args.threads) as pool:
             full = dict(pool.map(read_sequences, [(p, args.cif_dir) for p in pdb_ids], chunksize=64))
+        with gzip.open(args.out/'canonical_sequences.json.gz','wt') as handle:
+            json.dump(full,handle)
         rows = []
         for row in candidates.values():
-            if full[row['pdb_id']][row['entity_id']] != row['sequence']:
+            canonical = full[row['pdb_id']][row['entity_id']]
+            span = canonical_span(row['sequence'],canonical,args.max_terminal_crop,args.minimum_coverage)
+            if span is None:
                 counts['incomplete_or_noncanonical_chain'] += 1
                 continue
+            begin,end = span
+            row.update(canonical_length=len(canonical),canonical_start=begin,canonical_end=end)
+            counts['terminally_cropped_chain' if len(canonical)!=row['L'] else 'complete_canonical_chain'] += 1
             rows.append(row)
         counts['complete_eligible'] = len(rows)
         pq.write_table(pa.Table.from_pylist(rows), eligible_path, compression='zstd')
         (args.out / 'eligibility_counts.json').write_text(json.dumps(counts, indent=2))
+        config_path.write_text(json.dumps(eligibility_config,indent=2))
     # Round-robin across source families, favoring resolution within each family.
     # These are distinct experimental chain structures, not 50,000 independent
     # sequence families; record both counts instead of imposing a scale-breaking cap.
@@ -221,10 +260,14 @@ def main() -> None:
     rows = [r for r in rows if r['entry_id'] not in excluded]
     write_fasta(rows, args.out / 'clean.fasta')
     clusters = args.out / 'homology_cluster.tsv'
-    if not clusters.exists():
+    cluster_digest = hashlib.sha256((args.out / 'clean.fasta').read_bytes()).hexdigest()
+    cluster_stamp = args.out / 'homology.sha256'
+    if not clusters.exists() or not cluster_stamp.exists() or cluster_stamp.read_text() != cluster_digest:
+        clusters.unlink(missing_ok=True)
         command([str(MMSEQS), 'easy-cluster', str(args.out / 'clean.fasta'), str(args.out / 'homology'),
-            str(args.out / 'cluster-tmp'), '--min-seq-id', '0.3', '-c', '0.5', '--cov-mode', '0',
-            '--cluster-mode', '1', '--threads', str(args.threads), '-s', '7.5'], args.out / 'clustering.log')
+            str(args.out / f'cluster-tmp-{cluster_digest[:12]}'), '--min-seq-id', '0.3', '-c', '0.5', '--cov-mode', '0',
+            '--cluster-mode', '1', '--linclust-version', '1', '--threads', str(args.threads), '-s', '7.5'], args.out / 'clustering.log')
+        cluster_stamp.write_text(cluster_digest)
     components = Components([r['entry_id'] for r in rows])
     for line in clusters.read_text().splitlines():
         components.union(*line.split('\t'))
@@ -278,6 +321,10 @@ def main() -> None:
         subset = [r for r in selected if r['split'] == split]
         counts[f'{split}_structures'] = len(subset)
         counts[f'{split}_groups'] = len({r['group_id'] for r in subset})
+        counts[f'{split}_unique_sequences'] = len({r['sequence'] for r in subset})
+        counts[f'{split}_terminally_cropped'] = sum(r['canonical_length'] != r['L'] for r in subset)
+        sizes = Counter(r['group_id'] for r in subset)
+        counts[f'{split}_largest_group'] = max(sizes.values())
     counts['mmseqs_version'] = subprocess.check_output([str(MMSEQS), 'version'], text=True).strip()
     (args.out / 'manifest.json').write_text(json.dumps(counts, indent=2))
     data = HERE / 'data'

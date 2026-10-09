@@ -17,7 +17,7 @@ from sklearn.metrics import average_precision_score, roc_auc_score
 
 from model import ASSESSMENT, load_model
 from records import collate, make_example
-from storage import ROOT, stage_directory, write_json, write_rows
+from storage import ROOT, stage_directory, write_csv, write_json, write_rows
 from training_data import read_table, stage_rollouts
 
 
@@ -91,6 +91,7 @@ def main() -> None:
                 for fraction in (.25,.5,.75):
                     count=max(1,round(len(q)*fraction))
                     stats[f'precision_retained_{fraction}']=float(y[np.argsort(-q,kind='stable')[:count]].mean())
+                    stats[f'precision_emission_{fraction}']=float(y[:count].mean())
                 summaries.append(stats)
                 if label == 'full':
                     contact_scores.append(dict(identity=row['identity'], entry_id=row['entry_id'],
@@ -106,6 +107,7 @@ def main() -> None:
                     timestamp_utc=datetime.now(UTC).isoformat(),**worker))
     write_rows(summaries,args.out+f'/per_rollout-rank-{rank}.parquet')
     write_rows(timings,args.out+f'/timings-rank-{rank}.parquet')
+    write_csv(timings,args.out+f'/timings-rank-{rank}.csv')
     write_rows(contact_scores,args.out+f'/contact_scores-rank-{rank}.parquet')
     write_rows([dict(prefix=k[0],bin=k[1],count=v[0],sum_probability=v[1],sum_truth=v[2]) for k,v in calibration.items()],
                args.out+f'/calibration-rank-{rank}.parquet')

@@ -14,4 +14,16 @@ Fine-tuning a pretrained contact-language backbone on experimentally determined 
 
 ## Results so far
 
-_(Fill in as results come in.)_
+CoreWeave generation smoke: 48 complete experimental chain structures, eight actual exp277 rollouts each. All 384 completed; 381 passed strict parsing. No empty rollouts. Twenty-four emitted pairs were invalid contacts and remain negative examples.
+
+Eight behavioral tests pass: later evidence affects earlier judgments, padding is invisible, prefixes exclude future tokens, duplicate contacts do not inflate metrics, and saved heads/tokenizers round-trip.
+
+Training and checkpoint recovery are being tested. No trained-model quality claim yet.
+
+## Production data and validation
+
+Target: 50,000 experimental chain structures for training, plus separate validation and test families. The dataset is not 50,000 independent sequence families; report both structure and family counts.
+
+Only complete canonical sequences and complete reference contact lists are accepted. Benchmark homologs are excluded. Related structures stay in one split, followed by explicit searches across split boundaries.
+
+Test precision, recall and calibration from one contact through full rollouts. Measure whether later evidence improves the first contact's judgment and whether proofreading improves contact selection.

@@ -10,4 +10,8 @@ export WANDB_ENTITY=open-athena
 uv sync --locked --extra train
 entrypoint=train.py
 if [[ "${1:-}" == "--evaluate" ]]; then entrypoint=evaluate.py; shift; fi
+if [[ "${1:-}" == "--collect" ]]; then
+    shift
+    exec uv run --no-sync python collect.py "$@"
+fi
 exec uv run --no-sync python -m torch.distributed.run --standalone --nproc_per_node="${PROOFREADER_GPUS:-1}" "$entrypoint" "$@"

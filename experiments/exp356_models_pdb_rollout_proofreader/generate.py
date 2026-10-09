@@ -1,6 +1,7 @@
 """Generate ordered exp277 rollout supervision as resumable CoreWeave shards."""
 
 import argparse
+import hashlib
 import json
 import platform
 import socket
@@ -13,7 +14,7 @@ from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 
 from records import CONTEXT, make_prompt, parse_contacts, stable_seed
-from storage import GENERATOR, ROOT, filesystem, read_rows, stage_directory, write_json, write_rows
+from storage import GENERATOR, ROOT, filesystem, read_rows, stage_directory, write_csv, write_json, write_rows
 
 
 def main() -> None:
@@ -32,6 +33,19 @@ def main() -> None:
     if args.limit:
         targets = targets[:args.limit]
     fs, output_root = filesystem(args.out)
+    plan = dict(model=args.model,targets=args.targets,shard=args.shard,shards=args.shards,
+        rollouts=args.rollouts,batch_proteins=args.batch_proteins,limit=args.limit,
+        target_fingerprint=hashlib.sha256(json.dumps(targets,sort_keys=True).encode()).hexdigest(),
+        sampling=dict(temperature=1.0,top_p=.95,top_k=-1,budget='min(6L+128,8192-prompt_tokens-1)'))
+    plan_key = output_root+f'/shard-{args.shard:03d}.plan.json'
+    if fs.exists(plan_key):
+        if json.loads(fs.cat(plan_key)) != plan:
+            raise ValueError('Generation parameters or target shard changed on resume')
+    else:
+        if fs.glob(output_root+f'/shard-{args.shard:03d}-batch-*.done.json'):
+            raise ValueError('Existing batches lack a pinned generation plan')
+        write_json(plan,args.out+f'/shard-{args.shard:03d}.plan.json')
+    code = json.loads(Path('code_manifest.json').read_text())
     local_model = Path('/tmp/exp356-generator')
     started = time.perf_counter()
     stage_directory(args.model, local_model)
@@ -102,11 +116,13 @@ def main() -> None:
                 timestamp_utc=datetime.now(UTC).isoformat(), **worker))
         write_rows(records, args.out + '/' + key + '.parquet')
         write_rows(timing, args.out + '/' + key + '.timings.parquet')
+        write_csv(timing, args.out + '/' + key + '.timings.csv')
         summary = dict(proteins=len(batch), rollouts=len(records), finished=sum(r['finished'] for r in records),
             malformed=sum(r['malformed'] for r in records), seconds=batch_seconds,
-            zero_contact=sum(not r['contact_ends'] for r in records))
+            zero_contact=sum(not r['contact_ends'] for r in records),code_sha256=code['sha256'])
         write_json(summary, args.out + '/' + key + '.done.json')
         print(f'[exp356] {key} {json.dumps(summary)}', flush=True)
+    write_json(code,args.out+f'/shard-{args.shard:03d}.code.json')
     write_json(dict(shard=args.shard, shards=args.shards, proteins=len(targets), rollouts=args.rollouts),
                args.out + f'/shard-{args.shard:03d}.complete.json')
 

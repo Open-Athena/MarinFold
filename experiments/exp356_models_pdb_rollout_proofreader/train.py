@@ -94,7 +94,8 @@ def checkpoint(model, tokenizer, optimizer, args, step: int, epoch: int, next_ba
         metadata = dict(architecture='exp277-bidirectional-contact-recall-v1', step=step,
             epoch=epoch, next_batch=next_batch, data_fingerprint=data_hash,
             generator=GENERATOR, assessment_token=ASSESSMENT, attention='bidirectional',
-            precision='mean unique-contact probabilities', config=vars(args), best_validation_loss=best_loss)
+            precision='mean unique-contact probabilities', config=vars(args), best_validation_loss=best_loss,
+            code=json.loads(Path('code_manifest.json').read_text()))
         model.save(path, tokenizer, metadata)
         torch.save(dict(optimizer=optimizer.state_dict(), step=step, epoch=epoch,
             next_batch=next_batch, best_loss=best_loss, data_fingerprint=data_hash,
@@ -181,6 +182,7 @@ def main() -> None:
     if rank == 0:
         run = wandb.init(entity='open-athena', project='MarinFold', id=args.run_name,
             name=args.run_name, resume='allow', config={**vars(args), 'data_fingerprint':data_hash,
+                'code':json.loads(Path('code_manifest.json').read_text()),
                 'world_size':world, 'train_rollouts':len(train_table), 'steps_per_epoch':steps_per_epoch,
                 'max_steps':max_steps}, tags=['exp356', 'proofreader', 'experimental-pdb', 'bidirectional'])
         write_json(dict(wandb_url=run.url, wandb_name=args.run_name, job_id=os.getenv('IRIS_JOB_ID'),

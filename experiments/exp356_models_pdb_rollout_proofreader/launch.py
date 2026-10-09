@@ -1,6 +1,7 @@
 """Submit and record CoreWeave root jobs through the central Iris controller."""
 
 import argparse
+import hashlib
 import json
 import netrc
 import os
@@ -17,23 +18,27 @@ GEN_IMAGE = 'vllm/vllm-openai:v0.9.2'
 def main() -> None:
     """Launch exactly the requested bounded job and persist recovery metadata."""
     parser = argparse.ArgumentParser()
-    parser.add_argument('kind', choices=['generate', 'train', 'evaluate'])
+    parser.add_argument('kind', choices=['generate', 'train', 'evaluate', 'collect'])
     parser.add_argument('--name', required=True)
-    parser.add_argument('--gpus', type=int, choices=[1, 8], default=1)
+    parser.add_argument('--gpus', type=int, choices=[0, 1, 8], default=1)
     parser.add_argument('--cluster', default='cw-us-east-02a')
     parser.add_argument('--dry-run', action='store_true')
     args, remaining = parser.parse_known_args()
     if remaining and remaining[0] == '--':
         remaining = remaining[1:]
+    if args.gpus == 0 and args.kind != 'collect':
+        raise ValueError('Predictor and training jobs require a GPU')
     bootstrap = 'generate_bootstrap.sh' if args.kind == 'generate' else 'train_bootstrap.sh'
     command = ['uv', 'run', '--project', '/home/bizon/git/marin', '--package', 'marin-iris',
         'iris', '--cluster', 'marin', 'job', 'run', '--target-cluster', args.cluster,
         '--priority', 'batch', '--user', 'bizon', '--job-name', args.name, '--no-wait',
-        '--enable-extra-resources', '--gpu', f'H100x{args.gpus}', '--cpu', str(max(8, args.gpus*4)),
+        '--enable-extra-resources', '--cpu', str(max(8, args.gpus*4)),
         '--memory', '512GB' if args.gpus == 8 else '64GB', '--disk', '256GB', '--no-sync',
         '--timeout', str(3*86400), '--max-retries', '2', '--task-image',
         GEN_IMAGE if args.kind == 'generate' else TRAIN_IMAGE,
         '--exclude', r'(^|/)(_cache|\.venv|wandb|data|plots|__pycache__)/']
+    if args.gpus:
+        command += ['--gpu', f'H100x{args.gpus}']
     secret = None
     if args.kind != 'generate':
         secret = os.getenv('WANDB_API_KEY')
@@ -44,8 +49,8 @@ def main() -> None:
             secret = auth[2]
         command += ['-e', 'WANDB_API_KEY', '<redacted>', '-e', 'PROOFREADER_GPUS', str(args.gpus)]
     command += ['--', 'bash', bootstrap]
-    if args.kind == 'evaluate':
-        command += ['--evaluate']
+    if args.kind in {'evaluate', 'collect'}:
+        command += ['--'+args.kind]
     command += remaining
     redacted = shlex.join(command)
     print(redacted, flush=True)
@@ -53,6 +58,12 @@ def main() -> None:
         return
     if secret:
         command[command.index('<redacted>')] = secret
+    sources = {p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(HERE.iterdir())
+        if p.is_file() and p.suffix in {'.py','.sh','.toml','.lock'}}
+    source_manifest = dict(files=sources,
+        sha256=hashlib.sha256(json.dumps(sources,sort_keys=True).encode()).hexdigest(),
+        git_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=HERE,text=True).strip())
+    (HERE/'code_manifest.json').write_text(json.dumps(source_manifest,indent=2))
     submitted = datetime.now(UTC).isoformat()
     result = subprocess.run(command, cwd=HERE, text=True, capture_output=True)
     output = result.stdout + result.stderr
@@ -65,7 +76,8 @@ def main() -> None:
     if job_id not in output:
         raise ValueError('Inspect Iris: submission did not confirm the expected job ID')
     state = dict(job_id=job_id, kind=args.kind, cluster=args.cluster, submitted_at=submitted,
-                 resubmit_command=redacted, restart_count=0, monitoring_owner='exp356-root-agent')
+                 resubmit_command=redacted, restart_count=0, monitoring_owner='exp356-root-agent',
+                 source=source_manifest)
     path = HERE / '_cache/jobs'
     path.mkdir(parents=True, exist_ok=True)
     (path / f'{args.name}.json').write_text(json.dumps(state, indent=2))
