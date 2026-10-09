@@ -1,0 +1,63 @@
+{
+  "source": "s3://marin-us-east-02a/MarinFold/exp356/data/smoke-batched-v1/rollouts",
+  "target_source": "s3://marin-us-east-02a/MarinFold/exp356/data/smoke-v1/targets.parquet",
+  "target_fingerprint": "c5a30b46c8b171118df8bf9047cd25407273c061d5529984f987ca5f60df2fbc",
+  "counts": {
+    "structures": 48,
+    "rollouts": 384,
+    "files": 3,
+    "malformed_rollouts": 2,
+    "empty_rollouts": 0,
+    "unfinished_rollouts": 0,
+    "invalid_contacts": 17,
+    "retained_rollouts": 382,
+    "structures_by_split": {
+      "validation": 8,
+      "test": 8,
+      "train": 32
+    }
+  },
+  "files": [
+    {
+      "name": "shard-000-batch-00000.parquet",
+      "size": 93466,
+      "sha256": "30d6f29e2b0af056bea4853eda71493b8e0fd7c50d4f49dce7a4d80eb2746a6a"
+    },
+    {
+      "name": "shard-000-batch-00001.parquet",
+      "size": 166533,
+      "sha256": "36a4affd73c7d390aa650ff00feb2f71b7fccf08893e84986a2570ec1f4977c3"
+    },
+    {
+      "name": "shard-000-batch-00002.parquet",
+      "size": 428718,
+      "sha256": "bc02dbecc363455e4a89d494fa919db4fd934f8c5b85f2ce133386500164d248"
+    }
+  ],
+  "generation_plans": [
+    {
+      "model": "s3://marin-us-east-02a/MarinFold/exp304/model/exp277-step-266344",
+      "targets": "s3://marin-us-east-02a/MarinFold/exp356/data/smoke-v1/targets.parquet",
+      "shard": 0,
+      "shards": 1,
+      "rollouts": 8,
+      "batch_proteins": 16,
+      "limit": null,
+      "target_fingerprint": "c5a30b46c8b171118df8bf9047cd25407273c061d5529984f987ca5f60df2fbc",
+      "sampling": {
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "top_k": -1,
+        "budget": "min(6L+128,8192-prompt_tokens-1)"
+      }
+    }
+  ],
+  "sampling": {
+    "rollouts": 8,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "top_k": -1,
+    "budget": "min(6L+128,8192-prompt_tokens-1)",
+    "prefix_resampling": true
+  }
+}

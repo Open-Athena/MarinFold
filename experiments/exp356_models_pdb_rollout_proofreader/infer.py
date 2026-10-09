@@ -89,7 +89,7 @@ def main() -> None:
     checkpoint=Path(args.checkpoint)
     if '://' in args.checkpoint:
         checkpoint=Path('/tmp/exp356-infer-checkpoint')
-        stage_directory(args.checkpoint,checkpoint)
+        stage_directory(args.checkpoint,checkpoint,include_training_state=False)
     device=torch.device(args.device)
     model,tokenizer=load_model(checkpoint)
     model.to(device).eval()

@@ -58,10 +58,12 @@ def write_csv(rows: list[dict], uri: str) -> None:
     fs.pipe_file(path, buffer.getvalue().encode())
 
 
-def stage_directory(source: str, destination: Path) -> None:
+def stage_directory(source: str, destination: Path, *, include_training_state: bool = True) -> None:
     """Stage a flat checkpoint directory with size-checked resumable files."""
     fs, root = filesystem(source)
     files = [f for f in fs.ls(root, detail=True) if f['type'] == 'file']
+    if not include_training_state:
+        files = [f for f in files if Path(f['name']).name != 'training_state.pt']
     if not files:
         raise FileNotFoundError(source)
     marker = destination / '.source.json'

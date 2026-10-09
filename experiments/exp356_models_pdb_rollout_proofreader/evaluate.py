@@ -39,7 +39,7 @@ def main() -> None:
     started = time.perf_counter()
     local = Path('/tmp/exp356-evaluation')
     if rank == 0:
-        stage_directory(args.checkpoint, local/'model')
+        stage_directory(args.checkpoint, local/'model',include_training_state=False)
         stage_rollouts(args.data, local/'data')
     if world > 1:
         dist.barrier()

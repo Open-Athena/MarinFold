@@ -9,6 +9,7 @@ import math
 import os
 import platform
 import random
+import re
 import shutil
 import socket
 import time
@@ -84,8 +85,34 @@ def validation(model, table, tokenizer, device, rank: int, world: int, limit: in
     return {name: float(counts[i]/counts[6]) for i, name in enumerate(names)}
 
 
+def schedule_config(args) -> dict:
+    """Identify settings that must stay fixed when replaying a saved optimizer cursor."""
+    return {key:getattr(args,key) for key in ['epochs','accumulation','learning_rate',
+        'head_learning_rate','warmup_steps','max_steps']}
+
+
+def prune_checkpoints(root: str, keep: int, best: str | None) -> list[str]:
+    """Keep recent recovery states and the validation winner within this run only."""
+    fs,path = filesystem(root)
+    checkpoints = []
+    for item in fs.ls(path,detail=False):
+        match = re.fullmatch(r'step-(\d+)',Path(item.rstrip('/')).name)
+        if match:
+            checkpoints.append((int(match[1]),item))
+    retained = {p for _,p in sorted(checkpoints)[-keep:]}
+    if best:
+        _,best_path = filesystem(best)
+        retained.add(best_path)
+    removed = []
+    for _,item in checkpoints:
+        if item not in retained:
+            fs.rm(item,recursive=True)
+            removed.append(item)
+    return removed
+
+
 def checkpoint(model, tokenizer, optimizer, args, step: int, epoch: int, next_batch: int,
-               best_loss: float, data_hash: str, local_root: Path, rank: int, world: int) -> None:
+               best_loss: float, improved: bool, data_hash: str, local_root: Path, rank: int, world: int) -> None:
     """Commit model and optimizer first, then atomically publish the resume pointer."""
     if world > 1:
         dist.barrier()
@@ -99,13 +126,21 @@ def checkpoint(model, tokenizer, optimizer, args, step: int, epoch: int, next_ba
         model.save(path, tokenizer, metadata)
         torch.save(dict(optimizer=optimizer.state_dict(), step=step, epoch=epoch,
             next_batch=next_batch, best_loss=best_loss, data_fingerprint=data_hash,
-            accumulation=args.accumulation, world_size=world), path / 'training_state.pt')
+            accumulation=args.accumulation, world_size=world,schedule=schedule_config(args)), path / 'training_state.pt')
         remote = f'{args.out}/checkpoints/{args.run_name}/step-{step}'
         files = upload_directory(path, remote)
         write_json(dict(files=files, **metadata), remote + '/manifest.json')
+        best_pointer = f'{args.out}/runs/{args.run_name}/best.json'
+        if improved:
+            write_json(dict(step=step,path=remote,validation_loss=best_loss),best_pointer)
         write_json(dict(path=remote, step=step), f'{args.out}/runs/{args.run_name}/resume.json')
         print(f'[exp356] CHECKPOINT {remote}', flush=True)
         shutil.rmtree(path)
+        fs,key = filesystem(best_pointer)
+        best = json.loads(fs.cat(key))['path'] if fs.exists(key) else None
+        removed = prune_checkpoints(f'{args.out}/checkpoints/{args.run_name}',args.keep_checkpoints,best)
+        if removed:
+            print(f'[exp356] retired {len(removed)} older recovery checkpoints',flush=True)
     if world > 1:
         dist.barrier()
 
@@ -123,12 +158,15 @@ def main() -> None:
     parser.add_argument('--head-learning-rate', type=float, default=2e-4)
     parser.add_argument('--warmup-steps', type=int, default=200)
     parser.add_argument('--checkpoint-every', type=int, default=1000)
+    parser.add_argument('--keep-checkpoints',type=int,default=3)
     parser.add_argument('--validate-every', type=int, default=500)
     parser.add_argument('--validation-examples', type=int, default=256)
     parser.add_argument('--max-steps', type=int)
     parser.add_argument('--stop-after-step', type=int, help='Save and pause for an intentional recovery test')
     parser.add_argument('--resume', action='store_true')
     args = parser.parse_args()
+    if args.keep_checkpoints < 2:
+        parser.error('Keep at least two recovery checkpoints')
     setup_started = time.perf_counter()
     rank = int(os.getenv('RANK', '0'))
     local_rank = int(os.getenv('LOCAL_RANK', '0'))
@@ -172,6 +210,8 @@ def main() -> None:
         state = torch.load(model_path / 'training_state.pt', map_location=device, weights_only=False)
         if state['data_fingerprint'] != data_hash or state['world_size'] != world or state['accumulation'] != args.accumulation:
             raise ValueError('Resume data or global batch changed')
+        if state['schedule'] != schedule_config(args):
+            raise ValueError('Optimizer or learning-rate schedule changed on resume')
         optimizer.load_state_dict(state['optimizer'])
         step, start_epoch, next_batch, best_loss = state['step'], state['epoch'], state['next_batch'], state['best_loss']
         del state
@@ -185,6 +225,9 @@ def main() -> None:
                 'code':json.loads(Path('code_manifest.json').read_text()),
                 'world_size':world, 'train_rollouts':len(train_table), 'steps_per_epoch':steps_per_epoch,
                 'max_steps':max_steps}, tags=['exp356', 'proofreader', 'experimental-pdb', 'bidirectional'])
+        run.define_metric('optimizer_step')
+        run.define_metric('train/*',step_metric='optimizer_step')
+        run.define_metric('validation/*',step_metric='optimizer_step')
         write_json(dict(wandb_url=run.url, wandb_name=args.run_name, job_id=os.getenv('IRIS_JOB_ID'),
             max_steps=max_steps, started_at=datetime.now(UTC).isoformat()), f'{args.out}/runs/{args.run_name}/started.json')
         print(f'[exp356] WANDB {run.url} max_steps={max_steps}', flush=True)
@@ -193,7 +236,7 @@ def main() -> None:
     initial = validation(model, validation_table, tokenizer, device, rank, world, args.validation_examples,
         f'{args.out}/runs/{args.run_name}/validation-timings/step-{step}', load_seconds, args.run_name)
     if rank == 0:
-        run.log({f'validation/{k}':v for k,v in initial.items()}, step=step)
+        run.log({'optimizer_step':step,**{f'validation/{k}':v for k,v in initial.items()}})
         print(f'[exp356] validation step={step} {json.dumps(initial)}', flush=True)
     model.train()
     optimizer.zero_grad(set_to_none=True)
@@ -241,7 +284,7 @@ def main() -> None:
                     logged = {f'train/{k}':float(v/world) for k,v in zip(names,metrics_sum,strict=True)}
                     logged.update(step=step, epoch=epoch+batch_index/len(order), learning_rate=optimizer.param_groups[0]['lr'],
                         grad_norm=float(grad_norm), tokens_this_step=float(tokens), elapsed_seconds=time.perf_counter()-training_started)
-                    run.log(logged, step=step)
+                    run.log(dict(optimizer_step=step,**logged))
                     print(f'[exp356] TRAIN {step}/{max_steps} {json.dumps(logged)}', flush=True)
                     write_json(logged, f'{args.out}/runs/{args.run_name}/progress.json')
             improved = False
@@ -252,14 +295,11 @@ def main() -> None:
                 if improved:
                     best_loss = measured['loss']
                 if rank == 0:
-                    run.log({f'validation/{k}':v for k,v in measured.items()}, step=step)
+                    run.log({'optimizer_step':step,**{f'validation/{k}':v for k,v in measured.items()}})
                     write_json(dict(step=step, **measured), f'{args.out}/runs/{args.run_name}/validation-step-{step}.json')
                     print(f'[exp356] validation step={step} {json.dumps(measured)}', flush=True)
             if improved or step % args.checkpoint_every == 0 or step == max_steps or step == args.stop_after_step:
-                checkpoint(model, tokenizer, optimizer, args, step, next_epoch, next_index, best_loss, data_hash, local/'checkpoints', rank, world)
-                if rank == 0 and improved:
-                    write_json(dict(step=step,path=f'{args.out}/checkpoints/{args.run_name}/step-{step}', validation_loss=best_loss),
-                        f'{args.out}/runs/{args.run_name}/best.json')
+                checkpoint(model, tokenizer, optimizer, args, step, next_epoch, next_index, best_loss, improved, data_hash, local/'checkpoints', rank, world)
             if step == max_steps or step == args.stop_after_step:
                 stop = True
                 break
