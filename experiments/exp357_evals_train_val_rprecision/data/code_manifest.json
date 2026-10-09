@@ -1,0 +1,17 @@
+{
+  "marinfold_revision": "d1bea417a64cc042ad931422200c3edeb873f2e0",
+  "files": {
+    "targets.json": "723025fc61f3261f7bca33ab3bcc8cc6e12358a6aa0f584304e4494c0ca09e58",
+    "cohort_manifest.csv": "995f88c5e8acdca0b88bf80861f07d62b3d9e371db0f0da987ee9f36712e97b4",
+    "pyproject.toml": "ba883c4d8af893e6c2f01affbc50f0f2b8a58a03ffa92cebdfcc20508e6948b3",
+    "protocol.py": "d5adbc9b2583c1b168d383321bb65f679551470228d421d2b736e2c8d6ffd9e4",
+    "input_provenance.json": "682bbb9dfbb8f29f95965abc09dc9c3efb30b98c3c457b8eaab06a1d51ae0b96",
+    "uv.lock": "4e3b57c2201cc460c17af1cae4fc5d196607e5bc1b613d112f7e13c361d0e282",
+    "driver.py": "d2519bf552a5e1ab15698f5e38cfa39d5a61433ce563a7ece8ffc2de714a402c",
+    "scoring.py": "2037c2bfccacb94113366050dabdf213477666061f4b098b48312df5cde84472",
+    "exp89_metrics.py": "6cbaa1c555763df07cb94ee81accebef25a5565590d47a32470ade78e36d824a",
+    "checkpoints.json": "7d1b8e94bdb359980e57328222b0171c92dda535535077f8204d37b72c62082f",
+    "marinfold-0.1.0-py3-none-any.whl": "8e81d6e1b39addf43e133916503e437fb089560fee25fb7f2c032798cf3df2fe",
+    "worker.py": "d823d2ff55c9e98cbf4fe05e0053b7a72b226d780d2010dbba09f2929b3d561a"
+  }
+}

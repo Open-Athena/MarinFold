@@ -1,0 +1,11 @@
+{
+  "metric_rows": 116640,
+  "unaffected_metric_rows": 116200,
+  "rechecked_units": 3,
+  "candidate_universes_unchanged": true,
+  "final_rollouts": 313800,
+  "unfinished_rollouts": 0,
+  "reproduction_checks_passed": 4,
+  "maximum_reproduction_delta": 0.00096980479002,
+  "maximum_headline_correction": 0.00012128562765301165
+}

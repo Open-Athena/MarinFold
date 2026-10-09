@@ -1,0 +1,122 @@
+[
+  {
+    "model": "exp277_full_epoch_m2_p06_step266344",
+    "stem": "7y5j_A",
+    "mode": "unconditioned",
+    "budget": 100,
+    "seeds_match": true,
+    "identical_contact_sets": 51,
+    "smoke_r": {
+      "all": 0.7692307692307693,
+      "short": 0.75,
+      "medium": 0.8,
+      "long": 0.72
+    },
+    "production_r": {
+      "all": 0.7692307692307693,
+      "short": 0.8125,
+      "medium": 0.84,
+      "long": 0.72
+    }
+  },
+  {
+    "model": "exp277_full_epoch_m2_p06_step266344",
+    "stem": "7y5j_A",
+    "mode": "unconditioned",
+    "budget": 1000,
+    "seeds_match": true,
+    "identical_contact_sets": 639,
+    "smoke_r": {
+      "all": 0.7912087912087912,
+      "short": 0.75,
+      "medium": 0.8,
+      "long": 0.72
+    },
+    "production_r": {
+      "all": 0.7912087912087912,
+      "short": 0.8125,
+      "medium": 0.8,
+      "long": 0.72
+    }
+  },
+  {
+    "model": "exp277_full_epoch_m2_p06_step266344",
+    "stem": "7y5j_A",
+    "mode": "oracle",
+    "budget": 100,
+    "seeds_match": true,
+    "identical_contact_sets": 99,
+    "smoke_r": {
+      "all": 0.7391304347826086,
+      "short": 1.0,
+      "medium": 0.8666666666666667,
+      "long": 0.625
+    },
+    "production_r": {
+      "all": 0.7391304347826086,
+      "short": 1.0,
+      "medium": 0.8666666666666667,
+      "long": 0.625
+    }
+  },
+  {
+    "model": "exp277_full_epoch2_from213072_step479417",
+    "stem": "7y5j_A",
+    "mode": "unconditioned",
+    "budget": 100,
+    "seeds_match": true,
+    "identical_contact_sets": 53,
+    "smoke_r": {
+      "all": 0.7472527472527473,
+      "short": 0.6875,
+      "medium": 0.8,
+      "long": 0.72
+    },
+    "production_r": {
+      "all": 0.7472527472527473,
+      "short": 0.6875,
+      "medium": 0.8,
+      "long": 0.72
+    }
+  },
+  {
+    "model": "exp277_full_epoch2_from213072_step479417",
+    "stem": "7y5j_A",
+    "mode": "unconditioned",
+    "budget": 1000,
+    "seeds_match": true,
+    "identical_contact_sets": 561,
+    "smoke_r": {
+      "all": 0.7802197802197802,
+      "short": 0.8125,
+      "medium": 0.8,
+      "long": 0.72
+    },
+    "production_r": {
+      "all": 0.7692307692307693,
+      "short": 0.8125,
+      "medium": 0.8,
+      "long": 0.72
+    }
+  },
+  {
+    "model": "exp277_full_epoch2_from213072_step479417",
+    "stem": "7y5j_A",
+    "mode": "oracle",
+    "budget": 100,
+    "seeds_match": true,
+    "identical_contact_sets": 98,
+    "smoke_r": {
+      "all": 0.7608695652173914,
+      "short": 1.0,
+      "medium": 0.8,
+      "long": 0.625
+    },
+    "production_r": {
+      "all": 0.7608695652173914,
+      "short": 1.0,
+      "medium": 0.8,
+      "long": 0.6666666666666666
+    }
+  }
+]
