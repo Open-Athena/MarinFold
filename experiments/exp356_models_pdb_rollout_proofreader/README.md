@@ -34,7 +34,11 @@ Inputs contain only observed residues. A supplied sequence must match the deposi
 
 The first generation smoke produced 384 rollouts across 48 structures: 381 passed strict parsing, with no empty rollouts. The one-H100 training smoke saved at step 6, reloaded model and optimizer in a separate job, reproduced its validation metrics exactly, and continued to step 12. This checks execution and recovery; it does not establish model quality. [W&B recovery smoke](https://wandb.ai/open-athena/MarinFold/runs/debug-exp356-recovery-v1).
 
-Production inputs are frozen at `s3://marin-us-east-02a/MarinFold/exp356/data/v1/targets.parquet`; checksums and selection counts are in `data/targets_provenance.json`. Production rollout generation and eight-H100 training validation are in progress. The new held-out splits measure proofreading generalization; they do not establish absence from the backbone's pretraining corpus.
+The eight-H100 smoke completed four optimizer steps with global batch 64, saving a reloadable checkpoint and reducing validation loss from 0.913 to 0.684. Its checkpoint also passed the complete evaluation/reporting pipeline. These short smoke runs verify execution, not production quality. [W&B eight-H100 smoke](https://wandb.ai/open-athena/MarinFold/runs/debug-exp356-eight-h100-v1).
+
+All 32 production generation shards completed, writing 3,328 batches (about 0.99 GB) for 53,025 structures and eight requested rollouts per structure. The final audit independently decodes emitted token triples, checks every label against the reference, verifies duplicate accounting, and requires retained trajectories for every intended structure before admitting the corpus to training.
+
+Production inputs are frozen at `s3://marin-us-east-02a/MarinFold/exp356/data/v1/targets.parquet`; checksums and selection counts are in `data/targets_provenance.json`. The target parquet and provenance are also public under `hf://buckets/open-athena/MarinFold/data/exp356/`. The new held-out splits measure proofreading generalization; they do not establish absence from the backbone's pretraining corpus.
 
 ## Conclusion
 

@@ -12,7 +12,7 @@ marinfold_run:
     project: MarinFold
     run_id: debug-exp356-eight-h100-v1
     run_name: debug-exp356-eight-h100-v1
-  git_sha: f980da847a3feefe8bf2df0a46c17cab025da57a
+  git_sha: 4aafce9e778c4d040609b10c90dd4218cab69433
   iris_job_ids:
   - /bizon/exp356-train-eight-gpu-smoke-a01
 ---
@@ -23,7 +23,7 @@ marinfold_run:
 **Kind:** models  
 **Experiment:** exp356_models_pdb_rollout_proofreader  
 **W&B:** [debug-exp356-eight-h100-v1](https://wandb.ai/open-athena/MarinFold/runs/debug-exp356-eight-h100-v1)  
-**Git:** `f980da84`  
+**Git:** `4aafce9e`  
 
 ## Description
 
@@ -39,4 +39,4 @@ _(Bullet list of differences from the last run of this kind.)_
 
 ## Notes
 
-_(Anything else worth remembering — preemptions, midway tweaks, etc.)_
+Completed four optimizer steps with eight H100s and global batch 64. Source-manifest SHA256: `3fccd291433da9f6f83779f9518b3ad08156ef841a72caf6cb588ac3b97f5f9e`. Validation loss fell from 0.913 to 0.684; this execution smoke does not establish production quality. The saved step-4 model was subsequently used to verify the full evaluation/reporting pipeline.

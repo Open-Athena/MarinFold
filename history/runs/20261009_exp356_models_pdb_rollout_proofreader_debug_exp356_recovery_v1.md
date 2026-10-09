@@ -12,7 +12,7 @@ marinfold_run:
     project: MarinFold
     run_id: debug-exp356-recovery-v1
     run_name: debug-exp356-recovery-v1
-  git_sha: ba1d566094f9737c13ad603653edc9f305da5a48
+  git_sha: 05e009885731ae3bb146bb5f055fe02cc00684e7
   iris_job_ids:
   - /bizon/exp356-train-smoke-a01
   - /bizon/exp356-train-smoke-a02
@@ -23,7 +23,7 @@ marinfold_run:
 **Kind:** models  
 **Experiment:** exp356_models_pdb_rollout_proofreader  
 **W&B:** [debug-exp356-recovery-v1](https://wandb.ai/open-athena/MarinFold/runs/debug-exp356-recovery-v1)  
-**Git:** `ba1d5660`  
+**Git:** `05e00988`  
 
 ## Description
 
@@ -39,4 +39,4 @@ _(Bullet list of differences from the last run of this kind.)_
 
 ## Notes
 
-_(Anything else worth remembering — preemptions, midway tweaks, etc.)_
+The initial job used clean commit `05e00988` (Iris tree `7f0a9429`). The recovery job used base commit `4aafce9e` and source-manifest SHA256 `3fccd291433da9f6f83779f9518b3ad08156ef841a72caf6cb588ac3b97f5f9e`. It reloaded step 6, reproduced all validation metrics exactly, and completed step 12. This run verifies execution and recovery only.

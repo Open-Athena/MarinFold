@@ -18,7 +18,9 @@ CoreWeave generation smoke: 48 complete experimental chain structures, eight act
 
 Behavioral tests pass: later evidence affects earlier judgments, padding is invisible, prefixes exclude future tokens, duplicate contacts do not inflate metrics, and saved heads/tokenizers round-trip.
 
-The one-H100 smoke resumed from a durable step-6 checkpoint, reproduced validation metrics exactly, and trained through step 12. Eight-H100 execution and larger generation batches are being checked. No trained-model quality claim yet.
+The one-H100 smoke resumed from a durable step-6 checkpoint, reproduced validation metrics exactly, and trained through step 12. The eight-H100 smoke completed four steps with global batch 64; validation loss fell from 0.913 to 0.684. Its checkpoint also completed the evaluation/reporting pipeline. No production-quality claim yet.
+
+All 32 production generation shards completed: 3,328 batches, about 0.99 GB of rollout parquet. The final audit checks raw token/contact alignment, reference labels and full target coverage before training.
 
 ## Production data and validation
 
