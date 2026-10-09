@@ -34,6 +34,6 @@ Test precision, recall and calibration from one contact through full rollouts. M
 
 ## Early checkpoint: not ready for release
 
-At step 500, fixed-sample validation loss fell from 0.924 to 0.676, mainly through recall prediction. A preview on the first 128 sorted validation IDs (35 related groups) remains weak: mean full-rollout contact AUROC 0.531, Brier 0.232. Weighted aggregation R-precision is 0.442 versus 0.441 for frequency alone.
+The complete step-500 validation covers 1,552 structures in 287 related groups. It remains weak: mean full-rollout contact AUROC 0.538, Brier 0.241, precision MAE 0.183 and recall MAE 0.189. Weighted aggregation R-precision is 0.519 versus 0.517 for frequency alone.
 
-Later contacts do not yet improve the first contact's judgment. This checkpoint is not a production-quality model. Training continues; the complete 1,552-structure validation split is being scored to avoid relying on this narrow preview.
+Later contacts do not yet improve the first contact's judgment. This checkpoint is not a production-quality model. Training continues: the fixed validation sample improves further at step 1,000, with contact Brier 0.215, precision MAE 0.239 and recall MAE 0.051. Sample diagnostics and complete evaluations are reported separately.
