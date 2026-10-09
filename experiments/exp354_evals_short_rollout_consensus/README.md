@@ -34,7 +34,11 @@ A gain of at least .005 all-range R-precision, with paired protein bootstrap unc
 
 The contact-count and live-vote parser passes three boundary-case tests. Immutable #245 inputs have been verified by SHA256 and filtered to exactly 97 eval-val proteins (length 38–761). The sweep requires at most 39.426 million short-rollout output tokens before early EOS, plus the full baseline.
 
-GPU smoke tests are in progress. Submission manifests under `data/` record job IDs, payload digests, the exact checkpoint, and execution region. No accuracy result is available yet.
+A local RTX A5000 smoke passed with the exact published checkpoint (all file SHA256 digests checked): 1,000 capped trajectories, 100 full trajectories with zero unfinished samples, 11 symmetric vote matrices, and 220 metric rows. It is excluded from the production comparison.
+
+H100 batch capacity was unavailable, so production moved to one available GB200 on `cw-us-east-08a`, using the ARM64 image `vllm/vllm-openai:v0.11.0`. Job `/bizon/exp354-gb-v1-20261009-production-00` reads the existing 5.89 GB CoreWeave checkpoint once. The two queued H100 smoke attempts were cancelled before model execution. The GPU job writes to `s3://marin-us-east-02a/MarinFold/exp354_evals_short_rollout_consensus/gb-v1-20261009/production/`; a CPU exporter publishes completed artifacts to `hf://buckets/open-athena/MarinFold/data/exp354-short-rollout-consensus/gb-v1-20261009/production/`.
+
+Submission manifests under `data/` record job IDs, payload digests, and placement. No production accuracy result is available yet.
 
 ## Conclusion
 

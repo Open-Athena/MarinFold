@@ -14,5 +14,6 @@ Exact exp89 metrics, paired protein bootstrap intervals, timings and raw tokens.
 
 ## Status
 
-Contact-cutoff tests pass. GPU smoke test awaiting batch capacity.
+Contact-cutoff tests and a real-protein GPU smoke pass.
+Production submitted on one GB200; all 97 proteins are queued for evaluation.
 No accuracy conclusion yet.

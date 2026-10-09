@@ -65,6 +65,21 @@ def main() -> None:
     metadata = pd.read_csv(HERE.parent / "exp245_evals_foldbench_held_out_monomers/data/eval_sets.csv")
     stratified = rows.merge(metadata[["stem", "is_viral"]], on="stem", validate="many_to_one")
     stratified.groupby(["is_viral", "mode", "range", "cut"]).precision.agg(["mean", "count"]).to_csv(data / "viral_split.csv")
+    frozen_low_msa = pd.read_csv(HERE.parent / "exp260_evals_msa_depth_stratified/data/low_msa_depth_set.csv")
+    overlap = set(frozen_low_msa.stem) & set(rows.stem)
+    pd.DataFrame([dict(cut="frozen low-MSA-depth set", n=len(overlap),
+                       reason="eval-val-only scope; no additional eval sets scored")]).to_csv(data / "low_msa_coverage.csv", index=False)
+    nulls = pd.read_csv(HERE.parent / "exp245_evals_foldbench_held_out_monomers/data/headline.csv")
+    nulls[(nulls.eval_set == "eval-val") & (nulls.stratum == "all") &
+          (nulls.predictor == "seq-KNN (decontaminated corpus)") & (nulls.cut == "R")].to_csv(data / "knn_reference.csv", index=False)
+    historical = pd.read_csv(HERE.parent / "exp277_models_single_mpnn_pilot/data/eval_rollout_v2/contact_precision_all.csv")
+    historical = historical[(historical.dataset == "foldbench_monomer") & historical.stem.isin(rows.stem)]
+    current = rows[rows['mode'] == "full_n100"]
+    comparison = current.merge(historical[["stem", "range", "cut", "precision"]],
+        on=["stem", "range", "cut"], suffixes=("_fresh", "_historical"), validate="one_to_one")
+    assert comparison.stem.nunique() == 97
+    comparison["delta"] = comparison.precision_fresh - comparison.precision_historical
+    comparison.groupby(["range", "cut"])[["precision_fresh", "precision_historical", "delta"]].mean().to_csv(data / "historical_baseline_check.csv")
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.6), sharey=True)
     for ax, distance in zip(axes, ("all", "long"), strict=True):
         for n, color in ((100, "#778da9"), (1000, "#007f73")):

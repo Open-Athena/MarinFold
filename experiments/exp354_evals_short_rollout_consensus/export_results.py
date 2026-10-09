@@ -5,6 +5,7 @@ import json
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 import fsspec
@@ -15,10 +16,21 @@ def main() -> None:
     parser.add_argument("--source", required=True)
     parser.add_argument("--destination", required=True)
     parser.add_argument("--expected", type=int, required=True)
+    parser.add_argument("--wait-seconds", type=int, default=0)
     args = parser.parse_args()
     filesystem, root = fsspec.core.url_to_fs(args.source)
-    files = filesystem.find(root)
-    markers = [p for p in files if "/complete/" in p and p.endswith(".json")]
+    deadline = time.monotonic() + args.wait_seconds
+    previous = -1
+    while True:
+        filesystem.invalidate_cache()
+        files = filesystem.find(root)
+        markers = [p for p in files if "/complete/" in p and p.endswith(".json")]
+        if len(markers) != previous:
+            print(json.dumps({"event": "progress", "complete": len(markers), "expected": args.expected}), flush=True)
+            previous = len(markers)
+        if len(markers) >= args.expected or time.monotonic() >= deadline:
+            break
+        time.sleep(20)
     if len(markers) != args.expected:
         raise RuntimeError(f"Expected {args.expected} complete proteins; found {len(markers)}")
     with tempfile.TemporaryDirectory() as directory:
