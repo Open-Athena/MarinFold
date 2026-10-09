@@ -1,0 +1,25 @@
+{
+  "eval_set": "eval-val",
+  "n_proteins": 97,
+  "source_sha256": {
+    "eval_targets_foldbench_monomers.parquet": "2eb4f1fee148fe2d6601bd171ef6e9431b96f38c82eaed1ad119a069a13f1fb8",
+    "gt_universe_scored.jsonl": "f30c23e3d2fbab245755fc01548388b41730ddfa45da87325539698cadb153e5",
+    "eval_sets.csv": "b13d060a091240921bc8466acecc9fa6ccbb45a56de4efda02cd903f6abf9861"
+  },
+  "marinfold_revision": "d1bea417a64cc042ad931422200c3edeb873f2e0",
+  "source_revision": "c6e776405e47ba64c45e3a11789dc01176ea5fbe",
+  "bundle_sha256": {
+    "targets.jsonl": "518d3163134f55dd4dced98f65d1f17a34071a3212887546f9935d8a95b27c67",
+    "publication_manifest.json": "18935bcec81aeb7430c491fcbdb0696d6275b987ea2ed6d02f53719f61358b17",
+    "contacts.py": "c77f777293d1227aea4d2d3abb7b6b9ac56d3aa34c77105550a5d1c0aa587c2c",
+    "compute_metrics.py": "6cbaa1c555763df07cb94ee81accebef25a5565590d47a32470ade78e36d824a",
+    "worker.py": "4c9ab28cae2633fc682e4dc6faf02f0bfd43e090ed1a564cc90d6a6e610cd9d5"
+  },
+  "jobs": [
+    "/bizon/exp354-v1-20261009-smoke-00"
+  ],
+  "output_uri": "s3://marin-us-east-02a/MarinFold/exp354_evals_short_rollout_consensus/v1-20261009/smoke",
+  "target_cluster": "cw-us-east-02a",
+  "num_shards": 12,
+  "phase": "smoke"
+}
