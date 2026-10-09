@@ -11,6 +11,8 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
+from huggingface_hub import get_token
+
 HERE = Path(__file__).resolve().parent
 TRAIN_IMAGE = 'pytorch/pytorch@sha256:b574d4ccf6d8856a5d87dcadc667aa4f95dc18d337ef3a28d02b7b01897d7081'
 GEN_IMAGE = 'vllm/vllm-openai:v0.9.2'
@@ -19,7 +21,7 @@ GEN_IMAGE = 'vllm/vllm-openai:v0.9.2'
 def main() -> None:
     """Launch exactly the requested bounded job and persist recovery metadata."""
     parser = argparse.ArgumentParser()
-    parser.add_argument('kind', choices=['generate', 'train', 'evaluate', 'collect'])
+    parser.add_argument('kind', choices=['generate', 'train', 'evaluate', 'collect', 'publish'])
     parser.add_argument('--name', required=True)
     parser.add_argument('--gpus', type=int, choices=[0, 1, 8], default=1)
     parser.add_argument('--cluster', default='cw-us-east-02a')
@@ -27,7 +29,7 @@ def main() -> None:
     args, remaining = parser.parse_known_args()
     if remaining and remaining[0] == '--':
         remaining = remaining[1:]
-    if args.gpus == 0 and args.kind != 'collect':
+    if args.gpus == 0 and args.kind not in {'collect','publish'}:
         raise ValueError('Predictor and training jobs require a GPU')
     bootstrap = 'generate_bootstrap.sh' if args.kind == 'generate' else 'train_bootstrap.sh'
     command = ['uv', 'run', '--project', '/home/bizon/git/marin', '--package', 'marin-iris',
@@ -42,16 +44,26 @@ def main() -> None:
     if args.gpus:
         command += ['--gpu', f'H100x{args.gpus}']
     secret = None
+    secret_name = None
     if args.kind != 'generate':
+        command += ['-e', 'PROOFREADER_GPUS', str(args.gpus)]
+    if args.kind == 'train':
         secret = os.getenv('WANDB_API_KEY')
         if not secret:
             auth = netrc.netrc().authenticators('api.wandb.ai')
             if auth is None:
                 raise ValueError('Missing W&B credentials')
             secret = auth[2]
-        command += ['-e', 'WANDB_API_KEY', '<redacted>', '-e', 'PROOFREADER_GPUS', str(args.gpus)]
+        secret_name = 'WANDB_API_KEY'
+    if args.kind == 'publish':
+        secret = get_token()
+        if not secret:
+            raise ValueError('Missing Hugging Face publication credentials')
+        secret_name = 'HF_TOKEN'
+    if secret_name:
+        command += ['-e',secret_name,'<redacted>']
     command += ['--', 'bash', bootstrap]
-    if args.kind in {'evaluate', 'collect'}:
+    if args.kind in {'evaluate', 'collect', 'publish'}:
         command += ['--'+args.kind]
     command += remaining
     redacted = shlex.join(command)
