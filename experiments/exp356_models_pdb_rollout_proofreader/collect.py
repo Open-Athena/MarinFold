@@ -8,23 +8,34 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 from storage import ROOT, filesystem, read_rows, upload_directory, write_json
 
 HERE = Path(__file__).resolve().parent
 
 
-def inspect_file(task: tuple[str, str]) -> tuple[dict, list[dict], list[dict]]:
+def inspect_file(task: tuple[str, str, dict]) -> tuple[dict, list[dict], list[dict]]:
     """Inspect one committed batch and its contemporaneous per-input timings."""
-    source, name = task
+    source, name, targets = task
     fs, root = filesystem(source)
     stem = name.removesuffix('.parquet')
     if not fs.exists(root + '/' + stem + '.done.json'):
         raise ValueError(f'Uncommitted rollout object: {name}')
-    rows = read_rows(source + '/' + name)
+    blob = fs.cat(root+'/'+name)
+    rows = pq.read_table(pa.BufferReader(blob)).to_pylist()
     timings = read_rows(source + '/' + stem + '.timings.parquet')
     audit = []
     for row in rows:
+        target = targets[row['entry_id']]
+        truth = {tuple(pair) for pair in target['contacts']}
+        seen = set()
+        for pair,label,unique in zip(row['pairs'],row['labels'],row['unique'],strict=True):
+            pair = tuple(pair)
+            if label != float(pair in truth) or unique != (pair not in seen):
+                raise ValueError(f"Incorrect label or duplicate accounting: {row['identity']}")
+            seen.add(pair)
         k = len(row['contact_ends'])
         if not all(len(row[field]) == k for field in ('labels', 'pairs', 'unique')):
             raise ValueError(f"Contact/label alignment failure: {row['identity']}")
@@ -36,7 +47,7 @@ def inspect_file(task: tuple[str, str]) -> tuple[dict, list[dict], list[dict]]:
             raise ValueError('Contact readout outside completion')
         audit.append({key:row[key] for key in ('identity','entry_id','split','group_id','gt_count','finished','malformed','invalid_contacts')})
         audit[-1]['n_contacts'] = k
-    return dict(name=name, size=fs.info(root+'/'+name)['size']), audit, timings
+    return dict(name=name,size=len(blob),sha256=hashlib.sha256(blob).hexdigest()), audit, timings
 
 
 def main() -> None:
@@ -53,19 +64,23 @@ def main() -> None:
     missing = [i for i in range(args.shards) if not fs.exists(f'{root}/shard-{i:03d}.complete.json')]
     if missing:
         raise ValueError(f'Incomplete shards: {missing}')
+    plans = [json.loads(fs.cat(f'{root}/shard-{i:03d}.plan.json')) for i in range(args.shards)]
+    for i,plan in enumerate(plans):
+        if (plan['shard'],plan['shards'],plan['rollouts'],plan['targets']) != (i,args.shards,args.rollouts,args.targets):
+            raise ValueError('Shard generation configuration differs from the requested audit')
+    targets = read_rows(args.targets)
+    by_id = {r['entry_id']:r for r in targets}
     names = sorted(Path(p).name for p in fs.glob(root + '/shard-*-batch-*.parquet') if not p.endswith('.timings.parquet'))
     files, audit, timings = [], [], []
     with ThreadPoolExecutor(12) as pool:
-        for item, records, measured in pool.map(inspect_file, [(args.source,n) for n in names]):
+        for item, records, measured in pool.map(inspect_file, [(args.source,n,by_id) for n in names]):
             files.append(item)
             audit.extend(records)
             timings.extend(measured)
-    targets = read_rows(args.targets)
     expected = {f"{r['entry_id']}:r{i}" for r in targets for i in range(args.rollouts)}
     actual = Counter(row['identity'] for row in audit)
     if set(actual) != expected or any(n != 1 for n in actual.values()):
         raise ValueError(f'Rollout coverage mismatch: expected {len(expected)}, actual {len(actual)}')
-    by_id = {r['entry_id']:r for r in targets}
     for row in audit:
         target = by_id[row['entry_id']]
         if row['split'] != target['split'] or row['group_id'] != target['group_id'] or row['gt_count'] != len(target['contacts']):
@@ -83,7 +98,7 @@ def main() -> None:
     counts['structures_by_split'] = dict(Counter(r['split'] for r in targets))
     manifest = dict(source=args.source, target_source=args.targets,
         target_fingerprint=hashlib.sha256(json.dumps(targets,sort_keys=True).encode()).hexdigest(),
-        counts=counts, files=files, sampling=dict(rollouts=args.rollouts,temperature=1.0,top_p=.95,top_k=-1,
+        counts=counts, files=files,generation_plans=plans, sampling=dict(rollouts=args.rollouts,temperature=1.0,top_p=.95,top_k=-1,
             budget='min(6L+128,8192-prompt_tokens-1)', prefix_resampling=True))
     write_json(manifest, args.source + '/_SUCCESS.json')
     data = HERE / 'data'

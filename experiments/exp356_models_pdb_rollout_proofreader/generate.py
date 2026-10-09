@@ -12,6 +12,7 @@ from pathlib import Path
 import torch
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
+from vllm.sampling_params import RequestOutputKind
 
 from records import CONTEXT, make_prompt, parse_contacts, stable_seed
 from storage import GENERATOR, ROOT, filesystem, read_rows, stage_directory, write_csv, write_json, write_rows
@@ -26,7 +27,7 @@ def main() -> None:
     parser.add_argument('--shard', type=int, default=0)
     parser.add_argument('--shards', type=int, default=32)
     parser.add_argument('--rollouts', type=int, default=8)
-    parser.add_argument('--batch-proteins', type=int, default=8)
+    parser.add_argument('--batch-proteins', type=int, default=16)
     parser.add_argument('--limit', type=int)
     args = parser.parse_args()
     targets = sorted(read_rows(args.targets), key=lambda r: (r['L'], r['entry_id']))[args.shard::args.shards]
@@ -80,19 +81,32 @@ def main() -> None:
                 prompts.append(prompt)
                 settings.append(SamplingParams(temperature=1.0, top_p=0.95, top_k=-1,
                     max_tokens=budget, stop_token_ids=[end_id], skip_special_tokens=False,
-                    seed=stable_seed('sample:' + identity)))
-        # vLLM 0.9.2's V1 offline API returns metrics=None. Measure one protein's
-        # rollout batch directly so timings remain attributable to that protein.
-        # Durable files still group several proteins to amortize S3 writes.
-        results = []
-        per_target = {}
+                    seed=stable_seed('sample:' + identity),output_kind=RequestOutputKind.FINAL_ONLY))
+        # Use the public add_request/step interface to timestamp each protein's
+        # final completion while batching across proteins. V1 offline outputs
+        # have metrics=None. These are observed latencies under concurrent load,
+        # not isolated-protein runtimes; batch wall time measures GPU throughput.
+        completed, per_target, target_started, target_completed = {}, {}, {}, {}
         inference_started = time.perf_counter()
-        for index, target in enumerate(batch):
-            first = index * args.rollouts
-            last = first + args.rollouts
-            protein_started = time.perf_counter()
-            results.extend(llm.generate(prompts[first:last], settings[first:last], use_tqdm=False))
-            per_target[target['entry_id']] = time.perf_counter() - protein_started
+        request_targets = {}
+        for (target,identity,_,_),prompt,setting in zip(work,prompts,settings,strict=True):
+            target_started.setdefault(target['entry_id'],time.perf_counter())
+            request_targets[identity] = target['entry_id']
+            llm.llm_engine.add_request(identity,prompt,setting)
+        while llm.llm_engine.has_unfinished_requests():
+            for result in llm.llm_engine.step():
+                if not result.finished:
+                    continue
+                if result.request_id in completed:
+                    raise ValueError('Duplicate final generation output')
+                completed[result.request_id] = result
+                target_id = request_targets[result.request_id]
+                target_completed[target_id] = target_completed.get(target_id,0)+1
+                if target_completed[target_id] == args.rollouts:
+                    per_target[target_id] = time.perf_counter()-target_started[target_id]
+        if set(completed) != set(request_targets) or set(per_target) != set(target_started):
+            raise ValueError('Generation engine did not complete every requested rollout')
+        results = [completed[identity] for _,identity,_,_ in work]
         batch_seconds = time.perf_counter() - inference_started
         records, timing = [], []
         for (target, identity, offset, prompt_ids), result in zip(work, results, strict=True):
@@ -105,16 +119,16 @@ def main() -> None:
                 group_id=target['group_id'], L=target['L'], gt_count=len(target['contacts']),
                 prompt_ids=prompt_ids, completion_ids=completion_ids, finished=finished,
                 finish_reason=output.finish_reason, **parsed))
+        write_rows(records, args.out + '/' + key + '.parquet')
         total_seconds = time.perf_counter() - batch_started
         for target in batch:
             timing.append(dict(stem=target['entry_id'], n_residues=target['L'], n_pairs=len(target['contacts']),
                 mode='rollout-supervision', elapsed_seconds=per_target[target['entry_id']],
                 model_load_seconds=load_seconds, total_seconds=total_seconds+load_seconds,
-                batch_elapsed_seconds=batch_seconds, timing_scope='direct per-protein rollout-batch wall time',
-                total_scope='shared batch setup+inference+serialization, plus full worker load',
-                n_rollouts=args.rollouts, batch_size=args.rollouts, batch_id=key,
+                batch_elapsed_seconds=batch_seconds, timing_scope='per-protein latency until all rollouts finish under concurrent batch load',
+                total_scope='shared batch setup+inference+data dump, plus full worker load',
+                n_rollouts=args.rollouts, batch_size=len(work), batch_id=key,
                 timestamp_utc=datetime.now(UTC).isoformat(), **worker))
-        write_rows(records, args.out + '/' + key + '.parquet')
         write_rows(timing, args.out + '/' + key + '.timings.parquet')
         write_csv(timing, args.out + '/' + key + '.timings.csv')
         summary = dict(proteins=len(batch), rollouts=len(records), finished=sum(r['finished'] for r in records),

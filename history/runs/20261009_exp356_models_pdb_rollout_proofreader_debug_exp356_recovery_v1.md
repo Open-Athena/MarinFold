@@ -15,8 +15,8 @@ marinfold_run:
   git_sha: ba1d566094f9737c13ad603653edc9f305da5a48
   iris_job_ids:
   - /bizon/exp356-train-smoke-a01
+  - /bizon/exp356-train-smoke-a02
 ---
-
 # 2026-10-09 · exp356_models_pdb_rollout_proofreader · debug-exp356-recovery-v1
 
 **Launched:** 2026-10-09T21:17:56Z by bizon  
