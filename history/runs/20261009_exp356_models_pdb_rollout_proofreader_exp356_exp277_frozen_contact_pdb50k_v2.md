@@ -15,8 +15,8 @@ marinfold_run:
   git_sha: 8bc77612ff769edf54254b95efa459062bf7a1fb
   iris_job_ids:
   - /bizon/exp356-train-frozen-prod-a01
+  - /bizon/exp356-train-frozen-prod-a02
 ---
-
 # 2026-10-09 · exp356_models_pdb_rollout_proofreader · exp356-exp277-frozen-contact-pdb50k-v2
 
 **Launched:** 2026-10-09T22:49:56Z by bizon  
@@ -35,8 +35,10 @@ Compare against the fully bidirectional backbone on the identical frozen corpus 
 
 ## Changes from previous runs
 
-_(Bullet list of differences from the last run of this kind.)_
+Freezes the generator's causal backbone and trains a separate bidirectional contact encoder, rather than changing the backbone attention pattern and fine-tuning all weights. The corpus, prefix sampler, global batch and three-epoch schedule match the fully bidirectional comparison.
 
 ## Notes
 
 Started 2026-10-09T22:48:13Z. The prerequisite eight-H100 smoke paused at step 2 and resumed in a separate job, reproducing all validation metrics exactly. Early training is about 0.27 seconds per optimizer step. Quality selection uses validation only; the new PDB test split remains reserved for the selected model.
+
+Full validation at step 2,000 selected this architecture: AUROC 0.763, Brier 0.167, precision MAE 0.096, recall MAE 0.103; later context improves first-contact Brier by 0.0176. Job a02 resumes the same optimizer and 18,714-step schedule without the pilot pause. Submitted 2026-10-09T23:06:48Z; source base `daf06408`, with exact bundle hashes in the experiment dispatch ledger.

@@ -21,7 +21,7 @@ GEN_IMAGE = 'vllm/vllm-openai:v0.9.2'
 def main() -> None:
     """Launch exactly the requested bounded job and persist recovery metadata."""
     parser = argparse.ArgumentParser()
-    parser.add_argument('kind', choices=['generate', 'train', 'evaluate', 'collect', 'publish'])
+    parser.add_argument('kind', choices=['generate', 'train', 'evaluate', 'collect', 'publish', 'verify-public'])
     parser.add_argument('--name', required=True)
     parser.add_argument('--gpus', type=int, choices=[0, 1, 8], default=1)
     parser.add_argument('--cluster', default='cw-us-east-02a')
@@ -63,7 +63,7 @@ def main() -> None:
     if secret_name:
         command += ['-e',secret_name,'<redacted>']
     command += ['--', 'bash', bootstrap]
-    if args.kind in {'evaluate', 'collect', 'publish'}:
+    if args.kind in {'evaluate', 'collect', 'publish', 'verify-public'}:
         command += ['--'+args.kind]
     command += remaining
     redacted = shlex.join(command)

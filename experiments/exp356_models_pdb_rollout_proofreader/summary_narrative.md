@@ -52,4 +52,10 @@ The alternative freezes exp277's causal features and trains a four-layer, 512-wi
 
 Eighteen tests pass. An eight-H100 smoke reloaded model and optimizer and reproduced validation exactly. Training is about four times faster (0.27 seconds per step). The first 1,000 steps already give fixed-sample contact Brier 0.171 and precision MAE 0.168.
 
-Compare both architectures at 2,000 steps on the complete validation split before selecting the production run. Complete training, final validation, test evaluation and publication remain in progress.
+The complete validation comparison selects the frozen-backbone model: AUROC 0.763 versus 0.728, Brier 0.167 versus 0.188, precision MAE 0.096 versus 0.109, recall MAE 0.103 versus 0.114.
+
+## Selected architecture: frozen causal features, bidirectional readout
+
+At step 2,000, later context improves first-contact Brier by 0.0176 (95% group-bootstrap interval 0.0123–0.0224). Keeping the highest-scored half gives precision 0.570, versus 0.407 for the first half in emission order. Weighted aggregation improves R-precision from 0.517 to 0.528; rollout selection improves precision from 0.409 to 0.452.
+
+The selected model resumes its existing three-epoch schedule from step 2,000. Full training, final validation, reserved test evaluation and publication remain in progress.

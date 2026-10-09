@@ -4,6 +4,7 @@ import argparse
 import contextlib
 import csv
 import json
+import os
 import platform
 import socket
 import time
@@ -111,7 +112,7 @@ def main() -> None:
     gpu=torch.cuda.get_device_properties(device) if device.type=='cuda' else None
     timing=dict(stem=source.stem,n_residues=result['n_residues'],n_pairs=len(result['contacts']),mode='proofreader',
         elapsed_seconds=elapsed,model_load_seconds=loaded,total_seconds=time.perf_counter()-started,
-        model_nickname=args.checkpoint,runner_tag='local',gpu_name=gpu.name if gpu else '',
+        model_nickname=args.checkpoint,runner_tag='iris' if os.getenv('EXP356_JOB_ID') else 'local',gpu_name=gpu.name if gpu else '',
         gpu_total_memory_gb=gpu.total_memory/1e9 if gpu else 0,
         gpu_compute_capability=f'{gpu.major}.{gpu.minor}' if gpu else '',hostname=socket.gethostname(),
         platform=platform.platform(),torch_version=torch.__version__,timestamp_utc=datetime.now(UTC).isoformat())

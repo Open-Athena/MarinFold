@@ -50,6 +50,8 @@ A comparison preserves exp277's causal backbone as a frozen feature extractor an
 
 Production inputs are frozen at `s3://marin-us-east-02a/MarinFold/exp356/data/v1/targets.parquet`; checksums and selection counts are in `data/targets_provenance.json`. The target parquet and provenance are also public under `hf://buckets/open-athena/MarinFold/data/exp356/`. The new held-out splits measure proofreading generalization; they do not establish absence from the backbone's pretraining corpus.
 
+The frozen-backbone comparison wins the complete step-2,000 validation: full-rollout AUROC 0.763, Brier 0.167, precision MAE 0.096 and recall MAE 0.103. Its one-contact Brier is 0.179, and later context improves first-contact Brier by 0.0176 (95% group-bootstrap interval 0.0123–0.0224). Selecting the highest-scored half gives precision 0.570, versus 0.407 for the first half in emission order. Probability-weighted aggregation improves R-precision from 0.517 to 0.528 (gain interval 0.0078–0.0148); rollout selection improves precision from 0.409 to 0.452. These results select the frozen-backbone architecture for continued production training through the existing three-epoch schedule. Its optimizer resumes from step 2,000 in `/bizon/exp356-train-frozen-prod-a02`. Tables are in `data/frozen_validation_step2000_*`.
+
 ## Conclusion
 
 _(Fill in after results are in.)_

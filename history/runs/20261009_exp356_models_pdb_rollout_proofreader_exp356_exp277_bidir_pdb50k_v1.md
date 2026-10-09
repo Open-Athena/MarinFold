@@ -35,8 +35,10 @@ Fine-tune the separate exp277 step-266344 backbone with bidirectional attention,
 
 ## Changes from previous runs
 
-_(Bullet list of differences from the last run of this kind.)_
+First full-corpus proofreader run, following the one- and eight-H100 execution and recovery checks.
 
 ## Notes
 
 Source-manifest SHA256: `d58b92ecf61ab5caaa127885a606f7e814f534e353b650e19d611d1fcd82592c`. Exact launch arguments and hashes are recorded in the experiment's `data/dispatches.jsonl`. Durable progress, recovery pointers and validation timings are under `s3://marin-us-east-02a/MarinFold/exp356/runs/exp356-exp277-bidir-pdb50k-v1/`. Training started at 2026-10-09T22:05:06Z.
+
+Intentionally stopped at 2026-10-09T23:08:07Z after saving step 3,000. The frozen-causal-backbone comparison won the complete step-2,000 validation and continues as `exp356-exp277-frozen-contact-pdb50k-v2`. This run did not complete its originally planned three epochs; its saved checkpoints and comparison reports remain available.
