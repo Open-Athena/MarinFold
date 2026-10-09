@@ -262,13 +262,14 @@ def main() -> None:
                 record = example(train_table, index, assess, epoch)
                 batch = device_batch(record, tokenizer.pad_token_id, device)
                 sync = wrapped.no_sync() if world > 1 and micro < args.accumulation-1 else contextlib.nullcontext()
-                with sync, torch.autocast('cuda', dtype=torch.bfloat16):
-                    logits, recall = predict(wrapped, batch)
-                    loss, metrics = loss_and_metrics(logits, recall, batch)
-                    if not bool(torch.isfinite(loss)):
-                        raise FloatingPointError(f'Nonfinite loss: step {step}, row {index}')
-                    scaled = loss / args.accumulation
-                scaled.backward()
+                with sync:
+                    with torch.autocast('cuda', dtype=torch.bfloat16):
+                        logits, recall = predict(wrapped, batch)
+                        loss, metrics = loss_and_metrics(logits, recall, batch)
+                        if not bool(torch.isfinite(loss)):
+                            raise FloatingPointError(f'Nonfinite loss: step {step}, row {index}')
+                        scaled = loss / args.accumulation
+                    scaled.backward()
                 metrics_sum += torch.stack([loss.detach(), *metrics.values()]) / args.accumulation
                 tokens += batch['token_mask'].sum()
             grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0, error_if_nonfinite=True)
