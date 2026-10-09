@@ -16,22 +16,39 @@ def main() -> None:
     parser.add_argument('--job')
     parser.add_argument('--run')
     parser.add_argument('--rollouts')
+    parser.add_argument('--brief',action='store_true')
     args = parser.parse_args()
     if args.job:
         result = subprocess.run(['uv','run','--project','/home/bizon/git/marin','--package','marin-iris',
             'iris','--cluster','marin','rpc','controller','get-job-status','--job-id',args.job],
             capture_output=True,text=True,check=True)
         status=json.loads(result.stdout)
+        status={'job':status['job']}
         path=HERE/'_cache/observations'
         path.mkdir(parents=True,exist_ok=True)
         (path/(args.job.replace('/','_')+'.json')).write_text(json.dumps(status,indent=2))
-        # Preserve compact top-level state; full task details remain on disk.
-        print(json.dumps({k:v for k,v in status.items() if k not in {'tasks','request','environment'}},default=str)[:6000])
+        # Job state is sufficient for monitoring; do not persist request env vars.
+        print(json.dumps(status,default=str))
     if args.run:
+        records={}
         for name in ['started.json','progress.json','resume.json','best.json','complete.json']:
             fs,key=filesystem(f'{ROOT}/runs/{args.run}/{name}')
             if fs.exists(key):
-                print(name,fs.cat(key).decode())
+                records[name]=json.loads(fs.cat(key))
+                if not args.brief:
+                    print(name,json.dumps(records[name]))
+        if args.brief:
+            progress=records.get('progress.json',{})
+            result={key:progress[key] for key in ['step','epoch','train/loss','elapsed_seconds'] if key in progress}
+            result['max_steps']=records.get('started.json',{}).get('max_steps')
+            result['best']=records.get('best.json')
+            fs,root=filesystem(f'{ROOT}/runs/{args.run}')
+            validations=fs.glob(root+'/validation-step-*.json')
+            if validations:
+                latest=max(validations,key=lambda p:int(Path(p).stem.split('-')[-1]))
+                result['validation']=json.loads(fs.cat(latest))
+            result['complete']='complete.json' in records
+            print(json.dumps(result))
     if args.rollouts:
         fs,root=filesystem(args.rollouts)
         objects=fs.ls(root,detail=False) if fs.exists(root) else []

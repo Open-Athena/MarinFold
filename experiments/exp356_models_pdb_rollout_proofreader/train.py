@@ -22,7 +22,7 @@ import torch.distributed as dist
 import wandb
 from torch.nn.parallel import DistributedDataParallel
 
-from model import ASSESSMENT, load_model, loss_and_metrics
+from model import ASSESSMENT, BIDIRECTIONAL_ARCHITECTURE, FROZEN_ARCHITECTURE, load_model, loss_and_metrics
 from records import collate
 from storage import GENERATOR, ROOT, filesystem, stage_directory, upload_directory, write_json
 from training_data import epoch_order, example, fingerprint, read_table, stage_rollouts
@@ -119,7 +119,7 @@ def checkpoint(model, tokenizer, optimizer, args, step: int, epoch: int, next_ba
         dist.barrier()
     if rank == 0:
         path = local_root / f'step-{step}'
-        metadata = dict(architecture='exp277-bidirectional-contact-recall-v1', step=step,
+        metadata = dict(architecture=model.architecture, step=step,
             epoch=epoch, next_batch=next_batch, data_fingerprint=data_hash,
             generator=GENERATOR, assessment_token=ASSESSMENT, attention='bidirectional',
             precision='mean unique-contact probabilities', config=vars(args), best_validation_loss=best_loss,
@@ -153,6 +153,8 @@ def main() -> None:
     parser.add_argument('--out', default=ROOT)
     parser.add_argument('--generator', default=GENERATOR)
     parser.add_argument('--run-name', default='exp356-exp277-bidir-pdb50k-v1')
+    parser.add_argument('--architecture',choices=[BIDIRECTIONAL_ARCHITECTURE,FROZEN_ARCHITECTURE],
+        default=BIDIRECTIONAL_ARCHITECTURE)
     parser.add_argument('--epochs', type=int, default=3)
     parser.add_argument('--accumulation', type=int, default=8)
     parser.add_argument('--learning-rate', type=float, default=2e-5)
@@ -199,8 +201,9 @@ def main() -> None:
     data_hash = fingerprint(manifest)
     train_table = read_table(data_path, 'train')
     validation_table = read_table(data_path, 'validation')
-    model, tokenizer = load_model(model_path, initialize=resume_path is None)
-    model.backbone.gradient_checkpointing_enable(gradient_checkpointing_kwargs={'use_reentrant': False})
+    model, tokenizer = load_model(model_path, initialize=resume_path is None,architecture=args.architecture)
+    if any(p.requires_grad for p in model.backbone.parameters()):
+        model.backbone.gradient_checkpointing_enable(gradient_checkpointing_kwargs={'use_reentrant': False})
     model.to(device)
     optimizer = torch.optim.AdamW([
         dict(params=model.backbone.parameters(), lr=args.learning_rate, initial_lr=args.learning_rate),
@@ -285,6 +288,7 @@ def main() -> None:
                     names = ['loss', 'contact_loss', 'recall_mse', 'precision_mae', 'recall_mae', 'brier']
                     logged = {f'train/{k}':float(v/world) for k,v in zip(names,metrics_sum,strict=True)}
                     logged.update(step=step, epoch=epoch+batch_index/len(order), learning_rate=optimizer.param_groups[0]['lr'],
+                        head_learning_rate=optimizer.param_groups[1]['lr'],
                         grad_norm=float(grad_norm), tokens_this_step=float(tokens), elapsed_seconds=time.perf_counter()-training_started)
                     run.log(dict(optimizer_step=step,**logged))
                     print(f'[exp356] TRAIN {step}/{max_steps} {json.dumps(logged)}', flush=True)

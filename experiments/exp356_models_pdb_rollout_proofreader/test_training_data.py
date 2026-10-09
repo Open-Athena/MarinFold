@@ -1,13 +1,14 @@
 """Tests for dataset coverage and repeatable distributed recovery."""
 
 import numpy as np
+import pytest
 import torch
 from transformers import PreTrainedTokenizerFast, Qwen3Config, Qwen3Model
 from tokenizers import Tokenizer
 from tokenizers.models import WordLevel
 from tokenizers.pre_tokenizers import WhitespaceSplit
 
-from model import ASSESSMENT, Proofreader, load_model
+from model import ASSESSMENT, CausalContactProofreader, Proofreader, load_model
 from training_data import epoch_order
 
 
@@ -20,12 +21,14 @@ def test_epoch_order_covers_every_rollout_and_is_reproducible():
     assert len(order.ravel())-103 < 32
 
 
-def test_checkpoint_roundtrip_keeps_heads_attention_and_tokenizer(tmp_path):
+@pytest.mark.parametrize('frozen',[False,True])
+def test_checkpoint_roundtrip_keeps_heads_attention_and_tokenizer(tmp_path,frozen):
     torch.manual_seed(9)
     config = Qwen3Config(vocab_size=8, hidden_size=32, intermediate_size=64,
         num_hidden_layers=2,num_attention_heads=4,num_key_value_heads=2,head_dim=8)
     config._attn_implementation='sdpa'
-    model=Proofreader(Qwen3Model(config)).eval()
+    backbone=Qwen3Model(config)
+    model=(CausalContactProofreader(backbone,2,32,2,4) if frozen else Proofreader(backbone)).eval()
     base=Tokenizer(WordLevel({token:i for i,token in enumerate(['<pad>','<unk>','a','b','c','d','e',ASSESSMENT])},unk_token='<unk>'))
     base.pre_tokenizer=WhitespaceSplit()
     tokenizer=PreTrainedTokenizerFast(tokenizer_object=base,pad_token='<pad>',unk_token='<unk>')

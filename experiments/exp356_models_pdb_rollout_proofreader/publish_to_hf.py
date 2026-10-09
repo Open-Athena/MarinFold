@@ -64,11 +64,15 @@ def main() -> None:
         raise ValueError('Smoke checkpoints cannot be published as production models')
     # The training manifest lists optimizer files; replace it with one describing
     # precisely the public, inference-only export.
+    training_manifest=json.loads((model/'manifest.json').read_text())
     (model/'manifest.json').unlink()
     shutil.copyfile(reports/'model_card.md',model/'README.md')
     for name in ['infer.py','model.py','records.py','storage.py','pyproject.toml','uv.lock']:
         shutil.copyfile(HERE/name,model/name)
     export=file_manifest(model)
+    for name,item in training_manifest['files'].items():
+        if name!='training_state.pt' and export.get(name)!=item:
+            raise ValueError(f'Export differs from the committed checkpoint: {name}')
     (model/'manifest.json').write_text(json.dumps(dict(source_checkpoint=args.checkpoint,files=export),indent=2))
     data=local/'data'
     manifest=stage_rollouts(args.data,data)
@@ -94,6 +98,12 @@ def main() -> None:
     for name,item in export.items():
         if anonymous.info(public_model+'/'+name)['size']!=item['size']:
             raise ValueError(f'Public model file has wrong size: {name}')
+    with anonymous.open(data_uri.removeprefix('hf://')+'/_SUCCESS.json') as handle:
+        if json.load(handle)!=manifest:
+            raise ValueError('Anonymous dataset manifest differs from the audited corpus')
+    with anonymous.open(report_uri.removeprefix('hf://')+'/release.json') as handle:
+        if json.load(handle)!=release:
+            raise ValueError('Anonymous release report differs from the evaluated release')
     result=dict(checkpoint=args.checkpoint,model=model_uri,data=data_uri,reports=report_uri,
         total_export_bytes=total_bytes,dataset_bytes=dataset_bytes,
         dataset_counts=manifest['counts'],published_at=datetime.now(UTC).isoformat())
