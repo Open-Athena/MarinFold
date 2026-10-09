@@ -34,10 +34,13 @@ def main() -> None:
     assert len(files) == 97
     out_of_ring: Counter = Counter()
     full_unfinished = 0
-    for file in files:
+    identities: set[tuple[str, str, str, str]] = set()
+    for completed, file in enumerate(files, start=1):
         result = json.loads(file.read_text())
         stem = result["stem"]
         timing = {r["mode"]: r for r in result["timings"]}
+        identities.add((result["worker_sha256"], result["checkpoint"],
+                        timing["full_n100"]["vllm_version"], timing["full_n100"]["transformers_version"]))
         length = timing["full_n100"]["n_residues"]
         caps = limits(length)
         with gzip.open(args.results / f"traces/{stem}.json.gz", "rt") as handle:
@@ -73,9 +76,13 @@ def main() -> None:
             for mode, expected in matrices.items():
                 if not np.array_equal(saved[mode], expected):
                     raise ValueError(f"raw-sample reconstruction disagrees for {stem}/{mode}; rebuild before analysis")
+        if completed % 10 == 0:
+            print(f"Verified raw samples and all vote matrices: {completed}/97", flush=True)
+    assert len(identities) == 1, "mixed worker/checkpoint/runtime identities"
     report = dict(proteins=97, short_rollouts=97_000, full_rollouts=9_700,
                   full_unfinished=full_unfinished, vote_matrices_verified=97 * 11,
-                  out_of_ring_tokens=dict(out_of_ring), tokenizer_sha256=hashlib.sha256(content).hexdigest())
+                  out_of_ring_tokens=dict(out_of_ring), tokenizer_sha256=hashlib.sha256(content).hexdigest(),
+                  worker_checkpoint_runtime=next(iter(identities)))
     (HERE / "data/artifact_audit.json").write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps(report, indent=2))
 
