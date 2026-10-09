@@ -17,6 +17,7 @@ def test_duplicate_and_invalid_contacts_spend_budget_but_not_extra_votes() -> No
     assert count == 3
     assert sequence_pairs(result[3]["pairs"], 0, 20) == {(0, 10)}
     assert result[2]["tokens"] == 6
+    assert sequence_pairs(frozenset({(0, 2010), (-1, 8)}), 0, 20) == set()
 
 
 def test_partial_malformed_and_eos_do_not_fabricate_contacts() -> None:

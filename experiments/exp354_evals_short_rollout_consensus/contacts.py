@@ -52,6 +52,8 @@ def sequence_pairs(pairs: frozenset, n_term: int, length: int) -> set[tuple[int,
     """Map ring positions to sequence pairs, applying the fixed separation cut."""
     result = set()
     for a, b in pairs:
+        if not (0 <= a < 2000 and 0 <= b < 2000):
+            continue
         i, j = sorted(((a - n_term) % 2000, (b - n_term) % 2000))
         if i < length and j < length and j - i >= 6:
             result.add((i, j))
