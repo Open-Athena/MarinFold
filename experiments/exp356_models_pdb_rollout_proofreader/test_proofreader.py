@@ -34,7 +34,7 @@ def test_later_contacts_change_earlier_judgment(reader):
     changed = inputs.clone()
     changed[0, 5] = 25
     revised, _ = reader(changed, mask, positions)
-    assert abs(float(original[0, 0] - revised[0, 0])) > 1e-5
+    assert abs(float((original[0, 0] - revised[0, 0]).detach())) > 1e-5
 
 
 def test_padding_cannot_change_real_readouts(reader):

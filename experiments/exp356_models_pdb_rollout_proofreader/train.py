@@ -97,6 +97,7 @@ def main() -> None:
     parser.add_argument('--validate-every', type=int, default=500)
     parser.add_argument('--validation-examples', type=int, default=256)
     parser.add_argument('--max-steps', type=int)
+    parser.add_argument('--stop-after-step', type=int, help='Save and pause for an intentional recovery test')
     parser.add_argument('--resume', action='store_true')
     args = parser.parse_args()
     rank = int(os.getenv('RANK', '0'))
@@ -220,19 +221,20 @@ def main() -> None:
                     run.log({f'validation/{k}':v for k,v in measured.items()}, step=step)
                     write_json(dict(step=step, **measured), f'{args.out}/runs/{args.run_name}/validation-step-{step}.json')
                     print(f'[exp356] validation step={step} {json.dumps(measured)}', flush=True)
-            if improved or step % args.checkpoint_every == 0 or step == max_steps:
+            if improved or step % args.checkpoint_every == 0 or step == max_steps or step == args.stop_after_step:
                 checkpoint(model, tokenizer, optimizer, args, step, next_epoch, next_index, best_loss, data_hash, local/'checkpoints', rank, world)
                 if rank == 0 and improved:
                     write_json(dict(step=step,path=f'{args.out}/checkpoints/{args.run_name}/step-{step}', validation_loss=best_loss),
                         f'{args.out}/runs/{args.run_name}/best.json')
-            if step == max_steps:
+            if step == max_steps or step == args.stop_after_step:
                 stop = True
                 break
         if stop:
             break
     if rank == 0:
+        status_file = 'complete.json' if step == max_steps else 'paused.json'
         write_json(dict(step=step, max_steps=max_steps, best_validation_loss=best_loss,
-            completed_at=datetime.now(UTC).isoformat()), f'{args.out}/runs/{args.run_name}/complete.json')
+            completed_at=datetime.now(UTC).isoformat()), f'{args.out}/runs/{args.run_name}/{status_file}')
         run.finish()
     if world > 1:
         dist.destroy_process_group()

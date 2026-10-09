@@ -3,6 +3,7 @@
 import hashlib
 import json
 import os
+import shutil
 from pathlib import Path
 
 import fsspec
@@ -49,6 +50,9 @@ def stage_directory(source: str, destination: Path) -> None:
     files = [f for f in fs.ls(root, detail=True) if f['type'] == 'file']
     if not files:
         raise FileNotFoundError(source)
+    marker = destination / '.source.json'
+    if destination.exists() and (not marker.exists() or json.loads(marker.read_text()) != source):
+        shutil.rmtree(destination)
     destination.mkdir(parents=True, exist_ok=True)
     for item in files:
         target = destination / Path(item['name']).name
@@ -59,6 +63,7 @@ def stage_directory(source: str, destination: Path) -> None:
         if temporary.stat().st_size != item['size']:
             raise ValueError(f'Staging size mismatch: {target.name}')
         temporary.replace(target)
+    marker.write_text(json.dumps(source))
 
 
 def upload_directory(source: Path, destination: str) -> dict:
@@ -66,7 +71,7 @@ def upload_directory(source: Path, destination: str) -> dict:
     fs, root = filesystem(destination)
     manifest = {}
     for path in sorted(source.iterdir()):
-        if not path.is_file():
+        if not path.is_file() or path.name.startswith('.'):
             continue
         digest = hashlib.sha256()
         with path.open('rb') as handle:

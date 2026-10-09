@@ -59,7 +59,22 @@ def decode_document(row: dict) -> tuple[str, list[list[int]]]:
 def read_sequences(task: tuple[str, str]) -> tuple[str, dict[str, str]]:
     """Read experimental entity sequences; parse failures are fatal."""
     pdb, directory = task
-    block = gemmi.cif.read(str(Path(directory) / f'{pdb}.cif')).sole_block()
+    # The PDB mirror separates categories with '#' records. Stop after entity_poly
+    # so a sequence lookup does not read megabytes of coordinates per entry.
+    # Respect semicolon text fields: '#' inside a quoted sequence/title is data.
+    lines = []
+    inside = False
+    multiline = False
+    with (Path(directory) / f'{pdb}.cif').open() as handle:
+        for line in handle:
+            lines.append(line)
+            if line.startswith(';'):
+                multiline = not multiline
+            if not multiline and line.startswith('_entity_poly.'):
+                inside = True
+            if inside and not multiline and line.startswith('#'):
+                break
+    block = gemmi.cif.read_string(''.join(lines)).sole_block()
     category = block.get_mmcif_category('_entity_poly.')
     return pdb, {
         entity: ''.join(sequence.split())
