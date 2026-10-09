@@ -37,3 +37,19 @@ Test precision, recall and calibration from one contact through full rollouts. M
 The complete step-500 validation covers 1,552 structures in 287 related groups. It remains weak: mean full-rollout contact AUROC 0.538, Brier 0.241, precision MAE 0.183 and recall MAE 0.189. Weighted aggregation R-precision is 0.519 versus 0.517 for frequency alone.
 
 Later contacts do not yet improve the first contact's judgment. This checkpoint is not a production-quality model. Training continues: the fixed validation sample improves further at step 1,000, with contact Brier 0.215, precision MAE 0.239 and recall MAE 0.051. Sample diagnostics and complete evaluations are reported separately.
+
+## Step 2,000: contextual proofreading emerges
+
+On all 1,552 validation structures, mean full-rollout contact AUROC reaches 0.728 and Brier improves to 0.188. Precision MAE is 0.109 and recall MAE 0.114.
+
+Later contacts improve first-contact Brier by 0.038 (group-bootstrap 95% interval 0.030–0.046). Keeping the highest-scored half gives precision 0.536, versus 0.407 for the first half in emission order. Quality-based rollout selection improves precision from 0.409 to 0.443.
+
+Frequency aggregation remains hard to improve: weighted R-precision 0.519 versus 0.517. These are validation results; the final test split remains reserved.
+
+## Faster architecture comparison
+
+The alternative freezes exp277's causal features and trains a four-layer, 512-wide bidirectional contact encoder. It still uses later contacts to revise earlier judgments. Trainable parameters: 22.18 million; total: 1.488 billion.
+
+Eighteen tests pass. An eight-H100 smoke reloaded model and optimizer and reproduced validation exactly. Training is about four times faster (0.27 seconds per step). The first 1,000 steps already give fixed-sample contact Brier 0.171 and precision MAE 0.168.
+
+Compare both architectures at 2,000 steps on the complete validation split before selecting the production run. Complete training, final validation, test evaluation and publication remain in progress.

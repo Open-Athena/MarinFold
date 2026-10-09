@@ -31,7 +31,7 @@ def main() -> None:
         print(json.dumps(status,default=str))
     if args.run:
         records={}
-        for name in ['started.json','progress.json','resume.json','best.json','complete.json']:
+        for name in ['started.json','progress.json','resume.json','best.json','paused.json','complete.json']:
             fs,key=filesystem(f'{ROOT}/runs/{args.run}/{name}')
             if fs.exists(key):
                 records[name]=json.loads(fs.cat(key))
@@ -48,6 +48,8 @@ def main() -> None:
                 latest=max(validations,key=lambda p:int(Path(p).stem.split('-')[-1]))
                 result['validation']=json.loads(fs.cat(latest))
             result['complete']='complete.json' in records
+            if 'paused.json' in records:
+                result['last_pause_step']=records['paused.json']['step']
             print(json.dumps(result))
     if args.rollouts:
         fs,root=filesystem(args.rollouts)

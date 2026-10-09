@@ -39,4 +39,4 @@ _(Bullet list of differences from the last run of this kind.)_
 
 ## Notes
 
-_(Anything else worth remembering — preemptions, midway tweaks, etc.)_
+The eight-H100 smoke paused at step 2 and resumed in a separate job. All six validation metrics reproduced exactly (loss 0.5982204149477184), then training completed step 4. This verifies execution, frozen-backbone behavior and optimizer recovery; it does not establish model quality.
