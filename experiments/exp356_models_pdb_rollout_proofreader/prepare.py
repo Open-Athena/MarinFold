@@ -195,18 +195,21 @@ def main() -> None:
         counts['complete_eligible'] = len(rows)
         pq.write_table(pa.Table.from_pylist(rows), eligible_path, compression='zstd')
         (args.out / 'eligibility_counts.json').write_text(json.dumps(counts, indent=2))
-    # Round-robin across source families. Cap at eight structures per family,
-    # favoring resolution, then a stable random tie-break over PDB identifiers.
+    # Round-robin across source families, favoring resolution within each family.
+    # These are distinct experimental chain structures, not 50,000 independent
+    # sequence families; record both counts instead of imposing a scale-breaking cap.
     groups = defaultdict(list)
     for row in rows:
         key = f"cluster:{row['cluster_id']}" if row['cluster_id'] >= 0 else 'seq:' + row['sequence']
         groups[key].append(row)
     for members in groups.values():
         members.sort(key=lambda r: (r['resolution'] or 99, seed(r['entry_id'])))
-    rows = [members[k] for k in range(8) for _, members in sorted(groups.items(), key=lambda item: seed(item[0])) if len(members) > k]
-    counts['family_capped_candidates'] = len(rows)
+    ordered_groups = sorted(groups.items(), key=lambda item: seed(item[0]))
+    rows = [members[k] for k in range(max(map(len, groups.values()))) for _, members in ordered_groups if len(members) > k]
+    counts['candidate_families'] = len(groups)
+    counts['family_ordered_candidates'] = len(rows)
     if len(rows) < args.train_count + args.validation_count + args.test_count:
-        raise ValueError(f'Only {len(rows)} eligible candidates after family cap')
+        raise ValueError(f'Only {len(rows)} eligible candidates')
     candidates_fasta = args.out / 'candidates.fasta'
     write_fasta(rows, candidates_fasta)
     references = args.out / 'benchmark_queries.fasta'

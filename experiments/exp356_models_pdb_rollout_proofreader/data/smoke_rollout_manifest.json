@@ -1,0 +1,54 @@
+{
+  "source": "s3://marin-us-east-02a/MarinFold/exp356/data/smoke-v1/rollouts",
+  "target_source": "s3://marin-us-east-02a/MarinFold/exp356/data/smoke-v1/targets.parquet",
+  "target_fingerprint": "c5a30b46c8b171118df8bf9047cd25407273c061d5529984f987ca5f60df2fbc",
+  "counts": {
+    "structures": 48,
+    "rollouts": 384,
+    "files": 6,
+    "malformed_rollouts": 3,
+    "empty_rollouts": 0,
+    "unfinished_rollouts": 0,
+    "invalid_contacts": 24,
+    "retained_rollouts": 381,
+    "structures_by_split": {
+      "validation": 8,
+      "test": 8,
+      "train": 32
+    }
+  },
+  "files": [
+    {
+      "name": "shard-000-batch-00000.parquet",
+      "size": 40918
+    },
+    {
+      "name": "shard-000-batch-00001.parquet",
+      "size": 62977
+    },
+    {
+      "name": "shard-000-batch-00002.parquet",
+      "size": 78258
+    },
+    {
+      "name": "shard-000-batch-00003.parquet",
+      "size": 100450
+    },
+    {
+      "name": "shard-000-batch-00004.parquet",
+      "size": 141744
+    },
+    {
+      "name": "shard-000-batch-00005.parquet",
+      "size": 297085
+    }
+  ],
+  "sampling": {
+    "rollouts": 8,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "top_k": -1,
+    "budget": "min(6L+128,8192-prompt_tokens-1)",
+    "prefix_resampling": true
+  }
+}

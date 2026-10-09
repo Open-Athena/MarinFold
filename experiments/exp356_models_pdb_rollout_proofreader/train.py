@@ -2,11 +2,15 @@
 
 import argparse
 import contextlib
+import csv
+import io
 import json
 import math
 import os
+import platform
 import random
 import shutil
+import socket
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -33,22 +37,46 @@ def predict(model, batch: dict):
     return model(batch['input_ids'], batch['token_mask'], batch['contact_positions'])
 
 
-def validation(model, table, tokenizer, device, rank: int, world: int, limit: int) -> dict:
+def validation(model, table, tokenizer, device, rank: int, world: int, limit: int,
+               timing_uri: str, model_load_seconds: float, model_nickname: str) -> dict:
     """Use deterministic held-out proteins and a fixed range of prefix lengths."""
     model.eval()
     counts = torch.zeros(7, device=device, dtype=torch.float64)
     assess = tokenizer.convert_tokens_to_ids(ASSESSMENT)
     # A fixed evenly spread sample of rows, independent of training order/crop RNG.
     indices = np.linspace(0, len(table)-1, min(limit, len(table)), dtype=int)
+    gpu = torch.cuda.get_device_properties(device)
+    worker = dict(model_nickname=model_nickname, runner_tag='iris', gpu_name=gpu.name,
+        gpu_total_memory_gb=gpu.total_memory/1e9, gpu_compute_capability=f'{gpu.major}.{gpu.minor}',
+        hostname=socket.gethostname(), platform=platform.platform(), torch_version=torch.__version__)
+    timings = []
     with torch.inference_mode(), torch.autocast('cuda', dtype=torch.bfloat16):
         for serial in range(rank, len(indices), world):
             k = (1, 4, 16, 10**6)[serial % 4]
-            batch = device_batch(example(table, int(indices[serial]), assess, 0, k), tokenizer.pad_token_id, device)
+            begun = time.perf_counter()
+            row = table.slice(int(indices[serial]), 1).to_pylist()[0]
+            record = example(table, int(indices[serial]), assess, 0, k)
+            batch = device_batch(record, tokenizer.pad_token_id, device)
+            torch.cuda.synchronize()
+            infer_started = time.perf_counter()
             logits, recall = predict(model, batch)
+            torch.cuda.synchronize()
+            elapsed = time.perf_counter() - infer_started
             loss, metrics = loss_and_metrics(logits, recall, batch)
             values = [loss, metrics['contact_loss'], metrics['recall_mse'], metrics['precision_mae'], metrics['recall_mae'], metrics['brier']]
             counts[:6] += torch.stack(values).double()
             counts[6] += 1
+            timings.append(dict(stem=row['entry_id'], identity=row['identity'], n_residues=row['L'],
+                n_pairs=len(record.labels), mode=f'validation-prefix-{k}', elapsed_seconds=elapsed,
+                model_load_seconds=model_load_seconds, total_seconds=time.perf_counter()-begun+model_load_seconds,
+                timestamp_utc=datetime.now(UTC).isoformat(), **worker))
+    if timings:
+        output = io.StringIO()
+        writer = csv.DictWriter(output, fieldnames=list(timings[0]))
+        writer.writeheader()
+        writer.writerows(timings)
+        fs, key = filesystem(timing_uri+f'/rank-{rank}.csv')
+        fs.pipe(key, output.getvalue().encode())
     if world > 1:
         dist.all_reduce(counts)
     model.train()
@@ -100,6 +128,7 @@ def main() -> None:
     parser.add_argument('--stop-after-step', type=int, help='Save and pause for an intentional recovery test')
     parser.add_argument('--resume', action='store_true')
     args = parser.parse_args()
+    setup_started = time.perf_counter()
     rank = int(os.getenv('RANK', '0'))
     local_rank = int(os.getenv('LOCAL_RANK', '0'))
     world = int(os.getenv('WORLD_SIZE', '1'))
@@ -158,7 +187,9 @@ def main() -> None:
             max_steps=max_steps, started_at=datetime.now(UTC).isoformat()), f'{args.out}/runs/{args.run_name}/started.json')
         print(f'[exp356] WANDB {run.url} max_steps={max_steps}', flush=True)
     assess = tokenizer.convert_tokens_to_ids(ASSESSMENT)
-    initial = validation(model, validation_table, tokenizer, device, rank, world, args.validation_examples)
+    load_seconds = time.perf_counter()-setup_started
+    initial = validation(model, validation_table, tokenizer, device, rank, world, args.validation_examples,
+        f'{args.out}/runs/{args.run_name}/validation-timings/step-{step}', load_seconds, args.run_name)
     if rank == 0:
         run.log({f'validation/{k}':v for k,v in initial.items()}, step=step)
         print(f'[exp356] validation step={step} {json.dumps(initial)}', flush=True)
@@ -213,7 +244,8 @@ def main() -> None:
                     write_json(logged, f'{args.out}/runs/{args.run_name}/progress.json')
             improved = False
             if step % args.validate_every == 0 or step == max_steps:
-                measured = validation(model, validation_table, tokenizer, device, rank, world, args.validation_examples)
+                measured = validation(model, validation_table, tokenizer, device, rank, world, args.validation_examples,
+                    f'{args.out}/runs/{args.run_name}/validation-timings/step-{step}', load_seconds, args.run_name)
                 improved = measured['loss'] < best_loss
                 if improved:
                     best_loss = measured['loss']
