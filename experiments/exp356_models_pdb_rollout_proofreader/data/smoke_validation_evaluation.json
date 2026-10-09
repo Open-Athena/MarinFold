@@ -1,0 +1,57 @@
+{
+  "source": "s3://marin-us-east-02a/MarinFold/exp356/evaluation/smoke-validation-v2",
+  "checkpoint": "s3://marin-us-east-02a/MarinFold/exp356/checkpoints/debug-exp356-eight-h100-v1/step-4",
+  "split": "validation",
+  "data_fingerprint": "6bcb3e64d4041f92b63872884dc8cc4dd301dc52a9b8293acbda15e4845ce5df",
+  "proteins": 8,
+  "rows": 476,
+  "ranks": [
+    {
+      "rank": 0,
+      "world": 1,
+      "proteins": 8,
+      "rows": 476,
+      "checkpoint": "s3://marin-us-east-02a/MarinFold/exp356/checkpoints/debug-exp356-eight-h100-v1/step-4",
+      "split": "validation",
+      "data_fingerprint": "6bcb3e64d4041f92b63872884dc8cc4dd301dc52a9b8293acbda15e4845ce5df",
+      "expected_proteins": 8,
+      "expected_ids_sha256": "748f61bfe11362731e0c096368889c74860221a8d3a91ddc5ce512a6e30037d6",
+      "code": {
+        "files": {
+          "analyze.py": "079037d2bc0f8d5e1f65c88323d53d35dfb3e0962e2d9af0fd521879f83e6bf5",
+          "build_summary.py": "a3cc048c692198a56a58cf35815eb81102bfcb361e1bf64db17b1d1758e6c629",
+          "collect.py": "eeb4b646bf5ac313ca3e7a27349a658a7cd6d0c35afa6c5ff3f9802057c4f874",
+          "dispatch_generation.py": "1a69bf7c483577208b7dae644b915e866ac371524a5a6f1aa3c08f08c87c5827",
+          "evaluate.py": "12b8d4c9d2463c8e8fe63cae9b4670a620a6044f4fe901e4fe9b2b671c22c19b",
+          "generate.py": "aa34247d1f46bcecf58af2c3565cdcf452df6a95b86b659c3d28d2080f48c068",
+          "generate_bootstrap.sh": "10c378712a8e4687e8c59c01ab8d3a78aadf98cd8cfc64ed653a27100f149988",
+          "infer.py": "f5f75f11ecead7eb3475d0ad1296fb6f7d57c9794fa7a4f4f7fd6b0449064f9f",
+          "launch.py": "7af35b9aee8cf0648fd0c80fc93b6736e467177cda013012e4ce1f4df4010335",
+          "model.py": "4d39103318fc47c1727c2c463e25d6df10de496f6b89a56bfd9a570424b4c170",
+          "observe.py": "0dde4a11c3b2fe13940e4cbb0cb0a6e60d9c9eeb4752e38df52c6a5ef71b990a",
+          "prepare.py": "5671f909b8b15741e59182053c9cd5567687d48ed221c7cd016bcefc4f041226",
+          "publish_targets.py": "6a92103b0fbf4c2186cd00a0272d0752ee699f897d94414f91733e80662a374a",
+          "publish_to_hf.py": "ec497636eb87517b973c1548bf5be9f6a1978e56a2f0e59f2f40a36c7bf3f139",
+          "pyproject.toml": "038e9b5e97784a20c55692cef32b06bcff1b110750f7db560db5d9f9f98d5088",
+          "records.py": "336769bdf14819a4834e5bb9fb3034ec690543f67226540854980705cf29afe5",
+          "smoke_targets.py": "b1f32543c03d9ffa927d0cdc8d0de4cbbadb1d562c623ec913bd886e5d5be16c",
+          "storage.py": "00c5c9225930aea4228ecbbcdac48973907b31353fe409b87c0c183b9cfd6a92",
+          "test_analyze.py": "d97edf3dae68da56dead38d5f723ebad224c1e46b5423c376da41b35eda61d81",
+          "test_checkpoint_retention.py": "74e074d2b26c02ba04764c730836baab1d97e1b51c86e3a3fc7b9de56ec1eb26",
+          "test_infer.py": "ed4f45ca2b14f69a7996ae2a7d6fe3fcfcefca33856bb5993f394c3285ecbcd1",
+          "test_prepare.py": "ae9305b5559c5e95ee0e43e2069502eb5d31cb72367b51698522d420f8f8b2ab",
+          "test_proofreader.py": "0601816b103cbc1bb7d00eaa3bafa529915543d7cb3816752df8ddcc25d86759",
+          "test_training_data.py": "253d5fc832edfec7e3a7d4fd816547052f6e06412f2ea6166adf1d263cdecbe7",
+          "train.py": "6a601f0d85b7332f0e215cbee9cf5e146c2836a2d8ac44dc19f312ef0d4e25b0",
+          "train_bootstrap.sh": "1eb6c9b8e01c7901695c1d9ebfb8993dca7f7125ae930744aa3d706b8351cbd2",
+          "training_data.py": "59375846656009cf4007a080545db0b13805c72bc0c5595b89a8a8a91ad5db7a",
+          "uv.lock": "ca2922d87661e2afb21c5dd74d8329074fb3b07fc396e4ea7fa6ce46b6490499"
+        },
+        "sha256": "35555fe5c7ccaa9613540904daa692af69f4c4002adcd4d41ac00529d138d996",
+        "git_commit": "58dd410e107ee04c561b8208787898e8f868ecd2"
+      },
+      "job_id": "/bizon/exp356-evaluate-smoke-a02"
+    }
+  ],
+  "analysis_sha256": "910f8330a658ba298f5a1765abb15497123c005f61151ddb76dcf3b8d1e798f1"
+}

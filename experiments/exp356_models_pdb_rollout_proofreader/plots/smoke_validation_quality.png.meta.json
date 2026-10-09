@@ -1,10 +1,9 @@
 {
   "script": "analyze.py",
   "args": [
-    "--source",
-    "s3://marin-us-east-02a/MarinFold/exp356/evaluation/smoke-validation",
     "--label",
-    "smoke_validation"
+    "smoke_validation",
+    "--replot-only"
   ],
-  "caption": "Held-out protein means. Calibration bins pool contacts; confidence intervals in metrics JSON resample related groups."
+  "caption": "smoke_validation, debug-exp356-eight-h100-v1/step-4. Protein means; calibration bins pool contacts. Confidence intervals in metrics JSON resample related groups."
 }

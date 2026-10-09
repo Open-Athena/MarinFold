@@ -1,6 +1,7 @@
 """Evaluate calibrated contact judgments at fixed prefix lengths on held-out chains."""
 
 import argparse
+import hashlib
 import json
 import os
 import platform
@@ -18,7 +19,7 @@ from sklearn.metrics import average_precision_score, roc_auc_score
 from model import ASSESSMENT, load_model
 from records import collate, make_example
 from storage import ROOT, stage_directory, write_csv, write_json, write_rows
-from training_data import read_table, stage_rollouts
+from training_data import fingerprint, read_table, stage_rollouts
 
 
 def main() -> None:
@@ -43,6 +44,7 @@ def main() -> None:
         stage_rollouts(args.data, local/'data')
     if world > 1:
         dist.barrier()
+    data_hash = fingerprint(json.loads((local/'data/manifest.json').read_text()))
     model, tokenizer = load_model(local/'model')
     model.to(device).eval()
     loaded = time.perf_counter()-started
@@ -112,6 +114,8 @@ def main() -> None:
     write_rows([dict(prefix=k[0],bin=k[1],count=v[0],sum_probability=v[1],sum_truth=v[2]) for k,v in calibration.items()],
                args.out+f'/calibration-rank-{rank}.parquet')
     write_json(dict(rank=rank,world=world,proteins=len(mine),rows=len(summaries),checkpoint=args.checkpoint,
+                   split=args.split,data_fingerprint=data_hash,
+                   expected_proteins=len(ids),expected_ids_sha256=hashlib.sha256(json.dumps(ids).encode()).hexdigest(),
                    code=json.loads(Path('code_manifest.json').read_text()),job_id=os.environ['EXP356_JOB_ID']),
                args.out+f'/rank-{rank}.complete.json')
     if world > 1:
