@@ -118,6 +118,39 @@ class TransformersBackend:
             .eval()
         )
 
+    @classmethod
+    def from_model(
+        cls, model, tokenizer, *, tail_batch_size: int = 64
+    ) -> "TransformersBackend":
+        """Wrap a model the caller already loaded, skipping path resolution.
+
+        For analysis code that needs control over how the model is built
+        (forward hooks registered before scoring, or a deliberately
+        unrepaired rope config as a negative control) while still scoring
+        through the same :meth:`next_token_probs` as every other caller.
+        The model is put in eval mode; its device is used as-is.
+
+        Args:
+            model: A loaded ``AutoModelForCausalLM`` (or compatible) module.
+            tokenizer: The tokenizer that matches ``model``.
+            tail_batch_size: Tails per cached forward pass (see class doc).
+        """
+        if tail_batch_size < 1:
+            raise ValueError(
+                f"tail_batch_size must be >= 1; got {tail_batch_size}."
+            )
+        backend = cls.__new__(cls)
+        backend._device = str(model.device)
+        backend._tail_batch_size = tail_batch_size
+        backend._tokenizer = tokenizer
+        backend._model = model.eval()
+        return backend
+
+    @property
+    def model(self):
+        """The underlying torch module (for hooks; do not swap it out)."""
+        return self._model
+
     @property
     def tokenizer(self):
         return self._tokenizer
