@@ -76,6 +76,11 @@ def main() -> None:
     (model/'manifest.json').write_text(json.dumps(dict(source_checkpoint=args.checkpoint,files=export),indent=2))
     data=local/'data'
     manifest=stage_rollouts(args.data,data)
+    for item in manifest['files']:
+        with (data/item['name']).open('rb') as handle:
+            digest=hashlib.file_digest(handle,'sha256').hexdigest()
+        if digest!=item['sha256']:
+            raise ValueError(f'Staged rollout differs from the audited corpus: {item["name"]}')
     shutil.copyfile(data/'manifest.json',data/'_SUCCESS.json')
     fs,key=filesystem(args.targets)
     fs.get_file(key,str(data/'targets.parquet'))
@@ -101,6 +106,11 @@ def main() -> None:
     with anonymous.open(data_uri.removeprefix('hf://')+'/_SUCCESS.json') as handle:
         if json.load(handle)!=manifest:
             raise ValueError('Anonymous dataset manifest differs from the audited corpus')
+    public_files={Path(item['name']).name:item['size']
+        for item in anonymous.ls(data_uri.removeprefix('hf://'),detail=True) if item['type']=='file'}
+    for path in data.iterdir():
+        if path.is_file() and not path.name.startswith('.') and public_files.get(path.name)!=path.stat().st_size:
+            raise ValueError(f'Public dataset file is missing or has wrong size: {path.name}')
     with anonymous.open(report_uri.removeprefix('hf://')+'/release.json') as handle:
         if json.load(handle)!=release:
             raise ValueError('Anonymous release report differs from the evaluated release')
