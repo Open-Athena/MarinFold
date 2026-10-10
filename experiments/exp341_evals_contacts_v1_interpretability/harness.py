@@ -14,9 +14,9 @@ need around it:
   transformers-5 rope repair (``marinfold.inference._config``) is applied by
   the same code the production evaluator uses, and checks that it took.
   :func:`load_unrepaired_model` builds the negative control the plan's
-  harness check 1 calls for: the same weights read with the raw exported
-  config, which transformers 4.x loads with theta 10000 and no llama3
-  scaling.
+  harness check 1 calls for: the same weights with the config reduced to
+  the bare transformers-5 rope shape, which transformers 4.x loads with
+  theta 10000 and no llama3 scaling.
 - **Hooks.** Plain ``torch`` forward hooks on the Qwen3 decoder layers.
   :func:`capture_residuals` records the residual stream after the embedding
   and after every layer; :func:`mean_ablation` replaces chosen attention or
@@ -142,20 +142,28 @@ def load_model(spec: str | None, *, device: str, dtype: str = "bfloat16") -> Bac
 
 
 def load_unrepaired_model(spec: str | None, repaired: Backend) -> Backend:
-    """Same weights, raw exported config: the rope-repair negative control.
+    """Same weights, rope read the way an unrepaired 4.x load reads it.
+
+    The negative control for harness check 1. Published exports have had
+    ``repair_config_file`` applied, so their ``config.json`` carries both the
+    transformers-5 ``rope_parameters`` block and the 4.x ``rope_theta`` /
+    ``rope_scaling`` keys and loads correctly as-is. The control restores
+    the hazard: it drops the 4.x keys, leaving the bare transformers-5 shape,
+    which transformers 4.x ignores in favour of the architecture default
+    (theta 10000, no scaling).
 
     ``repaired`` is the :func:`load_model` backend for the same ``spec``; the
     control reuses its tokenizer, device and dtype, and is wrapped by the
     same backend class so it is scored by identical code.
-
-    Raises if the raw config already reads as theta 500000 (an export that
-    needs no repair), since the control would then be identical to the
-    repaired model.
     """
     directory = resolve_model(spec)
-    config = AutoConfig.from_pretrained(str(directory))
+    raw = json.loads((directory / "config.json").read_text())
+    bare = {k: v for k, v in raw.items() if k not in ("rope_theta", "rope_scaling")}
+    if "rope_parameters" not in bare:
+        raise ValueError(f"{directory} has no rope_parameters block; the control would equal the model")
+    config = AutoConfig.for_model(**bare)
     if config.rope_theta == TRAINED_ROPE_THETA:
-        raise ValueError(f"{directory} loads with the trained rope as-is; there is no unrepaired control")
+        raise ValueError(f"transformers read theta {config.rope_theta} from the bare config; no control")
     model = AutoModelForCausalLM.from_pretrained(
         str(directory), config=config, dtype=repaired.model.dtype
     ).to(repaired.model.device)
