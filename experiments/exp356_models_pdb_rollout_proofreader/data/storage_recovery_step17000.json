@@ -1,0 +1,20 @@
+{
+  "step": 17000,
+  "recovered_checkpoint": "s3://marin-us-east-02a/MarinFold/exp356/recovered/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-17000",
+  "previous_resume": {
+    "path": "s3://marin-us-east-02a/MarinFold/exp356/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-16000",
+    "step": 16000
+  },
+  "previous_best": {
+    "step": 11500,
+    "path": "s3://marin-us-east-02a/MarinFold/exp356/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-11500",
+    "validation_loss": 0.41694160045153694
+  },
+  "source_job": "/bizon/exp356-train-frozen-prod-a03",
+  "transport": "https://cwobject.com; same CoreWeave US-East-02A bucket",
+  "model_upload_seconds": 12.127861963002943,
+  "model_bytes": 5862227888,
+  "aborted_incomplete_uploads": 1,
+  "removed_partial_directory": true,
+  "recovered_at": "2026-10-10T00:33:28.002615+00:00"
+}

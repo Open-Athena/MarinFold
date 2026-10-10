@@ -22,6 +22,16 @@ def filesystem(uri: str):
     if uri.startswith('s3://') and not os.environ.get('FSSPEC_S3'):
         options = dict(profile='cw', endpoint_url='https://cwobject.com',
                        config_kwargs={'s3': {'addressing_style': 'virtual'}})
+    endpoint = os.environ.get('EXP356_S3_ENDPOINT')
+    if uri.startswith('s3://') and endpoint:
+        if endpoint != 'https://cwobject.com':
+            raise ValueError('The storage override must address the same CoreWeave object store')
+        # Long-lived clients stalled with both LOTA and the regional origin,
+        # while fresh clients could write immediately. Avoid reusing connections;
+        # credentials still come from Iris and storage stays in the same region.
+        options.update(endpoint_url=endpoint,config_kwargs={'connect_timeout':5,'read_timeout':30,
+            'retries':{'max_attempts':2},'s3':{'addressing_style':'virtual'},
+            'connector_args':{'force_close':True,'keepalive_timeout':None}})
     return fsspec.core.url_to_fs(uri, **options)
 
 
@@ -43,7 +53,9 @@ def write_rows(rows: list[dict], uri: str) -> None:
 def write_json(value: dict, uri: str) -> None:
     """Write a JSON object, used last as the commit marker for grouped artifacts."""
     fs, path = filesystem(uri)
-    fs.pipe_file(path, json.dumps(value, indent=2).encode())
+    # Bound the whole operation as well as socket reads, so a stuck client fails
+    # visibly and the job can recover from its last committed optimizer cursor.
+    fs.pipe_file(path, json.dumps(value, indent=2).encode(), timeout=60)
 
 
 def write_csv(rows: list[dict], uri: str) -> None:
@@ -93,6 +105,6 @@ def upload_directory(source: Path, destination: str) -> dict:
         with path.open('rb') as handle:
             for chunk in iter(lambda: handle.read(8 * 1024 * 1024), b''):
                 digest.update(chunk)
-        fs.put_file(str(path), root + '/' + path.name)
+        fs.put_file(str(path), root + '/' + path.name, timeout=300)
         manifest[path.name] = dict(size=path.stat().st_size, sha256=digest.hexdigest())
     return manifest

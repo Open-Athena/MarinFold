@@ -25,6 +25,8 @@ def main() -> None:
     parser.add_argument('--name', required=True)
     parser.add_argument('--gpus', type=int, choices=[0, 1, 8], default=1)
     parser.add_argument('--cluster', default='cw-us-east-02a')
+    parser.add_argument('--storage-endpoint',choices=['https://cwobject.com'],
+        help='Use the same-region object-store origin if the worker proxy stalls')
     parser.add_argument('--dry-run', action='store_true')
     args, remaining = parser.parse_known_args()
     if remaining and remaining[0] == '--':
@@ -41,6 +43,8 @@ def main() -> None:
         GEN_IMAGE if args.kind == 'generate' else TRAIN_IMAGE,
         '--exclude', r'(^|/)(_cache|\.venv|wandb|data|plots|__pycache__)/']
     command += ['-e','EXP356_JOB_ID','/bizon/'+args.name]
+    if args.storage_endpoint:
+        command += ['-e','EXP356_S3_ENDPOINT',args.storage_endpoint]
     if args.gpus:
         command += ['--gpu', f'H100x{args.gpus}']
     secret = None
