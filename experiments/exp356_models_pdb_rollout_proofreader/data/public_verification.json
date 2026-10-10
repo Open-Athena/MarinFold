@@ -1,0 +1,26 @@
+{
+  "checkpoint": "hf://buckets/open-athena/MarinFold/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18000",
+  "anonymous_download": true,
+  "all_file_hashes_verified": true,
+  "inference_code": "published infer.py",
+  "offline_inference": true,
+  "example_identity": "1bzb_A:r0",
+  "job_id": "/bizon/exp356-verify-public-a01",
+  "predictions": {
+    "one": {
+      "estimated_precision": 0.053403329104185104,
+      "estimated_recall": 0.009125636890530586,
+      "n_unique_contacts": 1,
+      "n_residues": 32,
+      "finished": false
+    },
+    "full": {
+      "estimated_precision": 0.06480750100066264,
+      "estimated_recall": 0.07696083933115005,
+      "n_unique_contacts": 12,
+      "n_residues": 32,
+      "finished": true
+    }
+  },
+  "verified_at": "2026-10-10T01:15:29.961960+00:00"
+}

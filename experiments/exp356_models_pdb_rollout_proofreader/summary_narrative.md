@@ -4,7 +4,7 @@
 
 Predict correctness for each contact in an actual MarinFold rollout, allowing later contacts to revise earlier judgments. Support a single contact and variable-length prefixes. Also estimate current precision and recall.
 
-Released checkpoint: exp356-exp277-frozen-contact-pdb50k-v2/step-18000. Training and reserved-test evaluation are complete. Public download and inference verification remains in progress.
+Released checkpoint: exp356-exp277-frozen-contact-pdb50k-v2/step-18000. Training and reserved-test evaluation are complete. Public model bytes and shipped inference were independently verified.
 
 ## Architecture
 
@@ -40,4 +40,4 @@ Measured scope: exp277 single-chain rollouts, 32–1,000 residues, temperature 1
 
 Public checkpoint includes tokenizer, code, pinned dependencies and hashes. Raw rollouts, targets, split provenance, per-rollout tables, plots and predictor timings are public.
 
-Twenty-one behavioral tests pass. Optimizer recovery was exercised on one and eight GPUs. The final release check will download the checkpoint anonymously and run shipped inference offline for one contact and a complete rollout.
+Twenty-one behavioral tests pass. Optimizer recovery was exercised on one and eight GPUs. Independent anonymous download verified every checkpoint hash and ran shipped inference offline for one contact and a complete rollout.

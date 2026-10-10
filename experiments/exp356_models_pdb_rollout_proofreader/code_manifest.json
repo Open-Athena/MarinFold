@@ -6,6 +6,7 @@
     "collect_training_timings.py": "457ffebb32e54dfe78486e1749e3d5adb03e8e7943e844c8ed2e55aba93d6fcf",
     "dispatch_generation.py": "1a69bf7c483577208b7dae644b915e866ac371524a5a6f1aa3c08f08c87c5827",
     "evaluate.py": "7353364d64732b897d7d9b44e3f3904ce46c7ed23badcb977c41ed2effb17e55",
+    "finalize_public_reports.py": "07dcf7debf45cae89770400a77c3105cea262cb31630994476b8460482f528f4",
     "generate.py": "aa34247d1f46bcecf58af2c3565cdcf452df6a95b86b659c3d28d2080f48c068",
     "generate_bootstrap.sh": "10c378712a8e4687e8c59c01ab8d3a78aadf98cd8cfc64ed653a27100f149988",
     "infer.py": "b0b68b98031884f3d16709b1a00c01deb6a0f48c731746103bf58b01427bdf77",
@@ -16,7 +17,7 @@
     "prepare.py": "5671f909b8b15741e59182053c9cd5567687d48ed221c7cd016bcefc4f041226",
     "prepare_release.py": "92d0c160f5206febf7f55adbfe976c80b2c87fa6eff2436dce7dff4ba5525cd6",
     "publish_targets.py": "6a92103b0fbf4c2186cd00a0272d0752ee699f897d94414f91733e80662a374a",
-    "publish_to_hf.py": "f37c73317b9d5ac3274e43ea657b1a553a5919e736b8684b98c8cee721739808",
+    "publish_to_hf.py": "fff9612242bfd691f4be8963b665c239878d786bfb3d5e77ba3b6342a13ab5d6",
     "pyproject.toml": "038e9b5e97784a20c55692cef32b06bcff1b110750f7db560db5d9f9f98d5088",
     "records.py": "c5c4ca668e24c0bce9ec8a5daba967e80fa9c4140ff3790cc8d4ff7d8954b767",
     "recover_checkpoint.py": "f9dbba1fd4882c357a4c085aed682aa0cbbd032e11138b1a08dec32f727ac628",
@@ -37,6 +38,6 @@
     "uv.lock": "ca2922d87661e2afb21c5dd74d8329074fb3b07fc396e4ea7fa6ce46b6490499",
     "verify_public.py": "276cc6d7aa0f4e62b78ad3456f1db6783a395f5c0dc61ac96560544557ab5cd0"
   },
-  "sha256": "56a3af34f6941c3cfdd4ed6e01915eeb5b53e5479ed5cb734701779c02272c3c",
-  "git_commit": "3249f109773dddbc8bbd77206296601365a84d82"
+  "sha256": "3d69d6a9f26be2ead4da0ad86df792dc6d70ddaed90cdf17bb7c7a2b5abe0f2e",
+  "git_commit": "2c559451c4c59319b2dd2a36590734ff01611ff8"
 }

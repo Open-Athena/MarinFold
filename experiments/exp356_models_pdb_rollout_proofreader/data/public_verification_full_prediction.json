@@ -1,0 +1,93 @@
+{
+  "contacts": [
+    {
+      "pair": [
+        16,
+        25
+      ],
+      "probability_correct": 0.035678550601005554
+    },
+    {
+      "pair": [
+        8,
+        15
+      ],
+      "probability_correct": 0.18952108919620514
+    },
+    {
+      "pair": [
+        4,
+        23
+      ],
+      "probability_correct": 0.04023794084787369
+    },
+    {
+      "pair": [
+        19,
+        26
+      ],
+      "probability_correct": 0.10970578342676163
+    },
+    {
+      "pair": [
+        12,
+        25
+      ],
+      "probability_correct": 0.04336579889059067
+    },
+    {
+      "pair": [
+        13,
+        26
+      ],
+      "probability_correct": 0.07159119844436646
+    },
+    {
+      "pair": [
+        12,
+        26
+      ],
+      "probability_correct": 0.06371499598026276
+    },
+    {
+      "pair": [
+        16,
+        26
+      ],
+      "probability_correct": 0.04742587357759476
+    },
+    {
+      "pair": [
+        5,
+        23
+      ],
+      "probability_correct": 0.04023794084787369
+    },
+    {
+      "pair": [
+        3,
+        23
+      ],
+      "probability_correct": 0.03676946833729744
+    },
+    {
+      "pair": [
+        16,
+        23
+      ],
+      "probability_correct": 0.06097517907619476
+    },
+    {
+      "pair": [
+        5,
+        25
+      ],
+      "probability_correct": 0.0384661927819252
+    }
+  ],
+  "estimated_precision": 0.06480750100066264,
+  "estimated_recall": 0.07696083933115005,
+  "n_unique_contacts": 12,
+  "n_residues": 32,
+  "finished": true
+}
