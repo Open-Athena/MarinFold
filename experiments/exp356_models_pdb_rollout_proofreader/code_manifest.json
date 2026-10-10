@@ -14,12 +14,12 @@
     "observe.py": "9ba7d4dae10ed5db5f794c5082692beab779ef06aae96cfef4d1c5bdd7154063",
     "plot_learning.py": "1c8fd7f1afa45aa772fd8d7d7cce6a0db616275053e96c69df1fdeda08e7cee0",
     "prepare.py": "5671f909b8b15741e59182053c9cd5567687d48ed221c7cd016bcefc4f041226",
-    "prepare_release.py": "8802c9ad3888ef827b66cd07a30abb0c3f1672677bf1801834fd657acccd259b",
+    "prepare_release.py": "92d0c160f5206febf7f55adbfe976c80b2c87fa6eff2436dce7dff4ba5525cd6",
     "publish_targets.py": "6a92103b0fbf4c2186cd00a0272d0752ee699f897d94414f91733e80662a374a",
     "publish_to_hf.py": "f37c73317b9d5ac3274e43ea657b1a553a5919e736b8684b98c8cee721739808",
     "pyproject.toml": "038e9b5e97784a20c55692cef32b06bcff1b110750f7db560db5d9f9f98d5088",
     "records.py": "c5c4ca668e24c0bce9ec8a5daba967e80fa9c4140ff3790cc8d4ff7d8954b767",
-    "select_release.py": "668149607b139a1b57d0d0ddd4ecedd8e2474d9516f33c6507fb246ba4b1ff2a",
+    "select_release.py": "2b3672d9938d1191c6ea6bbd4cb34767aaf835334a6416e3500d65d934dd5df4",
     "smoke_targets.py": "b1f32543c03d9ffa927d0cdc8d0de4cbbadb1d562c623ec913bd886e5d5be16c",
     "storage.py": "00c5c9225930aea4228ecbbcdac48973907b31353fe409b87c0c183b9cfd6a92",
     "test_analyze.py": "d97edf3dae68da56dead38d5f723ebad224c1e46b5423c376da41b35eda61d81",
@@ -30,12 +30,12 @@
     "test_proofreader.py": "8083f17765ac6b8e0abaf7078050264afd98043f0d6db88b3ba790098165652d",
     "test_release_selection.py": "869b7429acfa966b57310ab28100a2342850ecae54cbf8b4148e131c601de1eb",
     "test_training_data.py": "edf5abb227fa895d254a852ef7b07b2260b667ec6c7e18f6bf5a5e0795a7e046",
-    "train.py": "5c67422a9a814048b945693194f94ca68ccb89ae954e0ed351ac73aefc7a531d",
+    "train.py": "3d3b8fa1c9f80579bfa6961b6e94e3bbd4afd056f63c56aef45691a5397cc6e6",
     "train_bootstrap.sh": "1193ee4d4d3487be32f822864f6042891f8f9d64569fae5b909e021db15fdbfc",
     "training_data.py": "59375846656009cf4007a080545db0b13805c72bc0c5595b89a8a8a91ad5db7a",
     "uv.lock": "ca2922d87661e2afb21c5dd74d8329074fb3b07fc396e4ea7fa6ce46b6490499",
     "verify_public.py": "276cc6d7aa0f4e62b78ad3456f1db6783a395f5c0dc61ac96560544557ab5cd0"
   },
-  "sha256": "14f0456202b2c62fa7614e85cdbe203b5e619f0c4461657264e2d1e1d6ee9f41",
-  "git_commit": "b3fe1ae3a6ebbce2f65d18f36e84532a4b77b8e6"
+  "sha256": "411bd5ff060c40a10f09fd56f66b4b2d5534b166300f716a66dd4a9bd52f81dd",
+  "git_commit": "2cd6fc44d664065d2d12ff73474427df66d74dff"
 }

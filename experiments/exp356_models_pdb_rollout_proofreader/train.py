@@ -121,7 +121,7 @@ def checkpoint(model, tokenizer, optimizer, args, step: int, epoch: int, next_ba
         path = local_root / f'step-{step}'
         metadata = dict(architecture=model.architecture, step=step,
             epoch=epoch, next_batch=next_batch, data_fingerprint=data_hash,
-            generator=GENERATOR, assessment_token=ASSESSMENT,
+            generator=args.generator, assessment_token=ASSESSMENT,
             attention='causal_backbone_bidirectional_contact_encoder' if model.architecture==FROZEN_ARCHITECTURE else 'bidirectional',
             precision='mean unique-contact probabilities', config=vars(args), best_validation_loss=best_loss,
             code=json.loads(Path('code_manifest.json').read_text()))

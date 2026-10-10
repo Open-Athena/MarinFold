@@ -39,6 +39,7 @@ judgments. A single contact is a supported input; no unseen continuation is supp
 - Checkpoint: `{release['model']}`.
 - Architecture: `{metadata['architecture']}`. Frozen exp277 step-266344 causal
   Qwen3 features feed a four-layer, 512-wide bidirectional contact encoder.
+- [Generator checkpoint](https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/contacts-v1-exp277-m2-p06-full-epoch-1.5B/hf/step-266344).
 - 1,487,731,202 total parameters; 22,181,378 trainable parameters.
 - Training: 50,000 experimental PDB chain structures (46,933 PDB entries;
   34,894 distinct supplied sequences; 9,074 connected related groups).
