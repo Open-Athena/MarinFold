@@ -9,7 +9,7 @@
     "generate.py": "aa34247d1f46bcecf58af2c3565cdcf452df6a95b86b659c3d28d2080f48c068",
     "generate_bootstrap.sh": "10c378712a8e4687e8c59c01ab8d3a78aadf98cd8cfc64ed653a27100f149988",
     "infer.py": "b0b68b98031884f3d16709b1a00c01deb6a0f48c731746103bf58b01427bdf77",
-    "launch.py": "8b34ecca068c8f812cf2ec14e6668462300ec9fb756b1ca9164f84c37160089d",
+    "launch.py": "5c595ab18b13f740ed5aa1d1fff902809d87d53e2e918b09c919d8557def66d1",
     "model.py": "f13d987f379955497a9a5d8667942549eb6d87df58c0a25879decfbfa5e25382",
     "observe.py": "9ba7d4dae10ed5db5f794c5082692beab779ef06aae96cfef4d1c5bdd7154063",
     "plot_learning.py": "1c8fd7f1afa45aa772fd8d7d7cce6a0db616275053e96c69df1fdeda08e7cee0",
@@ -19,9 +19,10 @@
     "publish_to_hf.py": "f37c73317b9d5ac3274e43ea657b1a553a5919e736b8684b98c8cee721739808",
     "pyproject.toml": "038e9b5e97784a20c55692cef32b06bcff1b110750f7db560db5d9f9f98d5088",
     "records.py": "c5c4ca668e24c0bce9ec8a5daba967e80fa9c4140ff3790cc8d4ff7d8954b767",
+    "recover_checkpoint.py": "f9dbba1fd4882c357a4c085aed682aa0cbbd032e11138b1a08dec32f727ac628",
     "select_release.py": "2b3672d9938d1191c6ea6bbd4cb34767aaf835334a6416e3500d65d934dd5df4",
     "smoke_targets.py": "b1f32543c03d9ffa927d0cdc8d0de4cbbadb1d562c623ec913bd886e5d5be16c",
-    "storage.py": "00c5c9225930aea4228ecbbcdac48973907b31353fe409b87c0c183b9cfd6a92",
+    "storage.py": "37f4ec95ade1f8eee9f685dddafd692e4d8d8357112a0492b8f67345abdb4d21",
     "test_analyze.py": "d97edf3dae68da56dead38d5f723ebad224c1e46b5423c376da41b35eda61d81",
     "test_checkpoint_retention.py": "74e074d2b26c02ba04764c730836baab1d97e1b51c86e3a3fc7b9de56ec1eb26",
     "test_frozen_reader.py": "8ee0e2e85212a7cc8d672709d0989ffba2f6b11d9ed32fb5a26904fd453a990e",
@@ -36,6 +37,6 @@
     "uv.lock": "ca2922d87661e2afb21c5dd74d8329074fb3b07fc396e4ea7fa6ce46b6490499",
     "verify_public.py": "276cc6d7aa0f4e62b78ad3456f1db6783a395f5c0dc61ac96560544557ab5cd0"
   },
-  "sha256": "411bd5ff060c40a10f09fd56f66b4b2d5534b166300f716a66dd4a9bd52f81dd",
-  "git_commit": "2cd6fc44d664065d2d12ff73474427df66d74dff"
+  "sha256": "56a3af34f6941c3cfdd4ed6e01915eeb5b53e5479ed5cb734701779c02272c3c",
+  "git_commit": "2455fb817b3002bce4cd641ab44962b7d8c6c9ee"
 }
