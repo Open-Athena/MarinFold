@@ -1,0 +1,9 @@
+{
+  "script": "analyze.py",
+  "args": [
+    "--label",
+    "final_validation_last",
+    "--replot-only"
+  ],
+  "caption": "final_validation_last, exp356-exp277-frozen-contact-pdb50k-v2/step-18714. Protein means; calibration bins pool contacts. Confidence intervals in metrics JSON resample related groups."
+}

@@ -1,0 +1,254 @@
+{
+  "checked_at": "2026-10-10T01:17:29.393183+00:00",
+  "active_jobs": 0,
+  "counts": {
+    "succeeded": 55,
+    "killed": 6
+  },
+  "jobs": [
+    {
+      "job_id": "/bizon/exp356-verify-public-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-publish-production-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-evaluate-reserved-test-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-evaluate-final-last-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-evaluate-final-best-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-train-frozen-prod-a05",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-train-frozen-prod-a04",
+      "state": "killed"
+    },
+    {
+      "job_id": "/bizon/exp356-train-frozen-prod-a03",
+      "state": "killed"
+    },
+    {
+      "job_id": "/bizon/exp356-evaluate-retained-7500-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-evaluate-frozen-7000-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-train-frozen-prod-a02",
+      "state": "killed"
+    },
+    {
+      "job_id": "/bizon/exp356-evaluate-frozen-2000-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-evaluate-validation-2000-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-train-frozen-prod-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-train-frozen-smoke-a02",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-train-frozen-smoke-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-evaluate-validation-500-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-evaluate-preview-500-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-evaluate-smoke-a02",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-train-prod-a01",
+      "state": "killed"
+    },
+    {
+      "job_id": "/bizon/exp356-audit-prod-a02",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-audit-prod-a01",
+      "state": "killed"
+    },
+    {
+      "job_id": "/bizon/exp356-evaluate-smoke-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s31-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s30-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s29-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s28-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s27-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s26-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s25-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s24-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s23-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s22-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s21-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s20-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s19-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s18-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s17-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s16-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s15-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s14-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s13-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s12-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s11-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s10-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s09-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s08-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s07-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s06-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s05-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s04-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s03-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s02-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s01-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-prod-s00-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-batch-smoke-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-train-eight-gpu-smoke-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-train-smoke-a02",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-train-smoke-a01",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-smoke-a02",
+      "state": "succeeded"
+    },
+    {
+      "job_id": "/bizon/exp356-generate-smoke-a01",
+      "state": "killed"
+    }
+  ]
+}

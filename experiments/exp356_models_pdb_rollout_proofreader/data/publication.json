@@ -1,0 +1,24 @@
+{
+  "checkpoint": "s3://marin-us-east-02a/MarinFold/exp356/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18000",
+  "model": "hf://buckets/open-athena/MarinFold/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18000",
+  "data": "hf://buckets/open-athena/MarinFold/data/exp356/rollouts-v1",
+  "reports": "hf://buckets/open-athena/MarinFold/data/exp356/reports",
+  "total_export_bytes": 7084151257,
+  "dataset_bytes": 1032783917,
+  "dataset_counts": {
+    "structures": 53025,
+    "rollouts": 424200,
+    "files": 3328,
+    "malformed_rollouts": 703,
+    "empty_rollouts": 126,
+    "unfinished_rollouts": 7,
+    "invalid_contacts": 22163,
+    "retained_rollouts": 423371,
+    "structures_by_split": {
+      "train": 50000,
+      "validation": 1552,
+      "test": 1473
+    }
+  },
+  "published_at": "2026-10-10T01:12:00.312253+00:00"
+}
