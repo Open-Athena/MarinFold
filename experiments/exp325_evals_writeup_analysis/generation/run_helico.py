@@ -34,7 +34,7 @@ from oracle_budgets import BUDGETS, map_keys, requested_count
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 PHASE = os.environ.get("WRITEUP_PHASE", "confidence")
-if PHASE not in ("confidence", "folding", "structured", "oracle_budget", "oracle_l2", "seed_completion", "marinfold_l2"):
+if PHASE not in ("confidence", "folding", "structured", "oracle_budget", "oracle_l2", "seed_completion", "marinfold_l2", "marinfold_l5"):
     raise ValueError(PHASE)
 INPUT_FOLDER = "oracle_budget_low_msa" if PHASE == "oracle_budget" else PHASE
 TARGETS = Path("/root/sweep/data") if Path("/root/sweep/data/targets.csv").exists() else ROOT / "scratch" / "helico" / INPUT_FOLDER
@@ -74,25 +74,25 @@ def estimate() -> tuple[int, float]:
     """Apply Helico's dry-run cost gate to the complete sweep."""
     with (TARGETS / "targets.csv").open() as stream:
         targets = list(csv.DictReader(stream))
-    if len(targets) != {"confidence": 20, "folding": 211, "structured": 5, "oracle_budget": 5, "oracle_l2": 305, "seed_completion": 5, "marinfold_l2": 305}[PHASE]:
+    if len(targets) != {"confidence": 20, "folding": 211, "structured": 5, "oracle_budget": 5, "oracle_l2": 305, "seed_completion": 5, "marinfold_l2": 305, "marinfold_l5": 305}[PHASE]:
         raise ValueError(f"unexpected target count: {len(targets)}")
     if PHASE in ("oracle_budget", "seed_completion") and any(float(target["msa_depth"]) >= 10 or int(target["designed"]) != 0 for target in targets):
         raise ValueError("Oracle-budget sweep is restricted to natural proteins at MSA depth <10")
-    if PHASE in ("oracle_l2", "marinfold_l2") and any(int(target["designed"]) != 0 for target in targets):
-        raise ValueError("L/2 cohort must contain only natural proteins")
+    if PHASE in ("oracle_l2", "marinfold_l2", "marinfold_l5") and any(int(target["designed"]) != 0 for target in targets):
+        raise ValueError("Contact-budget cohort must contain only natural proteins")
     limit = int(os.environ.get("SWEEP_TARGET_LIMIT", "0"))
     if limit:
         targets = targets[:limit]
     expected_cuts = len(targets) * {"confidence": 11, "folding": 2, "structured": 101,
-                                   "oracle_budget": len(map_keys()), "oracle_l2": 2, "seed_completion": 7, "marinfold_l2": 1}[PHASE]
+                                   "oracle_budget": len(map_keys()), "oracle_l2": 2, "seed_completion": 7, "marinfold_l2": 1, "marinfold_l5": 1}[PHASE]
     seconds_per_cut = 11.0
-    if PHASE in ("oracle_budget", "oracle_l2", "seed_completion", "marinfold_l2"):
+    if PHASE in ("oracle_budget", "oracle_l2", "seed_completion", "marinfold_l2", "marinfold_l5"):
         with (ROOT / "data/helico_folding_timings.csv").open() as stream:
             measured = [float(row["elapsed_seconds"]) for row in csv.DictReader(stream)]
         seconds_per_cut = sum(measured) / len(measured)
     estimated_gpu_hours = expected_cuts * seconds_per_cut * 1.7 / 3600 + min(N_WORKERS, len(targets)) * 0.1
     estimated_usd = estimated_gpu_hours * 3.95
-    if PHASE in ("oracle_budget", "oracle_l2", "seed_completion", "marinfold_l2"):
+    if PHASE in ("oracle_budget", "oracle_l2", "seed_completion", "marinfold_l2", "marinfold_l5"):
         # Modal's current narrow-region premium is 1.75x. Keep the weights in
         # their existing us-east placement; add 10% for CPU/memory alongside GPU.
         # https://modal.com/docs/guide/region-selection (checked 2026-10-08).
@@ -186,7 +186,7 @@ class Predictor:
         self.model.load_state_dict(checkpoint["model_state_dict"])
         self.ccd = parse_ccd()
         self.rankings = json.loads(Path("/root/sweep/data/ranked_pairs.json").read_text())
-        self.protocol = json.loads(Path("/root/sweep/data/protocol.json").read_text()) if PHASE in ("oracle_budget", "oracle_l2", "seed_completion", "marinfold_l2") else None
+        self.protocol = json.loads(Path("/root/sweep/data/protocol.json").read_text()) if PHASE in ("oracle_budget", "oracle_l2", "seed_completion", "marinfold_l2", "marinfold_l5") else None
         properties = torch.cuda.get_device_properties(0)
         self.worker_meta = {
             "model_load_seconds": round(time.monotonic() - started, 3),
@@ -224,7 +224,7 @@ class Predictor:
             raise ValueError(f"{stem}: too many tokens")
         length = int(target["L_exp245"])
         maps = []
-        if PHASE in ("seed_completion", "marinfold_l2"):
+        if PHASE in ("seed_completion", "marinfold_l2", "marinfold_l5"):
             pins = self.protocol["files_sha256"][stem]
             map_path = Path("/root/sweep/data/maps") / f"{stem}.npz"
             if sha256(map_path) != pins["maps_sha256"] or sha256(Path("/root/sweep/data/gt") / f"{stem}.cif.gz") != pins["gt_sha256"]:
@@ -238,7 +238,7 @@ class Predictor:
                     if (state.shape != (tokenized.n_tokens, tokenized.n_tokens)
                         or not np.array_equal(state, state.T) or np.any(np.diag(state))
                         or not set(np.unique(state)).issubset({0, 2})
-                        or int(np.triu(state == 2, 1).sum()) != length // 2):
+                        or int(np.triu(state == 2, 1).sum()) != length // (5 if PHASE == "marinfold_l5" else 2)):
                         raise ValueError(f"{stem}/{key}: invalid completed contact map")
                     maps.append((arm, int(replicate), state))
         elif PHASE in ("oracle_budget", "oracle_l2"):
@@ -321,7 +321,7 @@ class Predictor:
                 results_volume.commit()
             if result_path.exists():
                 saved = json.loads(result_path.read_text())
-                if PHASE in ("oracle_budget", "oracle_l2", "seed_completion", "marinfold_l2") and saved.get("state_sha256") != hashlib.sha256(state.tobytes()).hexdigest():
+                if PHASE in ("oracle_budget", "oracle_l2", "seed_completion", "marinfold_l2", "marinfold_l5") and saved.get("state_sha256") != hashlib.sha256(state.tobytes()).hexdigest():
                     raise ValueError(f"{stem}/{key}: resumed result has different conditioning")
                 sample_rows.extend(saved["samples"])
                 timing_rows.append(saved["timing"])
@@ -441,13 +441,13 @@ def run() -> None:
         "tag": TAG, "helico_source_sha": HELICO_SHA,
         "helico_checkpoint": CHECKPOINT, "helico_checkpoint_step": 6000,
         "helico_checkpoint_sha256": CHECKPOINT_SHA256,
-        "contact_checkpoint": "contacts-v1-exp277-m2-p06-full-epoch-1.5B-step-266344" if PHASE in ("folding", "seed_completion", "marinfold_l2") else None,
-        "conditioning_source": {"folding": "MarinFold votes", "confidence": "ground-truth oracle and randomized three-state maps", "structured": "ground-truth oracle and 100 seeded ESMFold2 full three-state maps per low-depth protein", "oracle_budget": "Frozen uniform random true-contact subsets plus zero, all-positive and full-map controls", "oracle_l2": "Two frozen uniform random subsets of floor(L/2) true contacts; all other pairs unknown; 305 natural proteins", "seed_completion": "0,5,10,L/5 oracle seed contacts retained and completed to L/2 using 100-rollout MarinFold consensus", "marinfold_l2": "Exact top-L/2 eligible pairs from the archived Figure 05 MarinFold consensus rankings; no oracle seeds"}[PHASE],
+        "contact_checkpoint": "contacts-v1-exp277-m2-p06-full-epoch-1.5B-step-266344" if PHASE in ("folding", "seed_completion", "marinfold_l2", "marinfold_l5") else None,
+        "conditioning_source": {"folding": "MarinFold votes", "confidence": "ground-truth oracle and randomized three-state maps", "structured": "ground-truth oracle and 100 seeded ESMFold2 full three-state maps per low-depth protein", "oracle_budget": "Frozen uniform random true-contact subsets plus zero, all-positive and full-map controls", "oracle_l2": "Two frozen uniform random subsets of floor(L/2) true contacts; all other pairs unknown; 305 natural proteins", "seed_completion": "0,5,10,L/5 oracle seed contacts retained and completed to L/2 using 100-rollout MarinFold consensus", "marinfold_l2": "Exact top-L/2 eligible pairs from the archived Figure 05 MarinFold consensus rankings; no oracle seeds", "marinfold_l5": "Exact top-L/5 eligible pairs from the archived Figure 05 MarinFold consensus rankings; no oracle seeds"}[PHASE],
         "n_targets": len(targets), "n_cuts": expected_cuts, "n_samples": len(samples),
         "n_diffusion_samples_per_cut": N_SAMPLES, "n_trunk_recycles": N_CYCLES,
         "seed_per_map": SEED, "phase": PHASE, "selection": "highest ranking_score among three diffusion samples per map", "max_tokens": MAX_TOKENS,
         "single_sequence": True, "msa": False,
-        "oracle_budget_protocol_sha256": sha256(TARGETS / "protocol.json") if PHASE in ("oracle_budget", "oracle_l2", "seed_completion", "marinfold_l2") else None,
+        "oracle_budget_protocol_sha256": sha256(TARGETS / "protocol.json") if PHASE in ("oracle_budget", "oracle_l2", "seed_completion", "marinfold_l2", "marinfold_l5") else None,
         "completed_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
     }
     (output_dir / "run_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")

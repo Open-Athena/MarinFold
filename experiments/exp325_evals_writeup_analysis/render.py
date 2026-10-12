@@ -148,7 +148,7 @@ def export_depth(summary: pd.DataFrame, figure: str, metrics: list[str] | None =
                           for tier, n, lo, hi in zip(TIERS, part.n, part.ci_low, part.ci_high)]
                 fig.add_trace(go.Scatter(x=(np.arange(4) + (i - (len(ORDER[figure]) - 1) / 2) * 0.065).tolist(),
                                         y=part["mean"].tolist(), mode="markers", name=label,
-                                        marker=dict(size=9, color=color, symbol={"o": "circle", "s": "square", "D": "diamond", "v": "triangle-down", "^": "triangle-up", "P": "cross"}[marker]),
+                                        marker=dict(size=9, color=color, symbol={"o": "circle", "s": "square", "D": "diamond", "v": "triangle-down", "^": "triangle-up", "P": "cross", "X": "x"}[marker]),
                                         error_y=dict(type="data", array=(part.ci_high - part["mean"]).tolist(),
                                                      arrayminus=(part["mean"] - part.ci_low).tolist(), width=3),
                                         visible=visible, legendgroup=method, customdata=custom,
@@ -508,7 +508,11 @@ def preview(names: list[str]) -> None:
             lineage += ('MarinFold L/2: <a href="../data/marinfold_l2_per_protein.csv">protein scores and raw sample rows</a>; '
                         '<a href="../data/marinfold_l2_pairs.csv">ranked input contacts</a>; '
                         '<a href="../data/marinfold_l2_deltas.csv">paired budget comparisons</a>; '
-                        '<a href="../MARINFOLD_L2.md">protocol and results</a>. ')
+                        '<a href="../MARINFOLD_L2.md">protocol and results</a>. '
+                        'MarinFold L/5: <a href="../data/marinfold_l5_per_protein.csv">protein scores and raw sample rows</a>; '
+                        '<a href="../data/marinfold_l5_pairs.csv">ranked input contacts</a>; '
+                        '<a href="../data/marinfold_l5_deltas.csv">paired budget comparisons</a>; '
+                        '<a href="../MARINFOLD_L5.md">protocol and results</a>. ')
         if name in ("02b_confidence", "02c_accuracy_confidence"):
             lineage = ('Each dot: <a href="../data/structured_confidence_per_map.csv">selected map scores and source rows</a>. '
                        'Accuracy/confidence join: <a href="../data/structured_accuracy_confidence.csv">paired measurements</a>. '

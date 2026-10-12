@@ -13,7 +13,7 @@ inference, joins, confidence selection, or resampling.
 | 02c_accuracy_confidence | Does Helico confidence track original ESMFold2 structure accuracy? | `structured_accuracy_confidence.csv` | `generation/score_esmfold2_decoys.py` scores all 500 original structures with the AF2/3/Boltz-2 scorer; `prepare_structured_confidence` joins by protein, seed, arm and structure hash |
 | 03_method | What was trained, and how does inference work? | `training_sources.csv`, `manifest.json` | Exp277 corpus inventory and fixed model identity; diagram arrows have no quantitative width |
 | 04_contacts | How accurate are the predicted contacts? | `figure_rows.csv`, `summary.csv` (`figure=04_contacts`) | `prepare_contacts`; exp277 validation/design results plus new exp325 test results; exp245 baseline scores and new AF2/3 and Boltz-2 pyconfind contacts |
-| 05_folding | Do predicted contacts improve structure accuracy? | Same, `figure=05_folding`; `oracle_L2` traces through `oracle_l2_per_protein.csv` | `prepare_folding`; fixed MarinFold top-L with three-sample confidence selection, all seven external predictors, no-contact Helico, and two-subset L/2 oracle conditioning; same 305 natural proteins in every arm |
+| 05_folding | Do predicted contacts improve structure accuracy? | Same, `figure=05_folding`; oracle and new contact budgets trace through their `*_per_protein.csv` tables | `prepare_folding`; MarinFold top-L, top-L/2 and top-L/5 with three-sample confidence selection, all seven external predictors, no-contact Helico, and two-subset L/2 oracle conditioning; same 305 natural proteins in every arm |
 | 06_sampling | Do better individual maps occur among 100 samples? | Same, `figure=06_sampling`; `sampling_diagnostics.csv` | `prepare_sampling`; exp321 ordinary iid validation control plus new exp325 test rollouts; same sample pool for each protein's three comparisons |
 
 For Figures 01, 02, 04 and 05, a dot is the `mean` from `summary.csv` keyed by
@@ -171,3 +171,9 @@ The numerical path is `summary.csv` → `figure_rows.csv` →
 selected sample and source row retained. `marinfold_l2_pairs.csv` links every
 input contact to its original rank. [MARINFOLD_L2.md](MARINFOLD_L2.md) documents
 the budget semantics, oracle exception and reproduction commands.
+
+The L/5 follow-up adds `marinfold_helico_L5` using the same preparation and
+analysis scripts with `--divisor 5`. Inputs are verified subsets of the frozen
+L/2 maps. Its lineage follows the same filenames with `marinfold_l5` replacing
+`marinfold_l2`; [MARINFOLD_L5.md](MARINFOLD_L5.md) records the protocol and results.
+The oracle in this comparison remains L/2.

@@ -35,6 +35,8 @@ scorable monomers comprise 97 natural validation proteins, 217 natural test
 proteins, and 19 designs. Natural proteins lead; designs remain separate.
 The checkpoint, sampling recipe, top-L cut and control target list were fixed
 before looking at test results. See [the test-read ledger](../exp245_evals_foldbench_held_out_monomers/data/eval_test_reads.md).
+The later L/2 and L/5 budget comparisons were requested after those results;
+they are exploratory follow-ups, not new untouched test confirmations.
 
 ## Approach
 
@@ -85,6 +87,12 @@ The original top-L arm remains visible for a paired budget comparison.
 Mean GDT-TS changes from **0.504 to 0.478** (paired 95% interval for the change:
 −0.041 to −0.012), versus **0.843** for L/2 oracle contacts. At depth <10 the
 mean rises from 0.261 to 0.297, with substantial uncertainty across five proteins.
+
+The [L/5 follow-up](MARINFOLD_L5.md) further reduces mean GDT-TS to **0.376**.
+The paired change versus L/2 is **−0.103 [−0.123, −0.083]**, concentrated in the
+deeper MSA tiers. The lowest tier gives 0.245, with an uncertain difference from
+either larger budget. These 305 new maps are verified subsets of the L/2 inputs;
+all previous method scores are unchanged.
 
 The main depth panels (Figures 02 and 05) use **L/2 randomly sampled true contacts**
 as the oracle point, with no non-contacts or MSA. Two subsets are averaged within

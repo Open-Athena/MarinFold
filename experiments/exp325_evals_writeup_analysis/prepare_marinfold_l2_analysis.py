@@ -1,5 +1,6 @@
-"""Validate exact-L/2 folding and cache paired comparisons for the depth figure."""
+"""Validate exact-L/2 or L/5 folding and cache paired comparisons for the depth figure."""
 
+import argparse
 import hashlib
 import io
 import json
@@ -18,9 +19,19 @@ METRICS = ("gdt_ts", "lddt", "tm_score")
 
 def main() -> None:
     """Audit raw maps/coordinates, select by confidence, and bootstrap proteins."""
-    names = ["marinfold_l2_protocol.json", "marinfold_l2_targets.csv", "marinfold_l2_maps.csv",
-             "helico_marinfold_l2_samples.csv", "helico_marinfold_l2_timings.csv", "helico_marinfold_l2_run.json",
-             "oracle_l2_per_protein.csv", "marinfold_l2_baselines.csv", "helico_oracle_l2_run.json"]
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--divisor", type=int, choices=(2, 5), default=2)
+    args = parser.parse_args()
+    divisor = args.divisor
+    phase = f"marinfold_l{divisor}"
+    method = f"marinfold_helico_L{divisor}"
+    arm = f"top_L{divisor}"
+    references = ["marinfold_helico", "oracle_L2", "no_contacts"]
+    if divisor == 5:
+        references.append("marinfold_helico_L2")
+    names = [f"{phase}_protocol.json", f"{phase}_targets.csv", f"{phase}_maps.csv",
+             f"helico_{phase}_samples.csv", f"helico_{phase}_timings.csv", f"helico_{phase}_run.json",
+             "oracle_l2_per_protein.csv", f"{phase}_baselines.csv", "helico_oracle_l2_run.json"]
     hashes = {name: hashlib.sha256((DATA / name).read_bytes()).hexdigest() for name in names}
     targets = pd.read_csv(DATA / names[1])
     maps = pd.read_csv(DATA / names[2])
@@ -36,17 +47,17 @@ def main() -> None:
     for field in ("helico_source_sha", "helico_checkpoint_sha256"):
         if run[field] != oracle_run[field]:
             raise ValueError(f"Helico identity differs from oracle comparison: {field}")
-    if run["oracle_budget_protocol_sha256"] != hashes["marinfold_l2_protocol.json"]:
+    if run["oracle_budget_protocol_sha256"] != hashes[f"{phase}_protocol.json"]:
         raise ValueError("Inference used a different frozen protocol")
     if len(targets) != 305 or targets.stem.duplicated().any() or targets.designed.any():
         raise ValueError("Expected all 305 natural proteins")
-    expected = {(stem, "top_L2", 0, sample) for stem in targets.stem for sample in range(3)}
+    expected = {(stem, arm, 0, sample) for stem in targets.stem for sample in range(3)}
     keys = ["stem", "arm", "map_seed", "sample_idx"]
     if len(samples) != 915 or set(samples[keys].itertuples(index=False, name=None)) != expected:
         raise ValueError("Incomplete or unexpected inference samples")
     if len(timings) != 305 or timings.stem.duplicated().any() or not (timings.elapsed_seconds > 0).all():
         raise ValueError("Incomplete inference timings")
-    if len(maps) != 305 or maps.stem.duplicated().any() or not maps.n_present.eq(maps.L // 2).all() or maps.n_absent.any():
+    if len(maps) != 305 or maps.stem.duplicated().any() or not maps.n_present.eq(maps.L // divisor).all() or maps.n_absent.any():
         raise ValueError("Wrong frozen contact budget")
     checked = samples.merge(maps, on=keys[:3], suffixes=("", "_frozen"), validate="many_to_one")
     for field in ("L", "n_present", "n_absent", "n_unknown", "requested_contacts"):
@@ -54,9 +65,9 @@ def main() -> None:
             raise ValueError(f"Wrong runtime {field}")
     if not np.isfinite(samples[[*METRICS, "ranking_score", "ptm"]]).all().all():
         raise ValueError("Nonfinite structural outcomes")
-    with tarfile.open(HERE / "scratch/marinfold_l2_coordinates.tar.gz") as archive:
+    with tarfile.open(HERE / f"scratch/{phase}_coordinates.tar.gz") as archive:
         for row in maps.itertuples():
-            prefix = f"marinfold_l2/{row.stem}/top_L2-0"
+            prefix = f"{phase}/{row.stem}/{arm}-0"
             with np.load(io.BytesIO(archive.extractfile(prefix + ".npz").read())) as raw:
                 if hashlib.sha256(raw["contact_state"].tobytes()).hexdigest() != row.state_sha256:
                     raise ValueError(f"{row.stem}: raw conditioning differs")
@@ -71,17 +82,17 @@ def main() -> None:
     selections = []
     for selector in ("ranking_score", "ptm"):
         selected = samples.sort_values(["stem", selector, "sample_idx"], ascending=[True, False, True]).drop_duplicates("stem")
-        selections.append(selected.assign(selector=selector, source="helico_marinfold_l2_samples.csv"))
+        selections.append(selected.assign(selector=selector, source=f"helico_{phase}_samples.csv"))
     selected = pd.concat(selections, ignore_index=True)
-    selected.to_csv(DATA / "marinfold_l2_selected.csv", index=False)
+    selected.to_csv(DATA / f"{phase}_selected.csv", index=False)
     protein = selected.melt(id_vars=["stem", "selector", "source", "source_row", "sample_idx", "n_present"],
                             value_vars=list(METRICS), var_name="metric", value_name="value")
-    protein = protein.assign(method="marinfold_helico_L2").merge(
+    protein = protein.assign(method=method).merge(
         targets[["stem", "eval_set", "msa_depth", "tier", "L_exp245"]], on="stem", validate="many_to_one")
-    protein.to_csv(DATA / "marinfold_l2_per_protein.csv", index=False)
+    protein.to_csv(DATA / f"{phase}_per_protein.csv", index=False)
     # Keep the earlier top-L and oracle arms frozen; do not reinterpret their selectors.
-    old = pd.read_csv(DATA / "marinfold_l2_baselines.csv")
-    if len(old) != 1830 or set(old.stem) != set(targets.stem) or old.duplicated(["stem", "method", "metric"]).any():
+    old = pd.read_csv(DATA / f"{phase}_baselines.csv")
+    if len(old) != 305 * 2 * len(references) or set(old.stem) != set(targets.stem) or old.duplicated(["stem", "method", "metric"]).any():
         raise ValueError("Frozen baselines do not match the new cohort")
     old = old.assign(selector="ranking_score")
     comparison = pd.concat([protein, old], ignore_index=True)
@@ -90,9 +101,9 @@ def main() -> None:
         cohort_rows = comparison if cohort == "natural" else comparison[comparison.eval_set == cohort]
         for tier in [*TIERS, "All depths"]:
             cut = cohort_rows if tier == "All depths" else cohort_rows[cohort_rows.tier == tier]
-            for (selector, metric, method), group in cut.groupby(["selector", "metric", "method"]):
+            for (selector, metric, summary_method), group in cut.groupby(["selector", "metric", "method"]):
                 mean, lo, hi = bootstrap(group.value.to_numpy())
-                summaries.append(dict(cohort=cohort, tier=tier, selector=selector, metric=metric, method=method,
+                summaries.append(dict(cohort=cohort, tier=tier, selector=selector, metric=metric, method=summary_method,
                     n=len(group), mean=mean, ci_low=lo, ci_high=hi))
             for metric in ("gdt_ts", "lddt"):
                 paired = cut[(cut.selector == "ranking_score") & (cut.metric == metric)].pivot(index="stem", columns="method", values="value")
@@ -100,17 +111,17 @@ def main() -> None:
                     continue
                 if paired.isna().any().any():
                     raise ValueError("Unmatched budget comparison")
-                for reference in ("marinfold_helico", "oracle_L2", "no_contacts"):
-                    difference = paired.marinfold_helico_L2 - paired[reference]
+                for reference in references:
+                    difference = paired[method] - paired[reference]
                     mean, lo, hi = bootstrap(difference.to_numpy())
                     deltas.append(dict(cohort=cohort, tier=tier, metric=metric, reference=reference,
                         n=len(paired), delta=mean, ci_low=lo, ci_high=hi))
-    pd.DataFrame(summaries).to_csv(DATA / "marinfold_l2_summary.csv", index=False)
-    pd.DataFrame(deltas).to_csv(DATA / "marinfold_l2_deltas.csv", index=False)
-    outputs = ["marinfold_l2_selected.csv", "marinfold_l2_per_protein.csv", "marinfold_l2_summary.csv", "marinfold_l2_deltas.csv"]
+    pd.DataFrame(summaries).to_csv(DATA / f"{phase}_summary.csv", index=False)
+    pd.DataFrame(deltas).to_csv(DATA / f"{phase}_deltas.csv", index=False)
+    outputs = [f"{phase}_selected.csv", f"{phase}_per_protein.csv", f"{phase}_summary.csv", f"{phase}_deltas.csv"]
     manifest = dict(protocol=protocol, sources=hashes, files={name: hashlib.sha256((DATA / name).read_bytes()).hexdigest() for name in outputs},
                     audit="All 305 maps, 915 coordinate sets and raw metric rows checked", n_targets=305, n_maps=305, n_samples=915)
-    (DATA / "marinfold_l2_analysis.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    (DATA / f"{phase}_analysis.json").write_text(json.dumps(manifest, indent=2) + "\n")
     print(pd.DataFrame(summaries).query("cohort == 'natural' and metric == 'gdt_ts' and selector == 'ranking_score'").pivot(index="tier", columns="method", values="mean").to_string())
 
 

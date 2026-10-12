@@ -26,11 +26,12 @@ def main() -> None:
     parser.add_argument("--l2", action="store_true", help="Publish the 305-protein L/2 follow-up")
     parser.add_argument("--seed-completion", action="store_true", help="Publish the paired contact-completion follow-up")
     parser.add_argument("--marinfold-l2", action="store_true", help="Publish exact-L/2 MarinFold folding on the full figure cohort")
+    parser.add_argument("--marinfold-l5", action="store_true", help="Publish exact-L/5 MarinFold folding on the full figure cohort")
     args = parser.parse_args()
-    if sum((args.l2, args.seed_completion, args.marinfold_l2)) > 1:
+    if sum((args.l2, args.seed_completion, args.marinfold_l2, args.marinfold_l5)) > 1:
         raise ValueError("Choose one publication phase")
-    phase = "marinfold_l2" if args.marinfold_l2 else ("seed_completion" if args.seed_completion else ("oracle_l2" if args.l2 else "oracle_budget"))
-    date = "2026-10-12" if args.marinfold_l2 else "2026-10-08"
+    phase = "marinfold_l5" if args.marinfold_l5 else "marinfold_l2" if args.marinfold_l2 else ("seed_completion" if args.seed_completion else ("oracle_l2" if args.l2 else "oracle_budget"))
+    date = "2026-10-12" if args.marinfold_l2 or args.marinfold_l5 else "2026-10-08"
     destination = PUBLIC_ROOT + "/" + phase.replace("_", "-") + "-" + date
     manifest = json.loads((HERE / f"data/{phase}_analysis.json").read_text())
     for name, expected in manifest["files"].items():

@@ -1,10 +1,11 @@
-"""Freeze exact top-L/2 maps from the archived 248B-model contact rankings.
+"""Freeze exact top-L/2 or top-L/5 maps from archived 248B-model rankings.
 
 Run in the pinned Helico environment. No MarinFold inference or correctness-
 based contact selection occurs here. The existing top-L lists are long enough
-to supply floor(L/2) pairs after Helico's sequence-separation filter.
+to supply either budget after Helico's sequence-separation filter.
 """
 
+import argparse
 import hashlib
 import json
 import shutil
@@ -14,7 +15,6 @@ import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parent.parent
-DEST = ROOT / "scratch/helico/marinfold_l2"
 EXP311 = ROOT.parent / "exp311_evals_helico_exp277_contact_count_sweep"
 
 
@@ -47,13 +47,23 @@ def main() -> None:
     from helico.data import parse_ccd, parse_mmcif, tokenize_sequences
     from helico.inference import contacts_from_pairs
 
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--divisor", type=int, choices=(2, 5), default=2)
+    args = parser.parse_args()
+    divisor = args.divisor
+    phase = f"marinfold_l{divisor}"
+    destination = ROOT / "scratch/helico" / phase
+    map_key = f"top_L{divisor}-0"
     targets_path = ROOT / "data/oracle_l2_targets.csv"
     targets = pd.read_csv(targets_path)
     if len(targets) != 305 or targets.stem.duplicated().any() or targets.designed.any():
         raise ValueError("Expected the same 305 natural figure proteins")
     figure = pd.read_csv(ROOT / "data/figure_rows.csv")
-    baseline = figure[(figure.figure == "05_folding") & figure.method.isin(["marinfold_helico", "oracle_L2", "no_contacts"])]
-    baseline.to_csv(ROOT / "data/marinfold_l2_baselines.csv", index=False)
+    methods = ["marinfold_helico", "oracle_L2", "no_contacts"]
+    if divisor == 5:
+        methods.append("marinfold_helico_L2")
+    baseline = figure[(figure.figure == "05_folding") & figure.method.isin(methods)]
+    baseline.to_csv(ROOT / f"data/{phase}_baselines.csv", index=False)
     val_path = ROOT / "scratch/marinfold_l2/exp311_ranked_pairs.json"
     test_path = ROOT / "scratch/helico/folding/ranked_pairs.json"
     val_manifest = json.loads((EXP311 / "data/input_manifest.json").read_text())
@@ -89,8 +99,8 @@ def main() -> None:
             raise ValueError(f"{target.stem}: archived test ranking differs from votes")
     oracle_root = ROOT / "scratch/helico/oracle_l2"
     oracle_protocol = json.loads((oracle_root / "protocol.json").read_text())
-    (DEST / "maps").mkdir(parents=True, exist_ok=True)
-    (DEST / "gt").mkdir(exist_ok=True)
+    (destination / "maps").mkdir(parents=True, exist_ok=True)
+    (destination / "gt").mkdir(exist_ok=True)
     ccd = parse_ccd()
     rows, pairs, pins = [], [], {}
     for target in targets.sort_values("stem").itertuples():
@@ -110,29 +120,33 @@ def main() -> None:
             raise ValueError(f"{stem}: sequence differs from original folding input")
         chain = proteins[0]["id"]
         tokenized = tokenize_sequences(chains, ccd)
-        chosen = select_pairs(ranked, length // 2)
+        chosen = select_pairs(ranked, length // divisor)
         state = contacts_from_pairs([(chain, i, chain, j) for _, i, j in chosen], tokenized=tokenized, strict=False).numpy()
-        if int(np.triu(state == 2, 1).sum()) != length // 2 or np.any(state == 1):
-            raise ValueError(f"{stem}: final conditioning is not exactly L/2 positives")
-        map_path = DEST / "maps" / f"{stem}.npz"
-        np.savez_compressed(map_path, **{"top_L2-0": state})
-        shutil.copyfile(source, DEST / "gt" / source.name)
+        if int(np.triu(state == 2, 1).sum()) != length // divisor or np.any(state == 1):
+            raise ValueError(f"{stem}: final conditioning is not exactly L/{divisor} positives")
+        if divisor == 5:
+            with np.load(ROOT / "scratch/helico/marinfold_l2/maps" / f"{stem}.npz") as previous:
+                if state.shape != previous["top_L2-0"].shape or np.any((state == 2) & (previous["top_L2-0"] != 2)):
+                    raise ValueError(f"{stem}: L/5 is not a subset of the frozen L/2 contacts")
+        map_path = destination / "maps" / f"{stem}.npz"
+        np.savez_compressed(map_path, **{map_key: state})
+        shutil.copyfile(source, destination / "gt" / source.name)
         pins[stem] = dict(maps_sha256=digest(map_path), gt_sha256=digest(source))
-        rows.append(dict(stem=stem, arm="top_L2", map_seed=0, L=length, n_tokens=tokenized.n_tokens,
-            requested_contacts=length // 2, n_present=length // 2, n_absent=0,
+        rows.append(dict(stem=stem, arm=f"top_L{divisor}", map_seed=0, L=length, n_tokens=tokenized.n_tokens,
+            requested_contacts=length // divisor, n_present=length // divisor, n_absent=0,
             n_unknown=int(np.triu(state == 0, 1).sum()), skipped_short_pairs=chosen[-1][0] - len(chosen),
             state_sha256=hashlib.sha256(state.tobytes()).hexdigest(), ranking_source="exp311" if stem in val else "exp325-test"))
         pairs.extend(dict(stem=stem, selection_rank=k, original_rank=rank, helico_residue_i=i, helico_residue_j=j)
                      for k, (rank, i, j) in enumerate(chosen, 1))
-    targets.to_csv(DEST / "targets.csv", index=False)
-    targets.to_csv(ROOT / "data/marinfold_l2_targets.csv", index=False)
-    (DEST / "ranked_pairs.json").write_text(json.dumps({s: rankings[s] for s in targets.stem}) + "\n")
+    targets.to_csv(destination / "targets.csv", index=False)
+    targets.to_csv(ROOT / f"data/{phase}_targets.csv", index=False)
+    (destination / "ranked_pairs.json").write_text(json.dumps({s: rankings[s] for s in targets.stem}) + "\n")
     for name, records in (("maps", rows), ("pairs", pairs)):
-        pd.DataFrame(records).to_csv(ROOT / f"data/marinfold_l2_{name}.csv", index=False)
-    protocol = dict(phase="marinfold_l2", n_targets=305, n_maps_per_target=1, map_keys=["top_L2-0"],
+        pd.DataFrame(records).to_csv(ROOT / f"data/{phase}_{name}.csv", index=False)
+    protocol = dict(phase=phase, n_targets=305, n_maps_per_target=1, map_keys=[map_key],
         model="contacts-v1-exp277-m2-p06-full-epoch-1.5B-step-266344", raw_training_tokens=248583762834,
         ranking="Reuse the exact 100-rollout consensus rankings underlying Figure 05 top-L: exp311 validation and exp325 publication test. No new MarinFold inference.",
-        selection="First floor(L/2) pairs after filtering Helico residue separation <6; retain original vote order and ties. No ground-truth correctness or seed contacts.",
+        selection=f"First floor(L/{divisor}) pairs after filtering Helico residue separation <6; retain original vote order and ties. No ground-truth correctness or seed contacts.",
         length="L_exp245 frozen full input sequence length, not resolved token count",
         sparse_encoding="PRESENT=2 for selected pairs, UNKNOWN=0 everywhere else; no non-contacts",
         inference="MSA-free Helico step6000; three diffusion samples, six recycles, seed42 per map",
@@ -141,9 +155,9 @@ def main() -> None:
         sources_sha256={str(p.relative_to(ROOT)) if p.is_relative_to(ROOT) else str(p): digest(p)
                         for p in [targets_path, val_path, test_path, truth_path, mapping_path, *score_paths]},
         files_sha256=pins)
-    for path in (DEST / "protocol.json", ROOT / "data/marinfold_l2_protocol.json"):
+    for path in (destination / "protocol.json", ROOT / f"data/{phase}_protocol.json"):
         path.write_text(json.dumps(protocol, indent=2) + "\n")
-    print(f"Prepared 305 exact L/2 maps; skipped {sum(row['skipped_short_pairs'] for row in rows)} short mapped pairs")
+    print(f"Prepared 305 exact L/{divisor} maps; skipped {sum(row['skipped_short_pairs'] for row in rows)} short mapped pairs")
 
 
 if __name__ == "__main__":

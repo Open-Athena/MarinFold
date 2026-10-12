@@ -25,7 +25,7 @@ pTM–source TM-score Spearman: 0.127, 0.083, 0.254, 0.288, 0.613.
 Protein order: 8ii8_A, 8oxk_A, 8qoh_A, 8ux2_A, 8wrx_A. Only five biological examples.
 
 Top-L contacts raise Helico GDT-TS from 0.150 to 0.504 on 305 matched natural proteins.
-The paired gain is 0.354 [0.323, 0.387]. All cuts were fixed before test inference.
+The paired gain is 0.354 [0.323, 0.387]. The original top-L recipe was fixed before test inference.
 
 ## Can more AlphaFold3 sampling recover accurate folds?
 
@@ -114,6 +114,23 @@ L/2 oracle remains 0.843 overall. Matching count leaves a large accuracy gap.
 915 new structures audited; old predictor points remain unchanged.
 Figure 05 shows both predicted-contact budgets alongside every existing predictor.
 Source: MARINFOLD_L2.md; marinfold_l2_per_protein.csv → raw sample rows.
+
+## Reducing predicted contacts further to L/5
+
+Same archived rankings, 305 proteins, Helico recipe and confidence selector.
+Each exact L/5 map is a subset of the frozen L/2 input; no oracle seeds or MSA.
+
+Mean GDT-TS, L / L/2 / L/5:
+<10: 0.261 / 0.297 / 0.245; 10–99: 0.325 / 0.341 / 0.331;
+100–999: 0.369 / 0.370 / 0.304; >=1000: 0.563 / 0.524 / 0.402.
+Overall: 0.504 / 0.478 / 0.376. The L/2 oracle remains 0.843.
+Paired L/5 minus L/2: −0.103, 95% interval [−0.123, −0.083].
+L/5 minus L: −0.129, 95% interval [−0.151, −0.108].
+Shallow-tier intervals include zero; only five proteins have depth <10.
+
+All 915 new structures and direct timings retained; original scores unchanged.
+Exploratory follow-up requested after earlier results; no model tuning.
+Source: MARINFOLD_L5.md; marinfold_l5_per_protein.csv → raw sample rows.
 
 ## Sparse oracle contacts at very low MSA depth
 

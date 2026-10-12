@@ -328,3 +328,9 @@ Run `prepare_marinfold_l2_analysis.py` after retrieving its Helico artifacts,
 then `prepare.py` to add the method to Figure 05. Rendering and poster exports
 continue to use the same cached-data commands. `publish_oracle_budget.py
 --marinfold-l2 --upload` publishes the complete updated draft and raw new results.
+
+For the L/5 follow-up, the shared preparation and analysis scripts take
+`--divisor 5`, and inference uses `WRITEUP_PHASE=marinfold_l5`.
+Archive and publication use `--marinfold-l5`. See
+[MARINFOLD_L5.md](MARINFOLD_L5.md) for the complete commands. Each budget writes
+separate artifacts; rendering continues to consume only the prepared tables.

@@ -45,7 +45,7 @@ FIGURES = {
     "01_predictors": ["af3", "af2", "boltz2", "protenix_msa", "esmfold2", "esmfold", "protenix_ss"],
     "02_oracle": ["oracle_L2", "af3", "af2", "boltz2", "protenix_msa", "esmfold2", "esmfold", "protenix_ss", "no_contacts"],
     "04_contacts": ["af3", "af2", "boltz2", "protenix_msa", "esmfold2", "esmfold", "marinfold", "knn", "protenix_ss"],
-    "05_folding": ["oracle_L2", "af3", "af2", "boltz2", "protenix_msa", "esmfold2", "esmfold", "marinfold_helico", "marinfold_helico_L2", "protenix_ss", "no_contacts"],
+    "05_folding": ["oracle_L2", "af3", "af2", "boltz2", "protenix_msa", "esmfold2", "esmfold", "marinfold_helico", "marinfold_helico_L2", "marinfold_helico_L5", "protenix_ss", "no_contacts"],
     "06_sampling": ["single", "consensus", "best100"],
 }
 
@@ -231,15 +231,16 @@ def prepare_folding(sources: Sources, targets: pd.DataFrame, structure: pd.DataF
         selected = selected.assign(method=selected.arm.map({"top_L": "marinfold_helico", "top_0": "no_contacts"}))
         selected = selected.melt(id_vars=["stem", "method", "source", "source_row"], value_vars=["gdt_ts", "lddt"], var_name="metric", value_name="value")
         parts.append(annotate(selected, targets))
-    l2_manifest = json.loads((DATA / "marinfold_l2_analysis.json").read_text())
-    for name, expected in l2_manifest["files"].items():
-        if sha256(DATA / name) != expected:
-            raise ValueError(f"Stale MarinFold L/2 analysis: {name}")
-    l2 = sources.csv(DATA / "marinfold_l2_per_protein.csv")
-    l2 = l2[(l2.selector == "ranking_score") & l2.metric.isin(["gdt_ts", "lddt"])]
-    if len(l2) != 610 or l2.stem.nunique() != 305:
-        raise ValueError("Incomplete MarinFold L/2 population")
-    parts.append(annotate(l2[["stem", "method", "metric", "value", "source", "source_row"]], targets))
+    for divisor in (2, 5):
+        budget_manifest = json.loads((DATA / f"marinfold_l{divisor}_analysis.json").read_text())
+        for name, expected in budget_manifest["files"].items():
+            if sha256(DATA / name) != expected:
+                raise ValueError(f"Stale MarinFold L/{divisor} analysis: {name}")
+        budget = sources.csv(DATA / f"marinfold_l{divisor}_per_protein.csv")
+        budget = budget[(budget.selector == "ranking_score") & budget.metric.isin(["gdt_ts", "lddt"])]
+        if len(budget) != 610 or budget.stem.nunique() != 305:
+            raise ValueError(f"Incomplete MarinFold L/{divisor} population")
+        parts.append(annotate(budget[["stem", "method", "metric", "value", "source", "source_row"]], targets))
     baselines = structure[structure.method.isin(["oracle_L2", "af2", "af3", "boltz2", "protenix_msa", "protenix_ss", "esmfold", "esmfold2"])]
     combined = pd.concat([baselines, *parts], ignore_index=True)
     counts = combined.groupby(["stem", "metric"]).method.nunique()
@@ -322,6 +323,10 @@ def paired_deltas(rows: pd.DataFrame) -> pd.DataFrame:
                  ("05_folding", "marinfold_helico_L2", "marinfold_helico"),
                  ("05_folding", "marinfold_helico_L2", "oracle_L2"),
                  ("05_folding", "marinfold_helico_L2", "no_contacts"),
+                 ("05_folding", "marinfold_helico_L5", "marinfold_helico"),
+                 ("05_folding", "marinfold_helico_L5", "marinfold_helico_L2"),
+                 ("05_folding", "marinfold_helico_L5", "oracle_L2"),
+                 ("05_folding", "marinfold_helico_L5", "no_contacts"),
                  ("06_sampling", "best100", "consensus")]
     records = []
     for figure, method, reference in contrasts:
@@ -540,6 +545,7 @@ def main() -> None:
         "sampling_recipe": "exp321 ordinary iid control, N=100, on 97 eval-val proteins plus new 217 publication test proteins. Same pool within protein. Consensus uses all parsed maps; unfinished/malformed individual rollouts score zero. Main contact panel follows exp277 and omits unfinished maps from votes.",
         "oracle_contacts": "305 natural proteins: two random subsets of floor(L/2) true contacts, capped at available positives; every unselected pair unknown, no non-contacts. Highest ranking_score among three samples per subset, then mean of the two subset accuracies per protein. Ground-truth diagnostic, not a predictor. Full-map controls remain in separate confidence and low-depth budget diagnostics.",
         "marinfold_l2_contacts": "Figure 05 adds exact floor(L/2) valid contacts from the same archived 248B-model consensus rankings as top-L. Filter post-mapping separation <6 before truncation; no oracle seed contacts. Same 305 proteins and three-sample Helico confidence selection. See MARINFOLD_L2.md.",
+        "marinfold_l5_contacts": "Figure 05 adds exact floor(L/5) valid contacts from the same archived rankings, verified as subsets of frozen L/2 inputs. Same 305 proteins and Helico recipe. No MSA or oracle seed contacts. Exploratory follow-up after L/2 results. See MARINFOLD_L5.md.",
         "sampling_oracle": "Max correct contacts among first R emitted pairs / R; short sets retain denominator R. Ground-truth selection.",
         "scope": "Publication reanalysis plus explicitly authorized inference on the fixed eval-test split. Checkpoints remain fixed. The user selected the L/2 oracle budget after inspecting the five low-depth test proteins; the follow-up is an exploratory ground-truth conditioning diagnostic, not an untouched held-out confirmation.",
         "confidence_control": {"status": "complete", "selection": "All five natural proteins at MSA depth <10; oracle plus 100 seeded ESMFold2 maps, three diffusion samples per map; select and rank by highest pTM, with sample_idx breaking within-map ties. No ipTM or clash penalty. Historical random controls and other structural benchmark panels retain their original selection protocols.", "scatter": "Measured protein CA TM-score versus selected Helico pTM; separate original ESMFold2 and reconstructed Helico views; oracle source TM-score is one by definition."},
