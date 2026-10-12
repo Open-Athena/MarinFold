@@ -8,6 +8,8 @@ all individual-protein pages, new P@L/5 figures, focused KNN comparisons and
 the four sparse-oracle GDT-TS/lDDT figures for the five proteins at MSA depth <10
 (42 static figures total, including four new [seed-completion panels](SEED_COMPLETION.md)). Figures 02 and 05 now use the
 [L/2 oracle-contact protocol](ORACLE_L2.md) across all four MSA-depth tiers.
+Figure 05 also includes [MarinFold top-L/2 contacts](MARINFOLD_L2.md), alongside
+the original top-L prediction arm, on the same 305 natural proteins.
 Every poster PDF, SVG and PNG has a **plain white background**, including the
 plot areas, annotation boxes and schematic boxes.
 

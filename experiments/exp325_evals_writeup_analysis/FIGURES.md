@@ -156,3 +156,18 @@ completed rollouts without correctness labels. `prepare_seed_completion_analysis
 caches confidence selection, subset averages and paired protein bootstraps.
 `render_seed_completion.py` only reads those cached tables. Exact point-to-row
 keys, all commands and the public raw archives are in [SEED_COMPLETION.md](SEED_COMPLETION.md).
+
+## Matching MarinFold's contact count to the L/2 oracle
+
+Figure `05_folding` (GDT-TS and lDDT) adds `marinfold_helico_L2` beside the
+unchanged top-L method. `generation/prepare_marinfold_l2.py` reuses the same
+rankings, filters invalid mapped separations, and freezes exactly floor(L/2)
+contacts per protein. `prepare_marinfold_l2_analysis.py` audits all raw maps,
+coordinates and scores before confidence selection and protein bootstraps.
+`prepare.py` joins the result into the existing 305-protein comparison.
+
+The numerical path is `summary.csv` → `figure_rows.csv` →
+`marinfold_l2_per_protein.csv` → `helico_marinfold_l2_samples.csv`, with the
+selected sample and source row retained. `marinfold_l2_pairs.csv` links every
+input contact to its original rank. [MARINFOLD_L2.md](MARINFOLD_L2.md) documents
+the budget semantics, oracle exception and reproduction commands.

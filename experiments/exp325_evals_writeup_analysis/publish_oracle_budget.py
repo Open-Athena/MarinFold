@@ -25,11 +25,13 @@ def main() -> None:
     parser.add_argument("--upload", action="store_true")
     parser.add_argument("--l2", action="store_true", help="Publish the 305-protein L/2 follow-up")
     parser.add_argument("--seed-completion", action="store_true", help="Publish the paired contact-completion follow-up")
+    parser.add_argument("--marinfold-l2", action="store_true", help="Publish exact-L/2 MarinFold folding on the full figure cohort")
     args = parser.parse_args()
-    if args.l2 and args.seed_completion:
+    if sum((args.l2, args.seed_completion, args.marinfold_l2)) > 1:
         raise ValueError("Choose one publication phase")
-    phase = "seed_completion" if args.seed_completion else ("oracle_l2" if args.l2 else "oracle_budget")
-    destination = PUBLIC_ROOT + "/" + phase.replace("_", "-") + "-2026-10-08"
+    phase = "marinfold_l2" if args.marinfold_l2 else ("seed_completion" if args.seed_completion else ("oracle_l2" if args.l2 else "oracle_budget"))
+    date = "2026-10-12" if args.marinfold_l2 else "2026-10-08"
+    destination = PUBLIC_ROOT + "/" + phase.replace("_", "-") + "-" + date
     manifest = json.loads((HERE / f"data/{phase}_analysis.json").read_text())
     for name, expected in manifest["files"].items():
         if digest(HERE / "data" / name) != expected:
@@ -43,6 +45,7 @@ def main() -> None:
     stage.mkdir(parents=True)
     for pattern in ("data/*.csv", "data/*.json", "data/*.txt", "data/*.md", "data/inputs/Lato-*", "plots/*", "site/*",
                     "*oracle_budget*.py", "*oracle_l2*.py", "*seed_completion*.py", "generation/*seed_completion*.py",
+                    "*marinfold_l2*.py", "generation/*marinfold_l2*.py",
                     "generation/run_contacts.py", "generation/score_rollout_worker.py", "generation/checkpoint_manifest.json",
                     "generation/*oracle_budget*.py", "generation/run_helico.py",
                     "generation/archive_helico.py", "generation/pyproject.toml", "generation/uv.lock",

@@ -77,8 +77,8 @@ def static_depth(summary: pd.DataFrame, figure: str, metric: str, cohort: str = 
                     (summary.cohort == cohort) & summary.tier.isin(TIERS)]
     crowded = len(ORDER[figure]) > 6
     sparse_oracle = figure in ("02_oracle", "05_folding")
-    fig, ax = plt.subplots(figsize=(10.4, 6.8 if crowded else 6.0), facecolor=PAPER)
-    fig.subplots_adjust(left=0.09, right=0.98, bottom=0.40 if sparse_oracle else (0.36 if crowded else 0.33), top=0.79)
+    fig, ax = plt.subplots(figsize=(10.4, 7.3 if figure == "05_folding" else (6.8 if crowded else 6.0)), facecolor=PAPER)
+    fig.subplots_adjust(left=0.09, right=0.98, bottom=0.42 if figure == "05_folding" else (0.40 if sparse_oracle else (0.36 if crowded else 0.33)), top=0.79)
     fig.text(0.09, 0.945, TITLES[figure], fontsize=20, color=INK, weight="bold")
     population = "Natural FoldBench monomers" if figure in {"01_predictors", "02_oracle"} else "Natural FoldBench · 248B-token model"
     fig.text(0.09, 0.887, f"{population}  ·  mean and 95% interval", fontsize=11, color=INK)
@@ -148,7 +148,7 @@ def export_depth(summary: pd.DataFrame, figure: str, metrics: list[str] | None =
                           for tier, n, lo, hi in zip(TIERS, part.n, part.ci_low, part.ci_high)]
                 fig.add_trace(go.Scatter(x=(np.arange(4) + (i - (len(ORDER[figure]) - 1) / 2) * 0.065).tolist(),
                                         y=part["mean"].tolist(), mode="markers", name=label,
-                                        marker=dict(size=9, color=color, symbol={"o": "circle", "s": "square", "D": "diamond", "v": "triangle-down", "^": "triangle-up"}[marker]),
+                                        marker=dict(size=9, color=color, symbol={"o": "circle", "s": "square", "D": "diamond", "v": "triangle-down", "^": "triangle-up", "P": "cross"}[marker]),
                                         error_y=dict(type="data", array=(part.ci_high - part["mean"]).tolist(),
                                                      arrayminus=(part["mean"] - part.ci_low).tolist(), width=3),
                                         visible=visible, legendgroup=method, customdata=custom,
@@ -504,6 +504,11 @@ def preview(names: list[str]) -> None:
                         '<a href="../data/oracle_l2_selected.csv">selected diffusion samples</a>; '
                         '<a href="../data/oracle_l2_maps.csv">contact counts and map hashes</a>; '
                         '<a href="../ORACLE_L2.md">protocol and results</a>. ')
+        if name == "05_folding":
+            lineage += ('MarinFold L/2: <a href="../data/marinfold_l2_per_protein.csv">protein scores and raw sample rows</a>; '
+                        '<a href="../data/marinfold_l2_pairs.csv">ranked input contacts</a>; '
+                        '<a href="../data/marinfold_l2_deltas.csv">paired budget comparisons</a>; '
+                        '<a href="../MARINFOLD_L2.md">protocol and results</a>. ')
         if name in ("02b_confidence", "02c_accuracy_confidence"):
             lineage = ('Each dot: <a href="../data/structured_confidence_per_map.csv">selected map scores and source rows</a>. '
                        'Accuracy/confidence join: <a href="../data/structured_accuracy_confidence.csv">paired measurements</a>. '

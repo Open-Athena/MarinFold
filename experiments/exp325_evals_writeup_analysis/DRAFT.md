@@ -69,7 +69,7 @@ This suggests generating candidate contact sets directly from sequence, trained 
 
 ![MarinFold](plots/03_method.png)
 
-Our current 1.47B-parameter model saw 248.584B raw tokens. Here is its contact accuracy, followed by the structures Helico produces from its top-L contacts.
+Our current 1.47B-parameter model saw 248.584B raw tokens. Here is its contact accuracy, followed by the structures Helico produces from its top-L and top-L/2 contacts.
 
 ![Contact R-precision](plots/04_contacts.png)
 
@@ -82,6 +82,10 @@ MarinFold also clears the decontaminated sequence-KNN baseline.
 ![MarinFold versus KNN](plots/04b_knn.png)
 
 ![From predicted contacts to structures](plots/05_folding.png)
+
+The top-L/2 prediction arm matches the oracle's contact budget.
+Mean GDT-TS falls slightly from 0.504 to 0.478; the L/2 oracle reaches 0.843.
+[Paired comparison and exact protocol](MARINFOLD_L2.md).
 
 Low-depth proteins remain the challenge. Consensus R-precision is 0.561; oracle selection of an individual sample gives 0.528. The maps are distinct, but useful whole-map alternatives remain limited.
 

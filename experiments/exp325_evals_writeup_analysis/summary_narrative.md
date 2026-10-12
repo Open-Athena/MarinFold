@@ -99,6 +99,22 @@ No MSA or negative contacts. Average two subsets per protein after three-sample 
 One protein has 109 available positives versus 110 requested.
 Source: ORACLE_L2.md; oracle_l2_per_protein.csv → helico_oracle_l2_samples.csv.
 
+## Match MarinFold and oracle contact counts
+
+Same archived 248B-model rankings; exact top-L/2 positives, no oracle seeds or MSA.
+305 proteins, three Helico samples/map, original ranking-score selection.
+
+Mean GDT-TS, top-L → top-L/2:
+<10: 0.261 → 0.297; 10–99: 0.325 → 0.341;
+100–999: 0.369 → 0.370; >=1000: 0.563 → 0.524.
+Overall: 0.504 → 0.478; paired change −0.026, 95% interval [−0.041, −0.012].
+Shallower-tier paired intervals include zero; only five proteins have depth <10.
+L/2 oracle remains 0.843 overall. Matching count leaves a large accuracy gap.
+
+915 new structures audited; old predictor points remain unchanged.
+Figure 05 shows both predicted-contact budgets alongside every existing predictor.
+Source: MARINFOLD_L2.md; marinfold_l2_per_protein.csv → raw sample rows.
+
 ## Sparse oracle contacts at very low MSA depth
 
 All five natural proteins with MSA depth <10; Helico receives no MSA.

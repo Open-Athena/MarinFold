@@ -1,0 +1,22 @@
+{
+  "tag": "exp325-exp277-step266344-marinfold_l2-v1",
+  "helico_source_sha": "b10385d736673c81b10e70d1099962af6f2573c0",
+  "helico_checkpoint": "/ckpts/contacts-msafree-01/contacts-msafree-01-step-6000.pt",
+  "helico_checkpoint_step": 6000,
+  "helico_checkpoint_sha256": "779d540e5bb45cd26bb970188da2f1937ed3079942923a1356c29d06f20fe644",
+  "contact_checkpoint": "contacts-v1-exp277-m2-p06-full-epoch-1.5B-step-266344",
+  "conditioning_source": "Exact top-L/2 eligible pairs from the archived Figure 05 MarinFold consensus rankings; no oracle seeds",
+  "n_targets": 305,
+  "n_cuts": 305,
+  "n_samples": 915,
+  "n_diffusion_samples_per_cut": 3,
+  "n_trunk_recycles": 6,
+  "seed_per_map": 42,
+  "phase": "marinfold_l2",
+  "selection": "highest ranking_score among three diffusion samples per map",
+  "max_tokens": 2048,
+  "single_sequence": true,
+  "msa": false,
+  "oracle_budget_protocol_sha256": "3f672b69987b28e3e92991956f3a694dd610e66240e4bf355a3d5c6eabbaf62f",
+  "completed_at_utc": "2026-10-12T18:43:45.382449+00:00"
+}

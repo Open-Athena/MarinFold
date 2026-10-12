@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
-  "input_checkout": "b5139583e338fcde7bf6bf285bf342cc3c4410b2",
-  "prepare_sha256": "b350695f98618f62204db9b46b0be758a53855ccb67af233e3505f9f243ff44e",
+  "input_checkout": "733a5899320b5c38f61b5da8e54fefcc0c0e794e",
+  "prepare_sha256": "15d8665844e96dff508ec5d36dd4f01b512df084db1857833a4fa778e38a6625",
   "lock_sha256": "aee5714751d7ad87e306dcca84d822bfaf88311d84bf174d025b7ca177005130",
   "inputs": {
     "experiments/exp245_evals_foldbench_held_out_monomers/data/eval_sets.csv": {
@@ -67,6 +67,10 @@
     "experiments/exp325_evals_writeup_analysis/data/helico_folding_samples.csv": {
       "sha256": "39f3524d5859e1c27fad737ac96e2e8e54b91f3bdbc452f99825fee2210205e7",
       "bytes": 242085
+    },
+    "experiments/exp325_evals_writeup_analysis/data/marinfold_l2_per_protein.csv": {
+      "sha256": "5a2a27100d4c019ac666606356786f83877321d00f28271df26bc52e0678e676",
+      "bytes": 238182
     },
     "experiments/exp321_evals_null_sequence_contrastive_guidance_for_contacts/data/full_dev_natural.csv": {
       "sha256": "1abff837c30a2c618868e44733d05762ae6998920d9a208d9300833a29cffd02",
@@ -159,11 +163,17 @@
     "data/helico_folding_run.json": {
       "sha256": "532daa6b752dbc6be46e050efed499183f54f4bf0eb6f502a05c00db7edcdcfe"
     },
+    "data/helico_marinfold_l2_run.json": {
+      "sha256": "9a2d50cb2a5a2bda52c222b91df5dae6bff3f637508c181bb6e7e409ee65f8e9"
+    },
     "data/helico_oracle_budget_run.json": {
       "sha256": "59c79bb7df7295736307af8aa428b0e4de48be4c138d9be55eb876f4740a19d8"
     },
     "data/helico_oracle_l2_run.json": {
       "sha256": "01cc2096316bd8bf42a2267eb74d6a1f797c0f4fe5c4931a2bab9eeb0711baaf"
+    },
+    "data/helico_seed_completion_run.json": {
+      "sha256": "bdc306442876a1ce56e1a096480dd6181d4ced54892b0b5b18270f96bd84629e"
     },
     "data/helico_structured_run.json": {
       "sha256": "d680b5ef00ddfb4f5038959e33e895d710cbfb4c7957730422ebf4ddaea00f12"
@@ -191,16 +201,16 @@
       "rows": 9
     },
     "figure_rows.csv": {
-      "sha256": "99cae2ea4e5584ea4aa522a00b2e25539f9b9781a13b2495977783ef01561987",
-      "rows": 24004
+      "sha256": "518d49abdb2cba6d6ff12a46492d39ef354e2905eb9a5133b7d37f32c689eec9",
+      "rows": 24614
     },
     "summary.csv": {
-      "sha256": "062f9102068b23e189595a9820d69fed711cc21fb5d64a561c4f49d71e2be07c",
-      "rows": 1952
+      "sha256": "8f816813b85fbf2c4276a65cb6af121a8d1f75c4893929f5258dba19246529cb",
+      "rows": 2000
     },
     "paired_deltas.csv": {
-      "sha256": "138118cac9c67ff6cee674f6aef282c354c376078a6509f8ab0cdaecae7a4152",
-      "rows": 248
+      "sha256": "d639d75637875d7d6e1c44fe1635a0f3683224b6ad22592b24ee89e0acaacf67",
+      "rows": 392
     },
     "sampling_diagnostics.csv": {
       "sha256": "e52eea61959f0d83bbc5f089cc1939307267f8b334d532a169811cdfbcff23d6",
@@ -260,6 +270,7 @@
   "sampling_checkpoint": "contacts-v1-exp277-m2-p06-full-epoch-1.5B-step-266344",
   "sampling_recipe": "exp321 ordinary iid control, N=100, on 97 eval-val proteins plus new 217 publication test proteins. Same pool within protein. Consensus uses all parsed maps; unfinished/malformed individual rollouts score zero. Main contact panel follows exp277 and omits unfinished maps from votes.",
   "oracle_contacts": "305 natural proteins: two random subsets of floor(L/2) true contacts, capped at available positives; every unselected pair unknown, no non-contacts. Highest ranking_score among three samples per subset, then mean of the two subset accuracies per protein. Ground-truth diagnostic, not a predictor. Full-map controls remain in separate confidence and low-depth budget diagnostics.",
+  "marinfold_l2_contacts": "Figure 05 adds exact floor(L/2) valid contacts from the same archived 248B-model consensus rankings as top-L. Filter post-mapping separation <6 before truncation; no oracle seed contacts. Same 305 proteins and three-sample Helico confidence selection. See MARINFOLD_L2.md.",
   "sampling_oracle": "Max correct contacts among first R emitted pairs / R; short sets retain denominator R. Ground-truth selection.",
   "scope": "Publication reanalysis plus explicitly authorized inference on the fixed eval-test split. Checkpoints remain fixed. The user selected the L/2 oracle budget after inspecting the five low-depth test proteins; the follow-up is an exploratory ground-truth conditioning diagnostic, not an untouched held-out confirmation.",
   "confidence_control": {
