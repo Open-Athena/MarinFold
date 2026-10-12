@@ -79,11 +79,11 @@ unknown. Confidence selects one of three diffusion samples at the fixed cut.
 Benchmark entities, including non-protein entities where present, are retained.
 GDT-TS and lDDT remain distinct metrics.
 
-Figure 05 also includes [MarinFold top-L/2](MARINFOLD_L2.md), reusing the same
+Figure 05 uses only [MarinFold top-L/2](MARINFOLD_L2.md), reusing the same
 archived consensus rankings. This arm filters short mapped pairs before taking
 floor(L/2), so all 305 maps meet their contact budget exactly. It uses three
 Helico samples per map and the same confidence selector, with no oracle seeds.
-The original top-L arm remains visible for a paired budget comparison.
+The original top-L results remain in the tables for a paired budget comparison.
 Mean GDT-TS changes from **0.504 to 0.478** (paired 95% interval for the change:
 −0.041 to −0.012), versus **0.843** for L/2 oracle contacts. At depth <10 the
 mean rises from 0.261 to 0.297, with substantial uncertainty across five proteins.

@@ -77,8 +77,8 @@ def static_depth(summary: pd.DataFrame, figure: str, metric: str, cohort: str = 
                     (summary.cohort == cohort) & summary.tier.isin(TIERS)]
     crowded = len(ORDER[figure]) > 6
     sparse_oracle = figure in ("02_oracle", "05_folding")
-    fig, ax = plt.subplots(figsize=(10.4, 7.3 if figure == "05_folding" else (6.8 if crowded else 6.0)), facecolor=PAPER)
-    fig.subplots_adjust(left=0.09, right=0.98, bottom=0.42 if figure == "05_folding" else (0.40 if sparse_oracle else (0.36 if crowded else 0.33)), top=0.79)
+    fig, ax = plt.subplots(figsize=(10.4, 6.8 if crowded else 6.0), facecolor=PAPER)
+    fig.subplots_adjust(left=0.09, right=0.98, bottom=0.40 if sparse_oracle else (0.36 if crowded else 0.33), top=0.79)
     fig.text(0.09, 0.945, TITLES[figure], fontsize=20, color=INK, weight="bold")
     population = "Natural FoldBench monomers" if figure in {"01_predictors", "02_oracle"} else "Natural FoldBench · 248B-token model"
     fig.text(0.09, 0.887, f"{population}  ·  mean and 95% interval", fontsize=11, color=INK)
@@ -509,10 +509,7 @@ def preview(names: list[str]) -> None:
                         '<a href="../data/marinfold_l2_pairs.csv">ranked input contacts</a>; '
                         '<a href="../data/marinfold_l2_deltas.csv">paired budget comparisons</a>; '
                         '<a href="../MARINFOLD_L2.md">protocol and results</a>. '
-                        'MarinFold L/5: <a href="../data/marinfold_l5_per_protein.csv">protein scores and raw sample rows</a>; '
-                        '<a href="../data/marinfold_l5_pairs.csv">ranked input contacts</a>; '
-                        '<a href="../data/marinfold_l5_deltas.csv">paired budget comparisons</a>; '
-                        '<a href="../MARINFOLD_L5.md">protocol and results</a>. ')
+                        'Additional contact-budget results: <a href="../MARINFOLD_L5.md">L, L/2 and L/5 comparison</a>. ')
         if name in ("02b_confidence", "02c_accuracy_confidence"):
             lineage = ('Each dot: <a href="../data/structured_confidence_per_map.csv">selected map scores and source rows</a>. '
                        'Accuracy/confidence join: <a href="../data/structured_accuracy_confidence.csv">paired measurements</a>. '

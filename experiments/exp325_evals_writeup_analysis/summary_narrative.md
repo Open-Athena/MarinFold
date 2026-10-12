@@ -112,7 +112,7 @@ Shallower-tier paired intervals include zero; only five proteins have depth <10.
 L/2 oracle remains 0.843 overall. Matching count leaves a large accuracy gap.
 
 915 new structures audited; old predictor points remain unchanged.
-Figure 05 shows both predicted-contact budgets alongside every existing predictor.
+Figure 05 shows L/2 as its only MarinFold variant alongside every existing predictor.
 Source: MARINFOLD_L2.md; marinfold_l2_per_protein.csv → raw sample rows.
 
 ## Reducing predicted contacts further to L/5

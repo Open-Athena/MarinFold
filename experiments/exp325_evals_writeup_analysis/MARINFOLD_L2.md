@@ -1,11 +1,11 @@
 # MarinFold top-L/2 contacts through Helico
 
-Figure 05 now compares **top-L/2 and top-L predicted contacts** from the same
+Figure 05 shows **top-L/2 predicted contacts** from the
 248B-token MarinFold model, alongside **L/2 oracle contacts** and all existing
 predictors. Every arm covers the same **305 natural proteins**: 95 validation
 and 210 test, with 5 / 20 / 60 / 220 in the four MSA-depth tiers.
-The figure also includes the subsequent [L/5 follow-up](MARINFOLD_L5.md);
-the results below retain the original L/2 comparison.
+L/2 is the only MarinFold variant in the figure. The results below retain the
+original comparison with top-L; the [L/5 follow-up](MARINFOLD_L5.md) compares all three budgets.
 
 ![GDT-TS at matched MSA depths](plots/05_folding.png)
 

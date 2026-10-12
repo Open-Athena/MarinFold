@@ -13,7 +13,7 @@ inference, joins, confidence selection, or resampling.
 | 02c_accuracy_confidence | Does Helico confidence track original ESMFold2 structure accuracy? | `structured_accuracy_confidence.csv` | `generation/score_esmfold2_decoys.py` scores all 500 original structures with the AF2/3/Boltz-2 scorer; `prepare_structured_confidence` joins by protein, seed, arm and structure hash |
 | 03_method | What was trained, and how does inference work? | `training_sources.csv`, `manifest.json` | Exp277 corpus inventory and fixed model identity; diagram arrows have no quantitative width |
 | 04_contacts | How accurate are the predicted contacts? | `figure_rows.csv`, `summary.csv` (`figure=04_contacts`) | `prepare_contacts`; exp277 validation/design results plus new exp325 test results; exp245 baseline scores and new AF2/3 and Boltz-2 pyconfind contacts |
-| 05_folding | Do predicted contacts improve structure accuracy? | Same, `figure=05_folding`; oracle and new contact budgets trace through their `*_per_protein.csv` tables | `prepare_folding`; MarinFold top-L, top-L/2 and top-L/5 with three-sample confidence selection, all seven external predictors, no-contact Helico, and two-subset L/2 oracle conditioning; same 305 natural proteins in every arm |
+| 05_folding | Do predicted contacts improve structure accuracy? | Same, `figure=05_folding`; oracle and predicted contacts trace through their `*_per_protein.csv` tables | `prepare_folding`; MarinFold top-L/2 with three-sample confidence selection, all seven external predictors, no-contact Helico, and two-subset L/2 oracle conditioning; same 305 natural proteins in every arm. `theme.ORDER` selects these ten methods from cached results that also retain top-L and top-L/5. |
 | 06_sampling | Do better individual maps occur among 100 samples? | Same, `figure=06_sampling`; `sampling_diagnostics.csv` | `prepare_sampling`; exp321 ordinary iid validation control plus new exp325 test rollouts; same sample pool for each protein's three comparisons |
 
 For Figures 01, 02, 04 and 05, a dot is the `mean` from `summary.csv` keyed by
@@ -122,8 +122,9 @@ means, 95% protein-bootstrap intervals, n, stems and contributing `context_rows`
 Only the <10 tier has extended AF3 results. Missing cells mean not run.
 `af3_context_low_depth.csv` retains paired deltas from the original AF3 baseline.
 The ESMFold2 comparator uses the archived baseline, not the 100-map decoy pool.
-MarinFold→Helico uses exp277 step266344 at the fixed top-L cut, selected by
-confidence, matching Figure 05. Oracle rows are ground-truth diagnostics.
+MarinFold→Helico uses exp277 step266344 at the original fixed top-L cut,
+selected by confidence; the main Figure 05 now uses top-L/2.
+Oracle rows are ground-truth diagnostics.
 
 `render_af3_context.py` checks the prepared file hashes and writes PNG/PDF/SVG
 and interactive matrices. Hover reveals each source cell or aggregate interval.
@@ -159,8 +160,8 @@ keys, all commands and the public raw archives are in [SEED_COMPLETION.md](SEED_
 
 ## Matching MarinFold's contact count to the L/2 oracle
 
-Figure `05_folding` (GDT-TS and lDDT) adds `marinfold_helico_L2` beside the
-unchanged top-L method. `generation/prepare_marinfold_l2.py` reuses the same
+Figure `05_folding` (GDT-TS and lDDT) shows `marinfold_helico_L2` as its only
+MarinFold variant. `generation/prepare_marinfold_l2.py` reuses the same
 rankings, filters invalid mapped separations, and freezes exactly floor(L/2)
 contacts per protein. `prepare_marinfold_l2_analysis.py` audits all raw maps,
 coordinates and scores before confidence selection and protein bootstraps.
@@ -177,3 +178,7 @@ analysis scripts with `--divisor 5`. Inputs are verified subsets of the frozen
 L/2 maps. Its lineage follows the same filenames with `marinfold_l5` replacing
 `marinfold_l2`; [MARINFOLD_L5.md](MARINFOLD_L5.md) records the protocol and results.
 The oracle in this comparison remains L/2.
+
+All three budgets remain in `figure_rows.csv` and `summary.csv`. The display
+selection lives only in `theme.ORDER["05_folding"]`, shared by static, interactive
+and poster renderers. Changing the displayed methods never reruns analysis.

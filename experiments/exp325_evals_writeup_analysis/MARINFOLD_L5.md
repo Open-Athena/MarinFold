@@ -1,8 +1,9 @@
 # MarinFold top-L/5 contacts through Helico
 
-Figure 05 compares **top-L, top-L/2 and top-L/5 predicted contacts** from the
-same 248B-token MarinFold model, alongside the existing L/2 oracle and all
-seven structure predictors. Every arm covers the same **305 natural proteins**:
+This analysis compares **top-L, top-L/2 and top-L/5 predicted contacts** from the
+same 248B-token MarinFold model. Figure 05 displays **L/2 only**, alongside the
+L/2 oracle, all seven structure predictors and no-contact Helico.
+Every arm covers the same **305 natural proteins**:
 95 validation and 210 test, with 5 / 20 / 60 / 220 in the four MSA-depth tiers.
 
 ![GDT-TS across MSA depths](plots/05_folding.png)
@@ -42,8 +43,8 @@ oracle seed contacts, negative contacts, or MSA. The checkpoint remains
 `contacts-v1-exp277-m2-p06-full-epoch-1.5B-step-266344`, trained on
 248,583,762,834 raw tokens.
 
-Reuse the same archived 100-rollout consensus rankings as Figure 05's top-L
-and [top-L/2](MARINFOLD_L2.md): exp311 for validation, exp325's publication run
+Reuse the same archived 100-rollout consensus rankings as the original top-L
+and Figure 05's [top-L/2](MARINFOLD_L2.md): exp311 for validation, exp325's publication run
 for test. No MarinFold inference is repeated. The validation ranking file is
 checked against its published hash; every test list is independently rebuilt
 from the original sparse votes. Filter mapped residue separation <6 **before**
@@ -75,7 +76,8 @@ budget comparison, not untouched held-out confirmation.
 - `marinfold_l5_summary.csv` and `marinfold_l5_deltas.csv`: protein-weighted means
   and paired differences, using 5,000 protein-bootstrap replicates.
 - `figure_rows.csv` → `marinfold_l5_per_protein.csv` → raw samples traces every
-  new Figure 05 dot; `summary.csv` stores the exact plotted tier aggregates.
+  L/5 result; `summary.csv` retains its tier aggregates, although L/5 is hidden
+  in the current Figure 05 presentation.
 
 The [public bundle](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp325-writeup-analysis/marinfold-l5-2026-10-12)
 contains every frozen input and all raw coordinates, metrics and timings.
