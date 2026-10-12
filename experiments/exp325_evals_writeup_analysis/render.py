@@ -106,7 +106,7 @@ def static_depth(summary: pd.DataFrame, figure: str, metric: str, cohort: str = 
     if sparse_oracle:
         fig.text(0.09, 0.025, "*Oracle: L/2 random true contacts; other pairs unknown. Two subsets averaged per protein; no MSA.",
                  fontsize=9, color=INK)
-    suffix = {"lddt": "_lddt", "r_precision_long": "_long", "p_at_l5_long": "_long"}.get(metric, "")
+    suffix = {"lddt": "_lddt", "r_precision_long": "_long", "p_at_l5_long": "_long", "p_at_l2_long": "_long"}.get(metric, "")
     if figure == "04b_knn" and metric.startswith("r_precision"):
         suffix = "_r_precision" + ("_long" if metric.endswith("long") else "")
     save(fig, figure, CAPTIONS[figure], suffix, poster_dir=poster_dir)
@@ -156,7 +156,8 @@ def export_depth(summary: pd.DataFrame, figure: str, metrics: list[str] | None =
             states.append((cohort, metric, start, len(fig.data), counts))
     buttons = []
     for cohort, metric, start, end, counts in states:
-        buttons.append(dict(label=f"{COHORTS[cohort]} · {METRICS[metric]}", method="update",
+        menu_label = {"p_at_l2": "P@L/2", "p_at_l2_long": "Long-range P@L/2"}.get(metric, METRICS[metric])
+        buttons.append(dict(label=f"{COHORTS[cohort]} · {menu_label}", method="update",
                             args=[{"visible": [start <= i < end for i in range(len(fig.data))]},
                                   {"yaxis.title.text": METRICS[metric],
                                    "xaxis.ticktext": [f"{t}<br>n={counts.get(t, 0)}" for t in TIERS]}]))
@@ -534,6 +535,10 @@ def preview(names: list[str]) -> None:
                        '<a href="../data/pl5_figure_rows.csv">protein scores and source rows</a>; '
                        '<a href="../data/pl5_sampling_per_protein.csv">P@L/5 sampling selectors</a>; '
                        '<a href="../data/pl5_paired_deltas.csv">paired differences</a>. ')
+        elif name == "04_contacts_pl2":
+            lineage = ('Data: <a href="../data/pl2_summary.csv">means and intervals</a>; '
+                       '<a href="../data/pl2_figure_rows.csv">protein scores, cutoffs and original source rows</a>; '
+                       '<a href="../PL2_ANALYSIS.md">metric definition and reproduction</a>. ')
         elif name == "01b_af3_sampling":
             lineage = ('Each dot: <a href="../data/af3_sampling_samples.csv">per-seed accuracy, pTM and structure hashes</a>. '
                        'Curves: <a href="../data/af3_sampling_curves.csv">prefix budgets and selected seeds</a>. '
@@ -547,6 +552,8 @@ def preview(names: list[str]) -> None:
             manifest = "af3_context_analysis.json"
         if name in ("04_contacts_pl5", "04b_knn", "06_sampling_pl5"):
             manifest = "pl5_analysis.json"
+        if name == "04_contacts_pl2":
+            manifest = "pl2_analysis.json"
         if name in ("02e_oracle_budget", "02f_oracle_budget_context"):
             manifest = "oracle_budget_analysis.json"
         if name in ("02g_seed_completion", "02h_seed_contact_precision"):
@@ -613,6 +620,15 @@ def main() -> None:
         export_plotly(export_depth(pl5_summary, figure, metrics), figure)
     export_plotly(sampling_figure(pl5_summary, pl5_rows, "06_sampling_pl5", "p_at_l5", poster_dir=poster_dir), "06_sampling_pl5")
     export_plotly(sampling_figure(pl5_summary, pl5_rows, "06_sampling_pl5", "p_at_l5_long", poster_dir=poster_dir), "06_sampling_pl5_long")
+    pl2_manifest = json.loads((DATA / "pl2_analysis.json").read_text())
+    for name, expected in pl2_manifest["files"].items():
+        if hashlib.sha256((DATA / name).read_bytes()).hexdigest() != expected:
+            raise ValueError(f"Prepared P@L/2 data changed: {name}; run prepare_pl2.py")
+    pl2_summary = pd.read_csv(DATA / "pl2_summary.csv")
+    pl2_metrics = ["p_at_l2", "p_at_l2_long"]
+    for metric in pl2_metrics:
+        static_depth(pl2_summary, "04_contacts_pl2", metric, poster_dir=poster_dir)
+    export_plotly(export_depth(pl2_summary, "04_contacts_pl2", pl2_metrics), "04_contacts_pl2")
     names = list(TITLES)
     if (DATA / "seed_completion_analysis.json").exists():
         render_seed_completion(poster_dir=poster_dir)

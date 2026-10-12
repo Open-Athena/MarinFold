@@ -31,8 +31,11 @@ def rollout_precision(contacts: list[tuple[int, int]], true: set[tuple[int, int]
     return len(set(list(dict.fromkeys(contacts))[:k]) & true) / k
 
 
-def contact_sources(sources: Sources, targets: pd.DataFrame) -> pd.DataFrame:
+def contact_sources(sources: Sources, targets: pd.DataFrame, *, divisor: int) -> pd.DataFrame:
     """Read complete precision tables; check reused rows against the old R scores."""
+    if divisor not in (2, 5):
+        raise ValueError("Supported archived precision cutoffs are L/2 and L/5")
+    cutoff = f"L/{divisor}"
     stems = set(targets.stem)
     old = sources.csv(REPO / "experiments/exp78_evals_esmfold_contacts/data/contact_precision_all.csv", round_trip=True)
     # 7ur7_A and 8ah9_A also occur as denovo_pdb entries with different inputs.
@@ -60,7 +63,7 @@ def contact_sources(sources: Sources, targets: pd.DataFrame) -> pd.DataFrame:
     for method in ("af2", "af3", "boltz2"):
         frames.append(sources.csv(DATA / f"{method}_contact_metrics.csv", round_trip=True))
     raw = pd.concat(frames, ignore_index=True)
-    raw = raw[raw.stem.isin(stems) & raw["range"].isin(["all", "long"]) & raw.cut.isin(["R", "L/5"])].copy()
+    raw = raw[raw.stem.isin(stems) & raw["range"].isin(["all", "long"]) & raw.cut.isin(["R", cutoff])].copy()
     if raw.duplicated(["stem", "method", "range", "cut"]).any():
         raise ValueError("Duplicate source scores")
     if raw.groupby(["method", "range", "cut"]).size().ne(333).any():
@@ -73,8 +76,8 @@ def contact_sources(sources: Sources, targets: pd.DataFrame) -> pd.DataFrame:
     bad = check[~np.isclose(check.precision, check.value, atol=1e-12, rtol=0)]
     if len(check) != 333 * 9 * 2 or not bad.empty:
         raise ValueError(f"Archived R-precision does not reproduce:\n{bad[['stem','method','range','precision','value']]}")
-    result = raw[raw.cut == "L/5"].copy()
-    result["metric"] = result["range"].map({"all": "p_at_l5", "long": "p_at_l5_long"})
+    result = raw[raw.cut == cutoff].copy()
+    result["metric"] = result["range"].map({"all": f"p_at_l{divisor}", "long": f"p_at_l{divisor}_long"})
     result["source_column"] = "precision"
     return annotate(result[["stem", "method", "metric", "precision", "n_top", "n_candidate", "n_true",
                             "source", "source_row", "source_column"]].rename(columns={"precision": "value"}), targets)
@@ -155,7 +158,7 @@ def main() -> None:
     """Freeze the numeric figure inputs, with protein-level paired uncertainty."""
     sources = Sources()
     targets = pd.read_csv(DATA / "targets.csv")
-    contact = contact_sources(sources, targets).assign(figure="04_contacts_pl5")
+    contact = contact_sources(sources, targets, divisor=5).assign(figure="04_contacts_pl5")
     for row in contact.itertuples():
         if row.n_top != min(max(1, row.L // 5), row.n_candidate):
             raise ValueError(f"P@L/5 source length mismatch for {row.stem}/{row.method}")

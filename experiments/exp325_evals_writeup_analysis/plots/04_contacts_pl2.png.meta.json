@@ -1,0 +1,5 @@
+{
+  "script": "render.py",
+  "args": [],
+  "caption": "Precision among the top floor(L/2) contacts on the same 314 natural FoldBench proteins as P@L/5 (97 validation + 217 test); L is the frozen input sequence length, including unresolved input residues. Same nine predictors, archived rankings and fixed 248B-token MarinFold model. True contacts have pyconfind degree >=0.001; eligible pairs have resolved residues and sequence separation >=6 (all-range) or >=24 (long-range). Structure predictors rank contact degree, MarinFold ranks consensus votes, and sequence-KNN uses transferred scores; stable candidate-order ties. Every natural-protein score uses the full L/2 denominator. Mean and 95% protein-bootstrap intervals. The menu exposes both ranges, splits, viral status and designs separately; the designed protein 5sbj_A has only 10 long-range candidates versus 15 requested. All original R-precision scores reproduce before selecting archived L/2 scores. See PL2_ANALYSIS.md."
+}

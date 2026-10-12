@@ -4,9 +4,9 @@
 [Download the complete ZIP](https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/exp325-writeup-analysis/poster-2026-10-08/poster_plots.zip), or browse
 `poster_plots/pdf`, `poster_plots/svg`, and `poster_plots/png` for individual files.
 The complete collection includes every static plot and metric variant, including
-all individual-protein pages, new P@L/5 figures, focused KNN comparisons and
+all individual-protein pages, P@L/5 and [P@L/2](PL2_ANALYSIS.md) figures, focused KNN comparisons and
 the four sparse-oracle GDT-TS/lDDT figures for the five proteins at MSA depth <10
-(42 static figures total, including four new [seed-completion panels](SEED_COMPLETION.md)). Figures 02 and 05 now use the
+(44 static figures total, including four [seed-completion panels](SEED_COMPLETION.md)). Figures 02 and 05 now use the
 [L/2 oracle-contact protocol](ORACLE_L2.md) across all four MSA-depth tiers.
 Figure 05 uses [MarinFold top-L/2](MARINFOLD_L2.md) as its only MarinFold
 variant, on the same 305 natural proteins. The full

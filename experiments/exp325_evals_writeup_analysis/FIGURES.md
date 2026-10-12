@@ -158,6 +158,15 @@ caches confidence selection, subset averages and paired protein bootstraps.
 `render_seed_completion.py` only reads those cached tables. Exact point-to-row
 keys, all commands and the public raw archives are in [SEED_COMPLETION.md](SEED_COMPLETION.md).
 
+## Precision at L/2 contacts
+
+The separate contact-accuracy panel `04_contacts_pl2{,_long}` uses
+`pl2_summary.csv` → `pl2_figure_rows.csv` → archived source CSV rows. It keeps
+all nine predictors from P@L/5 and changes the evaluation cutoff to L/2.
+`prepare_pl2.py` performs source validation and bootstraps; rendering reads only
+cached data. Exact definitions and the designed-protein candidate cap are in
+[PL2_ANALYSIS.md](PL2_ANALYSIS.md).
+
 ## Matching MarinFold's contact count to the L/2 oracle
 
 Figure `05_folding` (GDT-TS and lDDT) shows `marinfold_helico_L2` as its only

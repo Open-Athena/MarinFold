@@ -302,7 +302,7 @@ rerunning context preprocessing. Protocol and interpretation:
 [AF3_SAMPLING.md](AF3_SAMPLING.md#what-is-standard-af3-inference-here).
 
 
-## P@L/5 and poster exports
+## P@L/5, P@L/2 and poster exports
 
 [PL5_ANALYSIS.md](PL5_ANALYSIS.md#provenance-and-reproduction) gives the input
 recovery and preprocessing commands. Run `uv run python prepare_pl5.py` once
@@ -311,6 +311,11 @@ when source predictions change. Run `uv run python render.py` and
 `uv run python export_poster.py --width-px 7200 --print-dpi 300 --upload`
 for native vector PDFs/SVGs and raster print files. It never reruns inference
 or metric analysis. The package and sizes are described in [POSTER.md](POSTER.md).
+
+For the L/2 predictor panel, run `uv run python prepare_pl2.py` once to select
+the archived L/2 scores and cache their uncertainty. The same render/export
+commands then produce `04_contacts_pl2` and its long-range counterpart.
+See [PL2_ANALYSIS.md](PL2_ANALYSIS.md) for exact definitions and source rows.
 
 ## Completing sparse oracle contacts
 

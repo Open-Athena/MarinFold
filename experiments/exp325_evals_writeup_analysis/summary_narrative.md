@@ -17,6 +17,10 @@ At MSA depth <10: 0.196 / 0.332 / 0.239, with only five proteins.
 MarinFold contact R-precision: 0.561 overall; 0.345 at MSA depth <10 versus 0.617 at ≥1000.
 Only five natural proteins occupy the shallowest tier.
 
+Precision @ L/2 contacts: MarinFold 0.713 overall, 0.449 at depth <10.
+Same nine predictors and 314 proteins as P@L/5; cached source scores, no new inference.
+Source: PL2_ANALYSIS.md; pl2_summary.csv → pl2_figure_rows.csv → original source rows.
+
 Oracle pTM ranks 1, 5, 1, 1, 1 out of 101 maps for the five low-depth proteins.
 Highest pTM selects each map’s Helico sample; no ipTM or clash penalty.
 100 ESMFold2 maps/protein, a shared eligible-pair mask, three Helico samples/map.

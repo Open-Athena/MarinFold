@@ -1,0 +1,151 @@
+{
+  "preprocessors": {
+    "prepare_pl2.py": "1b705aaff581c8a4e3b7edb7c3236412192846fe10f79b2092d006de62454bb4",
+    "prepare_pl5.py": "26a784eb0b09f608fd779d6b2c45bdbbc728bc539ac87a47c65d753559a7db9f",
+    "prepare.py": "d93df615231001700c89caf5491c7048d92d704beb4f65de4f9a10c13717b2fd"
+  },
+  "sources": {
+    "experiments/exp325_evals_writeup_analysis/data/targets.csv": {
+      "sha256": "16079908b54d9a913c14b9fa18a24e24d7bb44379d736077f3f653283ac4a23c",
+      "bytes": 13853
+    },
+    "experiments/exp78_evals_esmfold_contacts/data/contact_precision_all.csv": {
+      "sha256": "cc9eb8f4788e3d7e8ff6868cef7479481d4e4e6983f909deafab12db37aee8db",
+      "bytes": 6355899
+    },
+    "experiments/exp325_evals_writeup_analysis/data/inputs/pl5_exp226_esm_precision.csv": {
+      "sha256": "453522f786924a4376338004cc4ab9b169c87479f8ef3679702ec48e5798d90c",
+      "bytes": 69558
+    },
+    "experiments/exp325_evals_writeup_analysis/data/inputs/pl5_exp226_protenix_precision.csv": {
+      "sha256": "eb7e3c885e625cd500ac0ed7663e3c25daed84788b66bd045ea0098b486d2915",
+      "bytes": 121259
+    },
+    "experiments/exp245_evals_foldbench_held_out_monomers/data/baseline_precision_new.csv.gz": {
+      "sha256": "7d45f5bff045a6ff6a1c54d3f168b4979edc6f4d56f011293a805925e3967568",
+      "bytes": 145845
+    },
+    "experiments/exp245_evals_foldbench_held_out_monomers/data/knn_precision_new.csv.gz": {
+      "sha256": "4afb33f2118d4d56580062a1d0282ec9e562a8f9308964aad99d2d1d1034360e",
+      "bytes": 182747
+    },
+    "experiments/exp277_models_single_mpnn_pilot/data/eval_rollout_v2/contact_precision_all.csv": {
+      "sha256": "f8dba35fc697e37e5a383567946efee613948e736607ce7d01486243d0c079c5",
+      "bytes": 2004396
+    },
+    "experiments/exp325_evals_writeup_analysis/data/test_contact_metrics.csv": {
+      "sha256": "12ac728c772b662f448bb0d614adcdfa43ccc5c95bab79e6abda5de31d451507",
+      "bytes": 321317
+    },
+    "experiments/exp325_evals_writeup_analysis/data/af2_contact_metrics.csv": {
+      "sha256": "cd07668bcf0cb6746e2efcfed444b5e89cbc5aae3664b4c16a8fc70aabff5460",
+      "bytes": 398323
+    },
+    "experiments/exp325_evals_writeup_analysis/data/af3_contact_metrics.csv": {
+      "sha256": "942c982215cc62187fd0b7929e2a1423673486da15eacf01c18ede9c874cdceb",
+      "bytes": 398097
+    },
+    "experiments/exp325_evals_writeup_analysis/data/boltz2_contact_metrics.csv": {
+      "sha256": "c9a5ed98fe8cd845062810a5ce57d20b0bf1e6f505bfc2c5e2779fd5e2331b58",
+      "bytes": 417979
+    },
+    "experiments/exp325_evals_writeup_analysis/data/figure_rows.csv": {
+      "sha256": "8cd3a742f313dd6301b47321b7e2b00d29eb51dec0f46b45f8cc98e7b86953c9",
+      "bytes": 4414162
+    }
+  },
+  "files": {
+    "pl2_figure_rows.csv": "456f5c05e63634251f7889f9895ab50ad7201afd821cf3738baf6eab382260a1",
+    "pl2_summary.csv": "91556142de3b894c3c47674f52da23ec7fd167ed10806ea199f25099b4907aee"
+  },
+  "checkpoint": "contacts-v1-exp277-m2-p06-full-epoch-1.5B-step-266344",
+  "cutoff": "k=min(max(1,floor(L/2)),n_candidate); L=frozen input sequence length, including unresolved input residues; all natural rows use full L/2",
+  "capped_rows": [
+    {
+      "stem": "5sbj_A",
+      "method": "esmfold",
+      "metric": "p_at_l2_long",
+      "L": 30,
+      "requested_n_top": 15,
+      "n_top": 10,
+      "n_candidate": 10
+    },
+    {
+      "stem": "5sbj_A",
+      "method": "esmfold2",
+      "metric": "p_at_l2_long",
+      "L": 30,
+      "requested_n_top": 15,
+      "n_top": 10,
+      "n_candidate": 10
+    },
+    {
+      "stem": "5sbj_A",
+      "method": "protenix_ss",
+      "metric": "p_at_l2_long",
+      "L": 30,
+      "requested_n_top": 15,
+      "n_top": 10,
+      "n_candidate": 10
+    },
+    {
+      "stem": "5sbj_A",
+      "method": "protenix_msa",
+      "metric": "p_at_l2_long",
+      "L": 30,
+      "requested_n_top": 15,
+      "n_top": 10,
+      "n_candidate": 10
+    },
+    {
+      "stem": "5sbj_A",
+      "method": "knn",
+      "metric": "p_at_l2_long",
+      "L": 30,
+      "requested_n_top": 15,
+      "n_top": 10,
+      "n_candidate": 10
+    },
+    {
+      "stem": "5sbj_A",
+      "method": "marinfold",
+      "metric": "p_at_l2_long",
+      "L": 30,
+      "requested_n_top": 15,
+      "n_top": 10,
+      "n_candidate": 10
+    },
+    {
+      "stem": "5sbj_A",
+      "method": "af2",
+      "metric": "p_at_l2_long",
+      "L": 30,
+      "requested_n_top": 15,
+      "n_top": 10,
+      "n_candidate": 10
+    },
+    {
+      "stem": "5sbj_A",
+      "method": "af3",
+      "metric": "p_at_l2_long",
+      "L": 30,
+      "requested_n_top": 15,
+      "n_top": 10,
+      "n_candidate": 10
+    },
+    {
+      "stem": "5sbj_A",
+      "method": "boltz2",
+      "metric": "p_at_l2_long",
+      "L": 30,
+      "requested_n_top": 15,
+      "n_top": 10,
+      "n_candidate": 10
+    }
+  ],
+  "contact_definition": "pyconfind degree >=0.001; resolved pairs; sequence separation >=6 (all) or >=24 (long)",
+  "ranking": "Same archived scores as P@L/5: structural contact degree, MarinFold consensus votes, and sequence-KNN transferred scores; stable candidate-order ties",
+  "population": "314 natural proteins (97 validation, 217 test); tiers 5/21/62/226; 19 designs separate",
+  "uncertainty": "Equal-weight protein means; 5000 protein-bootstrap replicates, seed325",
+  "regression": "All 5994 original predictor R-precision cells reproduced within 1e-12 before selecting L/2 scores"
+}

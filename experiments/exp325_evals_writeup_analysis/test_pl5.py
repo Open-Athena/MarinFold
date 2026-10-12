@@ -1,4 +1,4 @@
-"""P@L/5 must retain its denominator and the same protein/source identities."""
+"""P@L/2 and P@L/5 must retain their cutoffs and protein/source identities."""
 
 from pathlib import Path
 
@@ -21,23 +21,35 @@ def test_short_rollouts_and_duplicate_statements_cannot_inflate_precision() -> N
         rollout_precision([], truth, 0)
 
 
-def test_all_figure_values_round_trip_to_source_cells() -> None:
-    rows = pd.read_csv(HERE / "data/pl5_figure_rows.csv", float_precision="round_trip")
+@pytest.mark.parametrize("divisor", [2, 5])
+def test_all_figure_values_round_trip_to_source_cells(divisor: int) -> None:
+    rows = pd.read_csv(HERE / f"data/pl{divisor}_figure_rows.csv", float_precision="round_trip")
     for source, group in rows.groupby("source"):
         original = pd.read_csv(REPO / source, float_precision="round_trip")
         for row in group.itertuples():
             raw = original.iloc[row.source_row]
             assert row.stem == raw.stem
             assert row.value == raw[row.source_column]
+            if row.figure == f"04_contacts_pl{divisor}":
+                assert raw.cut == f"L/{divisor}"
+                assert raw.n_top == row.n_top
+                assert raw["range"] == ("long" if row.metric.endswith("_long") else "all")
 
 
-def test_cutoff_uses_sequence_length_and_population_matches_r_precision() -> None:
-    rows = pd.read_csv(HERE / "data/pl5_figure_rows.csv")
+@pytest.mark.parametrize("divisor", [2, 5])
+def test_cutoff_uses_sequence_length_and_population_matches_r_precision(divisor: int) -> None:
+    rows = pd.read_csv(HERE / f"data/pl{divisor}_figure_rows.csv")
     old = pd.read_csv(HERE / "data/figure_rows.csv")
-    for figure, counterpart in [("04_contacts_pl5", "04_contacts"), ("06_sampling_pl5", "06_sampling")]:
+    comparisons = [(f"04_contacts_pl{divisor}", "04_contacts")]
+    if divisor == 5:
+        comparisons.append(("06_sampling_pl5", "06_sampling"))
+    for figure, counterpart in comparisons:
         for method, group in rows[rows.figure == figure].groupby("method"):
             assert set(group.stem) == set(old.loc[(old.figure == counterpart) & (old.method == method), "stem"])
-            assert (group.n_top == np.maximum(1, group.L // 5)).all()
+            requested = np.maximum(1, group.L // divisor)
+            expected = np.minimum(requested, group.n_candidate) if figure.startswith("04_contacts") else requested
+            assert (group.n_top == expected).all()
+            assert (group.loc[group.designed == 0, "n_top"] == requested[group.designed == 0]).all()
     assert not rows.duplicated(["figure", "stem", "method", "metric"]).any()
 
 

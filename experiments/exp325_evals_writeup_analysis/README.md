@@ -313,9 +313,15 @@ decontaminated sequence-KNN **0.657**; long-range **0.761 / 0.595**. At depth <1
 MarinFold is **0.595**, KNN **0.102**, ESMFold2 **0.727** (five proteins).
 The 100-rollout diagnostic gives consensus **0.829** versus oracle-best
 individual **0.609**, with the oracle reselected by P@L/5. The original
-R-precision plots remain available. All 38 static plots now have native vector
+R-precision plots remain available. All 44 static plots now have native vector
 PDF/SVG and 7,200-pixel-wide PNG exports for printing; [POSTER.md](POSTER.md)
 links the complete downloadable collection.
+
+The [P@L/2 predictor comparison](PL2_ANALYSIS.md) uses the same nine methods
+and 314 natural proteins, with y-axis **Precision @ L/2 contacts**. All-range
+precision is **0.713** for MarinFold and **0.539** for KNN; at depth <10 it is
+**0.449 / 0.046**, versus **0.746** for ESMFold2. Archived source scores and
+protein-bootstrap intervals are cached separately in `data/pl2_*`.
 
 [Sparse oracle contacts at MSA depth <10](ORACLE_BUDGET.md): all five natural
 proteins, 55 maps and 165 structures. Mean GDT-TS is **0.244** without contacts,

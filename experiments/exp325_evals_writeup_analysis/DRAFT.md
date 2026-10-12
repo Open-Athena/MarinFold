@@ -73,9 +73,11 @@ Our current 1.47B-parameter model saw 248.584B raw tokens. Here is its contact a
 
 ![Contact R-precision](plots/04_contacts.png)
 
-The top-L/5 view emphasizes the highest-ranked contacts.
+Precision at L/2 uses a sequence-length-based contact budget.
 
-![Contact precision at L/5](plots/04_contacts_pl5.png)
+![Precision at L/2 contacts](plots/04_contacts_pl2.png)
+
+[Metric details](PL2_ANALYSIS.md) · [L/5 comparison](PL5_ANALYSIS.md).
 
 MarinFold also clears the decontaminated sequence-KNN baseline.
 

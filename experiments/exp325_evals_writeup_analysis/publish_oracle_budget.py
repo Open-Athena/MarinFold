@@ -50,7 +50,7 @@ def main() -> None:
                     "generation/run_contacts.py", "generation/score_rollout_worker.py", "generation/checkpoint_manifest.json",
                     "generation/*oracle_budget*.py", "generation/run_helico.py",
                     "generation/archive_helico.py", "generation/pyproject.toml", "generation/uv.lock",
-                    "theme.py", "poster_style.py", "prepare.py", "render*.py", "plan_missing.py",
+                    "theme.py", "poster_style.py", "prepare.py", "*pl[25]*.py", "render*.py", "plan_missing.py",
                     "build_summary.py", "sources_remote.json", "pyproject.toml", "uv.lock", "*.md"):
         for source in HERE.glob(pattern):
             if not source.is_file() or source.name == f"{phase}_publication.json":
