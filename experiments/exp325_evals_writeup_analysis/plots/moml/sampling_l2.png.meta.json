@@ -1,0 +1,7 @@
+{
+  "script": "revise_moml_poster.py",
+  "args": [
+    "--panels-only"
+  ],
+  "caption": "314 matched natural proteins, three MarinFold summaries and seven standard predictors. Mean single, consensus and oracle best individual at P@L/2, plus structure contacts ranked by pLDDT product times degree. All means and 95% CIs copied from data/pl2_sampling_comparison_summary.csv."
+}

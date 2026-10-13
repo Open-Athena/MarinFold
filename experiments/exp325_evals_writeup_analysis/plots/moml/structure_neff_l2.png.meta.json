@@ -1,0 +1,7 @@
+{
+  "script": "revise_moml_poster.py",
+  "args": [
+    "--panels-only"
+  ],
+  "caption": "305 common natural FoldBench proteins. Helico with top-L/2 MarinFold or randomly sampled ground truth contacts; other pairs unknown, no MSA. Ground truth averages two subsets. Means and 95% protein-bootstrap CIs from data/neff_summary.csv; exact displayed rows in data/moml_poster_figure_rows.csv."
+}

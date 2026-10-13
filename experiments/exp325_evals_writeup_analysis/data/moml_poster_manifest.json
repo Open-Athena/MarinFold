@@ -1,0 +1,29 @@
+{
+  "original_pptx_sha256": "5310bce37fa93caf6ee7ddefe47395851c6805e14d4f504c18dc032a3a1be886",
+  "checkpoint": "exp277-step-266344",
+  "raw_training_tokens": 248583762834,
+  "training_documents": 232090905,
+  "dimensions_inches": [
+    36,
+    24
+  ],
+  "numerical_reanalysis": false,
+  "inputs": {
+    "experiments/exp325_evals_writeup_analysis/data/training_sources.csv": "2639994d76a392e8ef4e37502bfeea2da11a1d3773a5bdaa8b6b3dee9927da74",
+    "experiments/exp325_evals_writeup_analysis/data/poster_product_summary.csv": "ac1c68e7c4754087b168e64e06f2a0f9e1d2fa815162d6b3c0456dc06c33f0fb",
+    "experiments/exp325_evals_writeup_analysis/data/neff_summary.csv": "be57d8fee891b95a71b22762534dc55ad41e0d3e7e3bc51de040684822bb515d",
+    "experiments/exp325_evals_writeup_analysis/data/pl2_sampling_comparison_summary.csv": "061f6574453cfa170dee5ad52b1863d1471b3ccd0e4383897b8ae0e961299103",
+    "experiments/exp325_evals_writeup_analysis/data/structure_exclusions.csv": "49c1317086362baca7a20dd48171133089bcd24087c002dc7696fcd200fbd37e",
+    "experiments/exp277_models_single_mpnn_pilot/data/eval_rollout_v2/top7_votes.csv": "846e21360f2662ce345df77e8935d04351d7ef4d132a0ad1022ebe82a9b531a4",
+    "experiments/exp277_models_single_mpnn_pilot/data/eval_rollout_v2/top7_ground_truth.json": "6fbd8be9efe4f1b16c1667ecc74297388745b2e43eb8d3c06ef640750b01eeaf",
+    "experiments/exp277_models_single_mpnn_pilot/data/eval_rollout_v2/top7_provenance.json": "8cbbfe4c874428c2a8dfe55431522d53daf5830eb4f7d02c62f59290bef2c48d"
+  },
+  "figure_rows": "data/moml_poster_figure_rows.csv",
+  "outputs": {
+    "MarinFold_MoML_revised.png": "9930dc2ef2844871790dbdadf119b24f705c7446e3b55fdcc0ed169320536d0d",
+    "MarinFold_MoML_revised_preview.png": "b2d569e1f4f45f0279c8ac7599e4fb4a6f8e266e4e3b8cf6ec602b1db2feb142",
+    "MarinFold_MoML_revised.pdf": "d1d292db3c4b52d501dc2b0e29c333c9951a368860175ff665ed6c33afc442a0",
+    "MarinFold_MoML_revised.pptx": "8b302e29bd4ad1b26fc02a7743c8ff37a1345bc2bca6d69c26516ec4edfcbb01"
+  },
+  "generator": "revise_moml_poster.py --input <original poster.pptx>"
+}

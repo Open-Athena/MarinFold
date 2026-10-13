@@ -1,0 +1,7 @@
+{
+  "script": "revise_moml_poster.py",
+  "args": [
+    "--panels-only"
+  ],
+  "caption": "314 natural FoldBench proteins; exp277 step266344. Three-way-ranked structure contacts, MarinFold consensus and AFDB Sequence KNN. Equal protein means and 95% bootstrap CIs, regrouped by Neff80. Cached source: data/poster_product_summary.csv; exact displayed rows in data/moml_poster_figure_rows.csv."
+}

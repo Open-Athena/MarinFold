@@ -253,3 +253,16 @@ AF3 0.900; AF2 0.889; Boltz-2 0.890; Protenix+MSA 0.902; ESMFold2 0.860.
 All means and intervals reused exactly from their existing cached summaries.
 White all/long PDF + PNG exports included.
 Source: SAMPLING_L2.md; data/pl2_sampling_comparison_summary.csv; prepare_sampling_comparison.py → render.py.
+
+## MoML poster revision
+
+Shortened the Summary and replaced template references with verified citations.
+Corrected the training inventory: 232.09M documents and 248.58B raw tokens.
+The training Atlas is the 2026 ESMFold2 release; keep the ESMFold2 teacher label.
+Clarified sequence-only inference, parent-sequence exclusion, cohorts and Neff.
+At Neff<10, Helico + MarinFold is 0.285 versus 0.290 for single-sequence Protenix-v2.
+A matched pretrained Protenix-v1 comparison remains an additional analysis.
+All plotted values and intervals are unchanged; Top7 uses cached step266344 votes.
+Editable 36 × 24 inch PowerPoint, print PDF and 300-dpi PNG are generated together.
+Review decisions and full references: MOML_POSTER_REVIEW.md.
+Source: revise_moml_poster.py; data/moml_poster_figure_rows.csv.

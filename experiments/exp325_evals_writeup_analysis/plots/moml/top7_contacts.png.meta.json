@@ -1,0 +1,7 @@
+{
+  "script": "revise_moml_poster.py",
+  "args": [
+    "--panels-only"
+  ],
+  "caption": "Top7 (PDB 1QYS), a separate designed-protein illustration outside FoldBench. Experimental contacts and exp277 step266344 contact votes from 100 saved rollouts; source: exp277 data/eval_rollout_v2/top7_provenance.json. Not an independent held-out baseline comparison."
+}

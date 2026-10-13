@@ -24,6 +24,11 @@ The **[curated poster package](POSTER_NEFF.md)** contains 46 white-background
 figures in PDF and 7,200-pixel PNG (plus SVG), using only Neff depth panels and
 the three-way contact ranking for all standard-predictor contact metrics.
 
+[MoML poster review](MOML_POSTER_REVIEW.md) records the accepted, qualified and
+deferred edits to the supplied conference poster. `revise_moml_poster.py`
+builds an editable PowerPoint, print PDF and 300-dpi PNG from the original
+poster artwork and cached summaries; `--panels-only` restyles its figures.
+
 [Confidence-ranked contacts](CONTACT_CONFIDENCE.md) compares ConFind degree,
 residue pLDDT product, and their three-way product on the same archived structures.
 The three-way product improves every structural baseline's mean P@L/5;
