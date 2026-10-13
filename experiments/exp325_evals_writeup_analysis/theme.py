@@ -10,6 +10,7 @@ INK = "#1F1E1B"
 GRID = "#D2C8BC"
 PALETTE = ["#385C8F", "#8F6B38", "#388F8D", "#8F386D", "#7E8F38",
            "#47388F", "#8F3839", "#388F59", "#7C388F", "#4A8F38"]
+MARINFOLD_COLOR = PALETTE[3]
 FONT = "Lato, DejaVu Sans, Arial, sans-serif"
 TIERS = ["<10", "10–99", "100–999", "≥1000"]
 METHODS = {
@@ -20,16 +21,16 @@ METHODS = {
     "protenix_ss": ("Protenix-v2 · single sequence", PALETTE[1], "s"),
     "esmfold2": ("ESMFold2", PALETTE[2], "D"),
     "esmfold": ("ESMFold", PALETTE[4], "v"),
-    "marinfold": ("MarinFold", PALETTE[3], "o"),
-    "marinfold_helico": ("Helico + MarinFold top-L", PALETTE[3], "o"),
-    "marinfold_helico_L2": ("Helico + MarinFold top-L/2", PALETTE[5], "P"),
-    "marinfold_helico_L5": ("Helico + MarinFold top-L/5", "#D46B31", "X"),
+    "marinfold": ("MarinFold", MARINFOLD_COLOR, "o"),
+    "marinfold_helico": ("Helico + MarinFold top-L", MARINFOLD_COLOR, "o"),
+    "marinfold_helico_L2": ("Helico + MarinFold top-L/2", MARINFOLD_COLOR, "P"),
+    "marinfold_helico_L5": ("Helico + MarinFold top-L/5", MARINFOLD_COLOR, "X"),
     "knn": ("Sequence KNN", PALETTE[5], "^"),
     "oracle": ("Helico + oracle map*", INK, "D"),
     "oracle_L2": ("Helico + L/2 oracle contacts*", INK, "D"),
     "no_contacts": ("Helico · no contacts", "#817970", "s"),
     "single": ("Mean single rollout", PALETTE[1], "s"),
-    "consensus": ("Consensus of 100", PALETTE[3], "o"),
+    "consensus": ("Consensus of 100", MARINFOLD_COLOR, "o"),
     "best100": ("Oracle best of 100*", INK, "D"),
 }
 ORDER = {

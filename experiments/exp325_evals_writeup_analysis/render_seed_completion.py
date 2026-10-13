@@ -11,13 +11,13 @@ import plotly.graph_objects as go
 
 from build_summary import save_plot_with_meta
 from poster_style import save_poster_vectors
-from theme import CAPTIONS, GRID, INK, PAPER, TITLES
+from theme import CAPTIONS, GRID, INK, MARINFOLD_COLOR, PAPER, TITLES
 
 HERE = Path(__file__).resolve().parent
 BUDGETS = ["0", "5", "10", "L5"]
 TICKS = ["0", "5", "10", "L/5"]
 STYLES = {"direct": ("Helico: supplied contacts only", "#385C8F", "s"),
-          "complete": ("MarinFold fills to L/2 → Helico", "#8F386D", "o")}
+          "complete": ("MarinFold fills to L/2 → Helico", MARINFOLD_COLOR, "o")}
 METRICS = {"gdt_ts": "GDT-TS", "tm_score": "TM-score", "lddt": "lDDT"}
 
 

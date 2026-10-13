@@ -725,7 +725,7 @@
         },
         "svg": {
           "path": "svg/03_method.svg",
-          "sha256": "c8a4de231d1d37819f8d1837e76d260018e9199a9490343e062940744a3c00a1"
+          "sha256": "d076bcf00761289e106ce5682578b9ebadbc5a1ac7d20df605fca631c6b434cc"
         }
       }
     },
@@ -750,7 +750,7 @@
         },
         "svg": {
           "path": "svg/04_contacts_neff.svg",
-          "sha256": "af113455586482b5033e41cbb21bd95485279fe386401ac63dd3e7498f8d3c13"
+          "sha256": "1d6ebc06849b6b69d106cfb9ab0ab14b1a34198ced477ffcd9330e47b727ccde"
         }
       }
     },
@@ -775,7 +775,7 @@
         },
         "svg": {
           "path": "svg/04_contacts_neff_long.svg",
-          "sha256": "d9abeeb4dcb7466b99596dd0d18389b4d029a1e0b7bd931c55a64c79491646a6"
+          "sha256": "1e8adb90627be7a3cd02276f1181c98a1d62635862c43b2da90ce08bd24b79bd"
         }
       }
     },
@@ -800,7 +800,7 @@
         },
         "svg": {
           "path": "svg/04_contacts_pl2_neff.svg",
-          "sha256": "81ad4acd7d6529b0ec64c005039721ce696c7d3dcca3cd07336f20a9a7c82e3f"
+          "sha256": "3569ed6899a0544baba91586d29b2ada7f35c05208611638c6e356a416a132a3"
         }
       }
     },
@@ -825,7 +825,7 @@
         },
         "svg": {
           "path": "svg/04_contacts_pl2_neff_long.svg",
-          "sha256": "b30ee8010a30cad375cb13f40e0ad214828511114225c0a6a58b50524af72d53"
+          "sha256": "688e7291967cb296d0dcf3c1b09cb13583d6dfd0b9aada393aa5760d3ab06947"
         }
       }
     },
@@ -850,7 +850,7 @@
         },
         "svg": {
           "path": "svg/04_contacts_pl5_neff.svg",
-          "sha256": "d26a78a60cde3aa1ea7eefbd20975ea07aef4bc9d88e60cac6e0cfd4ac16b8fc"
+          "sha256": "6eea58801742580458b9e71649e725b4ff6878fdbcee9cd57af0850f8f7b50db"
         }
       }
     },
@@ -875,7 +875,7 @@
         },
         "svg": {
           "path": "svg/04_contacts_pl5_neff_long.svg",
-          "sha256": "4c04916d07c57b4b0b043adfff7fb764623488a4d1135eb0ca9b0de873adb72c"
+          "sha256": "8e4efad6c43de07c50c13b15e4f10bccfd3a34d089e26a46ee092bc84ec152ac"
         }
       }
     },
@@ -992,15 +992,15 @@
       "files": {
         "pdf": {
           "path": "pdf/05_folding_neff.pdf",
-          "sha256": "96087b953b0b9a5faaaebb10bc355de79e30acf682993e3f3c20c17fdbcf405f"
+          "sha256": "42f2af4817dbed42158cca624637b7e1b1520385940f1fe896a235a49a9f73d1"
         },
         "png": {
           "path": "png/05_folding_neff.png",
-          "sha256": "7cf95e9307256f6f629995940a75ae6606668264d89a17204591e994340348b9"
+          "sha256": "d59cc0277003859051b07901d252cf62dfeb414eb10d4ca609960ffde973264a"
         },
         "svg": {
           "path": "svg/05_folding_neff.svg",
-          "sha256": "3aa6af81cbd27d0df6c64402c818cc449ea7bfd801089a50d381c6ff95444ed7"
+          "sha256": "d5cd9d0c03a64ca375bfb3f2281116275dac19b7e55c3b0c36d4e430321843e3"
         }
       }
     },
@@ -1017,15 +1017,15 @@
       "files": {
         "pdf": {
           "path": "pdf/05_folding_neff_lddt.pdf",
-          "sha256": "205afa44e4951cbf9443c939d2005e4857f20d251b9a3789892749a0c6e8c547"
+          "sha256": "261cdcd91e853e982c8da39a921f00a845b74832a4ab2ebd61257cf48ba37441"
         },
         "png": {
           "path": "png/05_folding_neff_lddt.png",
-          "sha256": "6e7ca494ca854e9d65bd360537da554a626711a375760ca4442389b550ec35fe"
+          "sha256": "d3cf1fe5b370be26d604cf40282c121ba48bf70770d96f2558ce1691bb5b38d9"
         },
         "svg": {
           "path": "svg/05_folding_neff_lddt.svg",
-          "sha256": "3609b6560a7ebf4cccecc47e1efe9dc442a9705b69731225a85ccb87849d1abd"
+          "sha256": "605ce6ed2bc82dc2487cf3f670f25be4a2ada17d73ab765b35960083e9a109c2"
         }
       }
     },
