@@ -71,7 +71,7 @@ Its means therefore describe a different population from the original five:
 | Sequence-KNN | 0.069 | — |
 | Protenix-v2 single sequence | 0.336 | 0.290 |
 | Helico, no contacts | — | 0.271 |
-| Helico + L/2 oracle contacts | — | 0.872 |
+| Helico + L/2 ground truth contacts | — | 0.872 |
 
 Overall values do not change: MarinFold P@L/2 is **0.713**, and Helico with
 MarinFold L/2 contacts gives **0.478 GDT-TS**, versus **0.843** for L/2 oracle

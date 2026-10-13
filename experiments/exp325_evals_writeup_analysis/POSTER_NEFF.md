@@ -25,7 +25,8 @@ with/without MSA. MarinFold still ranks consensus votes; Sequence KNN still uses
 its transferred scores. Structural accuracy (GDT-TS, lDDT, TM-score) retains the
 same selected structures and results: contact ranking affects contact precision,
 not those already-computed folds. Main folding panels retain MarinFold top-L/2
-and random L/2 oracle contacts.
+and random L/2 ground truth contacts. Figure labels use “Helico + L/2 ground
+truth contacts” and omit asterisk markers and their footnotes.
 
 ## Files to start with
 

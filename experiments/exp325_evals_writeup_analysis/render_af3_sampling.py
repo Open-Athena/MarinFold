@@ -61,7 +61,7 @@ def interactive(samples: pd.DataFrame, curves: pd.DataFrame, protocol: dict, con
                           marker=dict(color=color, size=6, opacity=0.45), customdata=subset[["seed"]].values.tolist(),
                           hovertemplate="Seed %{customdata[0]}<br>pTM %{x:.4f}<br>TM %{y:.4f}<extra></extra>"), row=1, col=1)
         for seed, color, symbol, label in [(final.best_seed, INK, "diamond-open", "Oracle best TM"),
-                                          (final.ptm_selected_seed, PALETTE[3], "star", "pTM selected")]:
+                                          (final.ptm_selected_seed, PALETTE[3], "square", "pTM selected")]:
             row = frame[frame.seed == seed].iloc[0]
             fig.add_trace(go.Scatter(x=[row.ptm], y=[row.tm_score], mode="markers", name=label,
                           marker=dict(color=color, size=15, symbol=symbol), customdata=[[int(seed)]],
@@ -148,7 +148,7 @@ def main(*, poster_dir: Path | None = None) -> None:
         best = frame[frame.seed == final.best_seed].iloc[0]
         axes[0].scatter([best.ptm], [best.tm_score], marker="D", s=100, facecolors="none", edgecolors=INK,
                         linewidths=1.5, zorder=5, label="Oracle best TM")
-        axes[0].scatter([selected.ptm], [selected.tm_score], marker="*", s=180, color=PALETTE[3],
+        axes[0].scatter([selected.ptm], [selected.tm_score], marker="s", s=110, color=PALETTE[3],
                         edgecolors=PAPER, zorder=6, label="Selected by pTM")
         axes[0].set(xlim=(0, 1), xlabel="AF3 pTM", ylabel="TM-score against reference")
         axes[0].legend(loc="upper left", bbox_to_anchor=(-0.02, -0.18), frameon=False, ncol=2, fontsize=9)
@@ -186,8 +186,8 @@ def main(*, poster_dir: Path | None = None) -> None:
         pilot = group[group.budget == 100].iloc[0]
         values = [pilot.best_tm, final.best_tm, final.ptm_selected_tm]
         ax.plot([min(values), max(values)], [i, i], color=GRID, lw=2, zorder=1)
-        for j, (value, color, marker) in enumerate(zip(values, colors, ["o", "D", "*"])):
-            ax.scatter(value, i + (j - 1) * 0.12, s=95 if marker != "*" else 180, color=color,
+        for j, (value, color, marker) in enumerate(zip(values, colors, ["o", "D", "s"])):
+            ax.scatter(value, i + (j - 1) * 0.12, s=95, color=color,
                        marker=marker, label=descriptions[j] if i == 0 else None, zorder=3)
     ax.axvline(threshold, color=INK, ls="--", lw=1, alpha=0.45)
     ax.set(xlim=(0.25, 1), xlabel="TM-score against reference", yticks=range(len(stems)), yticklabels=stems)

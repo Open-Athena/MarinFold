@@ -81,9 +81,8 @@ def static_depth(summary: pd.DataFrame, figure: str, metric: str, cohort: str = 
     base = figure.removesuffix("_neff")
     neff = figure.endswith("_neff")
     tier_labels = NEFF_TIER_LABELS if neff else TIERS
-    sparse_oracle = base in ("02_oracle", "05_folding")
     fig, ax = plt.subplots(figsize=(10.4, 6.8 if crowded else 6.0), facecolor=PAPER)
-    fig.subplots_adjust(left=0.09, right=0.98, bottom=0.40 if sparse_oracle else (0.36 if crowded else 0.33), top=0.79)
+    fig.subplots_adjust(left=0.09, right=0.98, bottom=0.36 if crowded else 0.33, top=0.79)
     fig.text(0.09, 0.945, TITLES[figure], fontsize=20, color=INK, weight="bold")
     population = "Natural FoldBench monomers" if base in {"01_predictors", "02_oracle"} else "Natural FoldBench · 248B-token model"
     fig.text(0.09, 0.887, f"{population}  ·  mean and 95% interval", fontsize=11, color=INK)
@@ -108,11 +107,8 @@ def static_depth(summary: pd.DataFrame, figure: str, metric: str, cohort: str = 
     ax.set_ylabel(METRICS[metric], labelpad=12)
     ax.set_xlabel(NEFF_AXIS if neff else "MSA depth (sequences)", labelpad=13)
     handles, labels = ax.get_legend_handles_labels()
-    fig.legend(handles, labels, loc="lower left", bbox_to_anchor=(0.075, 0.065 if sparse_oracle else 0.016),
+    fig.legend(handles, labels, loc="lower left", bbox_to_anchor=(0.075, 0.016),
                ncol=2, frameon=False, fontsize=10, columnspacing=2.5)
-    if sparse_oracle:
-        fig.text(0.09, 0.025, "*Oracle: L/2 random true contacts; other pairs unknown. Two subsets averaged per protein; no MSA.",
-                 fontsize=9, color=INK)
     suffix = {"lddt": "_lddt", "r_precision_long": "_long", "p_at_l5_long": "_long", "p_at_l2_long": "_long"}.get(metric, "")
     if base == "04b_knn" and metric.startswith("r_precision"):
         suffix = "_r_precision" + ("_long" if metric.endswith("long") else "")
@@ -247,15 +243,13 @@ def sampling_figure(summary: pd.DataFrame, rows: pd.DataFrame, figure: str = "06
         axes[0].errorbar(i, record["mean"], yerr=[[record["mean"] - record.ci_low], [record.ci_high - record["mean"]]],
                         fmt=marker, color=color, markersize=9, capsize=5)
         axes[0].text(i, record.ci_high + 0.05, f"{record['mean']:.3f}", ha="center", fontsize=12, color=color)
-    axes[0].set_xticks([0, 1, 2], ["Mean\nsingle", "Consensus\nof 100", "Oracle\nbest of 100*"])
+    axes[0].set_xticks([0, 1, 2], ["Mean\nsingle", "Consensus\nof 100", "Oracle\nbest of 100"])
     axes[0].set_xlim(-0.5, 2.5)
     axes[0].set_ylabel(METRICS[metric])
     axes[1].plot([0, 1], [0, 1], color=INK, linewidth=1, linestyle="--", alpha=0.6)
     axes[1].scatter(paired.consensus, paired.best100, color=PALETTE[3], s=20, alpha=0.65, linewidth=0)
-    axes[1].set(xlim=(0, 1), xlabel="Consensus of 100", ylabel="Oracle best of 100*")
+    axes[1].set(xlim=(0, 1), xlabel="Consensus of 100", ylabel="Oracle best of 100")
     axes[1].text(0.02, 0.96, "Above line: oracle wins", fontsize=10, va="top")
-    if figure == "06_sampling_pl2":
-        fig.text(0.09, 0.025, "*Oracle uses ground truth to select the best of 100 samples for each protein.", fontsize=9)
     save(fig, figure, CAPTIONS[figure], "_long" if metric.endswith("long") else "", poster_dir=poster_dir)
     interactive = make_subplots(rows=1, cols=2, horizontal_spacing=0.16)
     layout = plotly_layout(metric)
@@ -283,10 +277,10 @@ def sampling_figure(summary: pd.DataFrame, rows: pd.DataFrame, figure: str = "06
                                         customdata=[[stem, tier_label, details.loc[stem, "eval_set"]] for stem in stems],
                                         hovertemplate="%{customdata[0]} · %{customdata[2]}<br>" + depth_label + " %{customdata[1]}<br>Consensus %{x:.3f}<br>Oracle best %{y:.3f}<extra></extra>"), row=1, col=2)
     interactive.update_xaxes(row=1, col=1, range=[-0.5, 2.5], tickvals=[0, 1, 2],
-                             ticktext=["Mean<br>single", "Consensus<br>of 100", "Oracle best<br>of 100*"])
+                             ticktext=["Mean<br>single", "Consensus<br>of 100", "Oracle best<br>of 100"])
     interactive.update_xaxes(row=1, col=2, range=[0, 1], title="Consensus of 100", showgrid=False)
     interactive.update_yaxes(range=[0, 1.02], dtick=0.2, gridcolor=GRID, zeroline=False)
-    interactive.update_yaxes(title="Oracle best of 100*", row=1, col=2)
+    interactive.update_yaxes(title="Oracle best of 100", row=1, col=2)
     return interactive
 
 

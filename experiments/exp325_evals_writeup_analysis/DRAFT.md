@@ -96,8 +96,8 @@ MarinFold also clears the Sequence KNN baseline.
 
 ![From predicted contacts to structures across Neff tiers](plots/05_folding_neff.png)
 
-The top-L/2 prediction arm matches the oracle's contact budget.
-Mean GDT-TS is 0.478; the L/2 oracle reaches 0.843.
+The top-L/2 prediction arm matches the ground truth contact budget.
+Mean GDT-TS is 0.478; the L/2 ground truth arm reaches 0.843.
 [Exact protocol](MARINFOLD_L2.md) · [L, L/2 and L/5 budget comparison](MARINFOLD_L5.md).
 
 Low-depth proteins remain the challenge. Consensus R-precision is 0.561; oracle selection of an individual sample gives 0.528. The maps are distinct, but useful whole-map alternatives remain limited.

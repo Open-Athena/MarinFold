@@ -36,7 +36,7 @@ Structural tier sizes: 14 / 31 / 76 / 184 (305 natural proteins).
 The lowest tier formerly contained five proteins by raw count.
 
 At Neff<10: MarinFold P@L/2 = 0.401; Helico + MarinFold L/2 GDT-TS = 0.285.
-L/2 oracle GDT-TS = 0.872. Overall values and all per-protein scores stay unchanged.
+Helico + L/2 ground truth contacts: GDT-TS = 0.872. Overall values and all per-protein scores stay unchanged.
 The draft now uses Neff panels; original raw-depth plots remain in the appendix.
 Extended AF3 sampling is still only the original five-protein subset, labeled explicitly.
 
@@ -126,9 +126,9 @@ See TRAINING_SOURCE_SEARCH.md and data/training_source_depths.csv for details.
 Offline reduction: uv run python generation/search_training_sources.py prepare
 
 
-## L/2 oracle contacts across all MSA depths
+## L/2 ground truth contacts across all MSA depths
 
-The oracle dots in Figures 02 and 05 now use L/2 randomly sampled true contacts.
+The ground truth contact dots in Figures 02 and 05 now use L/2 randomly sampled true contacts.
 Same 305 natural proteins: 5 / 20 / 60 / 220 across the four MSA tiers.
 Mean GDT-TS: 0.906 / 0.841 / 0.853 / 0.839; overall 0.843 versus full-map oracle 0.893.
 No MSA or negative contacts. Average two subsets per protein after three-sample confidence selection.
@@ -136,7 +136,7 @@ No MSA or negative contacts. Average two subsets per protein after three-sample 
 One protein has 109 available positives versus 110 requested.
 Source: ORACLE_L2.md; oracle_l2_per_protein.csv → helico_oracle_l2_samples.csv.
 
-## Match MarinFold and oracle contact counts
+## Match predicted and ground truth contact counts
 
 Same archived 248B-model rankings; exact top-L/2 positives, no oracle seeds or MSA.
 305 proteins, three Helico samples/map, original ranking-score selection.
@@ -146,7 +146,7 @@ Mean GDT-TS, top-L → top-L/2:
 100–999: 0.369 → 0.370; >=1000: 0.563 → 0.524.
 Overall: 0.504 → 0.478; paired change −0.026, 95% interval [−0.041, −0.012].
 Shallower-tier paired intervals include zero; only five proteins have depth <10.
-L/2 oracle remains 0.843 overall. Matching count leaves a large accuracy gap.
+L/2 ground truth arm remains 0.843 overall. Matching count leaves a large accuracy gap.
 
 915 new structures audited; old predictor points remain unchanged.
 Figure 05 shows L/2 as its only MarinFold variant alongside every existing predictor.
@@ -160,7 +160,7 @@ Each exact L/5 map is a subset of the frozen L/2 input; no oracle seeds or MSA.
 Mean GDT-TS, L / L/2 / L/5:
 <10: 0.261 / 0.297 / 0.245; 10–99: 0.325 / 0.341 / 0.331;
 100–999: 0.369 / 0.370 / 0.304; >=1000: 0.563 / 0.524 / 0.402.
-Overall: 0.504 / 0.478 / 0.376. The L/2 oracle remains 0.843.
+Overall: 0.504 / 0.478 / 0.376. The L/2 ground truth arm remains 0.843.
 Paired L/5 minus L/2: −0.103, 95% interval [−0.123, −0.083].
 L/5 minus L: −0.129, 95% interval [−0.151, −0.108].
 Shallow-tier intervals include zero; only five proteins have depth <10.
@@ -178,7 +178,7 @@ Mean GDT-TS: none 0.244; 5 contacts 0.296; 10 contacts 0.362; L/5 0.622; L/2 0.9
 All true contacts 0.918; full positive/negative oracle 0.932. ESMFold2 baseline 0.680.
 Per-protein panels retain both subset results. L/2 comes close to the full map.
 Only five proteins; two subsets do not fully characterize map-sampling variability.
-Source: ORACLE_BUDGET.md, data/oracle_budget_*.csv; render.py uses cached tables.
+Source: ORACLE_BUDGET.md, data/oracle_budget_per_protein.csv; render.py uses cached tables.
 
 ## Can MarinFold extend known contacts?
 
@@ -252,4 +252,4 @@ Same 314 proteins, L/2 denominator and three-way structure-contact ranking.
 AF3 0.900; AF2 0.889; Boltz-2 0.890; Protenix+MSA 0.902; ESMFold2 0.860.
 All means and intervals reused exactly from their existing cached summaries.
 White all/long PDF + PNG exports included.
-Source: SAMPLING_L2.md; data/pl2_sampling_comparison_*; prepare_sampling_comparison.py → render.py.
+Source: SAMPLING_L2.md; data/pl2_sampling_comparison_summary.csv; prepare_sampling_comparison.py → render.py.

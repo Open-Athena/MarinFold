@@ -22,8 +22,8 @@ BASELINES = ["af3", "af2", "boltz2", "protenix_msa", "esmfold2", "esmfold", "pro
 EXTRA = [f"af3_{n}_{selector}" for n in (100, 1000) for selector in ("ranking_score", "ptm")]
 DIAGNOSTICS = ["af3_1000_tm_score", "oracle"]
 LABELS = {key: item[0] for key, item in METHODS.items()}
-LABELS.update({"af3": "AF3 · 25 · official rank", "af3_1000_tm_score": "AF3 · best of 1,000*",
-               "oracle": "Helico + oracle map*", "marinfold_helico": "Helico + MarinFold (248B)"})
+LABELS.update({"af3": "AF3 · 25 · official rank", "af3_1000_tm_score": "AF3 · best TM of 1,000",
+               "oracle": "Helico + ground truth map", "marinfold_helico": "Helico + MarinFold (248B)"})
 for _n in (100, 1000):
     LABELS[f"af3_{_n}_ranking_score"] = f"AF3 · {_n:,} · official rank"
     LABELS[f"af3_{_n}_ptm"] = f"AF3 · {_n:,} · pTM"
@@ -89,7 +89,7 @@ def panel(frame: pd.DataFrame, name: str, methods: list[str], columns: list[str]
     cax = fig.add_axes([0.915, 0.20, 0.014, 0.55])
     fig.colorbar(im, cax=cax, label="TM-score", ticks=[0, 0.5, 1])
     cax.spines[:].set_visible(False)
-    fig.text(0.035, 0.075, "*Uses ground truth: diagnostic only. Predictor budgets differ. All AF3 runs use shared MSAs and no templates.", fontsize=10)
+    fig.text(0.035, 0.075, "Predictor budgets differ. All AF3 runs use shared MSAs and no templates.", fontsize=10)
     footer = ("Neff80 tiers contain different proteins. Extended AF3 cells cover only the original five raw-depth<10 proteins."
               if neff else "MSA tiers contain different proteins. Extended sampling covers only the five proteins at depth <10.")
     fig.text(0.035, 0.035, footer, fontsize=10)

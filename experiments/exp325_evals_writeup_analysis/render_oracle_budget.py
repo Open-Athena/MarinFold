@@ -18,12 +18,12 @@ BUDGET_ORDER = ["no_contacts", "oracle_5", "oracle_10", "oracle_L5", "oracle_L2"
 CONTEXT_ORDER = ["oracle", "oracle_positive_all", "oracle_L2", "oracle_L5", "oracle_10", "oracle_5", "no_contacts",
                  "af3", "af2", "boltz2", "protenix_msa", "esmfold2", "esmfold", "protenix_ss", "marinfold_helico"]
 STYLES = {**METHODS,
-    "oracle": ("Helico + full oracle map*", INK, "D"),
-    "oracle_positive_all": ("Helico + all true contacts*", "#47388F", "P"),
-    "oracle_5": ("Helico + 5 true contacts*", "#B37CA0", "v"),
-    "oracle_10": ("Helico + 10 true contacts*", "#8F386D", "o"),
-    "oracle_L5": ("Helico + L/5 true contacts*", "#388F8D", "s"),
-    "oracle_L2": ("Helico + L/2 true contacts*", "#8F6B38", "^"),
+    "oracle": ("Helico + full ground truth map", INK, "D"),
+    "oracle_positive_all": ("Helico + all ground truth contacts", "#47388F", "P"),
+    "oracle_5": ("Helico + 5 ground truth contacts", "#B37CA0", "v"),
+    "oracle_10": ("Helico + 10 ground truth contacts", "#8F386D", "o"),
+    "oracle_L5": ("Helico + L/5 ground truth contacts", "#388F8D", "s"),
+    "oracle_L2": ("Helico + L/2 ground truth contacts", "#8F6B38", "^"),
 }
 TICKS = ["0", "5", "10", "L/5", "L/2", "All\npositive", "Full\nmap"]
 METRICS = {"gdt_ts": "GDT-TS", "lddt": "lDDT"}
@@ -121,7 +121,7 @@ def context_panel(summary: pd.DataFrame, rows: pd.DataFrame, metric: str, poster
     ax.spines[["top", "right", "left"]].set_visible(False)
     ax.spines["bottom"].set_color(GRID)
     ax.tick_params(length=0, pad=9)
-    fig.text(0.055, 0.062, "*Ground-truth diagnostic. Sparse arms average two random subsets per protein. Faint dots show all five proteins.", fontsize=10)
+    fig.text(0.055, 0.062, "Sparse arms average two random subsets per protein. Faint dots show all five proteins.", fontsize=10)
     fig.text(0.055, 0.025, "Predictor entries retain their archived inputs and sampling budgets. All Helico arms use single-sequence input.", fontsize=10)
     save(fig, "02f_oracle_budget_context", metric, poster_dir)
 
