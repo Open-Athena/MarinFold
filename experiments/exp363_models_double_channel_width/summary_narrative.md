@@ -7,17 +7,17 @@ Hidden width 2048 -> 4096; MLP width 8192 -> 16384.
 Keep 32 query / 8 KV heads; head width 64 -> 128.
 Keep data, optimizer schedule, seeds and global batch fixed.
 
-## Architecture verified
-Actual Levanter parameter-tree counts:
-Baseline: 1,471,374,336 parameters.
-Wider model: 5,861,984,256 parameters (3.984x).
-12 configuration, tokenizer and finite-epoch dataset tests passed.
-Count reproduction: count_parameters.py via the README command.
+## Architecture and smoke verified
+5,861,984,256 parameters, versus exp277's 1,471,374,336 (3.984x).
+12 local configuration/tokenizer/data checks passed.
+64-H100 smoke: ten updates, train loss 8.56948, eval loss 8.03575.
+2.821 seconds/update; native and HF checkpoints saved with tokenizer.
+Compressed smoke schedule was spiky; this is an execution check.
 
 ## Current status
-64-H100 smoke active in CoreWeave US-EAST-02A.
-Resized from 128 GPUs after concurrent jobs reduced free capacity.
-Global batch remains 128 through gradient accumulation.
-Pinned tokenizer fix verified; distributed initialization succeeded.
-Checking full-corpus packing, then ten updates and checkpoint output.
-Production training and contact results are still pending.
+Full 266,345-update epoch submitted for 64 H100s in US-EAST-02A.
+At 15:11 UTC, queued for eight additional free H100s.
+Global batch 128 retained through gradient accumulation.
+Production uses the original 10% warmup and 1e-3 peak LR.
+Compute-only estimate: 8.7 days, plus validation/checkpoint/preemption overhead.
+Contact-accuracy results are pending.

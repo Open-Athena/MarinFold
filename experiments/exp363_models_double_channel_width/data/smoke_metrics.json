@@ -1,0 +1,94 @@
+{
+  "run_id": "contacts-v1-exp363-m2-p06-full-epoch-5.86B-smoke-n8-a03",
+  "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B-smoke-n8-a03",
+  "state": "finished",
+  "summary": {
+    "_runtime": 681.233980777,
+    "_step": 9,
+    "_timestamp": 1791903877.364762,
+    "_wandb.runtime": 681,
+    "backend": "gpu",
+    "eval/bpb": 1.001810908317566,
+    "eval/contacts-v1/bpb": 1.001810908317566,
+    "eval/contacts-v1/loss": 8.035748481750488,
+    "eval/input/bpb": 1.001810908317566,
+    "eval/input/macro_bpb": 1.001810908317566,
+    "eval/input/macro_loss": 8.035748481750488,
+    "eval/input/micro_loss": 8.035748481750488,
+    "eval/input/validation/bpb": 1.001810908317566,
+    "eval/input/validation/loss": 8.035748481750488,
+    "eval/loading_time": 0.02628605207428336,
+    "eval/loss": 8.035748481750488,
+    "eval/macro_bpb": 1.001810908317566,
+    "eval/macro_loss": 8.035748481750488,
+    "eval/pretokenized/bpb": 1.001810908317566,
+    "eval/pretokenized/loss": 8.035748481750488,
+    "eval/protein/bpb": 1.001810908317566,
+    "eval/protein/loss": 8.035748481750488,
+    "eval/total_time": 22.838068775017742,
+    "global_step": 9,
+    "num_devices": 64,
+    "num_hosts": 8,
+    "optim/learning_rate": 0.0005499999970197678,
+    "parameter_count": 5861984256,
+    "run_progress": 1,
+    "throughput/device_kind": "NVIDIA H100 80GB HBM3",
+    "throughput/duration": 2.820989200961776,
+    "throughput/examples_per_second": 45.37415455414017,
+    "throughput/flops_per_example": 367174002671616.0,
+    "throughput/gflops_per_second": 16660209.945484178,
+    "throughput/hook_time": 0.008807606995105743,
+    "throughput/loading_time": 0.0005147559568285942,
+    "throughput/mean_mfu": 26.319765752526408,
+    "throughput/mfu": 26.307810045294623,
+    "throughput/mfu_sample_count": 9,
+    "throughput/p10_mfu": 26.28468297601656,
+    "throughput/p50_mfu": 26.316152035547656,
+    "throughput/p90_mfu": 26.35419782357434,
+    "throughput/stddev_mfu": 0.02489995773238442,
+    "throughput/theoretical_flops": 6.3328e+16,
+    "throughput/theoretical_flops_per_device": 989500000000000.0,
+    "throughput/tokens_per_second": 371705.07410751627,
+    "throughput/total_gflops": 469982723.4196685,
+    "throughput/total_tokens": 10485760,
+    "train/loss": 8.569476127624512
+  },
+  "hf_files": [
+    {
+      "name": "config.json",
+      "size": 1728
+    },
+    {
+      "name": "model-00001-of-00005.safetensors",
+      "size": 4958809552
+    },
+    {
+      "name": "model-00002-of-00005.safetensors",
+      "size": 4865567936
+    },
+    {
+      "name": "model-00003-of-00005.safetensors",
+      "size": 4865567920
+    },
+    {
+      "name": "model-00004-of-00005.safetensors",
+      "size": 4865567896
+    },
+    {
+      "name": "model-00005-of-00005.safetensors",
+      "size": 3892454288
+    },
+    {
+      "name": "model.safetensors.index.json",
+      "size": 20883
+    },
+    {
+      "name": "tokenizer.json",
+      "size": 64407
+    },
+    {
+      "name": "tokenizer_config.json",
+      "size": 295
+    }
+  ]
+}

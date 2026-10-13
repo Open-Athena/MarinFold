@@ -24,9 +24,17 @@
       "job_id": "/bizon/exp363-train-smoke-a03",
       "git_sha": "65e00f6332d7ca39580d69c4eac8f900aebc2b26",
       "nodes": 8,
-      "state": "submitted"
+      "state": "succeeded",
+      "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B-smoke-n8-a03",
+      "child_job_id": "/bizon/exp363-train-smoke-a03/exp363-train-ecf49211"
     }
   ],
-  "production_state": "not_submitted",
-  "resume_command": "uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train --nodes 8"
+  "production_state": "queued_for_gpu_capacity",
+  "resume_command": "uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train --nodes 8",
+  "production_job_id": "/bizon/exp363-train-a01",
+  "production_git_sha": "104edab2a9ab114d6902dd73a66ab6ccaf8344e1",
+  "production_child_job_id": "/bizon/exp363-train-a01/exp363-train-224054ad",
+  "production_submitted_at": "2026-10-13T15:08:31.927Z",
+  "production_status_observed_at": "2026-10-13T15:11:30Z",
+  "production_pending_reason": "Kueue reports eight more H100 GPUs and RDMA slots needed for the requested 64-GPU gang; all eight tasks are scheduling-gated. W&B has not initialized for production."
 }
