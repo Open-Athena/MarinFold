@@ -38,6 +38,11 @@ All three runs complete the entire corpus, with reachable native final checkpoin
 
 ## Results
 
+The 255M and 985M ten-update smokes completed successfully on 2026-10-13. Their full-corpus count checks passed, observed parameter counts matched the analytic counts, and both native step-9 checkpoints and HF exports contain the expected model/config/tokenizer files. The cold startup spent several minutes reconstructing packing before optimizer updates. Measured step times were 0.489 s for 255M on 32 H100s and 0.996 s for 985M on 64 H100s; these short tests are throughput checks, not model-quality comparisons. Exact identities and measurements are in [training_smokes.csv](data/training_smokes.csv).
+
+[The 985M production run](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp362-depth16-full-epoch) was submitted as `/bizon/exp362-depth16-train-a01`, using source `5c036e962efe4b8f4156b1d8d89623c968bd1ab2`. Full training and evaluation are pending.
+
+
 Setup: the exact sizes are 254,941,696; 498,228,224; and 984,801,280 parameters, versus exp277's 1,471,374,336. All 26 configuration and finite-dataset tests plus eight fleet/persistence tests pass. The full resolved configuration matches exp277 after normalizing depth and operational identities.
 
 TRC preflight inspected the configured GCS regions and found no complete regional MPNN caches. The CoreWeave fallback reuses the exact existing inputs without a corpus transfer. The launch and worker environments retain exp277's committed dependency lock.

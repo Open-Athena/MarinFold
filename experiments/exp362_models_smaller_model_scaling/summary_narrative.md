@@ -12,7 +12,9 @@ Preserve exp277 optimizer, augmentation, shuffle, tokenizer and seeds.
 Experiment #362 registered. Resolved configuration and finite-data tests pass.
 TRC preflight found no complete regional MPNN caches.
 Proceeding with existing CoreWeave inputs at batch priority.
-Training and contact accuracy results are pending.
+255M and 985M smoke gates passed, including native/HF checkpoints and tokenizers.
+985M production submitted for all 266,345 updates.
+Full training and contact accuracy results are pending.
 
 ## Interpretation
 Use final validation loss and matched eval-val / eval-denovo contact accuracy.
