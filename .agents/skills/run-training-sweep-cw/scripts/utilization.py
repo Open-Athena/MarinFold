@@ -16,7 +16,9 @@ PRODUCTION_PEERS = {
     "cw-us-east-02a": "h100",
     "cw-us-east-08a": "gb200",
 }
-AVAILABILITY_VERSION = 2
+# Version 3 changes priority ordering, while retaining free/held GPU accounting.
+# This reader reports named bands and never infers rank from their wire values.
+AVAILABILITY_VERSION = 3
 
 
 class SnapshotError(RuntimeError):
