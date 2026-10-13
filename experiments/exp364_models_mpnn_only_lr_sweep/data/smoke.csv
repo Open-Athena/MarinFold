@@ -1,0 +1,2 @@
+run_id,nodes,gpus,final_step,run_progress,train_loss,eval_loss,tokens_per_second,native_checkpoint_verified,hf_weights_and_tokenizer_verified
+contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B-smoke-a01,8,64,9,1,15.215826034545898,12.036035537719728,713635.424592747,True,True

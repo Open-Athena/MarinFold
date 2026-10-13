@@ -16,6 +16,10 @@ No native training documents. Fresh global shuffle each epoch.
 
 23,921,189 packed examples per epoch; 373,769 updates for two passes.
 
-CoreWeave regional caches reused without a corpus transfer. Production launch follows coverage tests and a GPU smoke.
+Live regional audit passed: both source ledgers, raw tokens, packing and clipping exactly match the default corpus subset. Six CPU tests passed.
 
-No production results yet.
+The 64-H100 smoke passed ten updates with finite losses. Native checkpoint and HF weights plus tokenizer were verified.
+
+All three production trials were launched on 32 H100s each, 96 total, using regional cached data. Saved W&B configurations match the default except for the requested changes.
+
+Production startup is in progress; the two-epoch runs are not yet complete.

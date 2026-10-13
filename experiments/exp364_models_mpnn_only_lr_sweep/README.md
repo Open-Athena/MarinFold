@@ -38,11 +38,21 @@ The 2026-10-13 in-region audit (`/bizon/exp364-lr1e-3-audit-a01`) succeeded and 
 
 Six CPU tests pass. They compare the resolved recipe directly against exp277, enforce redesign-only training with unchanged validation, exercise complete traversal and deterministic resume across the epoch boundary through Levanter's actual loader, and check that resizing a gang does not change production identity. The default run's recorded W&B model and optimizer settings were also checked; `data/default_recipe.json` preserves that reference.
 
-The isolated [64-H100 smoke](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B-smoke-a01) is running as `/bizon/exp364-lr1e-3-train-smoke-a01`. Production results are pending.
+The isolated [64-H100 smoke](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B-smoke-a01) completed all ten updates with finite losses. Native step-9 metadata and HF weights plus `tokenizer.json` / `tokenizer_config.json` were verified in S3. Metrics are in `data/smoke.csv`; its short-run losses are only a pipeline check.
+
+Production uses 32 H100s per trial on `cw-us-east-02a` at batch priority (96 GPUs total). The four-sequence microbatch is below exp199/exp232's measured limit of eight sequences per H100; global batch remains 128. The 64-H100 smoke validated the complete two-epoch data path, training, validation and checkpoint/export behavior. Gang size is independent of run identity, so future capacity changes resume the same trial.
+
+| Peak LR | Production W&B | Initial Iris root |
+| --- | --- | --- |
+| 0.0005 | [lr5e-4](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B) | `/bizon/exp364-lr5e-4-train-a01` |
+| 0.001 | [lr1e-3](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B) | `/bizon/exp364-lr1e-3-train-a01` |
+| 0.002 | [lr2e-3](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B) | `/bizon/exp364-lr2e-3-train-a01` |
+
+All three trials were registered as running in W&B on 2026-10-13 at 15:10 UTC. Their live saved configurations were checked against the actual default run: model fields and all optimizer values match except the requested learning rate; the exact two-source training subset, global batch 128, 373,769-step target, and augmentation duration were verified. Data initialization was still in progress, with no production optimizer steps reported at that observation. Final results are pending.
 
 ## Reproduction
 
-`launch.py audit` verifies the regional token caches and recomputes packed-example counts. `launch.py train-smoke --trial lr1e-3 --nodes 8 --attempt 1` launches the isolated ten-update gate. `launch.py train --trial <lr5e-4|lr1e-3|lr2e-3> --nodes 8 --attempt 1` launches one production trial. Run launch commands with `uv run --project scripts python experiments/exp364_models_mpnn_only_lr_sweep/launch.py` from the repository root. The launcher uses the experiment's committed lock and source bundle on workers.
+`launch.py audit` verifies the regional token caches and recomputes packed-example counts. `launch.py train-smoke --trial lr1e-3 --nodes 8 --attempt 1` launches the isolated ten-update gate. `launch.py train --trial <lr5e-4|lr1e-3|lr2e-3> --nodes 4 --attempt 1` launches one production trial. Run launch commands with `uv run --project scripts python experiments/exp364_models_mpnn_only_lr_sweep/launch.py` from the repository root. The launcher uses the experiment's committed lock and source bundle on workers.
 
 `observe.py` reads the experiment's W&B group and optionally persists observations in the sweep SQLite database; it makes no placement or recovery decisions. `utilization.py` reads current Iris v3 fleet availability (free/held accounting is unchanged from v2; v3 changes priority-band ordering). Launch and recovery decisions remain agent-owned.
 
