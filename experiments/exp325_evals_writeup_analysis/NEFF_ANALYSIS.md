@@ -43,7 +43,8 @@ and worker metadata are in `data/msa_neff.csv`.
 ## What changes
 
 The same prespecified boundaries, **10 / 100 / 1,000**, now apply to a fractional
-effective count. Plot labels use `<10`, `10–<100`, `100–<1000`, and `≥1000`.
+effective count. Plot labels use `<10`, `10–100`, `100–1000`, and `≥1000`;
+finite upper bounds are exclusive.
 
 | Population | Raw-depth tier sizes | Neff80 tier sizes |
 |---|---|---|

@@ -15,7 +15,7 @@ Neff80 is measured on all 333 exact frozen predictor alignments; no predictor is
 Each sequence contributes the inverse of its >=80%-identity neighbor count.
 Identity uses columns non-gap in both sequences; duplicate records retain their weights.
 
-Same cutoffs: <10 / 10–<100 / 100–<1000 / >=1000.
+Same cutoffs, labeled <10 / 10–100 / 100–1000 / >=1000; finite upper bounds are exclusive.
 Contact tier sizes: 15 / 32 / 79 / 188 (314 natural proteins).
 Structural tier sizes: 14 / 31 / 76 / 184 (305 natural proteins).
 The lowest tier formerly contained five proteins by raw count.

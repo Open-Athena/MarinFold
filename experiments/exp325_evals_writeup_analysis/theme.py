@@ -97,7 +97,7 @@ for _figure in ("01_predictors", "02_oracle", "04_contacts", "05_folding"):
     CAPTIONS[_figure] += MSA_BASELINE_CAPTION
 
 NEFF_AXIS = "Effective MSA depth (Neff, 80% identity)"
-NEFF_TIER_LABELS = ["<10", "10–<100", "100–<1000", "≥1000"]
+NEFF_TIER_LABELS = ["<10", "10–100", "100–1000", "≥1000"]
 NEFF_FIGURES = {
     "01_predictors": ["gdt_ts", "lddt"],
     "02_oracle": ["gdt_ts", "lddt"],
@@ -120,7 +120,7 @@ for _base in NEFF_FIGURES:
     _name = _base + "_neff"
     ORDER[_name] = ORDER[_base].copy()
     TITLES[_name] = TITLES[_base] if _base != "04_contacts" else "Contact prediction versus effective MSA depth"
-    CAPTIONS[_name] = (_NEFF_PROTOCOLS[_base] + " Neff is recomputed on the exact frozen predictor alignments: sum of inverse neighbor counts at >=80% identity over jointly non-gap columns. Repeated sequences are downweighted; no alignment or prediction is changed. Bins are <10, 10–<100, 100–<1000 and >=1000. Means and 95% intervals bootstrap proteins; cohort membership changes relative to raw depth. Split, viral and design views remain separate. Every score, Neff measurement and contributing protein traces through neff_figure_rows.csv, neff_summary.csv and NEFF_ANALYSIS.md.")
+    CAPTIONS[_name] = (_NEFF_PROTOCOLS[_base] + " Neff is recomputed on the exact frozen predictor alignments: sum of inverse neighbor counts at >=80% identity over jointly non-gap columns. Repeated sequences are downweighted; no alignment or prediction is changed. Bins are labeled <10, 10–100, 100–1000 and >=1000; finite upper bounds are exclusive. Means and 95% intervals bootstrap proteins; cohort membership changes relative to raw depth. Split, viral and design views remain separate. Every score, Neff measurement and contributing protein traces through neff_figure_rows.csv, neff_summary.csv and NEFF_ANALYSIS.md.")
 TITLES["01d_af3_depth_context_neff"] = "Predictor accuracy across effective MSA depths"
 CAPTIONS["01d_af3_depth_context_neff"] = "Mean TM-score regrouped by Neff80 on the same 305 natural proteins and frozen alignments. Archived predictor rows retain their original protocols, including top-L MarinFold contacts and the full-map oracle in this diagnostic. Extended AF3 sampling still covers only the original five raw-depth<10 proteins; its Neff<10 cells explicitly show n=5, a subset of the full tier. Other extended-sampling cells are not run. These are not matched tier-wide AF3 sampling comparisons. Every source score and protein is preserved in neff_af3_context_rows.csv and neff_af3_context_summary.csv. See NEFF_ANALYSIS.md and AF3_SAMPLING.md."
 

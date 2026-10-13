@@ -112,7 +112,8 @@ each selected contact's rank, hashes, tables, scripts and figures.
 | Paired change/interval | `data/contact_confidence_deltas.csv`: both means, within-protein difference, CI, members |
 | Exact coordinate/contact check | `data/contact_confidence_validation.csv`: degree/support differences, hash, elapsed time |
 
-Neff bins are <10 / 10–<100 / 100–<1000 / >=1000. Means weight proteins
+Neff bins are labeled <10 / 10–100 / 100–1000 / >=1000, with finite upper
+bounds exclusive. Means weight proteins
 equally; 95% intervals use 5,000 protein bootstraps, seed325. Delta intervals
 bootstrap **within-protein differences**. Cohorts include validation, test,
 viral/nonviral and designs separately. Raw-depth delta strata are also saved.

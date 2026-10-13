@@ -10,7 +10,7 @@ from plotly.subplots import make_subplots
 
 from build_summary import save_plot_with_meta
 from poster_style import save_poster_vectors
-from theme import CAPTIONS, COHORTS, FONT, GRID, INK, METHODS, ORDER, PAPER, TITLES
+from theme import CAPTIONS, COHORTS, FONT, GRID, INK, METHODS, NEFF_TIER_LABELS, ORDER, PAPER, TIERS, TITLES
 
 HERE = Path(__file__).resolve().parent
 FIGURE = "04e_pl5_ranking_deltas"
@@ -68,7 +68,7 @@ def render(*, poster_dir: Path | None = None) -> go.Figure:
     methods = ORDER["01_predictors"]
     menus = []
     for cohort in COHORTS:
-        for tier in ["All depths","<10","10–99","100–999","≥1000"]:
+        for tier in ["All depths", *TIERS]:
             data = frame[(frame.axis=="neff") & (frame.cohort==cohort) & (frame.tier==tier)]
             if data.empty:
                 continue
@@ -86,7 +86,8 @@ def render(*, poster_dir: Path | None = None) -> go.Figure:
     buttons=[]
     for cohort,tier,start,n in menus:
         visible=[start<=idx<start+4 for idx in range(len(fig.data))]
-        label=f"{COHORTS[cohort]} · {'All Neff' if tier=='All depths' else 'Neff '+tier} · n={n}"
+        depth_label = "All Neff" if tier == "All depths" else "Neff " + NEFF_TIER_LABELS[TIERS.index(tier)]
+        label=f"{COHORTS[cohort]} · {depth_label} · n={n}"
         buttons.append(dict(label=label,method="update",args=[{"visible":visible},{"title.text":label}]))
     fig.update_layout(template="none",paper_bgcolor="rgba(0,0,0,0)",plot_bgcolor="rgba(0,0,0,0)",
                       font=dict(family=FONT,color=INK,size=12),height=540,margin=dict(l=175,r=25,t=110,b=100),
