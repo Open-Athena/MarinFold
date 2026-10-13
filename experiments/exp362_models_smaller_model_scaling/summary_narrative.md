@@ -14,7 +14,7 @@ TRC preflight found no complete regional MPNN caches.
 Proceeding with existing CoreWeave inputs at batch priority.
 All three smoke gates passed, including native/HF checkpoints and tokenizers.
 All three production runs submitted for all 266,345 updates, using 128 H100s.
-255M and 985M have reached optimizer updates; 498M is starting.
+255M and 985M have reached optimizer updates; 498M awaits GPU gang admission.
 Full training and contact accuracy results are pending.
 
 ## Interpretation
