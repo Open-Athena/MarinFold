@@ -62,7 +62,7 @@ The live federation inventory at 2026-10-13 14:43 UTC reports 248 available H100
 
 Production has not started. The ten-update smoke must complete training, validation, and checkpoint writing before production submission.
 
-The first GPU smoke `/bizon/exp363-train-smoke-a01` failed before model/W&B initialization because this Levanter release passes `repo@revision` to Hugging Face without parsing it. The tokenizer is now bundled as an unmodified, explicitly revisioned local snapshot using the loader's supported directory interface. A new integration test loads it through the actual training backend and checks the exported HF tokenizer vocabulary. The second smoke uses a fresh run identity.
+The first GPU smoke `/bizon/exp363-train-smoke-a01` failed before model/W&B initialization because this Levanter release passes `repo@revision` to Hugging Face without parsing it. The tokenizer is now bundled as an unmodified, explicitly revisioned local snapshot using the loader's supported directory interface. A new integration test loads it through the actual training backend and checks the exported HF tokenizer vocabulary. The second smoke was cancelled before GPU startup because other jobs consumed capacity, leaving 88 free H100s. The third smoke uses eight nodes / 64 H100s and gradient accumulation to retain global batch 128. Its run is [contacts-v1-exp363-m2-p06-full-epoch-5.86B-smoke-n8-a03](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B-smoke-n8-a03), Iris `/bizon/exp363-train-smoke-a03/exp363-train-ecf49211`, source `65e00f6332d7ca39580d69c4eac8f900aebc2b26`. All eight workers completed distributed initialization and W&B reports 64 H100 devices.
 
 ## Conclusion
 
@@ -75,9 +75,9 @@ Run from the repository root:
 ```bash
 JAX_PLATFORMS=cpu uv run --project experiments/exp363_models_double_channel_width --locked python -m experiments.exp363_models_double_channel_width.count_parameters
 JAX_PLATFORMS=cpu uv run --project experiments/exp363_models_double_channel_width --locked --with pytest python -m pytest -q experiments/exp363_models_double_channel_width/test_train.py experiments/exp277_models_single_mpnn_pilot/test_epoch_data.py
-uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train-smoke --nodes 16
+uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train-smoke --nodes 8 --attempt 3
 # After the smoke succeeds:
-uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train --nodes 16
+uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train --nodes 8
 uv run --no-project --with matplotlib python experiments/exp363_models_double_channel_width/build_summary.py
 ```
 

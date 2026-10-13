@@ -15,9 +15,9 @@ Wider model: 5,861,984,256 parameters (3.984x).
 Count reproduction: count_parameters.py via the README command.
 
 ## Current status
-Retrying the 128-H100 smoke in CoreWeave US-EAST-02A.
-First smoke stopped before training on a tokenizer loading error.
-Pinned tokenizer snapshot now bundled; integration test passes.
-248 available H100s observed at 2026-10-13 14:43 UTC.
-Production follows only after the ten-update smoke succeeds.
-No training or contact-accuracy results yet.
+64-H100 smoke active in CoreWeave US-EAST-02A.
+Resized from 128 GPUs after concurrent jobs reduced free capacity.
+Global batch remains 128 through gradient accumulation.
+Pinned tokenizer fix verified; distributed initialization succeeded.
+Checking full-corpus packing, then ten updates and checkpoint output.
+Production training and contact results are still pending.

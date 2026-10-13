@@ -1,0 +1,32 @@
+{
+  "experiment": 363,
+  "branch": "exp363/double-channel-width",
+  "pull_request": "https://github.com/Open-Athena/MarinFold/pull/366",
+  "production_run": "contacts-v1-exp363-m2-p06-full-epoch-5.86B",
+  "parameter_count": 5861984256,
+  "target_cluster": "cw-us-east-02a",
+  "nodes": 8,
+  "gpu_count": 64,
+  "smoke_attempts": [
+    {
+      "job_id": "/bizon/exp363-train-smoke-a01",
+      "git_sha": "cf3c6c922145248401720db8a9956f51a5384741",
+      "state": "failed",
+      "reason": "Levanter tokenizer loader rejected repo@revision before W&B/model initialization."
+    },
+    {
+      "job_id": "/bizon/exp363-train-smoke-a02",
+      "git_sha": "65e00f6332d7ca39580d69c4eac8f900aebc2b26",
+      "state": "cancelled",
+      "reason": "Before GPU startup: concurrent training jobs left 88 free H100s, fewer than the requested 128."
+    },
+    {
+      "job_id": "/bizon/exp363-train-smoke-a03",
+      "git_sha": "65e00f6332d7ca39580d69c4eac8f900aebc2b26",
+      "nodes": 8,
+      "state": "submitted"
+    }
+  ],
+  "production_state": "not_submitted",
+  "resume_command": "uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train --nodes 8"
+}
