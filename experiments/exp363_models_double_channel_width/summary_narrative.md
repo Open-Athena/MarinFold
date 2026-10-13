@@ -15,9 +15,10 @@ Keep data, optimizer schedule, seeds and global batch fixed.
 Compressed smoke schedule was spiky; this is an execution check.
 
 ## Current status
-Full 266,345-update epoch submitted for 64 H100s in US-EAST-02A.
-At 15:11 UTC, queued for eight additional free H100s.
-Global batch 128 retained through gradient accumulation.
+Full 266,345-update epoch started on 32 H100s in US-EAST-02A.
+W&B initialized at 2026-10-13 15:15:36 UTC; data initialization in progress.
+Other production jobs left 56 free GPUs; allocation reduced to fit.
+Global batch 128 retained through four-way gradient accumulation.
 Production uses the original 10% warmup and 1e-3 peak LR.
-Compute-only estimate: 8.7 days, plus validation/checkpoint/preemption overhead.
+Linear compute-only estimate: 17.4 days, pending measured production speed.
 Contact-accuracy results are pending.

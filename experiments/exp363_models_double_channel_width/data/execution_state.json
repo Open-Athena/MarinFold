@@ -5,8 +5,8 @@
   "production_run": "contacts-v1-exp363-m2-p06-full-epoch-5.86B",
   "parameter_count": 5861984256,
   "target_cluster": "cw-us-east-02a",
-  "nodes": 8,
-  "gpu_count": 64,
+  "nodes": 4,
+  "gpu_count": 32,
   "smoke_attempts": [
     {
       "job_id": "/bizon/exp363-train-smoke-a01",
@@ -29,12 +29,27 @@
       "child_job_id": "/bizon/exp363-train-smoke-a03/exp363-train-ecf49211"
     }
   ],
-  "production_state": "queued_for_gpu_capacity",
-  "resume_command": "uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train --nodes 8",
-  "production_job_id": "/bizon/exp363-train-a01",
-  "production_git_sha": "104edab2a9ab114d6902dd73a66ab6ccaf8344e1",
-  "production_child_job_id": "/bizon/exp363-train-a01/exp363-train-224054ad",
-  "production_submitted_at": "2026-10-13T15:08:31.927Z",
-  "production_status_observed_at": "2026-10-13T15:11:30Z",
-  "production_pending_reason": "Kueue reports eight more H100 GPUs and RDMA slots needed for the requested 64-GPU gang; all eight tasks are scheduling-gated. W&B has not initialized for production."
+  "production_state": "running_initializing_data",
+  "resume_command": "uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train --nodes 4 --attempt 3",
+  "production_job_id": "/bizon/exp363-train-a02",
+  "production_git_sha": "56f10733",
+  "production_attempts": [
+    {
+      "job_id": "/bizon/exp363-train-a01",
+      "child_job_id": "/bizon/exp363-train-a01/exp363-train-224054ad",
+      "nodes": 8,
+      "state": "cancelled",
+      "reason": "Kueue required eight more free H100s; remaining capacity occupied by other production jobs. Cancelled before W&B initialization."
+    },
+    {
+      "job_id": "/bizon/exp363-train-a02",
+      "nodes": 4,
+      "state": "running",
+      "git_sha": "56f10733",
+      "child_job_id": "/bizon/exp363-train-a02/exp363-train-4fae9eab"
+    }
+  ],
+  "production_child_job_id": "/bizon/exp363-train-a02/exp363-train-4fae9eab",
+  "production_submitted_at": "2026-10-13T15:14:24.763Z",
+  "production_wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B"
 }
