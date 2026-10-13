@@ -1,0 +1,42 @@
+{
+  "label": "contacts-v1-exp362-depth4-full-epoch-smoke-cw-us-east-02a-n4-a01-step-9",
+  "run_name": "contacts-v1-exp362-depth4-full-epoch-smoke-cw-us-east-02a-n4-a01",
+  "step": 9,
+  "coreweave_uri": "s3://marin-us-east-02a/MarinFold/exp362_models_smaller_model_scaling/runs/contacts-v1-exp362-depth4-full-epoch-smoke-cw-us-east-02a-n4-a01/hf/step-9",
+  "native_uri": "s3://marin-us-east-02a/MarinFold/exp362_models_smaller_model_scaling/runs/contacts-v1-exp362-depth4-full-epoch-smoke-cw-us-east-02a-n4-a01/checkpoints/step-9",
+  "native_metadata": {
+    "step": 9,
+    "timestamp": "2026-10-13T14:56:09.948380",
+    "is_temporary": false
+  },
+  "parameter_count": 254941696,
+  "checkpoint_files": [
+    {
+      "name": "config.json",
+      "size": 1365,
+      "digest": "07c025fe435b451dfa1524ec60b4291d",
+      "digest_kind": "s3-etag"
+    },
+    {
+      "name": "model.safetensors",
+      "size": 1019771992,
+      "digest": "1ca8d33be7c33d3cfda8161cbb6f5cc9-20",
+      "digest_kind": "s3-etag"
+    },
+    {
+      "name": "tokenizer.json",
+      "size": 64407,
+      "digest": "c4b3a16978e30eb150cca4fd8934b6ae",
+      "digest_kind": "s3-etag"
+    },
+    {
+      "name": "tokenizer_config.json",
+      "size": 296,
+      "digest": "5acd13b50d727187034880bd78bcb928",
+      "digest_kind": "s3-etag"
+    }
+  ],
+  "total_bytes": 1019838060,
+  "verified_at": "2026-10-13T15:11:44.872619+00:00",
+  "verification_scope": "Native metadata and manifests; HF configuration, tokenizer, tensor headers and object sizes. Weight payload bytes were not downloaded or hashed."
+}

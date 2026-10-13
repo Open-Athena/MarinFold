@@ -23,32 +23,36 @@ def main() -> None:
     db = sqlite3.connect(args.database)
     db.row_factory = sqlite3.Row
     db.execute("PRAGMA foreign_keys=ON")
-    active = db.execute(
-        "SELECT t.*,d.dispatch_id,d.iris_job_id FROM trials t "
-        "JOIN dispatches d USING(trial_id) WHERE d.active=1"
-    ).fetchall()
+    active = [
+        (prefix, row)
+        for prefix in ("", "validation_")
+        for row in db.execute(
+            f"SELECT t.*,d.dispatch_id,d.iris_job_id FROM {prefix}trials t "
+            f"JOIN {prefix}dispatches d USING(trial_id) WHERE d.active=1"
+        ).fetchall()
+    ]
     api = wandb.Api(timeout=45)
     runs = {r.id: r for r in api.runs("open-athena/MarinFold", filters={"group": "exp362-smaller-model-scaling"})}
     observations = []
     with open_iris_client(cluster_name="marin", workspace=None) as client:
-        for row in active:
+        for prefix, row in active:
             run = runs.get(row["wandb_run_id"])
             summary = dict(run.summary) if run is not None else {}
             state = client.job_state(JobName.from_wire(row["iris_job_id"])).value
             progress = summary.get("run_progress")
-            observations.append((row, run, state, progress, summary))
+            observations.append((prefix, row, run, state, progress, summary))
     # Commit only after all service calls succeed, so an incomplete fleet query
     # cannot look like a fresh decision snapshot.
     now = datetime.now(UTC).isoformat()
     with db:
-        for row, run, state, progress, summary in observations:
+        for prefix, row, run, state, progress, summary in observations:
             db.execute(
-                "INSERT INTO observations(trial_id,dispatch_id,observed_at,wandb_state,run_progress,iris_running) "
+                f"INSERT INTO {prefix}observations(trial_id,dispatch_id,observed_at,wandb_state,run_progress,iris_running) "
                 "VALUES(?,?,?,?,?,?)",
                 (row["trial_id"], row["dispatch_id"], now, run.state if run else None, progress, state == "running"),
             )
             if progress is not None and progress > row["high_water_progress"]:
-                db.execute("UPDATE trials SET high_water_progress=? WHERE trial_id=?", (progress, row["trial_id"]))
+                db.execute(f"UPDATE {prefix}trials SET high_water_progress=? WHERE trial_id=?", (progress, row["trial_id"]))
             print(json.dumps({
                 "observed_at": now, "trial": row["trial_id"], "wandb_id": row["wandb_run_id"],
                 "wandb_state": run.state if run else None, "iris_state": state,
