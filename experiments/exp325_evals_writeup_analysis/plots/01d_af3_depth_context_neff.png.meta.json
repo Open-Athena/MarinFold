@@ -1,0 +1,5 @@
+{
+  "script": "render_af3_context.py",
+  "args": [],
+  "caption": "Mean TM-score regrouped by Neff80 on the same 305 natural proteins and frozen alignments. Archived predictor rows retain their original protocols, including top-L MarinFold contacts and the full-map oracle in this diagnostic. Extended AF3 sampling still covers only the original five raw-depth<10 proteins; its Neff<10 cells explicitly show n=5, a subset of the full tier. Other extended-sampling cells are not run. These are not matched tier-wide AF3 sampling comparisons. Every source score and protein is preserved in neff_af3_context_rows.csv and neff_af3_context_summary.csv. See NEFF_ANALYSIS.md and AF3_SAMPLING.md."
+}

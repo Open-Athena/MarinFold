@@ -1,0 +1,43 @@
+{
+  "sources": {
+    "experiments/exp325_evals_writeup_analysis/data/msa_neff.csv": {
+      "sha256": "8a451e5e6ec35e50e3fc9fee5d026fa6bd2949298afb39860c1af7d8bc6f63bc",
+      "bytes": 172663
+    },
+    "experiments/exp325_evals_writeup_analysis/data/targets.csv": {
+      "sha256": "16079908b54d9a913c14b9fa18a24e24d7bb44379d736077f3f653283ac4a23c"
+    },
+    "experiments/exp325_evals_writeup_analysis/data/figure_rows.csv": {
+      "sha256": "8cd3a742f313dd6301b47321b7e2b00d29eb51dec0f46b45f8cc98e7b86953c9"
+    },
+    "experiments/exp325_evals_writeup_analysis/data/pl5_figure_rows.csv": {
+      "sha256": "7832f14858f0cc2d272b842d5b0a04b4e593810a493dd9251e10d3cd9770aa24"
+    },
+    "experiments/exp325_evals_writeup_analysis/data/pl2_figure_rows.csv": {
+      "sha256": "456f5c05e63634251f7889f9895ab50ad7201afd821cf3738baf6eab382260a1"
+    },
+    "experiments/exp325_evals_writeup_analysis/data/af3_context_rows.csv": {
+      "sha256": "1cac7221ec17cd4cab308c39a5757c77cc99a649756380275dcee474c06ed4b0"
+    }
+  },
+  "files": {
+    "msa_neff.csv": "8a451e5e6ec35e50e3fc9fee5d026fa6bd2949298afb39860c1af7d8bc6f63bc",
+    "neff_targets.csv": "d67d74fa26e1c24fb264ca93fae21fadc1c820415466f4dce6dbbd0522cf9d27",
+    "neff_figure_rows.csv": "681e0f9d0f000e8d61e1ee089b34fe4b8205851d08f66341bf77fd00b52932c9",
+    "neff_summary.csv": "be57d8fee891b95a71b22762534dc55ad41e0d3e7e3bc51de040684822bb515d",
+    "neff_tier_migration.csv": "5c5ea8b027dcc92724bafcda7c7cd7d91acf982badbb3f733676b800579a2e93",
+    "neff_af3_context_rows.csv": "70063e01b1b7d6edbc063913c726957710d2eff9c93152d474aa110c79927d4a",
+    "neff_af3_context_summary.csv": "8d24df906803de5bd74a76b4af77e75fb7a1cda03ba138d8d3bc0857d966b532"
+  },
+  "preprocessors": {
+    "prepare_neff.py": "097bb95e7dc767ac64fee35d4f79829f421dbe5820b7133db3568d43566c6aa1",
+    "generation/measure_neff.py": "b9603ecd531ebb965342a2d54ff02804d6d13f95e595aefe2ef564b3083afddd"
+  },
+  "msa_inputs_sha256": "20f1dc53bf0ed6aad2c58706bcf75f9b7957919f0a3152de550d52917e883d38",
+  "definition": "Neff80=sum_i 1/count_j(identity(i,j)>=0.8); identity over columns non-gap in both; insertions removed; all original records retained",
+  "tiers": "[1,10), [10,100), [100,1000), [1000,infinity); same prespecified cutoffs as raw depth",
+  "uncertainty": "5000 protein-bootstrap replicates, seed325; matched populations within each figure",
+  "prediction_changes": "None: original metrics, checkpoint, ranks, contacts and selected structures reused",
+  "af3_sampling": "Only the original five raw-depth<10 proteins; Neff tier cell is explicitly labeled n=5",
+  "old_exp260_table": "Not used: its alignments differ from the frozen exp325 predictor inputs"
+}

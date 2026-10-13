@@ -9,6 +9,24 @@ AF2/AF3/Boltz-2 comparators use shared archived MSAs and no templates, with conf
 Predictor generation → cached analysis tables → fast static and interactive rendering.
 Every numerical figure element maps back to a source CSV row.
 
+## Regrouping by effective MSA depth
+
+Neff80 is measured on all 333 exact frozen predictor alignments; no predictor is rerun.
+Each sequence contributes the inverse of its >=80%-identity neighbor count.
+Identity uses columns non-gap in both sequences; duplicate records retain their weights.
+
+Same cutoffs: <10 / 10–<100 / 100–<1000 / >=1000.
+Contact tier sizes: 15 / 32 / 79 / 188 (314 natural proteins).
+Structural tier sizes: 14 / 31 / 76 / 184 (305 natural proteins).
+The lowest tier formerly contained five proteins by raw count.
+
+At Neff<10: MarinFold P@L/2 = 0.401; Helico + MarinFold L/2 GDT-TS = 0.285.
+L/2 oracle GDT-TS = 0.872. Overall values and all per-protein scores stay unchanged.
+The draft now uses Neff panels; original raw-depth plots remain in the appendix.
+Extended AF3 sampling is still only the original five-protein subset, labeled explicitly.
+
+Source: NEFF_ANALYSIS.md; msa_neff.csv; neff_figure_rows.csv; neff_summary.csv.
+
 ## What the contact and confidence analyses show
 
 AF2 / AF3 / Boltz-2 GDT-TS: 0.854 / 0.860 / 0.861 on 305 natural proteins.

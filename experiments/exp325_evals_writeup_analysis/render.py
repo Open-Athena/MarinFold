@@ -26,7 +26,7 @@ from render_af3_sampling import main as render_af3_sampling
 from render_af3_context import main as render_af3_context
 from render_oracle_budget import main as render_oracle_budget
 from render_seed_completion import main as render_seed_completion
-from theme import CAPTIONS, COHORTS, FONT, GRID, INK, METHODS, METRICS, ORDER, PALETTE, PAPER, TIERS, TITLES
+from theme import CAPTIONS, COHORTS, FONT, GRID, INK, METHODS, METRICS, NEFF_AXIS, NEFF_FIGURES, NEFF_TIER_LABELS, ORDER, PALETTE, PAPER, TIERS, TITLES
 
 HERE = Path(__file__).resolve().parent
 DATA = HERE / "data"
@@ -76,11 +76,14 @@ def static_depth(summary: pd.DataFrame, figure: str, metric: str, cohort: str = 
     frame = summary[(summary.figure == figure) & (summary.metric == metric) &
                     (summary.cohort == cohort) & summary.tier.isin(TIERS)]
     crowded = len(ORDER[figure]) > 6
-    sparse_oracle = figure in ("02_oracle", "05_folding")
+    base = figure.removesuffix("_neff")
+    neff = figure.endswith("_neff")
+    tier_labels = NEFF_TIER_LABELS if neff else TIERS
+    sparse_oracle = base in ("02_oracle", "05_folding")
     fig, ax = plt.subplots(figsize=(10.4, 6.8 if crowded else 6.0), facecolor=PAPER)
     fig.subplots_adjust(left=0.09, right=0.98, bottom=0.40 if sparse_oracle else (0.36 if crowded else 0.33), top=0.79)
     fig.text(0.09, 0.945, TITLES[figure], fontsize=20, color=INK, weight="bold")
-    population = "Natural FoldBench monomers" if figure in {"01_predictors", "02_oracle"} else "Natural FoldBench · 248B-token model"
+    population = "Natural FoldBench monomers" if base in {"01_predictors", "02_oracle"} else "Natural FoldBench · 248B-token model"
     fig.text(0.09, 0.887, f"{population}  ·  mean and 95% interval", fontsize=11, color=INK)
     style_axes(ax)
     methods = ORDER[figure]
@@ -93,13 +96,13 @@ def static_depth(summary: pd.DataFrame, figure: str, metric: str, cohort: str = 
         ax.errorbar(x, group["mean"], yerr=[group["mean"] - group.ci_low, group.ci_high - group["mean"]],
                     fmt=marker, color=color, markersize=6.5, capsize=3, elinewidth=1.3,
                     label=label, zorder=3)
-    ax.set_xticks(np.arange(4), [f"{t}\nn = {counts.get(t, 0)}" for t in TIERS])
+    ax.set_xticks(np.arange(4), [f"{label}\nn = {counts.get(t, 0)}" for t, label in zip(TIERS, tier_labels, strict=True)])
     ax.set_xlim(-0.42, 3.42)
     for i, tier in enumerate(TIERS):
         if not counts.get(tier, 0):
             ax.text(i, 0.48, "Not yet\nevaluated", ha="center", va="center", fontsize=10, color="#817970")
     ax.set_ylabel(METRICS[metric], labelpad=12)
-    ax.set_xlabel("MSA depth (sequences)", labelpad=13)
+    ax.set_xlabel(NEFF_AXIS if neff else "MSA depth (sequences)", labelpad=13)
     handles, labels = ax.get_legend_handles_labels()
     fig.legend(handles, labels, loc="lower left", bbox_to_anchor=(0.075, 0.065 if sparse_oracle else 0.016),
                ncol=2, frameon=False, fontsize=10, columnspacing=2.5)
@@ -107,7 +110,7 @@ def static_depth(summary: pd.DataFrame, figure: str, metric: str, cohort: str = 
         fig.text(0.09, 0.025, "*Oracle: L/2 random true contacts; other pairs unknown. Two subsets averaged per protein; no MSA.",
                  fontsize=9, color=INK)
     suffix = {"lddt": "_lddt", "r_precision_long": "_long", "p_at_l5_long": "_long", "p_at_l2_long": "_long"}.get(metric, "")
-    if figure == "04b_knn" and metric.startswith("r_precision"):
+    if base == "04b_knn" and metric.startswith("r_precision"):
         suffix = "_r_precision" + ("_long" if metric.endswith("long") else "")
     save(fig, figure, CAPTIONS[figure], suffix, poster_dir=poster_dir)
 
@@ -132,6 +135,10 @@ def export_depth(summary: pd.DataFrame, figure: str, metrics: list[str] | None =
     if metrics is None:
         metrics = ["r_precision", "r_precision_long"] if figure == "04_contacts" else ["gdt_ts", "lddt"]
     fig = go.Figure(layout=plotly_layout(metrics[0]))
+    neff = figure.endswith("_neff")
+    tier_labels = NEFF_TIER_LABELS if neff else TIERS
+    if neff:
+        fig.update_xaxes(title=NEFF_AXIS)
     states = []
     for cohort in COHORTS:
         for metric in metrics:
@@ -146,13 +153,16 @@ def export_depth(summary: pd.DataFrame, figure: str, metrics: list[str] | None =
                 visible = cohort == "natural" and metric == metrics[0]
                 custom = [[tier, None if pd.isna(n) else int(n), lo, hi, figure, cohort, metric, method]
                           for tier, n, lo, hi in zip(TIERS, part.n, part.ci_low, part.ci_high)]
+                if neff:
+                    custom = [values + [label] for values, label in zip(custom, NEFF_TIER_LABELS, strict=True)]
+                depth_hover = "Neff80 %{customdata[8]}" if neff else "Depth %{customdata[0]}"
                 fig.add_trace(go.Scatter(x=(np.arange(4) + (i - (len(ORDER[figure]) - 1) / 2) * 0.065).tolist(),
                                         y=part["mean"].tolist(), mode="markers", name=label,
                                         marker=dict(size=9, color=color, symbol={"o": "circle", "s": "square", "D": "diamond", "v": "triangle-down", "^": "triangle-up", "P": "cross", "X": "x"}[marker]),
                                         error_y=dict(type="data", array=(part.ci_high - part["mean"]).tolist(),
                                                      arrayminus=(part["mean"] - part.ci_low).tolist(), width=3),
                                         visible=visible, legendgroup=method, customdata=custom,
-                                        hovertemplate="%{fullData.name}<br>Depth %{customdata[0]} · n=%{customdata[1]}<br>Mean %{y:.3f}<br>95% CI [%{customdata[2]:.3f}, %{customdata[3]:.3f}]<br><br>Prepared-table key:<br>%{customdata[4]} / %{customdata[5]}<br>%{customdata[6]} / %{customdata[7]}<extra></extra>"))
+                                        hovertemplate="%{fullData.name}<br>" + depth_hover + " · n=%{customdata[1]}<br>Mean %{y:.3f}<br>95% CI [%{customdata[2]:.3f}, %{customdata[3]:.3f}]<br><br>Prepared-table key:<br>%{customdata[4]} / %{customdata[5]}<br>%{customdata[6]} / %{customdata[7]}<extra></extra>"))
             states.append((cohort, metric, start, len(fig.data), counts))
     buttons = []
     for cohort, metric, start, end, counts in states:
@@ -160,9 +170,9 @@ def export_depth(summary: pd.DataFrame, figure: str, metrics: list[str] | None =
         buttons.append(dict(label=f"{COHORTS[cohort]} · {menu_label}", method="update",
                             args=[{"visible": [start <= i < end for i in range(len(fig.data))]},
                                   {"yaxis.title.text": METRICS[metric],
-                                   "xaxis.ticktext": [f"{t}<br>n={counts.get(t, 0)}" for t in TIERS]}]))
+                                   "xaxis.ticktext": [f"{label}<br>n={counts.get(t, 0)}" for t, label in zip(TIERS, tier_labels, strict=True)]}]))
     initial_counts = states[0][4]
-    fig.update_xaxes(ticktext=[f"{t}<br>n={initial_counts.get(t, 0)}" for t in TIERS])
+    fig.update_xaxes(ticktext=[f"{label}<br>n={initial_counts.get(t, 0)}" for t, label in zip(TIERS, tier_labels, strict=True)])
     fig.update_layout(updatemenus=[dict(buttons=buttons, direction="down", x=0, xanchor="left", y=1.16,
                                        bgcolor=PAPER, bordercolor=GRID, font=dict(size=12))])
     return fig
@@ -558,6 +568,15 @@ def preview(names: list[str]) -> None:
             manifest = "oracle_budget_analysis.json"
         if name in ("02g_seed_completion", "02h_seed_contact_precision"):
             manifest = "seed_completion_analysis.json"
+        if name.endswith("_neff"):
+            manifest = "neff_analysis.json"
+            prefix = "neff_af3_context" if name.startswith("01d_") else "neff"
+            rows_file = prefix + ("_rows.csv" if name.startswith("01d_") else "_figure_rows.csv")
+            lineage = (f'Data: <a href="../data/{prefix}_summary.csv">means, intervals and protein membership</a>; '
+                       f'<a href="../data/{rows_file}">unchanged source scores and Neff tiers</a>; '
+                       '<a href="../data/msa_neff.csv">per-alignment Neff and input hashes</a>; '
+                       '<a href="../data/neff_tier_migration.csv">raw-depth to Neff tier membership</a>; '
+                       '<a href="../NEFF_ANALYSIS.md">definition, results and reproduction</a>. ')
         sections.append(f'<section id="section-{name}"><p class="number">FIGURE {name[:2]}</p>'
                         f'<h2>{html.escape(TITLES[name])}</h2><div class="frame"><div id="{name}" class="chart"></div></div>'
                         f'<p class="caption">{html.escape(CAPTIONS[name])}</p>'
@@ -629,6 +648,16 @@ def main() -> None:
     for metric in pl2_metrics:
         static_depth(pl2_summary, "04_contacts_pl2", metric, poster_dir=poster_dir)
     export_plotly(export_depth(pl2_summary, "04_contacts_pl2", pl2_metrics), "04_contacts_pl2")
+    neff_manifest = json.loads((DATA / "neff_analysis.json").read_text())
+    for name, expected in neff_manifest["files"].items():
+        if hashlib.sha256((DATA / name).read_bytes()).hexdigest() != expected:
+            raise ValueError(f"Prepared Neff data changed: {name}; run prepare_neff.py")
+    neff_summary = pd.read_csv(DATA / "neff_summary.csv")
+    for base, metrics in NEFF_FIGURES.items():
+        figure = base + "_neff"
+        for metric in metrics:
+            static_depth(neff_summary, figure, metric, poster_dir=poster_dir)
+        export_plotly(export_depth(neff_summary, figure, metrics), figure)
     names = list(TITLES)
     if (DATA / "seed_completion_analysis.json").exists():
         render_seed_completion(poster_dir=poster_dir)

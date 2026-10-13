@@ -12,9 +12,12 @@ summary: A figure-first look at contact prediction, structural accuracy, and use
 
 Accurate folding remains harder for proteins with shallow benchmark MSAs. Improving here could also help protein design. These depth counts do not establish how many homologs appeared in a predictor's training data.
 
+Depth panels now use effective depth, Neff at 80% identity, on the same alignments.
+[Definition and comparison with raw depth](NEFF_ANALYSIS.md).
+
 AlphaFold2, AlphaFold3 and Boltz-2 use the shared benchmark MSAs here, with templates disabled.
 
-![Existing predictors across MSA depths](plots/01_predictors.png)
+![Existing predictors across Neff tiers](plots/01_predictors_neff.png)
 
 More AF3 sampling brings 8oxk_A from TM 0.472 to 0.947, close to ESMFold2’s
 existing 0.940. Two low-depth proteins remain below 0.8 after 1,000 runs.
@@ -29,17 +32,17 @@ ESMFold2 still has the higher mean TM on these five proteins: 0.854 versus
 
 ![AF3 sampling versus the other predictors](plots/01c_af3_context.png)
 
-The existing AF3 baseline is stronger than ESMFold2 in the three deeper MSA
-bins. Extra sampling has only been tested in the shallowest bin.
+The existing AF3 baseline is stronger than ESMFold2 in the three deeper Neff
+bins. Extra sampling covers only the original five raw-depth<10 proteins.
 
-![TM-score across MSA depths](plots/01d_af3_depth_context.png)
+![TM-score across Neff tiers](plots/01d_af3_depth_context_neff.png)
 
 Helico does much better with just L/2 randomly sampled true contacts. All other pairs stay unknown; Helico receives no MSA.
-Mean GDT-TS is 0.906 / 0.841 / 0.853 / 0.839 across the four MSA-depth tiers.
+Mean GDT-TS is 0.872 / 0.839 / 0.844 / 0.841 across the four Neff tiers.
 
-![Helico with oracle contacts](plots/02_oracle.png)
+![Helico with oracle contacts](plots/02_oracle_neff.png)
 
-On the five low-depth proteins, random L/5 true contacts give mean GDT-TS 0.622;
+On the original five raw-depth<10 proteins, random L/5 true contacts give mean GDT-TS 0.622;
 L/2 gives 0.906, versus 0.932 for the full oracle map. Ten contacts give 0.362.
 
 ![Sparse oracle contacts, per protein](plots/02e_oracle_budget.png)
@@ -71,19 +74,19 @@ This suggests generating candidate contact sets directly from sequence, trained 
 
 Our current 1.47B-parameter model saw 248.584B raw tokens. Here is its contact accuracy, followed by the structures Helico produces from its top-L/2 contacts.
 
-![Contact R-precision](plots/04_contacts.png)
+![Contact R-precision across Neff tiers](plots/04_contacts_neff.png)
 
 Precision at L/2 uses a sequence-length-based contact budget.
 
-![Precision at L/2 contacts](plots/04_contacts_pl2.png)
+![Precision at L/2 contacts across Neff tiers](plots/04_contacts_pl2_neff.png)
 
 [Metric details](PL2_ANALYSIS.md) · [L/5 comparison](PL5_ANALYSIS.md).
 
 MarinFold also clears the decontaminated sequence-KNN baseline.
 
-![MarinFold versus KNN](plots/04b_knn.png)
+![MarinFold versus KNN across Neff tiers](plots/04b_knn_neff.png)
 
-![From predicted contacts to structures](plots/05_folding.png)
+![From predicted contacts to structures across Neff tiers](plots/05_folding_neff.png)
 
 The top-L/2 prediction arm matches the oracle's contact budget.
 Mean GDT-TS is 0.478; the L/2 oracle reaches 0.843.

@@ -3,6 +3,12 @@
 Every numerical point is auditable through committed tables. Plotting does no
 inference, joins, confidence selection, or resampling.
 
+The draft's depth panels now use the `_neff` variants. Their path is
+`neff_summary.csv` → `neff_figure_rows.csv` → unchanged original score rows,
+plus `msa_neff.csv` for the exact frozen alignment measurement. The AF3 heatmap
+uses `neff_af3_context_*` and retains explicit per-cell counts for its
+five-protein sampling subset. See [NEFF_ANALYSIS.md](NEFF_ANALYSIS.md).
+
 | Figure | Question | Prepared tables | Analysis / source |
 |---|---|---|---|
 | 01_predictors | How do existing predictors fare across MSA depth? | `figure_rows.csv`, `summary.csv` (`figure=01_predictors`) | `prepare_structure`; exp250 archived per-target GDT-TS and lDDT plus new AF2/3 and Boltz-2 scores; natural proteins matched across methods |

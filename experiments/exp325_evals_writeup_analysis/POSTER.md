@@ -6,7 +6,7 @@
 The complete collection includes every static plot and metric variant, including
 all individual-protein pages, P@L/5 and [P@L/2](PL2_ANALYSIS.md) figures, focused KNN comparisons and
 the four sparse-oracle GDT-TS/lDDT figures for the five proteins at MSA depth <10
-(44 static figures total, including four [seed-completion panels](SEED_COMPLETION.md)). Figures 02 and 05 now use the
+(61 static figures total, including 17 [Neff counterparts](NEFF_ANALYSIS.md) and four [seed-completion panels](SEED_COMPLETION.md)). Figures 02 and 05 now use the
 [L/2 oracle-contact protocol](ORACLE_L2.md) across all four MSA-depth tiers.
 Figure 05 uses [MarinFold top-L/2](MARINFOLD_L2.md) as its only MarinFold
 variant, on the same 305 natural proteins. The full

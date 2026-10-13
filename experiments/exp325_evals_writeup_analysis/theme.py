@@ -95,3 +95,31 @@ COHORTS = {"natural": "Natural · all splits", "eval-val": "Natural · eval-val"
 MSA_BASELINE_CAPTION = " AlphaFold2/3 and Boltz-2 use the same archived MSA queries and alignments underlying these depth bins, with templates disabled and protein-chain-only inputs. Confidence selects among five AF2 pTM models (three recycles), 25 AF3 samples (five seeds, ten recycles), or 25 Boltz-2 samples (one seed, ten recycles). These are controlled shared-MSA runs, not the models’ full default search pipelines."
 for _figure in ("01_predictors", "02_oracle", "04_contacts", "05_folding"):
     CAPTIONS[_figure] += MSA_BASELINE_CAPTION
+
+NEFF_AXIS = "Effective MSA depth (Neff, 80% identity)"
+NEFF_TIER_LABELS = ["<10", "10–<100", "100–<1000", "≥1000"]
+NEFF_FIGURES = {
+    "01_predictors": ["gdt_ts", "lddt"],
+    "02_oracle": ["gdt_ts", "lddt"],
+    "04_contacts": ["r_precision", "r_precision_long"],
+    "04_contacts_pl5": ["p_at_l5", "p_at_l5_long"],
+    "04_contacts_pl2": ["p_at_l2", "p_at_l2_long"],
+    "04b_knn": ["p_at_l5", "p_at_l5_long", "r_precision", "r_precision_long"],
+    "05_folding": ["gdt_ts", "lddt"],
+}
+_NEFF_PROTOCOLS = {
+    "01_predictors": "Same seven archived structure predictors; 305 matched natural proteins.",
+    "02_oracle": "Same 305 natural proteins, all seven predictors and no-contact Helico. Oracle: two random L/2 true-contact subsets, three samples/subset, ranking_score selection then subset averaging; no MSA. See ORACLE_L2.md.",
+    "04_contacts": "Same nine contact predictors and 314 natural proteins; fixed 248B-token model; R-precision on resolved pairs with separation >=6 or >=24 for long-range. Same contact definition and rankings as the original panel.",
+    "04_contacts_pl5": "Same nine contact predictors and 314 natural proteins; precision among the top floor(L/5) contacts, L=frozen input length. See PL5_ANALYSIS.md.",
+    "04_contacts_pl2": "Same nine contact predictors and 314 natural proteins; Precision @ L/2 contacts, L=frozen input length. Every natural row uses the full floor(L/2) denominator. See PL2_ANALYSIS.md.",
+    "04b_knn": "Same 314 natural proteins; 248B-token MarinFold versus k=10 sequence-KNN over the native decontaminated corpus. P@L/5 and R-precision, all and long-range; unchanged original metrics.",
+    "05_folding": "Same 305 natural proteins. MarinFold supplies exact top-L/2 predicted contacts, with no MSA or oracle seeds; three Helico samples, ranking_score selection. Oracle supplies two random L/2 true-contact subsets, selecting within each and averaging; one target has 109 rather than 110 oracle contacts. All seven predictors and no-contact Helico retained. See MARINFOLD_L2.md and ORACLE_L2.md.",
+}
+for _base in NEFF_FIGURES:
+    _name = _base + "_neff"
+    ORDER[_name] = ORDER[_base].copy()
+    TITLES[_name] = TITLES[_base] if _base != "04_contacts" else "Contact prediction versus effective MSA depth"
+    CAPTIONS[_name] = (_NEFF_PROTOCOLS[_base] + " Neff is recomputed on the exact frozen predictor alignments: sum of inverse neighbor counts at >=80% identity over jointly non-gap columns. Repeated sequences are downweighted; no alignment or prediction is changed. Bins are <10, 10–<100, 100–<1000 and >=1000. Means and 95% intervals bootstrap proteins; cohort membership changes relative to raw depth. Split, viral and design views remain separate. Every score, Neff measurement and contributing protein traces through neff_figure_rows.csv, neff_summary.csv and NEFF_ANALYSIS.md.")
+TITLES["01d_af3_depth_context_neff"] = "Predictor accuracy across effective MSA depths"
+CAPTIONS["01d_af3_depth_context_neff"] = "Mean TM-score regrouped by Neff80 on the same 305 natural proteins and frozen alignments. Archived predictor rows retain their original protocols, including top-L MarinFold contacts and the full-map oracle in this diagnostic. Extended AF3 sampling still covers only the original five raw-depth<10 proteins; its Neff<10 cells explicitly show n=5, a subset of the full tier. Other extended-sampling cells are not run. These are not matched tier-wide AF3 sampling comparisons. Every source score and protein is preserved in neff_af3_context_rows.csv and neff_af3_context_summary.csv. See NEFF_ANALYSIS.md and AF3_SAMPLING.md."

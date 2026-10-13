@@ -313,7 +313,7 @@ decontaminated sequence-KNN **0.657**; long-range **0.761 / 0.595**. At depth <1
 MarinFold is **0.595**, KNN **0.102**, ESMFold2 **0.727** (five proteins).
 The 100-rollout diagnostic gives consensus **0.829** versus oracle-best
 individual **0.609**, with the oracle reselected by P@L/5. The original
-R-precision plots remain available. All 44 static plots now have native vector
+R-precision plots remain available. All 61 static plots now have native vector
 PDF/SVG and 7,200-pixel-wide PNG exports for printing; [POSTER.md](POSTER.md)
 links the complete downloadable collection.
 
@@ -322,6 +322,14 @@ and 314 natural proteins, with y-axis **Precision @ L/2 contacts**. All-range
 precision is **0.713** for MarinFold and **0.539** for KNN; at depth <10 it is
 **0.449 / 0.046**, versus **0.746** for ESMFold2. Archived source scores and
 protein-bootstrap intervals are cached separately in `data/pl2_*`.
+
+[Neff versions](NEFF_ANALYSIS.md) recompute effective depth at 80% identity on
+the exact frozen predictor alignments, then regroup the same scores. The
+lowest tier expands from five to **15 contact / 14 structural proteins**;
+MarinFold P@L/2 is **0.401**, and Helico + MarinFold L/2 GDT-TS is **0.285**
+there. Overall scores are unchanged. The draft uses Neff; raw-depth plots
+remain available. AF3 extended sampling still covers only its original five
+proteins, marked explicitly in the regrouped context heatmap.
 
 [Sparse oracle contacts at MSA depth <10](ORACLE_BUDGET.md): all five natural
 proteins, 55 maps and 165 structures. Mean GDT-TS is **0.244** without contacts,

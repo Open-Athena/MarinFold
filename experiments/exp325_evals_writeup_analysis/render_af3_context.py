@@ -14,7 +14,7 @@ import plotly.graph_objects as go
 
 from build_summary import save_plot_with_meta
 from poster_style import save_poster_vectors
-from theme import CAPTIONS, INK, METHODS, PAPER, TIERS, TITLES
+from theme import CAPTIONS, INK, METHODS, NEFF_TIER_LABELS, PAPER, TIERS, TITLES
 
 matplotlib.use("Agg")
 HERE = Path(__file__).resolve().parent
@@ -41,7 +41,7 @@ def load_tables() -> tuple[pd.DataFrame, pd.DataFrame]:
 
 def panel(frame: pd.DataFrame, name: str, methods: list[str], columns: list[str],
           xlabels: list[str], column: str, value: str, subtitle: str, *,
-          poster_dir: Path | None = None) -> None:
+          poster_dir: Path | None = None, neff: bool = False) -> None:
     """Draw a shared-scale matrix and interactive cell-level provenance."""
     matrix = frame.pivot(index="method", columns=column, values=value).reindex(index=methods, columns=columns)
     cmap = LinearSegmentedColormap.from_list("athena_tm", [color for _, color in COLORS])
@@ -62,17 +62,21 @@ def panel(frame: pd.DataFrame, name: str, methods: list[str], columns: list[str]
         text_row, hover_row = [], []
         for j, category in enumerate(columns):
             score = matrix.loc[method, category]
-            label = f"{score:.3f}" if np.isfinite(score) else "not run"
-            ax.text(j, i, label, ha="center", va="center", fontsize=12 if np.isfinite(score) else 10,
-                    color="white" if score > 0.7 else INK)
-            text_row.append(label)
             row = frame[(frame.method == method) & (frame[column] == category)]
+            label = f"{score:.3f}" if np.isfinite(score) else "not run"
+            partial = neff and not row.empty and int(row.iloc[0].n) != int(frame[(frame.method == "af3") & (frame[column] == category)].iloc[0].n)
+            if partial:
+                label += f"\nn={int(row.iloc[0].n)} subset"
+            ax.text(j, i, label, ha="center", va="center", fontsize=10 if partial else (12 if np.isfinite(score) else 10),
+                    color="white" if score > 0.7 else INK)
+            text_row.append(label.replace("\n", "<br>"))
             if row.empty:
-                hover_row.append("Extended sampling was only run at depth <10")
+                hover_row.append("Extended sampling was only run on the five original raw-depth<10 proteins")
             elif value == "mean":
                 r = row.iloc[0]
+                source = "neff_af3_context_summary.csv" if neff else "af3_context_summary.csv"
                 hover_row.append(f"n={r.n} proteins; 95% protein-bootstrap CI [{r.lo:.3f}, {r.hi:.3f}]"
-                                 f"<br>TM ≥0.8: {r.hits_tm_80}/{r.n}<br>Source: af3_context_summary.csv; {method}, {category}")
+                                 f"<br>TM ≥0.8: {r.hits_tm_80}/{r.n}<br>Source: {source}; {method}, {category}")
             else:
                 r = row.iloc[0]
                 hover_row.append(f"MSA depth {int(r.msa_depth)}<br>context_row={r.context_row}"
@@ -86,7 +90,9 @@ def panel(frame: pd.DataFrame, name: str, methods: list[str], columns: list[str]
     fig.colorbar(im, cax=cax, label="TM-score", ticks=[0, 0.5, 1])
     cax.spines[:].set_visible(False)
     fig.text(0.035, 0.075, "*Uses ground truth: diagnostic only. Predictor budgets differ. All AF3 runs use shared MSAs and no templates.", fontsize=10)
-    fig.text(0.035, 0.035, "MSA tiers contain different proteins. Extended sampling covers only the five proteins at depth <10.", fontsize=10)
+    footer = ("Neff80 tiers contain different proteins. Extended AF3 cells cover only the original five raw-depth<10 proteins."
+              if neff else "MSA tiers contain different proteins. Extended sampling covers only the five proteins at depth <10.")
+    fig.text(0.035, 0.035, footer, fontsize=10)
     if poster_dir is not None:
         save_poster_vectors(fig, poster_dir, name)
     else:
@@ -132,6 +138,16 @@ def main(*, poster_dir: Path | None = None) -> None:
     panel(summary, "01d_af3_depth_context", BASELINES + EXTRA[2:] + DIAGNOSTICS, TIERS,
           [f"{tier}\nn={counts[tier]}" for tier in TIERS], "tier", "mean",
           "Mean TM-score · 305 matched natural proteins · same 0–1 scale in every cell", poster_dir=poster_dir)
+    manifest = json.loads((HERE / "data/neff_analysis.json").read_text())
+    path = HERE / "data/neff_af3_context_summary.csv"
+    if hashlib.sha256(path.read_bytes()).hexdigest() != manifest["files"][path.name]:
+        raise ValueError("Prepared Neff context changed; run prepare_neff.py")
+    neff_summary = pd.read_csv(path)
+    counts = neff_summary[neff_summary.method == "af3"].set_index("tier").n
+    panel(neff_summary, "01d_af3_depth_context_neff", BASELINES + EXTRA[2:] + DIAGNOSTICS, TIERS,
+          [f"{label}\nn={counts[tier]}" for tier, label in zip(TIERS, NEFF_TIER_LABELS, strict=True)], "tier", "mean",
+          "Mean TM-score · Neff at 80% identity · 305 natural proteins; extended AF3 is a five-protein subset",
+          poster_dir=poster_dir, neff=True)
 
 
 if __name__ == "__main__":

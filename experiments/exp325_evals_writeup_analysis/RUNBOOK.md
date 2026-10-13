@@ -304,6 +304,12 @@ rerunning context preprocessing. Protocol and interpretation:
 
 ## P@L/5, P@L/2 and poster exports
 
+For the current Neff depth panels, run `generation/measure_neff.py` once in
+the existing Helico CUDA environment, then `uv run python prepare_neff.py`.
+The measurement verifies frozen A3M hashes; regrouping changes only tiers.
+`render.py` includes all Neff counterparts from cached `neff_*` tables.
+[NEFF_ANALYSIS.md](NEFF_ANALYSIS.md) gives the exact definition and full commands.
+
 [PL5_ANALYSIS.md](PL5_ANALYSIS.md#provenance-and-reproduction) gives the input
 recovery and preprocessing commands. Run `uv run python prepare_pl5.py` once
 when source predictions change. Run `uv run python render.py` and
