@@ -26,7 +26,7 @@ def main() -> None:
     """Bundle the locked recipe and submit without exposing credentials."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("phase", choices=("train-smoke", "train"))
-    parser.add_argument("--nodes", type=int, choices=(1, 2, 4, 8, 16), default=8)
+    parser.add_argument("--nodes", type=int, choices=(1, 2, 4, 8, 16), default=4)
     parser.add_argument("--attempt", type=int, default=1)
     parser.add_argument("--iris-bin", default=os.environ.get("IRIS_BIN", DEFAULT_IRIS))
     parser.add_argument("--dry-run", action="store_true")
@@ -67,7 +67,7 @@ def main() -> None:
         "--job-name", f"exp363-{args.phase}-a{args.attempt:02d}",
         "--no-wait", "--enable-extra-resources",
         "--cpu", "4", "--memory", "16GB", "--disk", "32GB",
-        "--timeout", "1209600",
+        "--timeout", "2592000",
     ]
     for key, value in env.items():
         command.extend(["-e", key, value])
