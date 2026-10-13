@@ -44,7 +44,9 @@ All three ten-update smokes completed successfully on 2026-10-13. Their full-cor
 
 [The 985M production run](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp362-depth16-full-epoch) was submitted as `/bizon/exp362-depth16-train-a01`, using source `5c036e962efe4b8f4156b1d8d89623c968bd1ab2`. Full training and evaluation are pending.
 
-[The 255M production run](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp362-depth4-full-epoch) was submitted as `/bizon/exp362-depth4-train-a01`, using source `6e2df4371275d11287aa9974fe72ae7d2aff0753`. The 985M run has reached optimizer updates with finite loss. The 255M run is starting; 498M production admission is pending.
+[The 255M production run](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp362-depth4-full-epoch) was submitted as `/bizon/exp362-depth4-train-a01`, using source `6e2df4371275d11287aa9974fe72ae7d2aff0753`. Both 255M and 985M have reached optimizer updates with finite loss.
+
+[The 498M production run](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp362-depth8-full-epoch) was submitted as `/bizon/exp362-depth8-train-a01`, using source `6aad8f15e5c092dc54022d900ef56fd1c245315a`. The three full-epoch jobs use 32, 32, and 64 H100s respectively, at batch priority in `cw-us-east-02a`. All training remains in progress; no scaling conclusion is available yet.
 
 
 Setup: the exact sizes are 254,941,696; 498,228,224; and 984,801,280 parameters, versus exp277's 1,471,374,336. All 26 configuration and finite-dataset tests plus eight fleet/persistence tests pass. The full resolved configuration matches exp277 after normalizing depth and operational identities.
