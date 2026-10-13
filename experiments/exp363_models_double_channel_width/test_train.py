@@ -4,6 +4,7 @@ from dataclasses import fields
 
 import pytest
 from levanter.data.text.datasets import ConcatDatasetComponent
+from levanter.tokenizers import load_tokenizer
 from marin.execution.build_context import BuildContext, VersionCodex, build_context
 from marin.execution.lazy import StepContext
 from marin.training.training import TrainLmOnPodConfig, apply_output_path
@@ -17,6 +18,7 @@ from experiments.exp277_models_single_mpnn_pilot.epoch_data import (
     FULL_CORPUS,
     OneEpochDataConfig,
 )
+from experiments.exp232_sweep_cv1_decontam.training_contract import CONTACTS_V1_TOKEN_IDS
 from experiments.exp363_models_double_channel_width.config import (
     BASELINE_MODEL_CONFIG,
     EXPECTED_PARAMETERS,
@@ -102,3 +104,12 @@ def test_smoke_uses_distinct_identity_and_bounded_validation() -> None:
 def test_unsupported_gang_rejected() -> None:
     with pytest.raises(ValueError, match="Unsupported H100"):
         build_run(smoke=False, nodes=3)
+
+
+def test_pinned_tokenizer_loads_through_the_training_backend() -> None:
+    tokenizer = load_tokenizer(TOKENIZER)
+    assert len(tokenizer) == 2845
+    assert tokenizer.convert_tokens_to_ids(list(CONTACTS_V1_TOKEN_IDS)) == list(
+        CONTACTS_V1_TOKEN_IDS.values()
+    )
+    assert tokenizer.as_hf_tokenizer().get_vocab() == tokenizer.get_vocab()

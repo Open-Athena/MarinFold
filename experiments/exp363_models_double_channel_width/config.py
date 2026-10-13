@@ -1,6 +1,7 @@
 """Only the model's hidden and feed-forward widths change from exp277."""
 
 from dataclasses import replace
+from pathlib import Path
 
 from experiments.exp232_sweep_cv1_decontam.training_contract import (
     MODEL_CONFIG as BASELINE_MODEL_CONFIG,
@@ -9,9 +10,14 @@ from experiments.exp232_sweep_cv1_decontam.training_contract import (
 PREFIX = "s3://marin-us-east-02a/MarinFold/exp363_models_double_channel_width"
 VERSION = "2026.10.13.1"
 RUN_ID = "contacts-v1-exp363-m2-p06-full-epoch-5.86B"
-TOKENIZER = (
+TOKENIZER_SOURCE = (
     "eczech/contacts-v1-tokenizer-5d68a24a899f"
     "@80f4e411b957641e8c350b07bbe1e2c832697518"
+)
+# This Levanter release does not parse repo@revision. Supply a local snapshot
+# downloaded at that exact revision; its directory name preserves the pin.
+TOKENIZER = str(
+    Path(__file__).parent / "tokenizer/contacts-v1@80f4e411b957641e8c350b07bbe1e2c832697518"
 )
 MODEL_CONFIG = replace(
     BASELINE_MODEL_CONFIG,

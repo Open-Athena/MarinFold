@@ -56,11 +56,13 @@ This is approximately 5.862B parameters, 3.984x the default. The parameter calcu
 
 The abstract Levanter model-tree audit confirms **5,861,984,256 parameters**, versus **1,471,374,336** for exp277 (3.984x). The audit allocates no model weights; its output is committed in `data/parameter_counts.csv`.
 
-Eleven local tests pass, including the resolved Marin training contract and the inherited finite-epoch dataset tests. Only `hidden_dim` and `intermediate_dim` differ in the model configuration. Per-device microbatch is one; global batch remains 128. The tokenizer is pinned to revision `80f4e411b957641e8c350b07bbe1e2c832697518`.
+Twelve local tests pass, including the resolved Marin training contract and the inherited finite-epoch dataset tests. Only `hidden_dim` and `intermediate_dim` differ in the model configuration. Per-device microbatch is one; global batch remains 128. The tokenizer is pinned to revision `80f4e411b957641e8c350b07bbe1e2c832697518`.
 
 The live federation inventory at 2026-10-13 14:43 UTC reports 248 available H100s in `cw-us-east-02a`, with no pending tasks. A 16-node / 128-H100 smoke will validate the intended production shape at batch priority. The data is already in the regional CoreWeave bucket; no corpus transfer is required. See `data/launch_capacity.json`.
 
 Production has not started. The ten-update smoke must complete training, validation, and checkpoint writing before production submission.
+
+The first GPU smoke `/bizon/exp363-train-smoke-a01` failed before model/W&B initialization because this Levanter release passes `repo@revision` to Hugging Face without parsing it. The tokenizer is now bundled as an unmodified, explicitly revisioned local snapshot using the loader's supported directory interface. A new integration test loads it through the actual training backend and checks the exported HF tokenizer vocabulary. The second smoke uses a fresh run identity.
 
 ## Conclusion
 

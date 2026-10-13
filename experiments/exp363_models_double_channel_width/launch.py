@@ -84,6 +84,11 @@ def main() -> None:
             destination = bundle / source.relative_to(root)
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, destination)
+        shutil.copytree(
+            project / "tokenizer",
+            bundle / project.relative_to(root) / "tokenizer",
+            ignore=shutil.ignore_patterns(".cache"),
+        )
         print(
             f"{args.phase}: cw-us-east-02a, batch, {args.nodes * 8} H100; "
             f"{len(sources)} source files, commit {env['GIT_COMMIT']}",
