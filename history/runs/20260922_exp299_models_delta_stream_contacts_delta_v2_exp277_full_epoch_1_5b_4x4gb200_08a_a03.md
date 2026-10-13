@@ -31,6 +31,17 @@ marinfold_run:
   - /zack/exp299-s3-gcs-v2-cache-a02
   - /zack/exp299-v2-exp277-full-epoch-driver-4x4gb200-08a-a06
   - /zack/exp299-v2-exp277-full-epoch-driver-4x4gb200-08a-a06/delta-v2-exp277-full-epoch-1_5b-4x4gb200-08a-a03
+  - /zack/exp299-exp277v2-export-step210491-a01
+  - /zack/exp299-exp277v2-rprec-s210491-smoke-a01
+  - /zack/exp299-exp277v2-rprec-s210491-0of8-a01
+  - /zack/exp299-exp277v2-rprec-s210491-1of8-a01
+  - /zack/exp299-exp277v2-rprec-s210491-2of8-a01
+  - /zack/exp299-exp277v2-rprec-s210491-3of8-a01
+  - /zack/exp299-exp277v2-rprec-s210491-4of8-a01
+  - /zack/exp299-exp277v2-rprec-s210491-5of8-a01
+  - /zack/exp299-exp277v2-rprec-s210491-6of8-a01
+  - /zack/exp299-exp277v2-rprec-s210491-7of8-a01
+  - /zack/exp299-exp277v2-rprec-aggregate-s210491-a01
 ---
 # 2026-09-22 · exp299_models_delta_stream_contacts · delta-v2-exp277-full-epoch-1_5b-4x4gb200-08a-a03
 
@@ -127,3 +138,16 @@ reports `run_progress=1`, final train loss 0.72673, final validation loss
 workers subsequently rediscovered and loaded the final native checkpoint at
 `checkpoints/step-210491`; the final checkpoint save completed before both the
 child gang and a06 root driver reached `succeeded`.
+
+The final checkpoint was exported in place and evaluated on 2026-10-13 with the
+canonical 100-rollout protocol over all 670 previously used targets. All 67,000
+generations parsed successfully. Step 210,491 reached `legacy_554` R/all 0.62384
+and R/long 0.57208, `eval-val` 0.54466 and 0.52168, and `eval-denovo` 0.68413
+and 0.63842; all-670 scores were 0.61409 and 0.56666. Relative to step 126,294,
+paired gains were +0.05734 R/all (95% CI [0.04968, 0.06512]) and +0.06354
+R/long ([0.05435, 0.07275]). The result ties promoted exp277 contacts-v1 on
+legacy all-range R-precision within rollout noise, but remains behind it on the
+headline natural `eval-val` set by 0.0091 R/all and 0.0163 R/long. Row-level
+results and timings are stored under
+`exp277_full_epoch_rollout_votes/results-2026-10-13-step210491/` in the 08a
+bucket.
