@@ -31,7 +31,9 @@ both new rankings have all-range/long-range Neff plots and paired-change panels.
 
 [L/2 sampling](SAMPLING_L2.md): mean single **0.414**, consensus **0.714**,
 oracle best-of-100 **0.570** on the same 314 proteins and saved sample pools.
-All-range and long-range PDF/PNG versions are included in the poster package.
+The single-panel figure also shows seven standard predictors on those same
+proteins, with the poster’s three-way contact ranking. All-range and long-range
+PDF/PNG versions are included in the poster package.
 
 ## Model and scope
 

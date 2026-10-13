@@ -247,5 +247,9 @@ Sampling consensus retains the original all-parsed-map vote policy.
 Main contact precision panels exclude unfinished maps from consensus votes.
 
 All raw-pool hashes and individual R-precision/validity rows reproduce.
-Neff80 colors the interactive scatter; white all/long PDF + PNG exports included.
-Source: SAMPLING_L2.md; data/pl2_sampling_*; prepare_sampling_pl2.py → render.py.
+Single-panel comparison with seven standard predictors; scatter removed.
+Same 314 proteins, L/2 denominator and three-way structure-contact ranking.
+AF3 0.900; AF2 0.889; Boltz-2 0.890; Protenix+MSA 0.902; ESMFold2 0.860.
+All means and intervals reused exactly from their existing cached summaries.
+White all/long PDF + PNG exports included.
+Source: SAMPLING_L2.md; data/pl2_sampling_comparison_*; prepare_sampling_comparison.py → render.py.

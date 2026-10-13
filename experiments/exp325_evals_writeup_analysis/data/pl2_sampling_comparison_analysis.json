@@ -1,0 +1,32 @@
+{
+  "inputs": {
+    "pl2_sampling_analysis.json": "5200c41132eb9cc30223b45a5f001085672eee20b515b1e18fdf888c0adb1608",
+    "pl2_sampling_figure_rows.csv": "90f9bcb00615e03a581608c18fe160c6e35668b2e85019c3ddecc97a89be84d6",
+    "pl2_sampling_summary.csv": "d3c8a241da7fc1c28a66941ffe08678c04a6ac8a13138548a613a5d8484aeaf1",
+    "poster_product_analysis.json": "c90c44c0943bd0c38075c3de53c638a4398482f294cf1ae5dd718e3b54a9b5eb",
+    "poster_product_figure_rows.csv": "13af8b24d90e5393b672f408ebbebcb2b1cbb2d33075fa33a7f32cc5cae44807",
+    "poster_product_summary.csv": "ac1c68e7c4754087b168e64e06f2a0f9e1d2fa815162d6b3c0456dc06c33f0fb"
+  },
+  "files": {
+    "pl2_sampling_comparison_rows.csv": "10154d46345edeee6f4b1b91e65a3f598f3a671a2d149596b54eca6eefd6282f",
+    "pl2_sampling_comparison_summary.csv": "061f6574453cfa170dee5ad52b1863d1471b3ccd0e4383897b8ae0e961299103"
+  },
+  "preprocessor_sha256": "9c21cc195e5a2224258b0a8926881b4cb1f9d82fab865f69104c38bd30bdd143",
+  "methods": [
+    "single",
+    "consensus",
+    "best100",
+    "af3",
+    "af2",
+    "boltz2",
+    "protenix_msa",
+    "esmfold2",
+    "esmfold",
+    "protenix_ss"
+  ],
+  "cohort": "Same 314 natural proteins, 97 validation + 217 test, in every arm",
+  "standard_ranking": "pLDDT_i * pLDDT_j * ConFind degree; same selected archived structures",
+  "sampling": "Original 100 iid samples; sampling consensus policy unchanged; oracle uses ground truth",
+  "uncertainty": "Existing equal-protein means and 95% bootstrap intervals copied exactly",
+  "validation": "Every mean, interval and individual score retains its cached source row; no new scoring"
+}

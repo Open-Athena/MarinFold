@@ -83,3 +83,29 @@ def test_l2_sampling_preserves_pool_identity_and_uses_neff() -> None:
         source = scores.iloc[row.source_row]
         assert row.stem == source.stem
         assert row.value == source[row.source_column]
+
+
+def test_sampling_comparison_preserves_predictor_scores_intervals_and_cohort() -> None:
+    rows = pd.read_csv(HERE / "data/pl2_sampling_comparison_rows.csv", float_precision="round_trip")
+    summary = pd.read_csv(HERE / "data/pl2_sampling_comparison_summary.csv", float_precision="round_trip")
+    expected = {"single", "consensus", "best100", "af3", "af2", "boltz2", "esmfold2", "esmfold", "protenix_msa", "protenix_ss"}
+    assert set(rows.method) == expected
+    assert len(rows) == 314 * 10 * 2
+    assert (rows.n_top == rows.L // 2).all()
+    assert set(rows.eval_set) == {"eval-val", "eval-test"}
+    reference = set(rows.loc[rows.method == "consensus", "stem"])
+    for _, group in rows.groupby(["method", "metric"]):
+        assert set(group.stem) == reference
+    for name, group in rows.groupby("source_figure_rows"):
+        source = pd.read_csv(HERE / "data" / name, float_precision="round_trip")
+        original = source.iloc[group.source_figure_row]
+        for column in ["stem", "method", "metric", "value", "n_top"]:
+            np.testing.assert_array_equal(group[column], original[column])
+        if name == "poster_product_figure_rows.csv":
+            assert original.ranking.eq("plddt_product_degree").all()
+    assert len(summary) == 20
+    for name, group in summary.groupby("source_summary"):
+        source = pd.read_csv(HERE / "data" / name, float_precision="round_trip")
+        original = source.iloc[group.source_summary_row]
+        for column in ["method", "metric", "mean", "ci_low", "ci_high", "n", "stems"]:
+            np.testing.assert_array_equal(group[column], original[column])

@@ -1,4 +1,4 @@
-# Sampling contacts: precision at L/2
+# Sampling and standard predictors: precision at L/2
 
 [White vector PDF](https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/exp325-writeup-analysis/poster-neff-product-2026-10-13/poster_neff_product/pdf/06_sampling_pl2.pdf) ·
 [7,200-pixel PNG](https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/exp325-writeup-analysis/poster-neff-product-2026-10-13/poster_neff_product/png/06_sampling_pl2.png) ·
@@ -8,7 +8,9 @@
 
 The L/2 counterpart of the original sampling figure uses the same **314 natural
 proteins** (97 validation, 217 test), fixed **exp277 step266344, 248.584B-token
-model**, and first **100 saved iid samples per protein**. No new inference ran.
+model**, and first **100 saved iid samples per protein**. The single-panel
+figure also shows seven standard predictor arms on exactly the same proteins.
+No new inference ran; all scores, means and intervals are reused unchanged.
 
 | Contact range | Mean individual sample | Consensus of 100 | Oracle best of 100 |
 |---|---:|---:|---:|
@@ -25,6 +27,31 @@ consensus assembled from multiple samples.
 ![Sampling precision at L/2](plots/06_sampling_pl2.png)
 
 ![Sampling precision at L/2, long-range](plots/06_sampling_pl2_long.png)
+
+## Standard predictors in the same panel
+
+| Predictor | Precision @ L/2 |
+|---|---:|
+| AlphaFold3 + MSA | 0.900 |
+| AlphaFold2 + MSA | 0.889 |
+| Boltz-2 + MSA | 0.890 |
+| Protenix-v2 + MSA | 0.902 |
+| ESMFold2 | 0.860 |
+| ESMFold | 0.829 |
+| Protenix-v2, single sequence | 0.303 |
+
+These are the cached three-way-ranking scores from the poster comparison:
+rank each selected structure's emitted ConFind-positive contacts by
+**pLDDT(i) × pLDDT(j) × contact degree(i,j)** before taking L/2 eligible pairs.
+Protein membership, contact truth, denominator and separation ranges match
+MarinFold. The existing predictor protocols (including MSA use) are unchanged;
+the three MarinFold points summarize their original 100-sample pool. See
+[POSTER_NEFF.md](POSTER_NEFF.md) for standard-predictor contact scoring.
+
+The scatter panel has been removed. Points show means and 95% intervals;
+method colors match the other poster figures. Both all-range and long-range
+versions use this layout. The interactive mobile view rotates the same means
+and intervals horizontally to keep all ten method labels readable.
 
 ## Exact scoring
 
@@ -47,24 +74,27 @@ resolved endpoints and the selected sequence-separation range.
   protein, separately for each range. Ties choose the earliest rollout index.
   This reselects the sample at the new cutoff; it uses ground truth.
 
-Intervals use 5,000 protein bootstraps, seed 325. The right panel plots each
-protein's consensus and oracle scores; points above the diagonal favor oracle.
-Interactive scatter colors and cached subgroup summaries use Neff80. Overall
-means do not depend on depth grouping. At Neff<10 (15 proteins), all-range mean
+Intervals use 5,000 protein bootstraps, seed 325. Cached subgroup summaries
+use Neff80; the displayed overall comparison has no depth strata. At Neff<10 (15 proteins), all-range mean
 single / consensus / oracle are 0.171 / 0.396 / 0.369; long-range values are
 0.111 / 0.261 / 0.309. Subgroup intervals are in the cached tables.
 
 ## Trace and reproduce
 
-`prepare_sampling_pl2.py` performs analysis once; `render.py` reads only its
-cached outputs. Every pool SHA256 and the frozen truth SHA256 match the L/5
+`prepare_sampling_pl2.py` performs sampling analysis once.
+`prepare_sampling_comparison.py` joins the cached sampling scores with the
+three-way-ranked predictor scores, validates identical protein membership, and
+copies their means and intervals without recomputation. `render.py` reads only
+the comparison cache. Every pool SHA256 and the frozen truth SHA256 match the L/5
 analysis. All 62,800 individual validity/R-score rows and 1,884 aggregate
 R-precision rows reproduce before these new scores are accepted.
 
 | Figure element | Cached source |
 |---|---|
-| Left-panel value and error bar | `data/pl2_sampling_summary.csv`: metric, cohort, tier, method |
-| Right-panel protein | `data/pl2_sampling_figure_rows.csv`: stem, metric, method; source row and column |
+| Displayed value and error bar | `data/pl2_sampling_comparison_summary.csv`: method, metric; original summary filename and row |
+| Matched protein scores | `data/pl2_sampling_comparison_rows.csv`: stem, method, metric; original figure-row filename and row |
+| Comparison source/output hashes | `data/pl2_sampling_comparison_analysis.json` |
+| Original sampling aggregate | `data/pl2_sampling_summary.csv`: metric, cohort, tier, method |
 | Consensus, single mean, oracle and selected index | `data/pl2_sampling_per_protein.csv`: stem, range |
 | Every individual score and validity flag | `data/pl2_sampling_individual.csv.gz`: stem, range, rollout |
 | Paired intervals and win counts | `data/pl2_sampling_deltas.csv`: metric, cohort, Neff tier |
@@ -75,6 +105,8 @@ Restore the existing saved pools as in [PL5_ANALYSIS.md](PL5_ANALYSIS.md), then:
 ```bash
 # Preprocessing only when scores need rebuilding:
 uv run python prepare_sampling_pl2.py
+# Join existing sampling and poster-product scores; no model runs or rescoring:
+uv run python prepare_sampling_comparison.py
 uv run pytest -q test_pl5.py
 # Fast aesthetic iteration from cached tables:
 uv run python render.py
@@ -84,6 +116,6 @@ uv run python export_poster.py --upload
 uv run python export_poster_neff.py --upload
 ```
 
-Both new figures and all six sampling tables/manifest are included in the
-curated poster ZIP. Test reuse is recorded as read 23 in the exp245 ledger;
+Both figures, the sampling tables and the comparison tables/manifests are
+included in the curated poster ZIP. Test reuse is recorded as read 23 in the exp245 ledger;
 this is an exploratory follow-up on previously examined test data.

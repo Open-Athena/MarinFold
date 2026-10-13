@@ -39,7 +39,7 @@ and random L/2 oracle contacts.
 | `04_contacts_pl2_neff` | Three-way-ranked precision @ L/2; `_long` counterpart |
 | `04b_knn_neff` | MarinFold versus Sequence KNN; both ranges and metrics |
 | `05_folding_neff` | Helico + MarinFold L/2 contacts: GDT-TS; `_lddt` counterpart |
-| `06_sampling_pl2` | Precision @ L/2: mean single, consensus and oracle best-of-100; `_long` counterpart |
+| `06_sampling_pl2` | Precision @ L/2: sampling choices and seven standard predictors; `_long` counterpart |
 
 The other figures are the method schematic, sampling/consensus diagnostics,
 per-protein confidence scatter plots, AF3 sampling, sparse-oracle and seeded
@@ -75,6 +75,9 @@ contains every eligible emitted pair and mapped residue confidence.
 
 The [L/2 sampling diagnostic](SAMPLING_L2.md) has its own cached summaries,
 per-protein rows and all 100 individual scores in `analysis/pl2_sampling_*`.
+Its single-panel comparison now includes seven standard predictor arms using
+the same three-way ranking; `pl2_sampling_comparison_*` retains the exact
+source rows of all ten plotted means and intervals.
 It uses the original sampling consensus over all parsed maps; main contact
 comparison panels exclude unfinished maps from consensus votes.
 

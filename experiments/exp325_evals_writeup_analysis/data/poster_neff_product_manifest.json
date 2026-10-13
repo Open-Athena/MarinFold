@@ -706,7 +706,7 @@
     },
     {
       "name": "03_method",
-      "width_px": 7201,
+      "width_px": 7200,
       "height_px": 4422,
       "dpi": 300,
       "background": "white",
@@ -721,11 +721,11 @@
         },
         "png": {
           "path": "png/03_method.png",
-          "sha256": "6b1bd4796578c9707ca3bbd314fb3369726cef2c23916a79296a75a00f8d188f"
+          "sha256": "3a83d3ca32b134af2d7adfbea166a2cd0346bc158de3b68865f5188d13edd5fc"
         },
         "svg": {
           "path": "svg/03_method.svg",
-          "sha256": "8d785dced4c5f810609a96e90f71e0d2f9826ddf69989f23dca9e8843a641149"
+          "sha256": "c558532d71a81f7448dbcc36a40d2406cccbe75a69d6629897ec1f11e8c6442e"
         }
       }
     },
@@ -750,7 +750,7 @@
         },
         "svg": {
           "path": "svg/04_contacts_neff.svg",
-          "sha256": "5bf39255b6ac942daf56738ac0fbdf70ba3c3a64fd80b90225a94d978e491c95"
+          "sha256": "559cc69563a65a8605b88f8aafae70c9dc23fb287cfab58eeb30ea6b64051f6e"
         }
       }
     },
@@ -775,7 +775,7 @@
         },
         "svg": {
           "path": "svg/04_contacts_neff_long.svg",
-          "sha256": "99cb90f0b0b32dcb7f21bca36cb979a90f620b8f07554dcace92cb3054c1a112"
+          "sha256": "428799f2f04fed1a7ed8efea217817a12474878ba0f53e58a2bcf2909774257f"
         }
       }
     },
@@ -800,7 +800,7 @@
         },
         "svg": {
           "path": "svg/04_contacts_pl2_neff.svg",
-          "sha256": "717a7f4a00bda35901461b56321765db99d46c2fc24bd4790503e7a6506c8098"
+          "sha256": "a3d12887f9ac8c30a99a7f598a73c4f018863c0ba8f7cb17e8a478355e2e4042"
         }
       }
     },
@@ -825,7 +825,7 @@
         },
         "svg": {
           "path": "svg/04_contacts_pl2_neff_long.svg",
-          "sha256": "7a78b0346434c6d3658aa43ac8b6d070d8d4e8925ca6253e147963dd611ca7e9"
+          "sha256": "51db48899b76a35705e07e3b989b9e4f991d61748c4bd1337071bbbafac65067"
         }
       }
     },
@@ -850,7 +850,7 @@
         },
         "svg": {
           "path": "svg/04_contacts_pl5_neff.svg",
-          "sha256": "273995134339fd83480969f228f57000440c7ae8f9ae044ef82dd5995d10bc4f"
+          "sha256": "4e2c0a68d081cbe545c6e838748b8535c5ab47c08327a1e39cb133f6ed20559e"
         }
       }
     },
@@ -875,7 +875,7 @@
         },
         "svg": {
           "path": "svg/04_contacts_pl5_neff_long.svg",
-          "sha256": "1d56b8136f6bd86b64fa141c7f87907bae00cc990ad1ba04d9e7f7e917bd9029"
+          "sha256": "c898466afa89e526ccbefbc8aed5d483c78994e817449e67017e143712e8d4dc"
         }
       }
     },
@@ -1057,50 +1057,50 @@
     {
       "name": "06_sampling_pl2",
       "width_px": 7200,
-      "height_px": 4116,
+      "height_px": 3406,
       "dpi": 300,
       "background": "white",
       "depth_axis": "not stratified",
-      "standard_contact_ranking": "not applicable",
-      "source_summary": "analysis/pl2_sampling_summary.csv",
-      "caption": "Precision @ L/2 on the same 314 natural proteins and first 100 saved iid samples per protein. L is frozen input length; k=max(1,floor(L/2)). Individual maps retain emission order after resolved-pair filtering and deduplication; short maps retain denominator k, invalid/unfinished maps score zero. Consensus ranks votes from all parsed maps, matching the original sampling diagnostic; the main contact comparison instead omits unfinished maps. Oracle best-of-100 is reselected by P@L/2 and uses ground truth. All-range separation >=6; long-range >=24, applied before cutoff. Bars are equal-protein means with 95% bootstrap intervals; scatter pairs consensus and oracle within protein. Interactive colors show Neff80 tiers. This measures contact accuracy, not distinct folds. Sources: pl2_sampling_summary.csv, pl2_sampling_figure_rows.csv and pl2_sampling_individual.csv.gz. See SAMPLING_L2.md.",
+      "standard_contact_ranking": "plddt_product_degree",
+      "source_summary": "analysis/pl2_sampling_comparison_summary.csv",
+      "caption": "Precision @ L/2 on the same 314 natural proteins (97 validation + 217 test) for every method. MarinFold uses the fixed 248B-token model and the original 100 iid samples per protein: mean single, consensus and ground-truth oracle best-of-100. Standard predictors use the same selected archived structures, ranking emitted ConFind-positive contacts by pLDDT_i \u00d7 pLDDT_j \u00d7 contact degree. Filter resolved endpoints and separation >=6 (all) or >=24 (long) before selecting floor(input L/2); unfilled ranks score zero. Original sampling consensus votes over all parsed maps; main contact-panel votes omit unfinished maps. Points are equal-protein means with existing 95% protein-bootstrap intervals. No scores, intervals or predictions were recomputed for this comparison. Sources: pl2_sampling_comparison_summary.csv and pl2_sampling_comparison_rows.csv, which retain pointers into the original sampling and poster-product tables. See SAMPLING_L2.md.",
       "files": {
         "pdf": {
           "path": "pdf/06_sampling_pl2.pdf",
-          "sha256": "1f93dde55d8620569c73f6e3a22897fa56d6dad0de1cd19ebec19edb26bcb1de"
+          "sha256": "be3b4af3a4847cf53fac2a309129c2c388cec00c46b146076bb2b1213605efa2"
         },
         "png": {
           "path": "png/06_sampling_pl2.png",
-          "sha256": "6ffaffdad19348c2722f500a8a4fda4c6d7fafd7b84d4eda50ac8cd4ee4bbe6c"
+          "sha256": "3a9e6cbdf57c0ac493e2a19c6ea6c3ea867a7deacef7246f04681bf25b2df9bc"
         },
         "svg": {
           "path": "svg/06_sampling_pl2.svg",
-          "sha256": "3fb8bede4ccd376d8498682a445a8495b3bdf186859bc9b319585c06f3adf72c"
+          "sha256": "a2f3d9c7233832501c767a802c1a47594981ce17785dafb05078571e56ab5068"
         }
       }
     },
     {
       "name": "06_sampling_pl2_long",
       "width_px": 7200,
-      "height_px": 4116,
+      "height_px": 3406,
       "dpi": 300,
       "background": "white",
       "depth_axis": "not stratified",
-      "standard_contact_ranking": "not applicable",
-      "source_summary": "analysis/pl2_sampling_summary.csv",
-      "caption": "Precision @ L/2 on the same 314 natural proteins and first 100 saved iid samples per protein. L is frozen input length; k=max(1,floor(L/2)). Individual maps retain emission order after resolved-pair filtering and deduplication; short maps retain denominator k, invalid/unfinished maps score zero. Consensus ranks votes from all parsed maps, matching the original sampling diagnostic; the main contact comparison instead omits unfinished maps. Oracle best-of-100 is reselected by P@L/2 and uses ground truth. All-range separation >=6; long-range >=24, applied before cutoff. Bars are equal-protein means with 95% bootstrap intervals; scatter pairs consensus and oracle within protein. Interactive colors show Neff80 tiers. This measures contact accuracy, not distinct folds. Sources: pl2_sampling_summary.csv, pl2_sampling_figure_rows.csv and pl2_sampling_individual.csv.gz. See SAMPLING_L2.md.",
+      "standard_contact_ranking": "plddt_product_degree",
+      "source_summary": "analysis/pl2_sampling_comparison_summary.csv",
+      "caption": "Precision @ L/2 on the same 314 natural proteins (97 validation + 217 test) for every method. MarinFold uses the fixed 248B-token model and the original 100 iid samples per protein: mean single, consensus and ground-truth oracle best-of-100. Standard predictors use the same selected archived structures, ranking emitted ConFind-positive contacts by pLDDT_i \u00d7 pLDDT_j \u00d7 contact degree. Filter resolved endpoints and separation >=6 (all) or >=24 (long) before selecting floor(input L/2); unfilled ranks score zero. Original sampling consensus votes over all parsed maps; main contact-panel votes omit unfinished maps. Points are equal-protein means with existing 95% protein-bootstrap intervals. No scores, intervals or predictions were recomputed for this comparison. Sources: pl2_sampling_comparison_summary.csv and pl2_sampling_comparison_rows.csv, which retain pointers into the original sampling and poster-product tables. See SAMPLING_L2.md.",
       "files": {
         "pdf": {
           "path": "pdf/06_sampling_pl2_long.pdf",
-          "sha256": "bc4ff84a2120ea2a7d12ad6f865c4329e05889af23a4129c068238096c2e9263"
+          "sha256": "dc1382902e999cc9fb09c6461a8fab5618574c2725eeb62d9bc12391957c3734"
         },
         "png": {
           "path": "png/06_sampling_pl2_long.png",
-          "sha256": "3dfbc1cf2f33ad3a8098e2520089bc89dd4e57501c30000423161b4a6ec1b50f"
+          "sha256": "492d0798e8216e7e5c3163dfaa6b2bd92284dab848be5eee21e6af858e44598f"
         },
         "svg": {
           "path": "svg/06_sampling_pl2_long.svg",
-          "sha256": "341a39de3cc1bf7be83fccb484402dbdf486049573d6d20f9f657c6cb6d2b449"
+          "sha256": "9a62547485245c88d3d8c0fc6bf7574dc2eed248c72081f508e71e9bd84c5fbc"
         }
       }
     },
@@ -1157,8 +1157,10 @@
   ],
   "analysis_sha256": "c90c44c0943bd0c38075c3de53c638a4398482f294cf1ae5dd718e3b54a9b5eb",
   "sampling_analysis_sha256": "5200c41132eb9cc30223b45a5f001085672eee20b515b1e18fdf888c0adb1608",
+  "sampling_comparison_sha256": "c1fb7c77ae566c275cefd6d7085fdff96198de9550a4b2823356250a71ea8ece",
   "base_publication": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/poster-2026-10-08",
   "preprocess_command": "uv run python prepare_poster_product.py",
   "sampling_preprocess_command": "uv run python prepare_sampling_pl2.py",
+  "comparison_preprocess_command": "uv run python prepare_sampling_comparison.py",
   "render_command": "uv run python export_poster_neff.py --upload"
 }

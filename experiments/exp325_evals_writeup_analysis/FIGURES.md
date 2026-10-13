@@ -217,17 +217,25 @@ and poster renderers. Changing the displayed methods never reruns analysis.
 
 ## Sampling at L/2
 
-`06_sampling_pl2{,_long}` changes the sampling diagnostic to precision @ L/2.
-`prepare_sampling_pl2.py` reselects the oracle within each frozen 100-rollout
-pool using this metric; `render.py` only reads its cached outputs.
+`06_sampling_pl2{,_long}` shows MarinFold's mean single sample, consensus and
+oracle best-of-100 alongside seven standard predictors in one mean/interval
+panel. The scatter has been removed. All ten arms use the same 314 natural
+proteins; standard predictors use the poster's three-way contact ranking.
 
-- Mean/interval: `pl2_sampling_summary.csv`, keyed by metric, cohort, tier and method.
-- Scatter point: `pl2_sampling_figure_rows.csv`, keyed by stem, metric and method;
-  source row/column points into `pl2_sampling_per_protein.csv`.
-- Individual scores and oracle selector: `pl2_sampling_individual.csv.gz` and
-  the per-protein table, keyed by stem, range and rollout index.
+`prepare_sampling_pl2.py` retains the original 100-rollout scoring.
+`prepare_sampling_comparison.py` joins those cached scores with the standard
+predictors from `poster_product_*`, without recomputing means or intervals.
+
+- Displayed mean/interval: `pl2_sampling_comparison_summary.csv`, keyed by
+  metric and method; `source_summary` and `source_summary_row` identify the
+  exact original mean and interval.
+- Per-protein contribution: `pl2_sampling_comparison_rows.csv`, keyed by stem,
+  metric and method; `source_figure_rows` and `source_figure_row` identify the
+  original score row and its upstream lineage.
+- Comparison hashes: `pl2_sampling_comparison_analysis.json`.
+- Individual sampling scores and oracle selectors: `pl2_sampling_individual.csv.gz`
+  and `pl2_sampling_per_protein.csv`, keyed by stem, range and rollout index.
 - Pool/truth SHA256s and public restoration URLs: `pl2_sampling_analysis.json`.
 
-Static figures use all 314 natural proteins. Interactive subgroup colors are
-Neff80; scores and oracle-minus-consensus intervals for each cohort/tier are cached.
-Definitions, consensus-policy caveat and results: [SAMPLING_L2.md](SAMPLING_L2.md).
+`render.py` consumes the comparison cache. Definitions and the sampling
+consensus-policy caveat are in [SAMPLING_L2.md](SAMPLING_L2.md).

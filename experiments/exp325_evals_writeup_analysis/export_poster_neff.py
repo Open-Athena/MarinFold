@@ -65,7 +65,7 @@ def rasterize(task: tuple[Path, Path, int]) -> None:
     """Render a native vector at the requested width, with 300-dpi tagging."""
     pdf, png, width = task
     subprocess.run(['pdftocairo', '-png', '-singlefile', '-r', '300', '-scale-to-x', str(width),
-                    '-scale-to-y', '-1', str(pdf), str(png.with_suffix(''))], check=True)
+                    '-scale-to-y', '-1', '-W', str(width), str(pdf), str(png.with_suffix(''))], check=True)
     with Image.open(png) as image:
         image.save(png, dpi=(300, 300))
 
@@ -86,6 +86,10 @@ def main() -> None:
     for filename, expected in sampling['files'].items():
         if sha256(DATA/filename) != expected:
             raise ValueError(f'Changed sampling table: {filename}; rerun prepare_sampling_pl2.py')
+    comparison = json.loads((DATA/'pl2_sampling_comparison_analysis.json').read_text())
+    for filename, expected in {**comparison['files'], **comparison['inputs']}.items():
+        if sha256(DATA/filename) != expected:
+            raise ValueError(f'Changed comparison table: {filename}; rerun prepare_sampling_comparison.py')
     base = HERE/'scratch/poster_public/poster_plots'
     old_manifest = json.loads((DATA/'poster_manifest.json').read_text())
     old = {row['name']: row for row in old_manifest['figures']}
@@ -135,7 +139,8 @@ def main() -> None:
         list(pool.map(rasterize, tasks))
     # The six contact panels carry precisely the prepared rows they display.
     # Other panels retain hash-pinned provenance from the full poster bundle.
-    for filename in [*analysis['files'], *sampling['files'], 'pl2_sampling_analysis.json',
+    for filename in [*analysis['files'], *sampling['files'], *comparison['files'],
+                     'pl2_sampling_analysis.json', 'pl2_sampling_comparison_analysis.json',
                      'poster_product_analysis.json', 'neff_figure_rows.csv', 'neff_summary.csv',
                      'neff_af3_context_rows.csv', 'neff_af3_context_summary.csv', 'msa_neff.csv', 'af3_notice.txt', 'af3_output_terms.md']:
         shutil.copyfile(DATA/filename, bundle/'analysis'/filename)
@@ -155,10 +160,10 @@ def main() -> None:
         if contact:
             source_summary = 'analysis/poster_product_summary.csv'
         elif name in {'06_sampling_pl2', '06_sampling_pl2_long'}:
-            source_summary = 'analysis/pl2_sampling_summary.csv'
+            source_summary = 'analysis/pl2_sampling_comparison_summary.csv'
         records.append(dict(name=name, width_px=width, height_px=height, dpi=300,
             background='white', depth_axis='neff80' if '_neff' in name else 'not stratified',
-            standard_contact_ranking='plddt_product_degree' if contact else 'not applicable',
+            standard_contact_ranking='plddt_product_degree' if contact or name.startswith('06_sampling_pl2') else 'not applicable',
             source_summary=source_summary,
             caption=CONTACT_CAPTION if contact else old[name]['caption'],
             files={extension:dict(path=f'{extension}/{name}.{extension}', sha256=sha256(bundle/extension/f'{name}.{extension}'))
@@ -166,9 +171,11 @@ def main() -> None:
     manifest = dict(destination=DESTINATION, figure_count=len(records), background='white', png_width_px=7200,
                     figures=records, analysis_sha256=sha256(DATA/'poster_product_analysis.json'),
                     sampling_analysis_sha256=sha256(DATA/'pl2_sampling_analysis.json'),
+                    sampling_comparison_sha256=sha256(DATA/'pl2_sampling_comparison_analysis.json'),
                     base_publication=old_manifest['destination'],
                     preprocess_command='uv run python prepare_poster_product.py',
                     sampling_preprocess_command='uv run python prepare_sampling_pl2.py',
+                    comparison_preprocess_command='uv run python prepare_sampling_comparison.py',
                     render_command='uv run python export_poster_neff.py --upload')
     content = json.dumps(manifest, indent=2)+'\n'
     (bundle/'manifest.json').write_text(content)
@@ -184,7 +191,7 @@ def main() -> None:
                 archive.write(path, path.relative_to(stage))
     provenance = stage/'reproduce'
     provenance.mkdir()
-    for filename in ['prepare_poster_product.py', 'prepare_sampling_pl2.py', 'prepare_pl5.py', 'prepare_neff.py',
+    for filename in ['prepare_poster_product.py', 'prepare_sampling_pl2.py', 'prepare_sampling_comparison.py', 'prepare_pl5.py', 'prepare_neff.py',
                      'generation/score_contacts.py', 'export_poster_neff.py', 'render.py', 'prepare.py', 'poster_style.py', 'theme.py',
                      'build_summary.py', 'test_poster_product.py', 'render_af3_context.py', 'render_af3_sampling.py', 'render_contact_confidence.py',
                      'render_oracle_budget.py', 'render_seed_completion.py', 'pyproject.toml', 'uv.lock', 'POSTER_NEFF.md', 'SAMPLING_L2.md']:

@@ -290,6 +290,56 @@ def sampling_figure(summary: pd.DataFrame, rows: pd.DataFrame, figure: str = "06
     return interactive
 
 
+def sampling_comparison_figure(summary: pd.DataFrame, metric: str, *, poster_dir: Path | None = None) -> go.Figure:
+    """Compare sampling choices with standard predictors on the matched cohort."""
+    figure = "06_sampling_pl2"
+    methods = ORDER[figure]
+    subset = summary[summary.metric == metric].set_index("method").loc[methods]
+    positions = np.arange(len(methods), dtype=float)
+    positions[3:] += 0.65
+    labels = ["Mean\nsingle", "Consensus\nof 100", "Oracle\nbest of 100*", "AlphaFold3\n+ MSA",
+              "AlphaFold2\n+ MSA", "Boltz-2\n+ MSA", "Protenix-v2\n+ MSA", "ESMFold2", "ESMFold",
+              "Protenix-v2\nsingle sequence"]
+    fig, ax = plt.subplots(figsize=(13, 6.1), facecolor=PAPER)
+    fig.subplots_adjust(left=0.075, right=0.985, bottom=0.27, top=0.74)
+    fig.text(0.075, 0.94, TITLES[figure], fontsize=20, weight="bold")
+    fig.text(0.075, 0.875, "314 natural proteins in every arm · 95% protein-bootstrap intervals", fontsize=12)
+    style_axes(ax)
+    ax.set_ylim(0, 1.03)
+    ax.axvline(2.825, color=GRID, linewidth=1, linestyle="--")
+    ax.text(1, 1.07, "MarinFold · 100 samples", ha="center", fontsize=11, color=METHODS["consensus"][1],
+            transform=ax.get_xaxis_transform())
+    ax.text(float(positions[3:].mean()), 1.07, "Standard structure predictors", ha="center", fontsize=11,
+            transform=ax.get_xaxis_transform())
+    for x, method in zip(positions, methods, strict=True):
+        row = subset.loc[method]
+        _, color, marker = METHODS[method]
+        ax.errorbar(x, row["mean"], yerr=[[row["mean"] - row.ci_low], [row.ci_high - row["mean"]]],
+                    fmt=marker, color=color, markersize=9, capsize=5)
+        ax.text(x, row.ci_high + 0.035, f"{row['mean']:.3f}", ha="center", color=color, fontsize=11)
+    ax.set_xticks(positions, labels, fontsize=10)
+    ax.set(xlim=(-0.65, positions[-1] + 0.65), ylabel=METRICS[metric])
+    fig.text(0.075, 0.105, "Structure contacts ranked by pLDDT × pLDDT × contact degree.", fontsize=10)
+    fig.text(0.075, 0.045, "*Oracle uses ground truth to select MarinFold's best individual sample of 100.", fontsize=10)
+    save(fig, figure, CAPTIONS[figure], "_long" if metric.endswith("long") else "", poster_dir=poster_dir)
+    interactive = go.Figure(go.Scatter(
+        x=positions.tolist(), y=subset["mean"].tolist(), mode="markers",
+        marker=dict(color=[METHODS[m][1] for m in methods], size=12,
+                    symbol=[{"o": "circle", "s": "square", "D": "diamond", "^": "triangle-up", "v": "triangle-down"}[METHODS[m][2]] for m in methods]),
+        error_y=dict(type="data", array=(subset.ci_high - subset["mean"]).tolist(),
+                     arrayminus=(subset["mean"] - subset.ci_low).tolist()),
+        customdata=[[label.replace("\n", " "), float(row["mean"]), int(row.n), float(row.ci_low), float(row.ci_high)]
+                    for label, (_, row) in zip(labels, subset.iterrows(), strict=True)],
+        hovertemplate="%{customdata[0]}<br>Precision %{customdata[1]:.3f}<br>95% CI %{customdata[3]:.3f}–%{customdata[4]:.3f}<br>n=%{customdata[2]}<extra></extra>"))
+    interactive.update_layout(**plotly_layout(metric))
+    interactive.update_layout(showlegend=False, margin=dict(l=60, r=20, t=50, b=100),
+        xaxis=dict(tickvals=positions.tolist(), ticktext=[label.replace("\n", "<br>") for label in labels],
+                   range=[-0.65, float(positions[-1] + 0.65)], showgrid=False),
+        annotations=[dict(x=1, y=1.08, xref="x", yref="paper", text="MarinFold · 100 samples", showarrow=False),
+                     dict(x=float(positions[3:].mean()), y=1.08, xref="x", yref="paper", text="Standard predictors", showarrow=False)])
+    return interactive
+
+
 def confidence_figure(*, poster_dir: Path | None = None) -> go.Figure:
     """Show each map's maximum pTM and the cached oracle rank."""
     maps = pd.read_csv(DATA / "structured_confidence_per_map.csv")
@@ -471,7 +521,7 @@ def export_plotly(fig: go.Figure, name: str) -> None:
         mobile["layout"]["legend"].update(y=-0.28, font=dict(size=10))
     if "updatemenus" in mobile["layout"]:
         mobile["layout"]["updatemenus"][0]["font"]["size"] = 10
-    if name.startswith("06_sampling"):
+    if name in ("06_sampling", "06_sampling_pl5", "06_sampling_pl5_long"):
         mobile["layout"].update(height=760, margin=dict(l=55, r=15, t=20, b=90))
         mobile["layout"]["xaxis"]["domain"] = [0, 1]
         mobile["layout"]["xaxis2"]["domain"] = [0, 1]
@@ -479,6 +529,20 @@ def export_plotly(fig: go.Figure, name: str) -> None:
         mobile["layout"]["yaxis2"]["domain"] = [0, 0.4]
         if "legend" in mobile["layout"]:
             mobile["layout"]["legend"]["y"] = -0.12
+    if name in ("06_sampling_pl2", "06_sampling_pl2_long"):
+        mobile["layout"].update(height=690, margin=dict(l=132, r=15, t=40, b=55), annotations=[])
+        for trace in mobile["data"]:
+            trace["x"], trace["y"] = trace["y"], trace["x"]
+            trace["error_x"] = trace.pop("error_y")
+            trace["customdata"][0][0] = "MarinFold mean single"
+            trace["customdata"][1][0] = "MarinFold consensus of 100"
+            trace["customdata"][2][0] = "MarinFold oracle best of 100"
+        mobile["layout"]["xaxis"] = dict(title=spec["layout"]["yaxis"]["title"], range=[0, 1.03], dtick=0.2,
+                                          gridcolor=GRID, zeroline=False)
+        labels = list(spec["layout"]["xaxis"]["ticktext"])
+        labels[:3] = ["MarinFold<br>mean single", "MarinFold<br>consensus of 100", "MarinFold<br>oracle best of 100*"]
+        mobile["layout"]["yaxis"] = dict(tickvals=spec["layout"]["xaxis"]["tickvals"], ticktext=labels,
+                                          range=[10.3, -0.65], showgrid=False, zeroline=False)
     if name == "02b_confidence":
         mobile["layout"].update(height=570, margin=dict(l=65, r=72, t=90, b=110))
         mobile["layout"]["yaxis"]["ticktext"] = [label.replace("_A", "").replace("  ·  ", "<br>") for label in spec["layout"]["yaxis"]["ticktext"]]
@@ -570,8 +634,8 @@ def preview(names: list[str]) -> None:
                        '<a href="../data/pl2_figure_rows.csv">protein scores, cutoffs and original source rows</a>; '
                        '<a href="../PL2_ANALYSIS.md">metric definition and reproduction</a>. ')
         elif name == "06_sampling_pl2":
-            lineage = ('Data: <a href="../data/pl2_sampling_summary.csv">means and intervals</a>; '
-                       '<a href="../data/pl2_sampling_figure_rows.csv">protein points and Neff tiers</a>; '
+            lineage = ('Data: <a href="../data/pl2_sampling_comparison_summary.csv">means, intervals and their source rows</a>; '
+                       '<a href="../data/pl2_sampling_comparison_rows.csv">matched protein scores and their source rows</a>; '
                        '<a href="../data/pl2_sampling_per_protein.csv">L/2 oracle selectors</a>; '
                        '<a href="../data/pl2_sampling_individual.csv.gz">all 100 individual scores per protein</a>; '
                        '<a href="../SAMPLING_L2.md">protocol and results</a>. ')
@@ -591,7 +655,7 @@ def preview(names: list[str]) -> None:
         if name == "04_contacts_pl2":
             manifest = "pl2_analysis.json"
         if name == "06_sampling_pl2":
-            manifest = "pl2_sampling_analysis.json"
+            manifest = "pl2_sampling_comparison_analysis.json"
         if name in ("02e_oracle_budget", "02f_oracle_budget_context"):
             manifest = "oracle_budget_analysis.json"
         if name in ("02g_seed_completion", "02h_seed_contact_precision"):
@@ -675,15 +739,14 @@ def main() -> None:
         export_plotly(export_depth(pl5_summary, figure, metrics), figure)
     export_plotly(sampling_figure(pl5_summary, pl5_rows, "06_sampling_pl5", "p_at_l5", poster_dir=poster_dir), "06_sampling_pl5")
     export_plotly(sampling_figure(pl5_summary, pl5_rows, "06_sampling_pl5", "p_at_l5_long", poster_dir=poster_dir), "06_sampling_pl5_long")
-    sampling_manifest = json.loads((DATA / "pl2_sampling_analysis.json").read_text())
-    for name, expected in sampling_manifest["files"].items():
+    sampling_manifest = json.loads((DATA / "pl2_sampling_comparison_analysis.json").read_text())
+    for name, expected in {**sampling_manifest["files"], **sampling_manifest["inputs"]}.items():
         if hashlib.sha256((DATA / name).read_bytes()).hexdigest() != expected:
-            raise ValueError(f"Prepared L/2 sampling data changed: {name}; run prepare_sampling_pl2.py")
-    sampling_summary = pd.read_csv(DATA / "pl2_sampling_summary.csv")
-    sampling_rows = pd.read_csv(DATA / "pl2_sampling_figure_rows.csv")
+            raise ValueError(f"Prepared L/2 comparison changed: {name}; run prepare_sampling_comparison.py")
+    sampling_summary = pd.read_csv(DATA / "pl2_sampling_comparison_summary.csv")
     for metric, suffix in [("p_at_l2", ""), ("p_at_l2_long", "_long")]:
-        export_plotly(sampling_figure(sampling_summary, sampling_rows, "06_sampling_pl2", metric,
-                                     poster_dir=poster_dir, neff=True), "06_sampling_pl2" + suffix)
+        export_plotly(sampling_comparison_figure(sampling_summary, metric, poster_dir=poster_dir),
+                      "06_sampling_pl2" + suffix)
     pl2_manifest = json.loads((DATA / "pl2_analysis.json").read_text())
     for name, expected in pl2_manifest["files"].items():
         if hashlib.sha256((DATA / name).read_bytes()).hexdigest() != expected:

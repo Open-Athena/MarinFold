@@ -62,7 +62,7 @@ def main() -> None:
         png = bundle / "png" / source.name
         png.parent.mkdir(exist_ok=True)
         subprocess.run(["pdftocairo", "-png", "-singlefile", "-r", str(args.print_dpi),
-                        "-scale-to-x", str(args.width_px), "-scale-to-y", "-1",
+                        "-scale-to-x", str(args.width_px), "-scale-to-y", "-1", "-W", str(args.width_px),
                         str(bundle / "pdf" / f"{name}.pdf"), str(png.with_suffix(""))], check=True)
         with Image.open(png) as raster:
             width, height = raster.size
@@ -97,6 +97,7 @@ def main() -> None:
     # make the baseline joins reproducible; large rollout pools already live at
     # the durable public URLs in pl5_analysis.json.
     for pattern in ("data/pl[25]*", "data/inputs/pl5*", "*pl[25]*.py", "export_poster.py", "render*.py",
+                    "prepare_sampling_comparison.py", "data/poster_product*",
                     "data/*neff*", "*neff*.py", "generation/*neff*.py",
                     "data/contact_confidence*", "*contact_confidence*.py", "generation/*contact_confidence*.py",
                     "data/af3_notice.txt", "data/af3_output_terms.md",

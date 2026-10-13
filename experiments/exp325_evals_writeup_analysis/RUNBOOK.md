@@ -383,6 +383,7 @@ Restore the same raw pools used by `prepare_pl5.py`, as documented in
 
 ```bash
 uv run python prepare_sampling_pl2.py
+uv run python prepare_sampling_comparison.py
 uv run pytest -q test_pl5.py
 # Aesthetic edits only need the following, which read cached data:
 uv run python render.py
@@ -392,5 +393,9 @@ uv run python export_poster_neff.py --upload
 ```
 
 `SAMPLING_L2.md` explains the metric, oracle re-selection and source-row lineage.
+`prepare_sampling_comparison.py` joins the existing sampling/predictor caches
+and copies their means and intervals exactly; no raw rollouts are needed for
+this display-only comparison. It replaces the L/2 scatter with seven standard
+predictors ranked by the same three-way product as the poster.
 No model inference is needed. The white poster bundle includes all-range and
 long-range versions, with the original 248B-token model and 100 saved samples.
