@@ -108,7 +108,11 @@ The same comparison at P@L/5 again favors consensus.
 
 ![Consensus versus oracle selection at L/5](plots/06_sampling_pl5.png)
 
-[Analysis details and long-range variants](PL5_ANALYSIS.md) · [Poster-ready files](POSTER.md).
+At L/2, consensus reaches 0.714 versus 0.570 for oracle best-of-100.
+
+![Consensus versus oracle selection at L/2](plots/06_sampling_pl2.png)
+
+[L/2 analysis and long-range variant](SAMPLING_L2.md) · [L/5 details](PL5_ANALYSIS.md) · [Poster-ready files](POSTER_NEFF.md).
 
 Next: better candidate diversity, inference-time search, and post-training.
 

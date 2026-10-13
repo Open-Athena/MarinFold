@@ -38,7 +38,7 @@ def main() -> None:
     if stage.exists():
         shutil.rmtree(stage)
     stage.mkdir(parents=True)
-    for pattern in ["data/*.csv","data/*.json","data/*.txt","data/*.md","data/inputs/Lato-*","plots/*","site/*","*.py","*.md",
+    for pattern in ["data/*.csv","data/*.csv.gz","data/*.json","data/*.txt","data/*.md","data/inputs/Lato-*","plots/*","site/*","*.py","*.md",
                     "pyproject.toml","uv.lock","generation/*contact_confidence*.py"]:
         for source in HERE.glob(pattern):
             if not source.is_file() or source.name.endswith("_publication.json"):

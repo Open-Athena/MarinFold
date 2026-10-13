@@ -20,7 +20,7 @@ Start with [the interactive preview](site/index.html) or [the PDF](plots/summary
 [FIGURES.md](FIGURES.md) maps each visual element to source rows;
 [RUNBOOK.md](RUNBOOK.md) gives reproduction and restyling commands.
 
-The **[curated poster package](POSTER_NEFF.md)** contains 44 white-background
+The **[curated poster package](POSTER_NEFF.md)** contains 46 white-background
 figures in PDF and 7,200-pixel PNG (plus SVG), using only Neff depth panels and
 the three-way contact ranking for all standard-predictor contact metrics.
 
@@ -28,6 +28,10 @@ the three-way contact ranking for all standard-predictor contact metrics.
 residue pLDDT product, and their three-way product on the same archived structures.
 The three-way product improves every structural baseline's mean P@L/5;
 both new rankings have all-range/long-range Neff plots and paired-change panels.
+
+[L/2 sampling](SAMPLING_L2.md): mean single **0.414**, consensus **0.714**,
+oracle best-of-100 **0.570** on the same 314 proteins and saved sample pools.
+All-range and long-range PDF/PNG versions are included in the poster package.
 
 ## Model and scope
 

@@ -83,8 +83,11 @@ def contact_sources(sources: Sources, targets: pd.DataFrame, *, divisor: int) ->
                             "source", "source_row", "source_column"]].rename(columns={"precision": "value"}), targets)
 
 
-def sampling_sources(targets: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
+def sampling_sources(targets: pd.DataFrame, *, divisor: int) -> tuple[pd.DataFrame, dict]:
     """Rescore the exact saved 100-map pools and verify their old R diagnostics."""
+    if divisor not in (2, 5):
+        raise ValueError("Supported sampling precision cutoffs are L/2 and L/5")
+    cutoff = f"L/{divisor}"
     truth_path = EXP245 / "gt_universe_scored.jsonl"
     truth = {r["stem"]: r for r in map(json.loads, truth_path.read_text().splitlines())}
     raw_manifest = {str(truth_path.relative_to(REPO)): dict(sha256=sha256(truth_path))}
@@ -121,10 +124,10 @@ def sampling_sources(targets: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
                               *resolved_pairs(np.asarray(record["resolved"])), length, with_precision=True))
         for region, minimum in (("all", 6), ("long", 24)):
             true = ordered_true_pairs(record, region)
-            chosen = scored[(scored["range"] == region) & (scored.cut == "L/5")].iloc[0]
+            chosen = scored[(scored["range"] == region) & (scored.cut == cutoff)].iloc[0]
             k = int(chosen.n_top)
-            if k != max(1, length // 5):
-                raise ValueError(f"{stem}/{region} has fewer candidates than the requested L/5 cutoff")
+            if k != max(1, length // divisor):
+                raise ValueError(f"{stem}/{region} has fewer candidates than the requested {cutoff} cutoff")
             scores, r_scores = [], []
             for idx, (pairs, ok) in enumerate(zip(maps, valid, strict=True)):
                 eligible = [(i, j) for i, j in pairs if i in resolved and j in resolved and j-i >= minimum]
@@ -133,7 +136,7 @@ def sampling_sources(targets: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
                 scores.append(score)
                 r_scores.append(r_score)
                 individuals.append(dict(stem=stem, range=region, rollout=idx, valid=ok, L=length, n_top=k,
-                    n_emitted=len(set(eligible)), p_at_l5=score, r_precision=r_score,
+                    n_emitted=len(set(eligible)), **{f"p_at_l{divisor}": score}, r_precision=r_score,
                     raw_source=key, raw_sha256=digest))
             r_consensus = scored[(scored["range"] == region) & (scored.cut == "R")].precision.iloc[0]
             checks.extend(dict(stem=stem, metric="r_precision" if region == "all" else "r_precision_long",
@@ -148,9 +151,9 @@ def sampling_sources(targets: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     bad = check[~np.isclose(check.value_new, check.value_old, atol=1e-12, rtol=0)]
     if len(check) != 314 * 2 * 3 or not bad.empty:
         raise ValueError(f"Saved sampling pools do not reproduce R-precision:\n{bad[['stem','metric','method','value_new','value_old']]}")
-    pd.DataFrame(individuals).to_csv(DATA / "pl5_sampling_individual.csv.gz", index=False,
+    pd.DataFrame(individuals).to_csv(DATA / f"pl{divisor}_sampling_individual.csv.gz", index=False,
                                     compression={"method": "gzip", "mtime": 0})
-    pd.DataFrame(summaries).to_csv(DATA / "pl5_sampling_per_protein.csv", index=False)
+    pd.DataFrame(summaries).to_csv(DATA / f"pl{divisor}_sampling_per_protein.csv", index=False)
     return pd.DataFrame(summaries), raw_manifest
 
 
@@ -162,7 +165,7 @@ def main() -> None:
     for row in contact.itertuples():
         if row.n_top != min(max(1, row.L // 5), row.n_candidate):
             raise ValueError(f"P@L/5 source length mismatch for {row.stem}/{row.method}")
-    _, raw_manifest = sampling_sources(targets)
+    _, raw_manifest = sampling_sources(targets, divisor=5)
     sampling = sources.csv(DATA / "pl5_sampling_per_protein.csv", round_trip=True)
     parts = []
     for method in ("single", "consensus", "best100"):

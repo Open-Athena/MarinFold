@@ -228,7 +228,8 @@ def method_figure(training: pd.DataFrame, *, poster_dir: Path | None = None) -> 
 
 
 def sampling_figure(summary: pd.DataFrame, rows: pd.DataFrame, figure: str = "06_sampling",
-                    metric: str = "r_precision", *, poster_dir: Path | None = None) -> go.Figure:
+                    metric: str = "r_precision", *, poster_dir: Path | None = None,
+                    neff: bool = False) -> go.Figure:
     """Pair a mean comparison with the underlying per-protein scatter."""
     subset = summary[(summary.figure == figure) & (summary.cohort == "natural") &
                      (summary.tier == "All depths") & (summary.metric == metric)].set_index("method")
@@ -236,7 +237,7 @@ def sampling_figure(summary: pd.DataFrame, rows: pd.DataFrame, figure: str = "06
         index="stem", columns="method", values="value")
     fig, axes = plt.subplots(1, 2, figsize=(10.4, 5.8), facecolor=PAPER)
     fig.subplots_adjust(left=0.09, right=0.98, bottom=0.19, top=0.77, wspace=0.4)
-    fig.text(0.09, 0.945, TITLES[figure], fontsize=17 if figure.endswith("pl5") else 19, weight="bold")
+    fig.text(0.09, 0.945, TITLES[figure], fontsize=17 if metric.startswith("p_at_l") else 19, weight="bold")
     fig.text(0.09, 0.884, f"248B-token model · step 266,344 · {len(paired)} natural proteins", fontsize=11)
     for ax in axes:
         style_axes(ax)
@@ -253,11 +254,14 @@ def sampling_figure(summary: pd.DataFrame, rows: pd.DataFrame, figure: str = "06
     axes[1].scatter(paired.consensus, paired.best100, color=PALETTE[3], s=20, alpha=0.65, linewidth=0)
     axes[1].set(xlim=(0, 1), xlabel="Consensus of 100", ylabel="Oracle best of 100*")
     axes[1].text(0.02, 0.96, "Above line: oracle wins", fontsize=10, va="top")
+    if figure == "06_sampling_pl2":
+        fig.text(0.09, 0.025, "*Oracle uses ground truth to select the best of 100 samples for each protein.", fontsize=9)
     save(fig, figure, CAPTIONS[figure], "_long" if metric.endswith("long") else "", poster_dir=poster_dir)
     interactive = make_subplots(rows=1, cols=2, horizontal_spacing=0.16)
     layout = plotly_layout(metric)
     layout.pop("xaxis")
-    layout.update(showlegend=True, margin=dict(l=60, r=20, t=50, b=120), legend=dict(orientation="h", y=-0.28, title="MSA depth"))
+    layout.update(showlegend=True, margin=dict(l=60, r=20, t=50, b=120),
+                  legend=dict(orientation="h", y=-0.28, title="Neff80" if neff else "MSA depth"))
     interactive.update_layout(**layout)
     for i, method in enumerate(ORDER[figure]):
         record = subset.loc[method]
@@ -272,10 +276,12 @@ def sampling_figure(summary: pd.DataFrame, rows: pd.DataFrame, figure: str = "06
     for i, tier in enumerate(TIERS):
         stems = paired.index.intersection(details.index[details.tier == tier])
         group = paired.loc[stems]
-        interactive.add_trace(go.Scatter(x=group.consensus, y=group.best100, mode="markers", name=tier,
+        tier_label = NEFF_TIER_LABELS[i] if neff else tier
+        depth_label = "Neff80" if neff else "MSA depth"
+        interactive.add_trace(go.Scatter(x=group.consensus, y=group.best100, mode="markers", name=tier_label,
                                         marker=dict(color=PALETTE[i], size=7, opacity=0.7),
-                                        customdata=[[stem, tier, details.loc[stem, "eval_set"]] for stem in stems],
-                                        hovertemplate="%{customdata[0]} · %{customdata[2]}<br>MSA depth %{customdata[1]}<br>Consensus %{x:.3f}<br>Oracle best %{y:.3f}<extra></extra>"), row=1, col=2)
+                                        customdata=[[stem, tier_label, details.loc[stem, "eval_set"]] for stem in stems],
+                                        hovertemplate="%{customdata[0]} · %{customdata[2]}<br>" + depth_label + " %{customdata[1]}<br>Consensus %{x:.3f}<br>Oracle best %{y:.3f}<extra></extra>"), row=1, col=2)
     interactive.update_xaxes(row=1, col=1, range=[-0.5, 2.5], tickvals=[0, 1, 2],
                              ticktext=["Mean<br>single", "Consensus<br>of 100", "Oracle best<br>of 100*"])
     interactive.update_xaxes(row=1, col=2, range=[0, 1], title="Consensus of 100", showgrid=False)
@@ -563,6 +569,12 @@ def preview(names: list[str]) -> None:
             lineage = ('Data: <a href="../data/pl2_summary.csv">means and intervals</a>; '
                        '<a href="../data/pl2_figure_rows.csv">protein scores, cutoffs and original source rows</a>; '
                        '<a href="../PL2_ANALYSIS.md">metric definition and reproduction</a>. ')
+        elif name == "06_sampling_pl2":
+            lineage = ('Data: <a href="../data/pl2_sampling_summary.csv">means and intervals</a>; '
+                       '<a href="../data/pl2_sampling_figure_rows.csv">protein points and Neff tiers</a>; '
+                       '<a href="../data/pl2_sampling_per_protein.csv">L/2 oracle selectors</a>; '
+                       '<a href="../data/pl2_sampling_individual.csv.gz">all 100 individual scores per protein</a>; '
+                       '<a href="../SAMPLING_L2.md">protocol and results</a>. ')
         elif name == "01b_af3_sampling":
             lineage = ('Each dot: <a href="../data/af3_sampling_samples.csv">per-seed accuracy, pTM and structure hashes</a>. '
                        'Curves: <a href="../data/af3_sampling_curves.csv">prefix budgets and selected seeds</a>. '
@@ -578,6 +590,8 @@ def preview(names: list[str]) -> None:
             manifest = "pl5_analysis.json"
         if name == "04_contacts_pl2":
             manifest = "pl2_analysis.json"
+        if name == "06_sampling_pl2":
+            manifest = "pl2_sampling_analysis.json"
         if name in ("02e_oracle_budget", "02f_oracle_budget_context"):
             manifest = "oracle_budget_analysis.json"
         if name in ("02g_seed_completion", "02h_seed_contact_precision"):
@@ -661,6 +675,15 @@ def main() -> None:
         export_plotly(export_depth(pl5_summary, figure, metrics), figure)
     export_plotly(sampling_figure(pl5_summary, pl5_rows, "06_sampling_pl5", "p_at_l5", poster_dir=poster_dir), "06_sampling_pl5")
     export_plotly(sampling_figure(pl5_summary, pl5_rows, "06_sampling_pl5", "p_at_l5_long", poster_dir=poster_dir), "06_sampling_pl5_long")
+    sampling_manifest = json.loads((DATA / "pl2_sampling_analysis.json").read_text())
+    for name, expected in sampling_manifest["files"].items():
+        if hashlib.sha256((DATA / name).read_bytes()).hexdigest() != expected:
+            raise ValueError(f"Prepared L/2 sampling data changed: {name}; run prepare_sampling_pl2.py")
+    sampling_summary = pd.read_csv(DATA / "pl2_sampling_summary.csv")
+    sampling_rows = pd.read_csv(DATA / "pl2_sampling_figure_rows.csv")
+    for metric, suffix in [("p_at_l2", ""), ("p_at_l2_long", "_long")]:
+        export_plotly(sampling_figure(sampling_summary, sampling_rows, "06_sampling_pl2", metric,
+                                     poster_dir=poster_dir, neff=True), "06_sampling_pl2" + suffix)
     pl2_manifest = json.loads((DATA / "pl2_analysis.json").read_text())
     for name, expected in pl2_manifest["files"].items():
         if hashlib.sha256((DATA / name).read_bytes()).hexdigest() != expected:

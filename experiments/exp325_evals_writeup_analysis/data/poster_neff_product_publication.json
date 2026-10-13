@@ -2,12 +2,16 @@
   "destination": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/poster-neff-product-2026-10-13",
   "files": {
     "poster_neff_product/README.md": {
-      "bytes": 5895,
-      "sha256": "1fa1c84b10e0e5b39ae7ad2cc1fe29318d839182e7d33a14e30359222845f6e4"
+      "bytes": 6296,
+      "sha256": "f99cd1434b4d0904641cef09ef9a956b8391b8a0e10f01aca1db0f58a4682a82"
+    },
+    "poster_neff_product/SAMPLING_L2.md": {
+      "bytes": 5193,
+      "sha256": "fc3a027cd22d180cc0cf6f9ad72bdef7106b87219ce6979cfb8cf2a64f57c1e3"
     },
     "poster_neff_product/all_plots.pdf": {
-      "bytes": 1848566,
-      "sha256": "3d315ac49a534f535a1259e04d48ee39d6189aac6cf502f27b40233b75367c75"
+      "bytes": 1926790,
+      "sha256": "09addab9302cf6575ce112ee1cadaa992ad96d4f11a43afdd6d38f7f19f56a0c"
     },
     "poster_neff_product/analysis/af3_notice.txt": {
       "bytes": 684,
@@ -38,8 +42,32 @@
       "sha256": "be57d8fee891b95a71b22762534dc55ad41e0d3e7e3bc51de040684822bb515d"
     },
     "poster_neff_product/analysis/original_poster_manifest.json": {
-      "bytes": 90873,
-      "sha256": "08be266d36df8c92d6113aedc9a062dd7fbfe68e158d2f30e26d412b6261ce5b"
+      "bytes": 93910,
+      "sha256": "c4307959e5a3f4fca8c51121b0f9a5e98ccb98f0769851ccb267b4f1ec836729"
+    },
+    "poster_neff_product/analysis/pl2_sampling_analysis.json": {
+      "bytes": 95038,
+      "sha256": "5200c41132eb9cc30223b45a5f001085672eee20b515b1e18fdf888c0adb1608"
+    },
+    "poster_neff_product/analysis/pl2_sampling_deltas.csv": {
+      "bytes": 31474,
+      "sha256": "22ee367fbbf82fd9dca378dc1b9a646c666e430288f317eef35d9d88fb3f7ee7"
+    },
+    "poster_neff_product/analysis/pl2_sampling_figure_rows.csv": {
+      "bytes": 415774,
+      "sha256": "90f9bcb00615e03a581608c18fe160c6e35668b2e85019c3ddecc97a89be84d6"
+    },
+    "poster_neff_product/analysis/pl2_sampling_individual.csv.gz": {
+      "bytes": 673846,
+      "sha256": "639fcf2e0a91e06aed9ea570812d78600dcb0e9188e25bc70b4e36852286e4f5"
+    },
+    "poster_neff_product/analysis/pl2_sampling_per_protein.csv": {
+      "bytes": 124013,
+      "sha256": "74a7def33937b184372c6980266cf4cae31c3cfba3a2871b1fb4d1d43dc721d0"
+    },
+    "poster_neff_product/analysis/pl2_sampling_summary.csv": {
+      "bytes": 95985,
+      "sha256": "d3c8a241da7fc1c28a66941ffe08678c04a6ac8a13138548a613a5d8484aeaf1"
     },
     "poster_neff_product/analysis/poster_product_analysis.json": {
       "bytes": 1928,
@@ -74,12 +102,12 @@
       "sha256": "d636e4683231f931eda222d588e944d082bfd3bdba02f928bee461c0f185b251"
     },
     "poster_neff_product/index.html": {
-      "bytes": 15547,
-      "sha256": "8a62cc6c8623a19133cf23e01ca2449f233c2ed0ee1826751f56a0dfe7a32739"
+      "bytes": 16164,
+      "sha256": "e282c727c71347902bbb49ca9d267143471d434d98b79641486ea634fc7e0b04"
     },
     "poster_neff_product/manifest.json": {
-      "bytes": 67840,
-      "sha256": "69b55f9c4c16c50d8bd1c14c146b265dff688ad9a7c5bf6b3841d8b940e05b0e"
+      "bytes": 71454,
+      "sha256": "4c3eacf9068ef7ea8684c064bc8acfef1f80e770b87ea89d5fb511acdf72b190"
     },
     "poster_neff_product/pdf/01_predictors_neff.pdf": {
       "bytes": 37253,
@@ -248,6 +276,14 @@
     "poster_neff_product/pdf/06_sampling.pdf": {
       "bytes": 36226,
       "sha256": "f1814986f890065b230c7e1daf98910f5242634d566c9869eb928a5e3c454aa9"
+    },
+    "poster_neff_product/pdf/06_sampling_pl2.pdf": {
+      "bytes": 39060,
+      "sha256": "1f93dde55d8620569c73f6e3a22897fa56d6dad0de1cd19ebec19edb26bcb1de"
+    },
+    "poster_neff_product/pdf/06_sampling_pl2_long.pdf": {
+      "bytes": 39251,
+      "sha256": "bc4ff84a2120ea2a7d12ad6f865c4329e05889af23a4129c068238096c2e9263"
     },
     "poster_neff_product/pdf/06_sampling_pl5.pdf": {
       "bytes": 37961,
@@ -425,6 +461,14 @@
       "bytes": 665338,
       "sha256": "de24ad5ad32c0f2c9a61e22c649926c1664e7e3e1e9cbcaf8e935e03b69c5867"
     },
+    "poster_neff_product/png/06_sampling_pl2.png": {
+      "bytes": 757900,
+      "sha256": "6ffaffdad19348c2722f500a8a4fda4c6d7fafd7b84d4eda50ac8cd4ee4bbe6c"
+    },
+    "poster_neff_product/png/06_sampling_pl2_long.png": {
+      "bytes": 784437,
+      "sha256": "3dfbc1cf2f33ad3a8098e2520089bc89dd4e57501c30000423161b4a6ec1b50f"
+    },
     "poster_neff_product/png/06_sampling_pl5.png": {
       "bytes": 660009,
       "sha256": "a51af36d017bec5cf3f4c057f8b976571ca4728b796c726178ce226211256c92"
@@ -435,195 +479,211 @@
     },
     "poster_neff_product/svg/01_predictors_neff.svg": {
       "bytes": 30577,
-      "sha256": "6fce6d8a65c017879963137196d7d9861f2c3d3126df0724e5de31b65e265d18"
+      "sha256": "ea0647109988b3268b0374423f8693545ee08d41d2115e3fe6789766d8c69fc2"
     },
     "poster_neff_product/svg/01_predictors_neff_lddt.svg": {
       "bytes": 30567,
-      "sha256": "de272749cd23107127bacbdd3c9e2e46f4e516218b8b3271ca650233045acb08"
+      "sha256": "5e2363206dc25ea527ed443bfa19ef1cc344d0b159e073c39bb82918ebe34322"
     },
     "poster_neff_product/svg/01b_af3_sampling.svg": {
       "bytes": 12258,
-      "sha256": "cc48745074fc2a4d1574813e09d69b484c7ff91069d0e544304e72bf8546f67f"
+      "sha256": "bebf4e33cdc84ac303e8cd97c413e097e867d637d5502bfe102e9ad14b5aff65"
     },
     "poster_neff_product/svg/01b_af3_sampling_8ii8_A.svg": {
       "bytes": 135756,
-      "sha256": "feb7339181608e54b75b990e70cbe2ce7707f809d8a5fad371778f4a21206a65"
+      "sha256": "e2eac6bf4f30455dc96cf64b0b52845ab8a2914502dbfdb1a9b630c26f58f62f"
     },
     "poster_neff_product/svg/01b_af3_sampling_8oxk_A.svg": {
       "bytes": 136293,
-      "sha256": "1933be130011d30edd48b6f4e45a7193e48bbc48edbbf852028e6d46adf4018f"
+      "sha256": "a72ddc02ea255b52b98900a3438d04733561e66f9cf72c5323df11e7a0d3b82b"
     },
     "poster_neff_product/svg/01b_af3_sampling_8qoh_A.svg": {
       "bytes": 136080,
-      "sha256": "5088a37ba336e5a9c1fb84618dddd4c4d577232c389f73748823735a9ae46e99"
+      "sha256": "80d00c0988804fa94c3968a88b7612040fdb2e4b5b757064b87a5b4eeab2e51e"
     },
     "poster_neff_product/svg/01b_af3_sampling_8ux2_A.svg": {
       "bytes": 135818,
-      "sha256": "bb70a910b700acf924354b68cc2041e63d9b14e7063b592c1a30bd1e611ef220"
+      "sha256": "c621ad69efd30bef2ce8dec10b6eb418a4b7569c99562b218b12881d53a28d45"
     },
     "poster_neff_product/svg/01b_af3_sampling_8wrx_A.svg": {
       "bytes": 135956,
-      "sha256": "5b1081d6eaf5db84282596ae6a01c8e1d3b643923c4382394c79ca52ea75f7d1"
+      "sha256": "81d8c81ba37c2057a910e627859b6e02c0f053ae27b51df51b6c9a2f7ed4063b"
     },
     "poster_neff_product/svg/01c_af3_context.svg": {
       "bytes": 30578,
-      "sha256": "d69ffcdf243b8a447c95812a27587ed6edf72e9124ff9b9cba26abf696163511"
+      "sha256": "19bae37cbb651e636dc3625d855faa32683a624ea2a8c71365d8413cbf56ec2a"
     },
     "poster_neff_product/svg/01d_af3_depth_context_neff.svg": {
       "bytes": 25002,
-      "sha256": "32d2b0b5d005d0860109bf9498be42338166453f1740d44829f68c4ad237c9ba"
+      "sha256": "2af4f12e92745ddabf9b847256db496b8e34219da67a8fc61f4c27f9bef235ec"
     },
     "poster_neff_product/svg/02_oracle_neff.svg": {
       "bytes": 37567,
-      "sha256": "a950782ad506c28b619b79f62c9b2ba9218a8c05da00102829295f048b39bab8"
+      "sha256": "f97d2178610449df2f04ae9f36d218c07cfa6ff65d2e18a32802cc0c5d78fd26"
     },
     "poster_neff_product/svg/02_oracle_neff_lddt.svg": {
       "bytes": 37563,
-      "sha256": "278bee47823d4bb3e25f2ca15b36cf942dc4f21d93259828059d6a8f62aca7a7"
+      "sha256": "447960725a044f6a738c3c47dc64601f3a47763515fc244788085ba35f05c612"
     },
     "poster_neff_product/svg/02b_confidence.svg": {
       "bytes": 66003,
-      "sha256": "05215e7b8540ea38c3776fd29b00d2b33759e28a215562888719e83b122554b9"
+      "sha256": "cac6ac531bc3c6db899462131c5791bba12777608f3e6fa4fb6dc5b7f9d01755"
     },
     "poster_neff_product/svg/02c_accuracy_confidence.svg": {
       "bytes": 69517,
-      "sha256": "bf99514e39f6d2f44559dde9879210690eecbc0cf15634d8dbe5ebecda2b58fc"
+      "sha256": "433e0288a3f6423601f8de6d9abadb1313af31e65f2b17a36a652eec80bd71a1"
     },
     "poster_neff_product/svg/02c_accuracy_confidence_protein_8ii8_A.svg": {
       "bytes": 35926,
-      "sha256": "2a17ecc5dc8b24e595aca5eb4dc2e8c67e30bd517867166bb1e0948f3528a68c"
+      "sha256": "b29359fd0eff866c53a64cbeb928573317813522b70cec63326756ea38341400"
     },
     "poster_neff_product/svg/02c_accuracy_confidence_protein_8oxk_A.svg": {
       "bytes": 35388,
-      "sha256": "9d1305a2f5538ac32c3a96c6e02f83c41391aeba90bf839d9b8b974067cdad83"
+      "sha256": "5bca3e89f433fde4707f9ab160f85ecd0b46f29748afb3f21d539fc6f87dc338"
     },
     "poster_neff_product/svg/02c_accuracy_confidence_protein_8qoh_A.svg": {
       "bytes": 35382,
-      "sha256": "2eeb18641f8e6b160d390e355d8a5b4b1c5eff8aabd8a12557d163453372cafb"
+      "sha256": "c080a9b9d70f732ec31a492b545e0be2d72550117ff296f7d44a8dc35671ea14"
     },
     "poster_neff_product/svg/02c_accuracy_confidence_protein_8ux2_A.svg": {
       "bytes": 35926,
-      "sha256": "7cca3513c9c54202e9cb79e637475fe169b2505c142069dc0c54653bf915ae50"
+      "sha256": "f5ea4a1f81fa281c752444be73d9fcc607d61ce7019231145349caf5fcb382c6"
     },
     "poster_neff_product/svg/02c_accuracy_confidence_protein_8wrx_A.svg": {
       "bytes": 35931,
-      "sha256": "d04a866811acc3303d0368d58ab458f2aed27dbfcaea91b555b0e08bccd7e66d"
+      "sha256": "8b36e19907c263de3eda6eaa7ab746c197a8a5e89395e10202dba5e6769add44"
     },
     "poster_neff_product/svg/02c_accuracy_confidence_tm_score.svg": {
       "bytes": 69513,
-      "sha256": "fca0d8fb5cc7f8af0c1d4533e9c8859460acbcd575e254bab9598f8d12291a3e"
+      "sha256": "d83ede4819f638e85019ae8936c5e0b52b87d5175735e5e724bf9b1c3a39adf7"
     },
     "poster_neff_product/svg/02e_oracle_budget.svg": {
       "bytes": 72599,
-      "sha256": "392fe14863182d9380c99ab3fff0bb978c190bf06e81b9cab62c46d53544a085"
+      "sha256": "6ceabd4e658c380be316bb3ffbe5b0379e62c291e31e9df33ed6d61caac37278"
     },
     "poster_neff_product/svg/02e_oracle_budget_lddt.svg": {
       "bytes": 72571,
-      "sha256": "787cf595b14083cbcd930a07e514c4a765d60d691b1c79efbb224169874d8469"
+      "sha256": "5143160e387d67ea6a7f3876e7c9279703f7ddb48a720b41a7962103aa3a963d"
     },
     "poster_neff_product/svg/02f_oracle_budget_context.svg": {
       "bytes": 43187,
-      "sha256": "f46d29542646971a91eae3362f73f278bdee1032717e20f5f8c9e5cc11bbb469"
+      "sha256": "7a86dca7d3f4066f957c8e9367876bd09bd25ada68d3498f360ce79f76144134"
     },
     "poster_neff_product/svg/02f_oracle_budget_context_lddt.svg": {
       "bytes": 43183,
-      "sha256": "b7e17bfac654140fdaa79e9b5d3620cde4eb69b9274acc170b37fd0eae94f375"
+      "sha256": "a077fdec8c559e64b33dc9687af86e1c6543020bf5fc3a68c0e00d1828482181"
     },
     "poster_neff_product/svg/02g_seed_completion.svg": {
       "bytes": 71271,
-      "sha256": "967ca2924576a310845f1e6742e1761b50a49bf6977cbc7df19fd347b5c387d2"
+      "sha256": "888b2f182e19a9b0296159557f4d389b4444ffcbbef1db01bb9301143eaec0e7"
     },
     "poster_neff_product/svg/02g_seed_completion_lddt.svg": {
       "bytes": 71259,
-      "sha256": "7d43d7b9c4ff7783d44accbaa0a18bddf59aabac11d471869e6e4b06987ebfa5"
+      "sha256": "cc7c3218b362d3450be84e8b14b7bc2499b834a37fc9e8c8aaedcd9af8f9cbd9"
     },
     "poster_neff_product/svg/02g_seed_completion_tm_score.svg": {
       "bytes": 71281,
-      "sha256": "ffc1762b6744fc3bb569170c78b00ae289c014fbc50498100f5fe18f181c1bbe"
+      "sha256": "11e4f31e79aefb3fc4c278aaed2e72df098607d9561c59be7fcc0f2b849e583a"
     },
     "poster_neff_product/svg/02h_seed_contact_precision.svg": {
       "bytes": 41489,
-      "sha256": "ec6d2047d0da38b8bcabcc8b61be8e32a077e7234931094ff97676448243a883"
+      "sha256": "b4994ffce5832a877082c02196bb8df4c1a3a67e4870d26349b52cc16b3bc1d9"
     },
     "poster_neff_product/svg/03_method.svg": {
       "bytes": 10908,
-      "sha256": "d076bcf00761289e106ce5682578b9ebadbc5a1ac7d20df605fca631c6b434cc"
+      "sha256": "8d785dced4c5f810609a96e90f71e0d2f9826ddf69989f23dca9e8843a641149"
     },
     "poster_neff_product/svg/04_contacts_neff.svg": {
       "bytes": 37765,
-      "sha256": "1d6ebc06849b6b69d106cfb9ab0ab14b1a34198ced477ffcd9330e47b727ccde"
+      "sha256": "5bf39255b6ac942daf56738ac0fbdf70ba3c3a64fd80b90225a94d978e491c95"
     },
     "poster_neff_product/svg/04_contacts_neff_long.svg": {
       "bytes": 37784,
-      "sha256": "1e8adb90627be7a3cd02276f1181c98a1d62635862c43b2da90ce08bd24b79bd"
+      "sha256": "99cb90f0b0b32dcb7f21bca36cb979a90f620b8f07554dcace92cb3054c1a112"
     },
     "poster_neff_product/svg/04_contacts_pl2_neff.svg": {
       "bytes": 37772,
-      "sha256": "3569ed6899a0544baba91586d29b2ada7f35c05208611638c6e356a416a132a3"
+      "sha256": "717a7f4a00bda35901461b56321765db99d46c2fc24bd4790503e7a6506c8098"
     },
     "poster_neff_product/svg/04_contacts_pl2_neff_long.svg": {
       "bytes": 37766,
-      "sha256": "688e7291967cb296d0dcf3c1b09cb13583d6dfd0b9aada393aa5760d3ab06947"
+      "sha256": "7a78b0346434c6d3658aa43ac8b6d070d8d4e8925ca6253e147963dd611ca7e9"
     },
     "poster_neff_product/svg/04_contacts_pl5_neff.svg": {
       "bytes": 37763,
-      "sha256": "6eea58801742580458b9e71649e725b4ff6878fdbcee9cd57af0850f8f7b50db"
+      "sha256": "273995134339fd83480969f228f57000440c7ae8f9ae044ef82dd5995d10bc4f"
     },
     "poster_neff_product/svg/04_contacts_pl5_neff_long.svg": {
       "bytes": 37761,
-      "sha256": "8e4efad6c43de07c50c13b15e4f10bccfd3a34d089e26a46ee092bc84ec152ac"
+      "sha256": "1d56b8136f6bd86b64fa141c7f87907bae00cc990ad1ba04d9e7f7e917bd9029"
     },
     "poster_neff_product/svg/04b_knn_neff.svg": {
       "bytes": 13656,
-      "sha256": "726152db4a3301cfb59697f1374d31a680519812ba3729c0c3d18aba1840a3f3"
+      "sha256": "84809ad2194fa6ab4303ccdcedfb16fca6986a2cf259d2d302f6fc9dbbda9acd"
     },
     "poster_neff_product/svg/04b_knn_neff_long.svg": {
       "bytes": 13680,
-      "sha256": "fa3e8ce528cdd8909c71fe04bdab14c004fb5ce6ff0c7d53a7bdb4e9b7ab58c2"
+      "sha256": "268a74fac08d22934046d7939f78d4f0fbceae1869d1e436ba1c57a4e002ac13"
     },
     "poster_neff_product/svg/04b_knn_neff_r_precision.svg": {
       "bytes": 13677,
-      "sha256": "97467647f720d12d4354fa0d56197d0e57c866002f292da683cd7917502d43a3"
+      "sha256": "67eef975d12985d6e377f74eabe1f667c752badb54ad592e726ae521189ca387"
     },
     "poster_neff_product/svg/04b_knn_neff_r_precision_long.svg": {
       "bytes": 13688,
-      "sha256": "6ab8df7d83f519d3bb9a6b802af27aa085060932ae052ffa8e5f0c1bf9e2dca2"
+      "sha256": "dfc65b22ee1ad4ead4a8e9488425403eaf6c09b3a04711375d0ab8000e938436"
     },
     "poster_neff_product/svg/05_folding_neff.svg": {
       "bytes": 41164,
-      "sha256": "d5cd9d0c03a64ca375bfb3f2281116275dac19b7e55c3b0c36d4e430321843e3"
+      "sha256": "99dc4f84181088cf19043e4ebb548fe5fbb876b64867c27cd5fbd08390714c1b"
     },
     "poster_neff_product/svg/05_folding_neff_lddt.svg": {
       "bytes": 41155,
-      "sha256": "605ce6ed2bc82dc2487cf3f670f25be4a2ada17d73ab765b35960083e9a109c2"
+      "sha256": "cb118e6973b9dd0ffac2958698e15aa7d2ac18ef88ecec3dd915ab8b895e4ac4"
     },
     "poster_neff_product/svg/06_sampling.svg": {
       "bytes": 51068,
-      "sha256": "ec2a31f4b40bb0e0b096a5d429e6faf5607b365a6541a2d5a5fb73149400b5cd"
+      "sha256": "7f32b4b6473d42fc34df29f97ef349830c780d417058dead62712db8bc6be1b8"
+    },
+    "poster_neff_product/svg/06_sampling_pl2.svg": {
+      "bytes": 51372,
+      "sha256": "3fb8bede4ccd376d8498682a445a8495b3bdf186859bc9b319585c06f3adf72c"
+    },
+    "poster_neff_product/svg/06_sampling_pl2_long.svg": {
+      "bytes": 51372,
+      "sha256": "341a39de3cc1bf7be83fccb484402dbdf486049573d6d20f9f657c6cb6d2b449"
     },
     "poster_neff_product/svg/06_sampling_pl5.svg": {
       "bytes": 51091,
-      "sha256": "5084078e4361ee12cb500b04962194ad8fc7ac98ce6e766d5816b42a2e88b873"
+      "sha256": "1e85dbc72e3eee4d86d994153c6c5b35bebd50ff25fb2178e2e32e2efe9d41bd"
     },
     "poster_neff_product/svg/06_sampling_pl5_long.svg": {
       "bytes": 51093,
-      "sha256": "3821fa7d1e1e328a86dfb264edaac66db9e5f6dc0af7ccff5bec6ccbcdbf19bf"
+      "sha256": "94cd38585b9b35485922339e301ccff8e2e638a401067400bed25f3a1a6eec77"
     },
     "poster_neff_product.zip": {
-      "bytes": 28484297,
-      "sha256": "57264312dafcc6a478d4aa036de0e65748de694b691d29178aa6ebc13bbb2106"
+      "bytes": 30794310,
+      "sha256": "8dd7576ee3b94b7a5b51241ddd5435514efd7a7d98d4c98cdb8e4dac30c1d765"
     },
     "reproduce/POSTER_NEFF.md": {
-      "bytes": 5895,
-      "sha256": "1fa1c84b10e0e5b39ae7ad2cc1fe29318d839182e7d33a14e30359222845f6e4"
+      "bytes": 6296,
+      "sha256": "f99cd1434b4d0904641cef09ef9a956b8391b8a0e10f01aca1db0f58a4682a82"
+    },
+    "reproduce/SAMPLING_L2.md": {
+      "bytes": 5193,
+      "sha256": "fc3a027cd22d180cc0cf6f9ad72bdef7106b87219ce6979cfb8cf2a64f57c1e3"
     },
     "reproduce/build_summary.py": {
       "bytes": 9256,
       "sha256": "59b65a0c2b398cb01b12ddafc75238b899c3d004caeba1fa09ad2293505a1c25"
     },
     "reproduce/export_poster_neff.py": {
-      "bytes": 11764,
-      "sha256": "36ed5d4b98d6407ac1c291298e7dc235c2ee61cdf82ca5ca30f1a0c5706c3732"
+      "bytes": 12779,
+      "sha256": "4d2740a07fa31819f0d653bf4afc4d34ab55eb36e9159ba2ae13e8a166253024"
+    },
+    "reproduce/generation/score_contacts.py": {
+      "bytes": 6777,
+      "sha256": "28a2de21a54f8fe698ef28f9d8d14e555d92d9505bfbb9bcca17da606018896f"
     },
     "reproduce/poster_style.py": {
       "bytes": 2306,
@@ -633,9 +693,21 @@
       "bytes": 36941,
       "sha256": "d93df615231001700c89caf5491c7048d92d704beb4f65de4f9a10c13717b2fd"
     },
+    "reproduce/prepare_neff.py": {
+      "bytes": 6534,
+      "sha256": "097bb95e7dc767ac64fee35d4f79829f421dbe5820b7133db3568d43566c6aa1"
+    },
+    "reproduce/prepare_pl5.py": {
+      "bytes": 14792,
+      "sha256": "8096061ca9821d78e4ef48f7e401af61cbb5a950cf024e57d3604cebfed7c14b"
+    },
     "reproduce/prepare_poster_product.py": {
       "bytes": 8981,
       "sha256": "47847bf642d1c2e3736ec0aaaef194fb65d36c86be74cc104c8b0524129da405"
+    },
+    "reproduce/prepare_sampling_pl2.py": {
+      "bytes": 6142,
+      "sha256": "72c158b8080d2bab7e37df546c06e3f4ef58dbe2defbe0bb8bc3c24fc72bfd53"
     },
     "reproduce/pyproject.toml": {
       "bytes": 631,
@@ -646,8 +718,8 @@
       "sha256": "dc21b1dffa956e1be8d961cc33aa53f318f59f276a690fccc8860ea0c567ec35"
     },
     "reproduce/render.py": {
-      "bytes": 51859,
-      "sha256": "0d701cbb5d0dec378d29c570615c52585f498c46e3a4cdfc3ae2f73952f130df"
+      "bytes": 53619,
+      "sha256": "99e3ab9483fccb7ddc800ddadb8823d0681e61596c4f693233484af188a3625e"
     },
     "reproduce/render_af3_context.py": {
       "bytes": 9161,
@@ -670,12 +742,12 @@
       "sha256": "12b8e0d2bf187096f54276702ab04a55d32ebd56233cb02b5404d83d31f95c09"
     },
     "reproduce/test_poster_product.py": {
-      "bytes": 4377,
-      "sha256": "20febd2fafefd5dde281607fba85e3f68bac941b343d0a84863f78cbd095fdef"
+      "bytes": 4451,
+      "sha256": "b588355c54bfc0671366a4af783c90520283da90641d15338df829bea9bd39de"
     },
     "reproduce/theme.py": {
-      "bytes": 23097,
-      "sha256": "81e69e18ee9ba2791500199f161d325f4ef683d61445450cd49a396570549034"
+      "bytes": 24159,
+      "sha256": "022e60c56b1991b91641607324ae76523299398be9cfbaea458cf798227c6f0a"
     },
     "reproduce/uv.lock": {
       "bytes": 291263,

@@ -80,7 +80,7 @@ def main() -> None:
         output = bundle / "fonts" / font.name
         output.parent.mkdir(exist_ok=True)
         shutil.copyfile(font, output)
-    for filename in ("POSTER.md", "FIGURES.md", "PL5_ANALYSIS.md", "PL2_ANALYSIS.md", "NEFF_ANALYSIS.md", "CONTACT_CONFIDENCE.md", "ORACLE_BUDGET.md", "ORACLE_L2.md", "SEED_COMPLETION.md", "MARINFOLD_L2.md", "MARINFOLD_L5.md"):
+    for filename in ("POSTER.md", "FIGURES.md", "PL5_ANALYSIS.md", "PL2_ANALYSIS.md", "NEFF_ANALYSIS.md", "CONTACT_CONFIDENCE.md", "ORACLE_BUDGET.md", "ORACLE_L2.md", "SEED_COMPLETION.md", "MARINFOLD_L2.md", "MARINFOLD_L5.md", "SAMPLING_L2.md"):
         shutil.copyfile(HERE / filename, bundle / filename)
     manifest = dict(destination=DESTINATION, generator="export_poster.py", width_px=args.width_px,
                     background="white", background_hex="#FFFFFF",

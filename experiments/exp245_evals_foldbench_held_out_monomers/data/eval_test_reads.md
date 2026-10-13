@@ -47,6 +47,8 @@ rather than re-filtering a curated benchmark
 
 | 22 | 2026-10-13 | #325 curated poster: fixed exp277 step266344; three-way structural-contact ranking extended to R and L/2 | User explicitly requested only pLDDT(i) × pLDDT(j) × ConFind degree for standard predictors in the poster. Previously authorized test reuse; ranking chosen after read 21, so this is exploratory reanalysis. Reuse all validated pair/confidence caches; fixed denominators, no new inference or model selection. | 217 test proteins; all-range R / L/2 / L/5: AF3 **0.836743 / 0.902740 / 0.921443**, ESMFold2 **0.792867 / 0.859314 / 0.883885**, Protenix single sequence **0.267030 / 0.303147 / 0.345789**. All 4,662 previous three-way L/5 cells reproduce; MarinFold/KNN values unchanged. Neff-stratified means, exact selected ranks and source hashes in exp325 `data/poster_product_*` and the public curated poster package. |
 
+| 23 | 2026-10-13 | #325 P@L/2 sampling diagnostic; fixed exp277 step266344 | Explicit user request for the L/2 version of the sampling figure; previously authorized test reuse. Same first 100 saved iid rollouts per protein, invalid-map rules and consensus voting; reselect oracle by P@L/2 independently for all/long range. No model inference, tuning or checkpoint change. Exploratory follow-up. | 217 test proteins: all-range mean single / consensus / oracle best-of-100 **0.416504 / 0.720064 / 0.572405**; long-range **0.384180 / 0.600190 / 0.528898**. All 314 raw-pool hashes and 62,800 individual validity/R-score rows match the prior L/5 analysis. Full point-level scores, Neff subgroups, oracle selectors and bootstrap intervals in exp325 `SAMPLING_L2.md` and `data/pl2_sampling_*`. |
+
 ## What a read costs
 
 

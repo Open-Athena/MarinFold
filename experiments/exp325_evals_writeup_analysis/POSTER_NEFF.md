@@ -4,7 +4,7 @@
 [Browse individual files](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp325-writeup-analysis/poster-neff-product-2026-10-13/poster_neff_product) ·
 [All plots in one PDF](https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/exp325-writeup-analysis/poster-neff-product-2026-10-13/poster_neff_product/all_plots.pdf).
 
-This is the curated poster collection: **44 figures**, each with a plain white
+This is the curated poster collection: **46 figures**, each with a plain white
 background, in `pdf/`, `png/`, and `svg/`. Open `index.html` after extracting the
 ZIP to browse the collection. PDF is native vector artwork with embedded fonts;
 PNG is **7,200 pixels wide, tagged 300 dpi** (24 inches / 61 cm wide). Editable
@@ -39,6 +39,7 @@ and random L/2 oracle contacts.
 | `04_contacts_pl2_neff` | Three-way-ranked precision @ L/2; `_long` counterpart |
 | `04b_knn_neff` | MarinFold versus Sequence KNN; both ranges and metrics |
 | `05_folding_neff` | Helico + MarinFold L/2 contacts: GDT-TS; `_lddt` counterpart |
+| `06_sampling_pl2` | Precision @ L/2: mean single, consensus and oracle best-of-100; `_long` counterpart |
 
 The other figures are the method schematic, sampling/consensus diagnostics,
 per-protein confidence scatter plots, AF3 sampling, sparse-oracle and seeded
@@ -71,6 +72,11 @@ is published separately (29 MB), so the artwork ZIP stays small. Keep `rank<=k`
 for a metric's requested contact count to recover its exact selected contacts.
 The [original pair/input archive](https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/exp325-writeup-analysis/contact-confidence-2026-10-13/contact_confidence_inputs_and_pairs.tar.gz)
 contains every eligible emitted pair and mapped residue confidence.
+
+The [L/2 sampling diagnostic](SAMPLING_L2.md) has its own cached summaries,
+per-protein rows and all 100 individual scores in `analysis/pl2_sampling_*`.
+It uses the original sampling consensus over all parsed maps; main contact
+comparison panels exclude unfinished maps from consensus votes.
 
 `manifest.json` identifies every included figure and its hashes. Unchanged
 figures trace through `analysis/original_poster_manifest.json` to the existing

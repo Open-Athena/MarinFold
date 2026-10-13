@@ -68,7 +68,8 @@ def test_matched_cohorts_controls_and_fixed_shortfall_denominators() -> None:
 def test_curated_inventory_excludes_raw_depth_and_other_rankings() -> None:
     inventory = json.loads((DATA/'poster_manifest.json').read_text())
     names = chosen_names({row['name'] for row in inventory['figures']})
-    assert len(names) == 44
+    assert len(names) == 46
+    assert '06_sampling_pl2' in names and '06_sampling_pl2_long' in names
     assert '04_contacts_pl2_neff' in names and '04_contacts_pl2_neff_long' in names
     assert '04_contacts_neff' in names and '04_contacts_neff_long' in names
     assert not any(name.startswith(('04c_', '04d_', '04e_')) for name in names)

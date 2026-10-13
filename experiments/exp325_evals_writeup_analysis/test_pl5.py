@@ -53,13 +53,33 @@ def test_cutoff_uses_sequence_length_and_population_matches_r_precision(divisor:
     assert not rows.duplicated(["figure", "stem", "method", "metric"]).any()
 
 
-def test_oracle_is_reselected_at_pl5_from_the_exact_first_100_pool() -> None:
-    individuals = pd.read_csv(HERE / "data/pl5_sampling_individual.csv.gz")
-    summaries = pd.read_csv(HERE / "data/pl5_sampling_per_protein.csv")
-    assert (individuals.loc[~individuals.valid, "p_at_l5"] == 0).all()
+@pytest.mark.parametrize("divisor", [2, 5])
+def test_oracle_is_reselected_from_the_exact_first_100_pool(divisor: int) -> None:
+    individuals = pd.read_csv(HERE / f"data/pl{divisor}_sampling_individual.csv.gz")
+    summaries = pd.read_csv(HERE / f"data/pl{divisor}_sampling_per_protein.csv")
+    metric = f"p_at_l{divisor}"
+    assert (individuals.loc[~individuals.valid, metric] == 0).all()
+    assert (individuals.n_top == np.maximum(1, individuals.L // divisor)).all()
     for row in summaries.itertuples():
         pool = individuals[(individuals.stem == row.stem) & (individuals["range"] == row.range)].sort_values("rollout")
         assert pool.rollout.tolist() == list(range(100))
-        assert row.single == pytest.approx(pool.p_at_l5.mean(), abs=1e-12)
-        assert row.best100 == pytest.approx(pool.p_at_l5.max(), abs=1e-12)
-        assert row.best_rollout == int(pool.iloc[np.argmax(pool.p_at_l5.to_numpy())].rollout)
+        assert row.single == pytest.approx(pool[metric].mean(), abs=1e-12)
+        assert row.best100 == pytest.approx(pool[metric].max(), abs=1e-12)
+        assert row.best_rollout == int(pool.iloc[np.argmax(pool[metric].to_numpy())].rollout)
+
+
+def test_l2_sampling_preserves_pool_identity_and_uses_neff() -> None:
+    rows = pd.read_csv(HERE / "data/pl2_sampling_figure_rows.csv", float_precision="round_trip")
+    old = pd.read_csv(HERE / "data/pl5_sampling_per_protein.csv")
+    scores = pd.read_csv(HERE / "data/pl2_sampling_per_protein.csv", float_precision="round_trip")
+    pairs = scores.merge(old, on=["stem", "range"], suffixes=("_new", "_old"), validate="one_to_one")
+    assert len(pairs) == 314 * 2
+    assert pairs.raw_sha256_new.equals(pairs.raw_sha256_old)
+    assert pairs.invalid_rollouts_new.equals(pairs.invalid_rollouts_old)
+    targets = pd.read_csv(HERE / "data/neff_targets.csv").set_index("stem")
+    assert set(rows.stem) == set(old.stem)
+    for row in rows.itertuples():
+        assert row.tier == targets.loc[row.stem, "neff_tier"]
+        source = scores.iloc[row.source_row]
+        assert row.stem == source.stem
+        assert row.value == source[row.source_column]

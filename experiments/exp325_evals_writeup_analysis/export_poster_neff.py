@@ -56,8 +56,8 @@ def chosen_names(all_names: set[str]) -> list[str]:
         excluded.update(names_for(base, metrics))
     excluded.update(name for name in all_names if name.startswith(('04c_', '04d_', '04e_')))
     selected = sorted(all_names - excluded)
-    if len(selected) != 44:
-        raise ValueError(f'Expected 44 curated plots, got {len(selected)}; review the inventory')
+    if len(selected) != 46:
+        raise ValueError(f'Expected 46 curated plots, got {len(selected)}; review the inventory')
     return selected
 
 
@@ -82,6 +82,10 @@ def main() -> None:
     for filename, expected in analysis['inputs'].items():
         if sha256(DATA/filename) != expected:
             raise ValueError(f'Changed analysis input: {filename}; rerun prepare_poster_product.py')
+    sampling = json.loads((DATA/'pl2_sampling_analysis.json').read_text())
+    for filename, expected in sampling['files'].items():
+        if sha256(DATA/filename) != expected:
+            raise ValueError(f'Changed sampling table: {filename}; rerun prepare_sampling_pl2.py')
     base = HERE/'scratch/poster_public/poster_plots'
     old_manifest = json.loads((DATA/'poster_manifest.json').read_text())
     old = {row['name']: row for row in old_manifest['figures']}
@@ -131,12 +135,14 @@ def main() -> None:
         list(pool.map(rasterize, tasks))
     # The six contact panels carry precisely the prepared rows they display.
     # Other panels retain hash-pinned provenance from the full poster bundle.
-    for filename in [*analysis['files'], 'poster_product_analysis.json', 'neff_figure_rows.csv', 'neff_summary.csv',
+    for filename in [*analysis['files'], *sampling['files'], 'pl2_sampling_analysis.json',
+                     'poster_product_analysis.json', 'neff_figure_rows.csv', 'neff_summary.csv',
                      'neff_af3_context_rows.csv', 'neff_af3_context_summary.csv', 'msa_neff.csv', 'af3_notice.txt', 'af3_output_terms.md']:
         shutil.copyfile(DATA/filename, bundle/'analysis'/filename)
     for source in (DATA/'inputs').glob('Lato-*'):
         shutil.copyfile(source, bundle/'fonts'/source.name)
     shutil.copyfile(HERE/'POSTER_NEFF.md', bundle/'README.md')
+    shutil.copyfile(HERE/'SAMPLING_L2.md', bundle/'SAMPLING_L2.md')
     shutil.copyfile(DATA/'poster_manifest.json', bundle/'analysis/original_poster_manifest.json')
     records = []
     for name in names:
@@ -145,17 +151,24 @@ def main() -> None:
             if image.convert('RGB').getpixel((0, 0)) != (255, 255, 255):
                 raise ValueError(f'Nonwhite poster canvas: {name}')
         contact = name in replacements and name != '03_method'
+        source_summary = 'analysis/original_poster_manifest.json'
+        if contact:
+            source_summary = 'analysis/poster_product_summary.csv'
+        elif name in {'06_sampling_pl2', '06_sampling_pl2_long'}:
+            source_summary = 'analysis/pl2_sampling_summary.csv'
         records.append(dict(name=name, width_px=width, height_px=height, dpi=300,
             background='white', depth_axis='neff80' if '_neff' in name else 'not stratified',
             standard_contact_ranking='plddt_product_degree' if contact else 'not applicable',
-            source_summary='analysis/poster_product_summary.csv' if contact else 'analysis/original_poster_manifest.json',
+            source_summary=source_summary,
             caption=CONTACT_CAPTION if contact else old[name]['caption'],
             files={extension:dict(path=f'{extension}/{name}.{extension}', sha256=sha256(bundle/extension/f'{name}.{extension}'))
                    for extension in ['pdf', 'png', 'svg']}))
     manifest = dict(destination=DESTINATION, figure_count=len(records), background='white', png_width_px=7200,
                     figures=records, analysis_sha256=sha256(DATA/'poster_product_analysis.json'),
+                    sampling_analysis_sha256=sha256(DATA/'pl2_sampling_analysis.json'),
                     base_publication=old_manifest['destination'],
                     preprocess_command='uv run python prepare_poster_product.py',
+                    sampling_preprocess_command='uv run python prepare_sampling_pl2.py',
                     render_command='uv run python export_poster_neff.py --upload')
     content = json.dumps(manifest, indent=2)+'\n'
     (bundle/'manifest.json').write_text(content)
@@ -163,7 +176,7 @@ def main() -> None:
     cards = ''.join(f'<article><h2>{html.escape(name)}</h2><a href="pdf/{name}.pdf"><img loading="lazy" src="png/{name}.png" alt="{html.escape(name)}"></a><p><a href="pdf/{name}.pdf">PDF</a> · <a href="png/{name}.png">PNG</a> · <a href="svg/{name}.svg">SVG</a></p></article>' for name in names)
     (bundle/'index.html').write_text('<!doctype html><meta charset="utf-8"><title>MarinFold poster plots</title>'
         '<style>body{font:16px sans-serif;background:white;color:#222;max-width:1200px;margin:40px auto}article{margin:40px 0;border-top:1px solid #ddd}img{width:100%;height:auto}a{color:#385c8f}</style>'
-        '<h1>MarinFold poster plots</h1><p>White backgrounds · Neff depth panels · three-way structural-contact ranking · 44 figures</p>' + cards)
+        f'<h1>MarinFold poster plots</h1><p>White backgrounds · Neff depth panels · three-way structural-contact ranking · {len(names)} figures</p>' + cards)
     subprocess.run(['pdfunite', *[str(bundle/'pdf'/f'{name}.pdf') for name in names], str(bundle/'all_plots.pdf')], check=True)
     with zipfile.ZipFile(stage/'poster_neff_product.zip', 'w', compression=zipfile.ZIP_DEFLATED) as archive:
         for path in sorted(bundle.rglob('*')):
@@ -171,9 +184,11 @@ def main() -> None:
                 archive.write(path, path.relative_to(stage))
     provenance = stage/'reproduce'
     provenance.mkdir()
-    for filename in ['prepare_poster_product.py', 'export_poster_neff.py', 'render.py', 'prepare.py', 'poster_style.py', 'theme.py',
+    for filename in ['prepare_poster_product.py', 'prepare_sampling_pl2.py', 'prepare_pl5.py', 'prepare_neff.py',
+                     'generation/score_contacts.py', 'export_poster_neff.py', 'render.py', 'prepare.py', 'poster_style.py', 'theme.py',
                      'build_summary.py', 'test_poster_product.py', 'render_af3_context.py', 'render_af3_sampling.py', 'render_contact_confidence.py',
-                     'render_oracle_budget.py', 'render_seed_completion.py', 'pyproject.toml', 'uv.lock', 'POSTER_NEFF.md']:
+                     'render_oracle_budget.py', 'render_seed_completion.py', 'pyproject.toml', 'uv.lock', 'POSTER_NEFF.md', 'SAMPLING_L2.md']:
+        (provenance/filename).parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(HERE/filename, provenance/filename)
     ranking_path = HERE/analysis['ranked_pairs']['path']
     if sha256(ranking_path) != analysis['ranked_pairs']['sha256']:

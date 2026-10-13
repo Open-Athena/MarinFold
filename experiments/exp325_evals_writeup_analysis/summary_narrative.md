@@ -11,7 +11,7 @@ Every numerical figure element maps back to a source CSV row.
 
 ## Curated poster package
 
-44 white-background figures; vector PDFs, 7,200-pixel PNGs and editable SVGs.
+46 white-background figures; vector PDFs, 7,200-pixel PNGs and editable SVGs.
 All stratified depth comparisons use Neff80. Standard predictors rank contacts
 by residue pLDDT × residue pLDDT × ConFind degree for R-precision, L/5 and L/2,
 in both all-range and long-range panels. MarinFold and Sequence KNN are unchanged.
@@ -231,3 +231,21 @@ MarinFold and Sequence KNN rankings and scores remain unchanged.
 2,331 structures reproduce all original contact degrees exactly; no inference reruns.
 314 natural proteins; 19 designs separate; 5,000 paired protein bootstraps, seed325.
 CONTACT_CONFIDENCE.md links pair features, selected ranks, source hashes and figures.
+
+## Sampling at L/2
+
+Same 314 natural proteins and first 100 saved iid rollouts per protein.
+Precision @ L/2, all-range: mean single 0.414; consensus 0.714; oracle best 0.570.
+Long-range: mean single 0.382; consensus 0.597; oracle best 0.527.
+Consensus beats the best individual sample on 273/314 proteins (all-range).
+
+Oracle reselected by P@L/2; it uses ground truth and is a diagnostic ceiling
+for selecting one individual sample, not for combining samples.
+Filter separation and resolved endpoints before selecting floor(L/2) contacts.
+Unfilled ranks score zero; invalid individual maps score zero.
+Sampling consensus retains the original all-parsed-map vote policy.
+Main contact precision panels exclude unfinished maps from consensus votes.
+
+All raw-pool hashes and individual R-precision/validity rows reproduce.
+Neff80 colors the interactive scatter; white all/long PDF + PNG exports included.
+Source: SAMPLING_L2.md; data/pl2_sampling_*; prepare_sampling_pl2.py → render.py.

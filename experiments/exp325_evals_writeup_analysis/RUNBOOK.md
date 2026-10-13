@@ -354,7 +354,7 @@ separate artifacts; rendering continues to consume only the prepared tables.
 
 ## Curated white Neff poster package
 
-Use [POSTER_NEFF.md](POSTER_NEFF.md) for the current 44-figure collection, with
+Use [POSTER_NEFF.md](POSTER_NEFF.md) for the current 46-figure collection, with
 R-precision, L/5 and L/2 contacts all ranked by the three-way product for standard
 predictors. Preprocessing is separate from rendering:
 
@@ -375,3 +375,22 @@ the public confidence archive as described in CONTACT_CONFIDENCE.md if needed.
 only changed contact panels and the L/2 schematic need rasterization. The ZIP has
 individual PDF/PNG/SVG files, a combined PDF, a browser index and analysis tables.
 Exact pair ranks are uploaded separately under `reproduce/ranked_pairs.parquet`.
+
+## Sampling at L/2
+
+Restore the same raw pools used by `prepare_pl5.py`, as documented in
+[PL5_ANALYSIS.md](PL5_ANALYSIS.md), then run the preprocessing once:
+
+```bash
+uv run python prepare_sampling_pl2.py
+uv run pytest -q test_pl5.py
+# Aesthetic edits only need the following, which read cached data:
+uv run python render.py
+uv run python build_summary.py
+uv run python export_poster.py --upload
+uv run python export_poster_neff.py --upload
+```
+
+`SAMPLING_L2.md` explains the metric, oracle re-selection and source-row lineage.
+No model inference is needed. The white poster bundle includes all-range and
+long-range versions, with the original 248B-token model and 100 saved samples.

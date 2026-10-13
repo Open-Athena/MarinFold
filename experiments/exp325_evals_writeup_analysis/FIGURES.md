@@ -214,3 +214,20 @@ The oracle in this comparison remains L/2.
 All three budgets remain in `figure_rows.csv` and `summary.csv`. The display
 selection lives only in `theme.ORDER["05_folding"]`, shared by static, interactive
 and poster renderers. Changing the displayed methods never reruns analysis.
+
+## Sampling at L/2
+
+`06_sampling_pl2{,_long}` changes the sampling diagnostic to precision @ L/2.
+`prepare_sampling_pl2.py` reselects the oracle within each frozen 100-rollout
+pool using this metric; `render.py` only reads its cached outputs.
+
+- Mean/interval: `pl2_sampling_summary.csv`, keyed by metric, cohort, tier and method.
+- Scatter point: `pl2_sampling_figure_rows.csv`, keyed by stem, metric and method;
+  source row/column points into `pl2_sampling_per_protein.csv`.
+- Individual scores and oracle selector: `pl2_sampling_individual.csv.gz` and
+  the per-protein table, keyed by stem, range and rollout index.
+- Pool/truth SHA256s and public restoration URLs: `pl2_sampling_analysis.json`.
+
+Static figures use all 314 natural proteins. Interactive subgroup colors are
+Neff80; scores and oracle-minus-consensus intervals for each cohort/tier are cached.
+Definitions, consensus-policy caveat and results: [SAMPLING_L2.md](SAMPLING_L2.md).
