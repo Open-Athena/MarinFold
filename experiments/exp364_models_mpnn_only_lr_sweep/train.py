@@ -8,10 +8,10 @@ import click
 from fray.types import ResourceConfig
 from levanter.data.text.datasets import ConcatDatasetComponent
 from levanter.optim.config import AdamConfig
-from marin.execution.lazy import ArtifactStep
+from marin.execution.lazy import ArtifactStep, StepContext
 from marin.experiment.cli import build_options
 from marin.experiment.train import train_lm
-from marin.training.training import LevanterCheckpoint
+from marin.training.training import LevanterCheckpoint, TrainLmOnPodConfig
 
 from experiments.exp232_sweep_cv1_decontam.training_contract import (
     DATA_SEED,
@@ -124,7 +124,7 @@ def build_run(
     )
     base_build_config = step.build_config
 
-    def build_config(ctx):
+    def build_config(ctx: StepContext) -> TrainLmOnPodConfig:
         pod = base_build_config(ctx)
         trainer = replace(
             pod.train_config.trainer,

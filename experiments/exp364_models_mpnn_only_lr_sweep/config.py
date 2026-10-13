@@ -3,10 +3,19 @@
 from experiments.exp277_models_single_mpnn_pilot.config import (
     CORPORA as DEFAULT_CORPORA,
 )
-from experiments.exp277_models_single_mpnn_pilot.config import (
-    TOKENIZER,
-    VALIDATION_CACHE,
-)
+from experiments.exp277_models_single_mpnn_pilot.config import VALIDATION_CACHE
+
+__all__ = [
+    "CORPORA",
+    "EPOCHS",
+    "EPOCH_PACKED_EXAMPLES",
+    "LEARNING_RATES",
+    "PREFIX",
+    "TRAIN_STEPS",
+    "VALIDATION_CACHE",
+    "VERSION",
+    "run_id_for",
+]
 
 PREFIX = "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep"
 VERSION = "2026.10.13.1"

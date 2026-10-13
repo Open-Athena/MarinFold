@@ -6,6 +6,8 @@ from dataclasses import fields
 import jax
 import pytest
 from haliax import Axis
+from levanter.data.dataset import AsyncDataset
+from levanter.models.lm_model import LmExample
 from levanter.schedule import BatchSchedule
 
 from experiments.exp277_models_single_mpnn_pilot.test_epoch_data import (
@@ -17,7 +19,7 @@ from experiments.exp277_models_single_mpnn_pilot.test_epoch_data import (
 from experiments.exp364_models_mpnn_only_lr_sweep.epoch_data import TwoEpochDataConfig
 
 
-def two_epochs(*, expected_examples: int = 50):
+def two_epochs(*, expected_examples: int = 50) -> AsyncDataset[LmExample]:
     # The two-statement synthetic examples can legitimately draw an identity
     # permutation. Focus this fixture on traversal; the config comparison
     # separately checks the unchanged production augmentation schedule.
