@@ -46,6 +46,7 @@ def main() -> None:
         rows = [
             {"run_id": run_id, "parameters": parameters, "step": int(row["_step"]), "eval_loss": float(row["eval/loss"])}
             for row in run.scan_history(keys=["_step", "eval/loss"])
+            if row["eval/loss"] is not None
         ]
         rows.sort(key=lambda row: row["step"])
         final = [row["eval_loss"] for row in rows if row["step"] == FINAL_STEP]

@@ -1,0 +1,2 @@
+run_id,parameters,wandb_state,run_progress,final_eval_loss
+contacts-v1-exp277-m2-p06-full-epoch-1.5B,1471374336,finished,1.0,2.984407424926758

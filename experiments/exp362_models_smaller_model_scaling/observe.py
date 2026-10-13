@@ -54,7 +54,7 @@ def main() -> None:
                 "wandb_state": run.state if run else None, "iris_state": state,
                 "run_progress": progress,
                 "metrics": {key: value for key, value in summary.items() if key in (
-                    "train/loss", "eval/loss", "train/step", "throughput/step_time",
+                    "train/loss", "eval/loss", "train/step", "throughput/duration",
                     "throughput/total_tokens", "num_params", "parameter_count",
                 )},
             }))
