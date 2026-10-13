@@ -3,6 +3,14 @@
 Every numerical point is auditable through committed tables. Plotting does no
 inference, joins, confidence selection, or resampling.
 
+The separate [curated poster collection](POSTER_NEFF.md) replaces all six
+standard-predictor contact panels (R, L/5, L/2; all/long) with the three-way
+pLDDT product × degree ranking. Its data path is `poster_product_summary.csv`
+→ `poster_product_figure_rows.csv` → `poster_product_metrics.csv`
+→ `poster_product_inputs.csv` and the published `ranked_pairs.parquet`.
+Figure names match the corresponding metric inside this separate package;
+the new white previews are in `plots/poster_neff_product/`.
+
 The draft's depth panels now use the `_neff` variants. Their path is
 `neff_summary.csv` → `neff_figure_rows.csv` → unchanged original score rows,
 plus `msa_neff.csv` for the exact frozen alignment measurement. The AF3 heatmap

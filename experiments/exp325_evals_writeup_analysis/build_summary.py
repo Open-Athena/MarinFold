@@ -158,7 +158,7 @@ def load_plots(plots_dir: Path) -> list[PlotEntry]:
     if not plots_dir.exists():
         return []
     paths: list[Path] = [
-        p for p in plots_dir.iterdir()
+        p for p in plots_dir.rglob("*")
         if p.suffix.lower() in PLOT_EXTENSIONS
     ]
     paths.sort(key=lambda p: p.name)

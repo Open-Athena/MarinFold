@@ -9,6 +9,21 @@ AF2/AF3/Boltz-2 comparators use shared archived MSAs and no templates, with conf
 Predictor generation → cached analysis tables → fast static and interactive rendering.
 Every numerical figure element maps back to a source CSV row.
 
+## Curated poster package
+
+44 white-background figures; vector PDFs, 7,200-pixel PNGs and editable SVGs.
+All stratified depth comparisons use Neff80. Standard predictors rank contacts
+by residue pLDDT × residue pLDDT × ConFind degree for R-precision, L/5 and L/2,
+in both all-range and long-range panels. MarinFold and Sequence KNN are unchanged.
+
+L/2 and R were recomputed from the validated pair caches; all 4,662 previous
+three-way L/5 scores reproduce. Denominators stay fixed when contacts run out.
+No predictor reruns. The fixed five-protein diagnostics retain their original cohort.
+
+POSTER_NEFF.md links the ZIP, combined PDF, individual files and point-level data.
+The white contact previews in plots/poster_neff_product/ use this new ranking;
+older plots in the appendix retain their original ranking for comparison.
+
 ## Regrouping by effective MSA depth
 
 Neff80 is measured on all 333 exact frozen predictor alignments; no predictor is rerun.

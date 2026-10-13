@@ -1,0 +1,27 @@
+{
+  "files": {
+    "poster_product_metrics.csv": "d1703173c1f6910ff6690e3917b81417545b96f789301c909fdf5eb583b34850",
+    "poster_product_inputs.csv": "ddfb7cb042ea295b7393ce5196577040e4557201ee0764009a189ceb62117961",
+    "poster_product_figure_rows.csv": "13af8b24d90e5393b672f408ebbebcb2b1cbb2d33075fa33a7f32cc5cae44807",
+    "poster_product_summary.csv": "ac1c68e7c4754087b168e64e06f2a0f9e1d2fa815162d6b3c0456dc06c33f0fb"
+  },
+  "inputs": {
+    "neff_figure_rows.csv": "681e0f9d0f000e8d61e1ee089b34fe4b8205851d08f66341bf77fd00b52932c9",
+    "contact_confidence_sources.csv": "6f58a7fe3c1e29b29bc620212da58dd321cba8333c28feae8e36653788f88434",
+    "contact_confidence_metrics.csv": "f1e4cda8a9f30c4f18202723e4e4ce05c5d9cc14a4df9a3890b4021354c22a96"
+  },
+  "preprocessors": {
+    "prepare_poster_product.py": "47847bf642d1c2e3736ec0aaaef194fb65d36c86be74cc104c8b0524129da405"
+  },
+  "ranked_pairs": {
+    "path": "scratch/poster_product_analysis/ranked_pairs.parquet",
+    "sha256": "dc21b1dffa956e1be8d961cc33aa53f318f59f276a690fccc8860ea0c567ec35"
+  },
+  "ranking": "pLDDT_i * pLDDT_j * ConFind degree; positive emitted contacts only; stable input (i,j) ties",
+  "confidence": "Mean heavy-atom pLDDT per residue, normalized to [0,1], from the same selected archived structure",
+  "eligibility": "Frozen resolved pair universe; separation >=6 or >=24 before ranking; truth degree>=0.001",
+  "denominator": "R = true-contact count; L/5 and L/2 use floor(input L / divisor), minimum 1; shortfalls get zero credit",
+  "controls": "MarinFold 248B-token consensus and Sequence KNN transferred scores unchanged",
+  "validation": "All 4662 prior three-way P@L/5 values reproduced within 1e-12; 2331 validated pair archives verified by SHA256",
+  "raw_pair_archive": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/exp325-writeup-analysis/contact-confidence-2026-10-13/contact_confidence_inputs_and_pairs.tar.gz"
+}

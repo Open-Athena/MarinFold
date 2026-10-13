@@ -1,0 +1,5 @@
+{
+  "script": "export_poster_neff.py",
+  "args": [],
+  "caption": "Same 314 natural proteins (97 validation + 217 test), fixed 248B-token MarinFold. Standard structure predictors rank emitted ConFind degree>0 pairs by pLDDT_i \u00d7 pLDDT_j \u00d7 degree; residue pLDDT is mean heavy-atom confidence normalized to [0,1]. Filter resolved residues and separation \u22656 (all) or \u226524 (long) before selection. Denominator is R true contacts, floor(L/5), or floor(L/2) as indicated; unfilled ranks receive zero credit. Truth is degree\u22650.001 and does not enter ranking. MarinFold consensus and Sequence KNN scores are unchanged. Neff80 on frozen alignments; equal protein means and 95% bootstrap intervals. Source: data/poster_product_figure_rows.csv and data/poster_product_summary.csv; pair ordering in the published ranked_pairs.parquet. See POSTER_NEFF.md."
+}

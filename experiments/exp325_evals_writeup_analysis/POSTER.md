@@ -1,5 +1,12 @@
 # Poster-ready plot collection
 
+For the current poster, use the **[Neff + three-way-ranking package](POSTER_NEFF.md)**:
+44 white-background figures, each as a vector PDF and 7,200-pixel PNG (SVG also
+included). It uses only Neff depth panels and pLDDT × pLDDT × contact degree
+for all standard-predictor R-precision, L/5 and L/2 contact comparisons.
+
+The broader archive below retains every historical ranking/depth alternative.
+
 [Browse individual public poster files](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp325-writeup-analysis/poster-2026-10-08).
 [Download the complete ZIP](https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/exp325-writeup-analysis/poster-2026-10-08/poster_plots.zip), or browse
 `poster_plots/pdf`, `poster_plots/svg`, and `poster_plots/png` for individual files.

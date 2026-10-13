@@ -351,3 +351,27 @@ For the L/5 follow-up, the shared preparation and analysis scripts take
 Archive and publication use `--marinfold-l5`. See
 [MARINFOLD_L5.md](MARINFOLD_L5.md) for the complete commands. Each budget writes
 separate artifacts; rendering continues to consume only the prepared tables.
+
+## Curated white Neff poster package
+
+Use [POSTER_NEFF.md](POSTER_NEFF.md) for the current 44-figure collection, with
+R-precision, L/5 and L/2 contacts all ranked by the three-way product for standard
+predictors. Preprocessing is separate from rendering:
+
+```bash
+uv run python prepare_poster_product.py
+uv run pytest -q test_poster_product.py
+# Only if the base white artwork cache is absent or stale:
+uv run python export_poster.py
+uv run python export_poster_neff.py --upload
+uv run python build_summary.py
+```
+
+`prepare_poster_product.py` reads the archived `scratch/contact_confidence/scored`
+pair features, verifies their hashes and reproduces existing L/5 scores before
+writing the new R/L2/L5 metric rows and summaries. Restore those pair files from
+the public confidence archive as described in CONTACT_CONFIDENCE.md if needed.
+`export_poster_neff.py` uses cached summaries and hash-checked base poster artwork;
+only changed contact panels and the L/2 schematic need rasterization. The ZIP has
+individual PDF/PNG/SVG files, a combined PDF, a browser index and analysis tables.
+Exact pair ranks are uploaded separately under `reproduce/ranked_pairs.parquet`.

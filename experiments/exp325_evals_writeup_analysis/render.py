@@ -72,7 +72,8 @@ def save(fig: plt.Figure, figure: str, caption: str, suffix: str = "", *, includ
 
 
 def static_depth(summary: pd.DataFrame, figure: str, metric: str, cohort: str = "natural", *,
-                 poster_dir: Path | None = None) -> None:
+                 poster_dir: Path | None = None, ranking_note: str | None = None,
+                 caption: str | None = None) -> None:
     """Draw the default matched-population view from summary rows."""
     frame = summary[(summary.figure == figure) & (summary.metric == metric) &
                     (summary.cohort == cohort) & summary.tier.isin(TIERS)]
@@ -86,6 +87,8 @@ def static_depth(summary: pd.DataFrame, figure: str, metric: str, cohort: str = 
     fig.text(0.09, 0.945, TITLES[figure], fontsize=20, color=INK, weight="bold")
     population = "Natural FoldBench monomers" if base in {"01_predictors", "02_oracle"} else "Natural FoldBench · 248B-token model"
     fig.text(0.09, 0.887, f"{population}  ·  mean and 95% interval", fontsize=11, color=INK)
+    if ranking_note:
+        fig.text(0.09, 0.84, ranking_note, fontsize=10, color=INK)
     style_axes(ax)
     methods = ORDER[figure]
     counts = frame.groupby("tier").n.first().to_dict()
@@ -113,7 +116,7 @@ def static_depth(summary: pd.DataFrame, figure: str, metric: str, cohort: str = 
     suffix = {"lddt": "_lddt", "r_precision_long": "_long", "p_at_l5_long": "_long", "p_at_l2_long": "_long"}.get(metric, "")
     if base == "04b_knn" and metric.startswith("r_precision"):
         suffix = "_r_precision" + ("_long" if metric.endswith("long") else "")
-    save(fig, figure, CAPTIONS[figure], suffix, poster_dir=poster_dir)
+    save(fig, figure, caption or CAPTIONS[figure], suffix, poster_dir=poster_dir)
 
 
 def plotly_layout(metric: str) -> dict:
@@ -190,7 +193,7 @@ def method_figure(training: pd.DataFrame, *, poster_dir: Path | None = None) -> 
         (6.9, 3.0, 2.8, "Train MarinFold", "1.47B autoregressive transformer\nPredict the next token", PALETTE[3]),
         (0.1, 0.4, 2.05, "Single sequence", "No MSA at inference", PALETTE[0]),
         (2.65, 0.4, 2.05, "100 samples", "Resample the prompt\nGenerate contact sets", PALETTE[3]),
-        (5.2, 0.4, 2.05, "Vote on contacts", "Rank residue pairs\nPass top-L to Helico", PALETTE[3]),
+        (5.2, 0.4, 2.05, "Vote on contacts", "Rank residue pairs\nPass top-L/2 to Helico", PALETTE[3]),
         (7.75, 0.4, 2.05, "3D structure", "Helico conditions on\nthe predicted contacts", PALETTE[2]),
     ]
     for x, y, width, title, body, color in stages:

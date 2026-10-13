@@ -1,0 +1,1112 @@
+{
+  "destination": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/poster-neff-product-2026-10-13",
+  "figure_count": 44,
+  "background": "white",
+  "png_width_px": 7200,
+  "figures": [
+    {
+      "name": "01_predictors_neff",
+      "width_px": 7200,
+      "height_px": 4772,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "neff80",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "Same seven archived structure predictors; 305 matched natural proteins. Neff is recomputed on the exact frozen predictor alignments: sum of inverse neighbor counts at >=80% identity over jointly non-gap columns. Repeated sequences are downweighted; no alignment or prediction is changed. Bins are labeled <10, 10\u2013100, 100\u20131000 and >=1000; finite upper bounds are exclusive. Means and 95% intervals bootstrap proteins; cohort membership changes relative to raw depth. Split, viral and design views remain separate. Every score, Neff measurement and contributing protein traces through neff_figure_rows.csv, neff_summary.csv and NEFF_ANALYSIS.md.",
+      "files": {
+        "pdf": {
+          "path": "pdf/01_predictors_neff.pdf",
+          "sha256": "46737371e9c6c237027003f34fd640992d68c19750e0dc47ae0b0e70eeb432f4"
+        },
+        "png": {
+          "path": "png/01_predictors_neff.png",
+          "sha256": "65718f604f645bb361a5b60e4b5476e6eb0f49b1f2d0126a1e0b709534a8de9c"
+        },
+        "svg": {
+          "path": "svg/01_predictors_neff.svg",
+          "sha256": "6fce6d8a65c017879963137196d7d9861f2c3d3126df0724e5de31b65e265d18"
+        }
+      }
+    },
+    {
+      "name": "01_predictors_neff_lddt",
+      "width_px": 7200,
+      "height_px": 4772,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "neff80",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "Same seven archived structure predictors; 305 matched natural proteins. Neff is recomputed on the exact frozen predictor alignments: sum of inverse neighbor counts at >=80% identity over jointly non-gap columns. Repeated sequences are downweighted; no alignment or prediction is changed. Bins are labeled <10, 10\u2013100, 100\u20131000 and >=1000; finite upper bounds are exclusive. Means and 95% intervals bootstrap proteins; cohort membership changes relative to raw depth. Split, viral and design views remain separate. Every score, Neff measurement and contributing protein traces through neff_figure_rows.csv, neff_summary.csv and NEFF_ANALYSIS.md.",
+      "files": {
+        "pdf": {
+          "path": "pdf/01_predictors_neff_lddt.pdf",
+          "sha256": "3a1f29ffa16e206b77fd6cb0b22d41fc21619d9f5120d1e20b1ce0129fc9a825"
+        },
+        "png": {
+          "path": "png/01_predictors_neff_lddt.png",
+          "sha256": "c134c3208aec3b51f386dc28a8d7d810df3572d5deccc1addbbba0008ee60f3e"
+        },
+        "svg": {
+          "path": "svg/01_predictors_neff_lddt.svg",
+          "sha256": "de272749cd23107127bacbdd3c9e2e46f4e516218b8b3271ca650233045acb08"
+        }
+      }
+    },
+    {
+      "name": "01b_af3_sampling",
+      "width_px": 7201,
+      "height_px": 3788,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "Best of 100 and 1,000 independent AF3 runs versus highest-pTM selection at 1,000. Only five biological examples. Oracle best uses the reference; pTM selection does not. Dashed line: prespecified TM >=0.8. Source: data/af3_sampling_summary.csv.",
+      "files": {
+        "pdf": {
+          "path": "pdf/01b_af3_sampling.pdf",
+          "sha256": "2d248e880959ceae5c9d05f4cd981a14b8fb65aaca63df9d26f317bbc37d05b1"
+        },
+        "png": {
+          "path": "png/01b_af3_sampling.png",
+          "sha256": "313360a36d8fe8c4c4ce85f0881802bdffd4330d5570c72241eb6df5ef81e6cd"
+        },
+        "svg": {
+          "path": "svg/01b_af3_sampling.svg",
+          "sha256": "cc48745074fc2a4d1574813e09d69b484c7ff91069d0e544304e72bf8546f67f"
+        }
+      }
+    },
+    {
+      "name": "01b_af3_sampling_8ii8_A",
+      "width_px": 7200,
+      "height_px": 3283,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "8ii8_A: each point is one independent AF3 trunk + diffusion run, seeds starting at 10000, ten recycles, fixed archived MSA and no templates. Full-precision pTM selects without using truth. Oracle best TM uses truth only for this diagnostic. Dashed line: prespecified TM >=0.8. Curves use the ascending-seed prefix; original dotted baseline selected among five seeds x five samples by official ranking_score. Data: af3_sampling_samples.csv and af3_sampling_curves.csv; original baseline: af3_sampling_original.csv. ESMFold2 baseline: af3_context_rows.csv. Official ranking_score selection is shown separately from pTM. All are in data/; preprocessing: prepare_af3_sampling.py and prepare_af3_context.py.",
+      "files": {
+        "pdf": {
+          "path": "pdf/01b_af3_sampling_8ii8_A.pdf",
+          "sha256": "49faeb6b843812ee5e3301fdefcbd8f2ecd2fb75bd37fdb391546567f8797102"
+        },
+        "png": {
+          "path": "png/01b_af3_sampling_8ii8_A.png",
+          "sha256": "54a591615a17349d75db2bb255911769da107823b4e918791db23dfe5d6e5aa9"
+        },
+        "svg": {
+          "path": "svg/01b_af3_sampling_8ii8_A.svg",
+          "sha256": "feb7339181608e54b75b990e70cbe2ce7707f809d8a5fad371778f4a21206a65"
+        }
+      }
+    },
+    {
+      "name": "01b_af3_sampling_8oxk_A",
+      "width_px": 7200,
+      "height_px": 3283,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "8oxk_A: each point is one independent AF3 trunk + diffusion run, seeds starting at 10000, ten recycles, fixed archived MSA and no templates. Full-precision pTM selects without using truth. Oracle best TM uses truth only for this diagnostic. Dashed line: prespecified TM >=0.8. Curves use the ascending-seed prefix; original dotted baseline selected among five seeds x five samples by official ranking_score. Data: af3_sampling_samples.csv and af3_sampling_curves.csv; original baseline: af3_sampling_original.csv. ESMFold2 baseline: af3_context_rows.csv. Official ranking_score selection is shown separately from pTM. All are in data/; preprocessing: prepare_af3_sampling.py and prepare_af3_context.py.",
+      "files": {
+        "pdf": {
+          "path": "pdf/01b_af3_sampling_8oxk_A.pdf",
+          "sha256": "8c98f4d43ef33b79cd27e31d2a423179cb886bdfcb0582d6c102760646e50f3d"
+        },
+        "png": {
+          "path": "png/01b_af3_sampling_8oxk_A.png",
+          "sha256": "65143a0bd2f1f76db2c1ada69712da24ad7cbfab6faeb77903255d0d81462315"
+        },
+        "svg": {
+          "path": "svg/01b_af3_sampling_8oxk_A.svg",
+          "sha256": "1933be130011d30edd48b6f4e45a7193e48bbc48edbbf852028e6d46adf4018f"
+        }
+      }
+    },
+    {
+      "name": "01b_af3_sampling_8qoh_A",
+      "width_px": 7200,
+      "height_px": 3283,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "8qoh_A: each point is one independent AF3 trunk + diffusion run, seeds starting at 10000, ten recycles, fixed archived MSA and no templates. Full-precision pTM selects without using truth. Oracle best TM uses truth only for this diagnostic. Dashed line: prespecified TM >=0.8. Curves use the ascending-seed prefix; original dotted baseline selected among five seeds x five samples by official ranking_score. Data: af3_sampling_samples.csv and af3_sampling_curves.csv; original baseline: af3_sampling_original.csv. ESMFold2 baseline: af3_context_rows.csv. Official ranking_score selection is shown separately from pTM. All are in data/; preprocessing: prepare_af3_sampling.py and prepare_af3_context.py.",
+      "files": {
+        "pdf": {
+          "path": "pdf/01b_af3_sampling_8qoh_A.pdf",
+          "sha256": "2a1f335290dcc103341a900f039ef11c087252a7a7bced60b952768ba0f76142"
+        },
+        "png": {
+          "path": "png/01b_af3_sampling_8qoh_A.png",
+          "sha256": "3d8f8e4e22fc609acdef6ae1230fcafe40b4ef285ad9cdb495d88bef56699e82"
+        },
+        "svg": {
+          "path": "svg/01b_af3_sampling_8qoh_A.svg",
+          "sha256": "5088a37ba336e5a9c1fb84618dddd4c4d577232c389f73748823735a9ae46e99"
+        }
+      }
+    },
+    {
+      "name": "01b_af3_sampling_8ux2_A",
+      "width_px": 7200,
+      "height_px": 3283,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "8ux2_A: each point is one independent AF3 trunk + diffusion run, seeds starting at 10000, ten recycles, fixed archived MSA and no templates. Full-precision pTM selects without using truth. Oracle best TM uses truth only for this diagnostic. Dashed line: prespecified TM >=0.8. Curves use the ascending-seed prefix; original dotted baseline selected among five seeds x five samples by official ranking_score. Data: af3_sampling_samples.csv and af3_sampling_curves.csv; original baseline: af3_sampling_original.csv. ESMFold2 baseline: af3_context_rows.csv. Official ranking_score selection is shown separately from pTM. All are in data/; preprocessing: prepare_af3_sampling.py and prepare_af3_context.py.",
+      "files": {
+        "pdf": {
+          "path": "pdf/01b_af3_sampling_8ux2_A.pdf",
+          "sha256": "c725731510bb7f15e8ba8906a8af5b7e64b477eaeec93d261cae1ec174cd86e0"
+        },
+        "png": {
+          "path": "png/01b_af3_sampling_8ux2_A.png",
+          "sha256": "a1ed1dd10807cce408d36bb3d5fea78267f1a288102a41a0133c3cec06801f45"
+        },
+        "svg": {
+          "path": "svg/01b_af3_sampling_8ux2_A.svg",
+          "sha256": "bb70a910b700acf924354b68cc2041e63d9b14e7063b592c1a30bd1e611ef220"
+        }
+      }
+    },
+    {
+      "name": "01b_af3_sampling_8wrx_A",
+      "width_px": 7200,
+      "height_px": 3283,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "8wrx_A: each point is one independent AF3 trunk + diffusion run, seeds starting at 10000, ten recycles, fixed archived MSA and no templates. Full-precision pTM selects without using truth. Oracle best TM uses truth only for this diagnostic. Dashed line: prespecified TM >=0.8. Curves use the ascending-seed prefix; original dotted baseline selected among five seeds x five samples by official ranking_score. Data: af3_sampling_samples.csv and af3_sampling_curves.csv; original baseline: af3_sampling_original.csv. ESMFold2 baseline: af3_context_rows.csv. Official ranking_score selection is shown separately from pTM. All are in data/; preprocessing: prepare_af3_sampling.py and prepare_af3_context.py.",
+      "files": {
+        "pdf": {
+          "path": "pdf/01b_af3_sampling_8wrx_A.pdf",
+          "sha256": "048eb8dc7dc25b7c39f114ba7864e177756a1022bc1c2ba661996b3ffafc2ecd"
+        },
+        "png": {
+          "path": "png/01b_af3_sampling_8wrx_A.png",
+          "sha256": "cf6420d9aaba5477d561b7b345d83ff3178a3f7dedd531b4e2d5faee37dd4aab"
+        },
+        "svg": {
+          "path": "svg/01b_af3_sampling_8wrx_A.svg",
+          "sha256": "5b1081d6eaf5db84282596ae6a01c8e1d3b643923c4382394c79ca52ea75f7d1"
+        }
+      }
+    },
+    {
+      "name": "01c_af3_context",
+      "width_px": 7200,
+      "height_px": 5120,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "TM-score for the same five natural test proteins with MSA depth <10. Top block: archived predictor entries, including the 248B-token MarinFold top-L contacts through Helico. Middle: 100 or 1,000 fresh AF3 full runs, one diffusion sample per seed, selected by official ranking_score or pTM. Bottom: ground-truth diagnostics, oracle best AF3 TM and Helico conditioned on the oracle map. ESMFold2 is the archived baseline, not a selected member or average of the 100-contact-map decoy pool. AF3 baseline uses five seeds times five diffusion samples, ten recycles, shared archived MSAs and no templates. Expanded runs retain the same inputs and recycles. Compute budgets differ. Hover identifies the exact source CSV cell.",
+      "files": {
+        "pdf": {
+          "path": "pdf/01c_af3_context.pdf",
+          "sha256": "a74268d20ef51870d67cc24bcd1b677676577e71ea7daa32f2612e8fd40ba874"
+        },
+        "png": {
+          "path": "png/01c_af3_context.png",
+          "sha256": "2f0d48a7f1bcc72874bb20887cd97055fd9a276a1adf509c1564ba832c825c22"
+        },
+        "svg": {
+          "path": "svg/01c_af3_context.svg",
+          "sha256": "d69ffcdf243b8a447c95812a27587ed6edf72e9124ff9b9cba26abf696163511"
+        }
+      }
+    },
+    {
+      "name": "01d_af3_depth_context_neff",
+      "width_px": 7200,
+      "height_px": 5120,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "neff80",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "Mean TM-score regrouped by Neff80 on the same 305 natural proteins and frozen alignments. Archived predictor rows retain their original protocols, including top-L MarinFold contacts and the full-map oracle in this diagnostic. Extended AF3 sampling still covers only the original five raw-depth<10 proteins; its Neff<10 cells explicitly show n=5, a subset of the full tier. Other extended-sampling cells are not run. These are not matched tier-wide AF3 sampling comparisons. Every source score and protein is preserved in neff_af3_context_rows.csv and neff_af3_context_summary.csv. See NEFF_ANALYSIS.md and AF3_SAMPLING.md.",
+      "files": {
+        "pdf": {
+          "path": "pdf/01d_af3_depth_context_neff.pdf",
+          "sha256": "1244c1500e8f11c93c3225d492bd44c239261e1e50cb806cd11b7bfc92d49ef5"
+        },
+        "png": {
+          "path": "png/01d_af3_depth_context_neff.png",
+          "sha256": "18ba68a921d27869e65024bf66a2801592aae800a09da21fb8b8889c93ffafe3"
+        },
+        "svg": {
+          "path": "svg/01d_af3_depth_context_neff.svg",
+          "sha256": "32d2b0b5d005d0860109bf9498be42338166453f1740d44829f68c4ad237c9ba"
+        }
+      }
+    },
+    {
+      "name": "02_oracle_neff",
+      "width_px": 7200,
+      "height_px": 4796,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "neff80",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "Same 305 natural proteins, all seven predictors and no-contact Helico. Oracle: two random L/2 true-contact subsets, three samples/subset, ranking_score selection then subset averaging; no MSA. See ORACLE_L2.md. Neff is recomputed on the exact frozen predictor alignments: sum of inverse neighbor counts at >=80% identity over jointly non-gap columns. Repeated sequences are downweighted; no alignment or prediction is changed. Bins are labeled <10, 10\u2013100, 100\u20131000 and >=1000; finite upper bounds are exclusive. Means and 95% intervals bootstrap proteins; cohort membership changes relative to raw depth. Split, viral and design views remain separate. Every score, Neff measurement and contributing protein traces through neff_figure_rows.csv, neff_summary.csv and NEFF_ANALYSIS.md.",
+      "files": {
+        "pdf": {
+          "path": "pdf/02_oracle_neff.pdf",
+          "sha256": "6667bdda75dd484990b204b2f2fe80a4c7a6a66930f1c4ccc127e6c674997c05"
+        },
+        "png": {
+          "path": "png/02_oracle_neff.png",
+          "sha256": "bfc2f5b197a10cc7e5d37dbb5f5773be56c178a7f799ad16f759c310cadd5e8f"
+        },
+        "svg": {
+          "path": "svg/02_oracle_neff.svg",
+          "sha256": "a950782ad506c28b619b79f62c9b2ba9218a8c05da00102829295f048b39bab8"
+        }
+      }
+    },
+    {
+      "name": "02_oracle_neff_lddt",
+      "width_px": 7200,
+      "height_px": 4796,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "neff80",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "Same 305 natural proteins, all seven predictors and no-contact Helico. Oracle: two random L/2 true-contact subsets, three samples/subset, ranking_score selection then subset averaging; no MSA. See ORACLE_L2.md. Neff is recomputed on the exact frozen predictor alignments: sum of inverse neighbor counts at >=80% identity over jointly non-gap columns. Repeated sequences are downweighted; no alignment or prediction is changed. Bins are labeled <10, 10\u2013100, 100\u20131000 and >=1000; finite upper bounds are exclusive. Means and 95% intervals bootstrap proteins; cohort membership changes relative to raw depth. Split, viral and design views remain separate. Every score, Neff measurement and contributing protein traces through neff_figure_rows.csv, neff_summary.csv and NEFF_ANALYSIS.md.",
+      "files": {
+        "pdf": {
+          "path": "pdf/02_oracle_neff_lddt.pdf",
+          "sha256": "46d3e6ce7712797226c68a3a87374cc20bfe7df41edaa4277daaad0124c5d6fd"
+        },
+        "png": {
+          "path": "png/02_oracle_neff_lddt.png",
+          "sha256": "1f7e61e52b6bde33e97cce6636063d0b9c291783b819171333700fa1c672ff73"
+        },
+        "svg": {
+          "path": "svg/02_oracle_neff_lddt.svg",
+          "sha256": "278bee47823d4bb3e25f2ca15b36cf942dc4f21d93259828059d6a8f62aca7a7"
+        }
+      }
+    },
+    {
+      "name": "02b_confidence",
+      "width_px": 7200,
+      "height_px": 4808,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "All five natural FoldBench proteins with MSA depth <10 (test split). Each dot is one of 100 single-sequence ESMFold2 predictions, converted to a full contact/non-contact map and folded by Helico; diamonds use the ground-truth oracle map. Every map has the same eligible-pair mask and three Helico diffusion samples. Highest pTM selects a sample per map; that pTM also ranks the 101 maps. No ipTM term, clash penalty or map filtering is used. Contact counts may vary. Rank 1 is highest pTM; ties are shown as rank intervals. Vertical jitter only separates points. These 500 decoys represent five proteins.",
+      "files": {
+        "pdf": {
+          "path": "pdf/02b_confidence.pdf",
+          "sha256": "86d94407a59c3f6bf11eb1101f1f9819d4d72d92ad58cf1b8cda72421af31de9"
+        },
+        "png": {
+          "path": "png/02b_confidence.png",
+          "sha256": "572596004e3b47db88207c037a6f731c60aa46d2f21164f9b125126db36f54e9"
+        },
+        "svg": {
+          "path": "svg/02b_confidence.svg",
+          "sha256": "05215e7b8540ea38c3776fd29b00d2b33759e28a215562888719e83b122554b9"
+        }
+      }
+    },
+    {
+      "name": "02c_accuracy_confidence",
+      "width_px": 7200,
+      "height_px": 5787,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "TM-score versus Helico pTM for five natural proteins with MSA depth <10. Each protein has 100 ESMFold2 predictions; their extracted maps each receive three Helico samples. Highest pTM selects the Helico sample and ranks maps, without ipTM or a clash penalty. The horizontal coordinate is selected Helico pTM. The menu switches the vertical coordinate between original ESMFold2 TM-score and reconstructed Helico TM-score, and can isolate each protein. Diamonds mark oracle contacts; original oracle TM-score is 1 because its source is the experimental reference. TM-score uses matched protein CA atoms; pTM retains all input tokens. Every map is retained. These are five biological examples, not 500 independent proteins.",
+      "files": {
+        "pdf": {
+          "path": "pdf/02c_accuracy_confidence.pdf",
+          "sha256": "126d7d524423659778989672bae7331b0a722a9ad70e53a2399691f24a119060"
+        },
+        "png": {
+          "path": "png/02c_accuracy_confidence.png",
+          "sha256": "2a2d7a28ca48981aa8e23194ac967c4599e5355e77abd8dc02e28b332fc05984"
+        },
+        "svg": {
+          "path": "svg/02c_accuracy_confidence.svg",
+          "sha256": "bf99514e39f6d2f44559dde9879210690eecbc0cf15634d8dbe5ebecda2b58fc"
+        }
+      }
+    },
+    {
+      "name": "02c_accuracy_confidence_protein_8ii8_A",
+      "width_px": 7200,
+      "height_px": 3756,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "Highest pTM selects one of three Helico samples for every map; pTM also ranks the 101 maps. Left: original ESMFold2 TM-score (oracle reference = 1). Right: selected Helico reconstruction TM-score. Diamonds identify oracle contacts; correlations use only the 100 ESMFold2 maps. TM-score uses matched protein CA atoms; pTM retains all Helico input tokens. No ipTM or clash penalty.",
+      "files": {
+        "pdf": {
+          "path": "pdf/02c_accuracy_confidence_protein_8ii8_A.pdf",
+          "sha256": "09e02090f8c825c05e62e461ecddd0aef2a4177ce1d240690fcc89f4698b89a7"
+        },
+        "png": {
+          "path": "png/02c_accuracy_confidence_protein_8ii8_A.png",
+          "sha256": "96382983195fc0e761cacbc92174ef8ed880531018311662d03d5d63f168852d"
+        },
+        "svg": {
+          "path": "svg/02c_accuracy_confidence_protein_8ii8_A.svg",
+          "sha256": "2a17ecc5dc8b24e595aca5eb4dc2e8c67e30bd517867166bb1e0948f3528a68c"
+        }
+      }
+    },
+    {
+      "name": "02c_accuracy_confidence_protein_8oxk_A",
+      "width_px": 7200,
+      "height_px": 3756,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "Highest pTM selects one of three Helico samples for every map; pTM also ranks the 101 maps. Left: original ESMFold2 TM-score (oracle reference = 1). Right: selected Helico reconstruction TM-score. Diamonds identify oracle contacts; correlations use only the 100 ESMFold2 maps. TM-score uses matched protein CA atoms; pTM retains all Helico input tokens. No ipTM or clash penalty.",
+      "files": {
+        "pdf": {
+          "path": "pdf/02c_accuracy_confidence_protein_8oxk_A.pdf",
+          "sha256": "f81497775a9c028875153e0bca804210f983e3e59ec84cf1968f15e73db8c295"
+        },
+        "png": {
+          "path": "png/02c_accuracy_confidence_protein_8oxk_A.png",
+          "sha256": "d41bbb76cbe1ba3f16b7f860d7414bdd84faa9f54ba37e7c00881be8c2dd94c2"
+        },
+        "svg": {
+          "path": "svg/02c_accuracy_confidence_protein_8oxk_A.svg",
+          "sha256": "9d1305a2f5538ac32c3a96c6e02f83c41391aeba90bf839d9b8b974067cdad83"
+        }
+      }
+    },
+    {
+      "name": "02c_accuracy_confidence_protein_8qoh_A",
+      "width_px": 7200,
+      "height_px": 3756,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "Highest pTM selects one of three Helico samples for every map; pTM also ranks the 101 maps. Left: original ESMFold2 TM-score (oracle reference = 1). Right: selected Helico reconstruction TM-score. Diamonds identify oracle contacts; correlations use only the 100 ESMFold2 maps. TM-score uses matched protein CA atoms; pTM retains all Helico input tokens. No ipTM or clash penalty.",
+      "files": {
+        "pdf": {
+          "path": "pdf/02c_accuracy_confidence_protein_8qoh_A.pdf",
+          "sha256": "f4e168508a9c585b1efd7120ea8a53a4f3256c538dd3b794ed937647f602feb1"
+        },
+        "png": {
+          "path": "png/02c_accuracy_confidence_protein_8qoh_A.png",
+          "sha256": "26945af82dc98a35c45da905c2ac934d49f05b80862c5214eb008693965b021c"
+        },
+        "svg": {
+          "path": "svg/02c_accuracy_confidence_protein_8qoh_A.svg",
+          "sha256": "2eeb18641f8e6b160d390e355d8a5b4b1c5eff8aabd8a12557d163453372cafb"
+        }
+      }
+    },
+    {
+      "name": "02c_accuracy_confidence_protein_8ux2_A",
+      "width_px": 7200,
+      "height_px": 3756,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "Highest pTM selects one of three Helico samples for every map; pTM also ranks the 101 maps. Left: original ESMFold2 TM-score (oracle reference = 1). Right: selected Helico reconstruction TM-score. Diamonds identify oracle contacts; correlations use only the 100 ESMFold2 maps. TM-score uses matched protein CA atoms; pTM retains all Helico input tokens. No ipTM or clash penalty.",
+      "files": {
+        "pdf": {
+          "path": "pdf/02c_accuracy_confidence_protein_8ux2_A.pdf",
+          "sha256": "dafd7e622d05cbcc0d4f41935c049cd9910c092f1e60d28e0bfdc608bdbdf8c0"
+        },
+        "png": {
+          "path": "png/02c_accuracy_confidence_protein_8ux2_A.png",
+          "sha256": "3bdd5bfd267d778f3299bbe7bdc037f7bb126b5b1cb6f38aa06b1d50eb5a80c7"
+        },
+        "svg": {
+          "path": "svg/02c_accuracy_confidence_protein_8ux2_A.svg",
+          "sha256": "7cca3513c9c54202e9cb79e637475fe169b2505c142069dc0c54653bf915ae50"
+        }
+      }
+    },
+    {
+      "name": "02c_accuracy_confidence_protein_8wrx_A",
+      "width_px": 7200,
+      "height_px": 3713,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "Highest pTM selects one of three Helico samples for every map; pTM also ranks the 101 maps. Left: original ESMFold2 TM-score (oracle reference = 1). Right: selected Helico reconstruction TM-score. Diamonds identify oracle contacts; correlations use only the 100 ESMFold2 maps. TM-score uses matched protein CA atoms; pTM retains all Helico input tokens. No ipTM or clash penalty.",
+      "files": {
+        "pdf": {
+          "path": "pdf/02c_accuracy_confidence_protein_8wrx_A.pdf",
+          "sha256": "28b6772bcc2dfefce5b176b7fb188d135a84a150bea91e854cbfc8a66d9e97a0"
+        },
+        "png": {
+          "path": "png/02c_accuracy_confidence_protein_8wrx_A.png",
+          "sha256": "421eebe92f36929932a20fab1818960781a73d996b2a4172a26134d4d1628f09"
+        },
+        "svg": {
+          "path": "svg/02c_accuracy_confidence_protein_8wrx_A.svg",
+          "sha256": "d04a866811acc3303d0368d58ab458f2aed27dbfcaea91b555b0e08bccd7e66d"
+        }
+      }
+    },
+    {
+      "name": "02c_accuracy_confidence_tm_score",
+      "width_px": 7200,
+      "height_px": 5787,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "TM-score versus Helico pTM for five natural proteins with MSA depth <10. Each protein has 100 ESMFold2 predictions; their extracted maps each receive three Helico samples. Highest pTM selects the Helico sample and ranks maps, without ipTM or a clash penalty. The horizontal coordinate is selected Helico pTM. The menu switches the vertical coordinate between original ESMFold2 TM-score and reconstructed Helico TM-score, and can isolate each protein. Diamonds mark oracle contacts; original oracle TM-score is 1 because its source is the experimental reference. TM-score uses matched protein CA atoms; pTM retains all input tokens. Every map is retained. These are five biological examples, not 500 independent proteins.",
+      "files": {
+        "pdf": {
+          "path": "pdf/02c_accuracy_confidence_tm_score.pdf",
+          "sha256": "b25bcc2749920fef79a83d90c9fa4bb0540f23677b3379a93fc68b06adf32490"
+        },
+        "png": {
+          "path": "png/02c_accuracy_confidence_tm_score.png",
+          "sha256": "cdfd02d5099f4845ece455d06711835dcac02e021c949d0606a2a9b461bd672c"
+        },
+        "svg": {
+          "path": "svg/02c_accuracy_confidence_tm_score.svg",
+          "sha256": "fca0d8fb5cc7f8af0c1d4533e9c8859460acbcd575e254bab9598f8d12291a3e"
+        }
+      }
+    },
+    {
+      "name": "02e_oracle_budget",
+      "width_px": 7200,
+      "height_px": 7258,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "All five natural Figure 02 proteins with MSA depth <10. Random subsets of 5, 10, floor(L/5) and floor(L/2) true contacts; L is frozen input sequence length. Unselected pairs stay unknown. Two independent subsets per budget, nested across budgets within each draw. Three diffusion samples/map, six recycles, seed42, no MSA. Highest ranking_score selects one sample per subset, then average the two subset accuracies within protein. Hollow dots show both subsets; filled markers show their mean. The sixth panel averages the five proteins with 95% protein-bootstrap intervals. Fresh no-contact, all-positive and full positive/negative controls. All oracle contacts use ground truth. Menus expose each protein and pTM selection. See ORACLE_BUDGET.md and oracle_budget_per_protein.csv for counts and source rows.",
+      "files": {
+        "pdf": {
+          "path": "pdf/02e_oracle_budget.pdf",
+          "sha256": "dc5689dd8f4519c4b8c4028f599012ecf680df1017ece92a5eb4377282855011"
+        },
+        "png": {
+          "path": "png/02e_oracle_budget.png",
+          "sha256": "1c6162c475a2cdd1ac56c288be704d2c436f2db0a9a82b49e4eb8a9de772c326"
+        },
+        "svg": {
+          "path": "svg/02e_oracle_budget.svg",
+          "sha256": "392fe14863182d9380c99ab3fff0bb978c190bf06e81b9cab62c46d53544a085"
+        }
+      }
+    },
+    {
+      "name": "02e_oracle_budget_lddt",
+      "width_px": 7200,
+      "height_px": 7258,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "All five natural Figure 02 proteins with MSA depth <10. Random subsets of 5, 10, floor(L/5) and floor(L/2) true contacts; L is frozen input sequence length. Unselected pairs stay unknown. Two independent subsets per budget, nested across budgets within each draw. Three diffusion samples/map, six recycles, seed42, no MSA. Highest ranking_score selects one sample per subset, then average the two subset accuracies within protein. Hollow dots show both subsets; filled markers show their mean. The sixth panel averages the five proteins with 95% protein-bootstrap intervals. Fresh no-contact, all-positive and full positive/negative controls. All oracle contacts use ground truth. Menus expose each protein and pTM selection. See ORACLE_BUDGET.md and oracle_budget_per_protein.csv for counts and source rows.",
+      "files": {
+        "pdf": {
+          "path": "pdf/02e_oracle_budget_lddt.pdf",
+          "sha256": "c67c1fc946f94aad71cbcb609b7c400b90d9f62b53167be5832c860a2dda5474"
+        },
+        "png": {
+          "path": "png/02e_oracle_budget_lddt.png",
+          "sha256": "63a5b28f6c5c7c58a33150808e43ac73aae73ad0db3f9a3388a5a967cd0a985e"
+        },
+        "svg": {
+          "path": "svg/02e_oracle_budget_lddt.svg",
+          "sha256": "787cf595b14083cbcd930a07e514c4a765d60d691b1c79efbb224169874d8469"
+        }
+      }
+    },
+    {
+      "name": "02f_oracle_budget_context",
+      "width_px": 7201,
+      "height_px": 5737,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "The same five low-depth natural proteins in every arm: sparse oracle conditioning versus archived AF3, AF2, Boltz-2, Protenix-v2 with/without MSA, ESMFold/ESMFold2 and Helico with 248B-token MarinFold contacts. Predictor inputs and sampling budgets retain their original protocols. Faint dots show individual proteins; means and 95% intervals bootstrap the five proteins. Oracle subsets use ground truth and are averaged within protein. The selector menu changes only the new Helico oracle-budget sweep; archived predictors and MarinFold folding retain their original selection. See ORACLE_BUDGET.md.",
+      "files": {
+        "pdf": {
+          "path": "pdf/02f_oracle_budget_context.pdf",
+          "sha256": "377ccc24adc6e52c99ba5689a38349f2868f1c7bf39af273a5ff8a97dc58c6de"
+        },
+        "png": {
+          "path": "png/02f_oracle_budget_context.png",
+          "sha256": "cf6936b73d259261c7ebe6f0735a557fcb9e8275db7d17a507240f1cb1371a09"
+        },
+        "svg": {
+          "path": "svg/02f_oracle_budget_context.svg",
+          "sha256": "f46d29542646971a91eae3362f73f278bdee1032717e20f5f8c9e5cc11bbb469"
+        }
+      }
+    },
+    {
+      "name": "02f_oracle_budget_context_lddt",
+      "width_px": 7201,
+      "height_px": 5737,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "The same five low-depth natural proteins in every arm: sparse oracle conditioning versus archived AF3, AF2, Boltz-2, Protenix-v2 with/without MSA, ESMFold/ESMFold2 and Helico with 248B-token MarinFold contacts. Predictor inputs and sampling budgets retain their original protocols. Faint dots show individual proteins; means and 95% intervals bootstrap the five proteins. Oracle subsets use ground truth and are averaged within protein. The selector menu changes only the new Helico oracle-budget sweep; archived predictors and MarinFold folding retain their original selection. See ORACLE_BUDGET.md.",
+      "files": {
+        "pdf": {
+          "path": "pdf/02f_oracle_budget_context_lddt.pdf",
+          "sha256": "15892ea1a0bc57bd36f255946b9a019bf2182802ca4d3b6c23ceda77f3bf2007"
+        },
+        "png": {
+          "path": "png/02f_oracle_budget_context_lddt.png",
+          "sha256": "1a32fd77be2fa3d48f62994d63d8c682e9d1c828f0e4a337ff3b60984686ab7b"
+        },
+        "svg": {
+          "path": "svg/02f_oracle_budget_context_lddt.svg",
+          "sha256": "b7e17bfac654140fdaa79e9b5d3620cde4eb69b9274acc170b37fd0eae94f375"
+        }
+      }
+    },
+    {
+      "name": "02g_seed_completion",
+      "width_px": 7200,
+      "height_px": 6820,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "Same five natural eval-test proteins with MSA depth <10. Both arms receive identical random subsets of 0, 5, 10 or floor(L/5) ground-truth contacts. Direct: Helico sees only those pairs. Completion: the fixed 248B-token MarinFold model receives those pairs in its prompt, then 100 resampled rollouts vote on additions; keep every seed and fill to floor(L/2) total contacts. Unselected pairs stay unknown. Helico uses no MSA, six recycles and three diffusion samples/map. Primary selection uses ranking_score, matching the sparse-oracle comparison; menus also expose pTM. Average two subsets within protein (one map at zero seeds). Hollow points show subsets; cohort intervals bootstrap five proteins. Menus expose all proteins, GDT-TS, TM-score and lDDT. This is an exploratory oracle-seeded diagnostic, not sequence-only prediction. See SEED_COMPLETION.md.",
+      "files": {
+        "pdf": {
+          "path": "pdf/02g_seed_completion.pdf",
+          "sha256": "5ba78e5ce5e5be79c3d99b8b8c498ef9eda405c87f45e38d15683f8239f50228"
+        },
+        "png": {
+          "path": "png/02g_seed_completion.png",
+          "sha256": "be0fb70ac97bf18f476ec121888a505535761095d10478a9148af0cb62415d71"
+        },
+        "svg": {
+          "path": "svg/02g_seed_completion.svg",
+          "sha256": "967ca2924576a310845f1e6742e1761b50a49bf6977cbc7df19fd347b5c387d2"
+        }
+      }
+    },
+    {
+      "name": "02g_seed_completion_lddt",
+      "width_px": 7200,
+      "height_px": 6820,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "Same five natural eval-test proteins with MSA depth <10. Both arms receive identical random subsets of 0, 5, 10 or floor(L/5) ground-truth contacts. Direct: Helico sees only those pairs. Completion: the fixed 248B-token MarinFold model receives those pairs in its prompt, then 100 resampled rollouts vote on additions; keep every seed and fill to floor(L/2) total contacts. Unselected pairs stay unknown. Helico uses no MSA, six recycles and three diffusion samples/map. Primary selection uses ranking_score, matching the sparse-oracle comparison; menus also expose pTM. Average two subsets within protein (one map at zero seeds). Hollow points show subsets; cohort intervals bootstrap five proteins. Menus expose all proteins, GDT-TS, TM-score and lDDT. This is an exploratory oracle-seeded diagnostic, not sequence-only prediction. See SEED_COMPLETION.md.",
+      "files": {
+        "pdf": {
+          "path": "pdf/02g_seed_completion_lddt.pdf",
+          "sha256": "7b49f7c9bc4611f098b3c79dc45dddc39e81d380fb113761d5625207f41eab1c"
+        },
+        "png": {
+          "path": "png/02g_seed_completion_lddt.png",
+          "sha256": "3c4946718fae9c751bf2303d841338c30f3022837e38f3c0a6ec995424fcb7c5"
+        },
+        "svg": {
+          "path": "svg/02g_seed_completion_lddt.svg",
+          "sha256": "7d43d7b9c4ff7783d44accbaa0a18bddf59aabac11d471869e6e4b06987ebfa5"
+        }
+      }
+    },
+    {
+      "name": "02g_seed_completion_tm_score",
+      "width_px": 7200,
+      "height_px": 6820,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "Same five natural eval-test proteins with MSA depth <10. Both arms receive identical random subsets of 0, 5, 10 or floor(L/5) ground-truth contacts. Direct: Helico sees only those pairs. Completion: the fixed 248B-token MarinFold model receives those pairs in its prompt, then 100 resampled rollouts vote on additions; keep every seed and fill to floor(L/2) total contacts. Unselected pairs stay unknown. Helico uses no MSA, six recycles and three diffusion samples/map. Primary selection uses ranking_score, matching the sparse-oracle comparison; menus also expose pTM. Average two subsets within protein (one map at zero seeds). Hollow points show subsets; cohort intervals bootstrap five proteins. Menus expose all proteins, GDT-TS, TM-score and lDDT. This is an exploratory oracle-seeded diagnostic, not sequence-only prediction. See SEED_COMPLETION.md.",
+      "files": {
+        "pdf": {
+          "path": "pdf/02g_seed_completion_tm_score.pdf",
+          "sha256": "ce6b6ce298b5a3b62f1ed56fb2f3d2ccc64d952bc2a6d652566eb660421ec8f4"
+        },
+        "png": {
+          "path": "png/02g_seed_completion_tm_score.png",
+          "sha256": "9d7d3de73674031cd2553ad3d0e03586b77e621ccc8adf5bed24f9b4590c865f"
+        },
+        "svg": {
+          "path": "svg/02g_seed_completion_tm_score.svg",
+          "sha256": "ffc1762b6744fc3bb569170c78b00ae289c014fbc50498100f5fe18f181c1bbe"
+        }
+      }
+    },
+    {
+      "name": "02h_seed_contact_precision",
+      "width_px": 7200,
+      "height_px": 6406,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "Precision of MarinFold additions alone versus the complete L/2 contact set including guaranteed-correct seeds. Pairs are selected solely by votes from normally terminated rollouts, with valid residue mappings and separation >=6; ties break by sequence indices. Ground truth is consulted for scoring only after selecting additions. Two random subsets are averaged per protein, then proteins receive equal weight. n=0 has one map. Each point traces to seed_completion_contact_precision.csv; exact selected pairs, votes and correctness labels are in seed_completion_pairs.csv.",
+      "files": {
+        "pdf": {
+          "path": "pdf/02h_seed_contact_precision.pdf",
+          "sha256": "be219270d6faca4a9c613a8b7016f980ff3aacef229a4f5ec1cbbfd889bfe80b"
+        },
+        "png": {
+          "path": "png/02h_seed_contact_precision.png",
+          "sha256": "2eef64277d9ab0c7391e96ca67336baf30310faddf54fdab5ed757bb28ef32fa"
+        },
+        "svg": {
+          "path": "svg/02h_seed_contact_precision.svg",
+          "sha256": "ec6d2047d0da38b8bcabcc8b61be8e32a077e7234931094ff97676448243a883"
+        }
+      }
+    },
+    {
+      "name": "03_method",
+      "width_px": 7201,
+      "height_px": 4422,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "Schematic; arrow widths do not encode amounts. Exp277 step 266,344: a scratch-trained 1.47B-parameter Qwen3, one epoch over 232,090,905 contact documents, totaling 248,583,762,834 raw tokens. Native and ProteinMPNN-redesigned sequences use AFDB / ESM Atlas source structures from the decontaminated corpus. Raw tokens differ from padded training slots.",
+      "files": {
+        "pdf": {
+          "path": "pdf/03_method.pdf",
+          "sha256": "4339222de0f5174bd247a771ae7cad327831c046022598251fa4e1c00efff010"
+        },
+        "png": {
+          "path": "png/03_method.png",
+          "sha256": "6b1bd4796578c9707ca3bbd314fb3369726cef2c23916a79296a75a00f8d188f"
+        },
+        "svg": {
+          "path": "svg/03_method.svg",
+          "sha256": "c8a4de231d1d37819f8d1837e76d260018e9199a9490343e062940744a3c00a1"
+        }
+      }
+    },
+    {
+      "name": "04_contacts_neff",
+      "width_px": 7200,
+      "height_px": 4772,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "neff80",
+      "standard_contact_ranking": "plddt_product_degree",
+      "source_summary": "analysis/poster_product_summary.csv",
+      "caption": "Same 314 natural proteins (97 validation + 217 test), fixed 248B-token MarinFold. Standard structure predictors rank emitted ConFind degree>0 pairs by pLDDT_i \u00d7 pLDDT_j \u00d7 degree; residue pLDDT is mean heavy-atom confidence normalized to [0,1]. Filter resolved residues and separation \u22656 (all) or \u226524 (long) before selection. Denominator is R true contacts, floor(L/5), or floor(L/2) as indicated; unfilled ranks receive zero credit. Truth is degree\u22650.001 and does not enter ranking. MarinFold consensus and Sequence KNN scores are unchanged. Neff80 on frozen alignments; equal protein means and 95% bootstrap intervals. Source: data/poster_product_figure_rows.csv and data/poster_product_summary.csv; pair ordering in the published ranked_pairs.parquet. See POSTER_NEFF.md.",
+      "files": {
+        "pdf": {
+          "path": "pdf/04_contacts_neff.pdf",
+          "sha256": "25830b8536b5d2658adef087677a7d2fccd5c1869de1da36acddec0ec092c2ab"
+        },
+        "png": {
+          "path": "png/04_contacts_neff.png",
+          "sha256": "ce51549db3effe9d774cc47c96e3b658792f974642d52474a486d0bc1a2d40fb"
+        },
+        "svg": {
+          "path": "svg/04_contacts_neff.svg",
+          "sha256": "af113455586482b5033e41cbb21bd95485279fe386401ac63dd3e7498f8d3c13"
+        }
+      }
+    },
+    {
+      "name": "04_contacts_neff_long",
+      "width_px": 7200,
+      "height_px": 4772,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "neff80",
+      "standard_contact_ranking": "plddt_product_degree",
+      "source_summary": "analysis/poster_product_summary.csv",
+      "caption": "Same 314 natural proteins (97 validation + 217 test), fixed 248B-token MarinFold. Standard structure predictors rank emitted ConFind degree>0 pairs by pLDDT_i \u00d7 pLDDT_j \u00d7 degree; residue pLDDT is mean heavy-atom confidence normalized to [0,1]. Filter resolved residues and separation \u22656 (all) or \u226524 (long) before selection. Denominator is R true contacts, floor(L/5), or floor(L/2) as indicated; unfilled ranks receive zero credit. Truth is degree\u22650.001 and does not enter ranking. MarinFold consensus and Sequence KNN scores are unchanged. Neff80 on frozen alignments; equal protein means and 95% bootstrap intervals. Source: data/poster_product_figure_rows.csv and data/poster_product_summary.csv; pair ordering in the published ranked_pairs.parquet. See POSTER_NEFF.md.",
+      "files": {
+        "pdf": {
+          "path": "pdf/04_contacts_neff_long.pdf",
+          "sha256": "5c3cec16a8c4fffb4b9aa3dcde16940a8e091c65eaac008b2db486ea165c9039"
+        },
+        "png": {
+          "path": "png/04_contacts_neff_long.png",
+          "sha256": "b2f47dd129442b416a6476549e5563729cfdc06af0afef4f23db07b055a72f32"
+        },
+        "svg": {
+          "path": "svg/04_contacts_neff_long.svg",
+          "sha256": "d9abeeb4dcb7466b99596dd0d18389b4d029a1e0b7bd931c55a64c79491646a6"
+        }
+      }
+    },
+    {
+      "name": "04_contacts_pl2_neff",
+      "width_px": 7200,
+      "height_px": 4772,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "neff80",
+      "standard_contact_ranking": "plddt_product_degree",
+      "source_summary": "analysis/poster_product_summary.csv",
+      "caption": "Same 314 natural proteins (97 validation + 217 test), fixed 248B-token MarinFold. Standard structure predictors rank emitted ConFind degree>0 pairs by pLDDT_i \u00d7 pLDDT_j \u00d7 degree; residue pLDDT is mean heavy-atom confidence normalized to [0,1]. Filter resolved residues and separation \u22656 (all) or \u226524 (long) before selection. Denominator is R true contacts, floor(L/5), or floor(L/2) as indicated; unfilled ranks receive zero credit. Truth is degree\u22650.001 and does not enter ranking. MarinFold consensus and Sequence KNN scores are unchanged. Neff80 on frozen alignments; equal protein means and 95% bootstrap intervals. Source: data/poster_product_figure_rows.csv and data/poster_product_summary.csv; pair ordering in the published ranked_pairs.parquet. See POSTER_NEFF.md.",
+      "files": {
+        "pdf": {
+          "path": "pdf/04_contacts_pl2_neff.pdf",
+          "sha256": "334a08c3eda1475284e8c2987e45e253b062653a8fb51643c7eb42975a53274c"
+        },
+        "png": {
+          "path": "png/04_contacts_pl2_neff.png",
+          "sha256": "0aff293e02f3e076002c85252deb0941602651714864e9d5bf4597ca450aa31e"
+        },
+        "svg": {
+          "path": "svg/04_contacts_pl2_neff.svg",
+          "sha256": "81ad4acd7d6529b0ec64c005039721ce696c7d3dcca3cd07336f20a9a7c82e3f"
+        }
+      }
+    },
+    {
+      "name": "04_contacts_pl2_neff_long",
+      "width_px": 7200,
+      "height_px": 4772,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "neff80",
+      "standard_contact_ranking": "plddt_product_degree",
+      "source_summary": "analysis/poster_product_summary.csv",
+      "caption": "Same 314 natural proteins (97 validation + 217 test), fixed 248B-token MarinFold. Standard structure predictors rank emitted ConFind degree>0 pairs by pLDDT_i \u00d7 pLDDT_j \u00d7 degree; residue pLDDT is mean heavy-atom confidence normalized to [0,1]. Filter resolved residues and separation \u22656 (all) or \u226524 (long) before selection. Denominator is R true contacts, floor(L/5), or floor(L/2) as indicated; unfilled ranks receive zero credit. Truth is degree\u22650.001 and does not enter ranking. MarinFold consensus and Sequence KNN scores are unchanged. Neff80 on frozen alignments; equal protein means and 95% bootstrap intervals. Source: data/poster_product_figure_rows.csv and data/poster_product_summary.csv; pair ordering in the published ranked_pairs.parquet. See POSTER_NEFF.md.",
+      "files": {
+        "pdf": {
+          "path": "pdf/04_contacts_pl2_neff_long.pdf",
+          "sha256": "8b35b53a1d9d6d023276bd03f8686bda0b6b51a12bec89fe776fd6a1ebe5a64a"
+        },
+        "png": {
+          "path": "png/04_contacts_pl2_neff_long.png",
+          "sha256": "d31095c3fe0c2e07176dde10e7b6f4252de3a25440e115ee54428c052c3b4b7e"
+        },
+        "svg": {
+          "path": "svg/04_contacts_pl2_neff_long.svg",
+          "sha256": "b30ee8010a30cad375cb13f40e0ad214828511114225c0a6a58b50524af72d53"
+        }
+      }
+    },
+    {
+      "name": "04_contacts_pl5_neff",
+      "width_px": 7200,
+      "height_px": 4772,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "neff80",
+      "standard_contact_ranking": "plddt_product_degree",
+      "source_summary": "analysis/poster_product_summary.csv",
+      "caption": "Same 314 natural proteins (97 validation + 217 test), fixed 248B-token MarinFold. Standard structure predictors rank emitted ConFind degree>0 pairs by pLDDT_i \u00d7 pLDDT_j \u00d7 degree; residue pLDDT is mean heavy-atom confidence normalized to [0,1]. Filter resolved residues and separation \u22656 (all) or \u226524 (long) before selection. Denominator is R true contacts, floor(L/5), or floor(L/2) as indicated; unfilled ranks receive zero credit. Truth is degree\u22650.001 and does not enter ranking. MarinFold consensus and Sequence KNN scores are unchanged. Neff80 on frozen alignments; equal protein means and 95% bootstrap intervals. Source: data/poster_product_figure_rows.csv and data/poster_product_summary.csv; pair ordering in the published ranked_pairs.parquet. See POSTER_NEFF.md.",
+      "files": {
+        "pdf": {
+          "path": "pdf/04_contacts_pl5_neff.pdf",
+          "sha256": "7b5c4fdf5d8407c12bfb362a5fe118894f2dee141569cdf4141b43359a27cb61"
+        },
+        "png": {
+          "path": "png/04_contacts_pl5_neff.png",
+          "sha256": "a5d33ea50ae6a4c02e048803ed8c4e2c40679af5bb0cf8c596521fcc20350c5e"
+        },
+        "svg": {
+          "path": "svg/04_contacts_pl5_neff.svg",
+          "sha256": "d26a78a60cde3aa1ea7eefbd20975ea07aef4bc9d88e60cac6e0cfd4ac16b8fc"
+        }
+      }
+    },
+    {
+      "name": "04_contacts_pl5_neff_long",
+      "width_px": 7200,
+      "height_px": 4772,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "neff80",
+      "standard_contact_ranking": "plddt_product_degree",
+      "source_summary": "analysis/poster_product_summary.csv",
+      "caption": "Same 314 natural proteins (97 validation + 217 test), fixed 248B-token MarinFold. Standard structure predictors rank emitted ConFind degree>0 pairs by pLDDT_i \u00d7 pLDDT_j \u00d7 degree; residue pLDDT is mean heavy-atom confidence normalized to [0,1]. Filter resolved residues and separation \u22656 (all) or \u226524 (long) before selection. Denominator is R true contacts, floor(L/5), or floor(L/2) as indicated; unfilled ranks receive zero credit. Truth is degree\u22650.001 and does not enter ranking. MarinFold consensus and Sequence KNN scores are unchanged. Neff80 on frozen alignments; equal protein means and 95% bootstrap intervals. Source: data/poster_product_figure_rows.csv and data/poster_product_summary.csv; pair ordering in the published ranked_pairs.parquet. See POSTER_NEFF.md.",
+      "files": {
+        "pdf": {
+          "path": "pdf/04_contacts_pl5_neff_long.pdf",
+          "sha256": "2873f0e9bb965424077a56fb826d3cf60582f8f566d904a8d52eabf2195a668e"
+        },
+        "png": {
+          "path": "png/04_contacts_pl5_neff_long.png",
+          "sha256": "7cc354c8fc163f2265379af4a77f018aa48f5060b38e92990ef8322be6c77379"
+        },
+        "svg": {
+          "path": "svg/04_contacts_pl5_neff_long.svg",
+          "sha256": "4c04916d07c57b4b0b043adfff7fb764623488a4d1135eb0ca9b0de873adb72c"
+        }
+      }
+    },
+    {
+      "name": "04b_knn_neff",
+      "width_px": 7200,
+      "height_px": 4244,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "neff80",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "Same 314 natural proteins; 248B-token MarinFold versus k=10 sequence-KNN over the native decontaminated corpus. P@L/5 and R-precision, all and long-range; unchanged original metrics. Neff is recomputed on the exact frozen predictor alignments: sum of inverse neighbor counts at >=80% identity over jointly non-gap columns. Repeated sequences are downweighted; no alignment or prediction is changed. Bins are labeled <10, 10\u2013100, 100\u20131000 and >=1000; finite upper bounds are exclusive. Means and 95% intervals bootstrap proteins; cohort membership changes relative to raw depth. Split, viral and design views remain separate. Every score, Neff measurement and contributing protein traces through neff_figure_rows.csv, neff_summary.csv and NEFF_ANALYSIS.md.",
+      "files": {
+        "pdf": {
+          "path": "pdf/04b_knn_neff.pdf",
+          "sha256": "1647873ba9f1c1600f407c555e59199d3e7d8801eecfe181052f177fbe7ca092"
+        },
+        "png": {
+          "path": "png/04b_knn_neff.png",
+          "sha256": "45d508ccdaa9be00cd7cec342a6765d5d5374ff2ae8e018e46d6441b68de61b1"
+        },
+        "svg": {
+          "path": "svg/04b_knn_neff.svg",
+          "sha256": "726152db4a3301cfb59697f1374d31a680519812ba3729c0c3d18aba1840a3f3"
+        }
+      }
+    },
+    {
+      "name": "04b_knn_neff_long",
+      "width_px": 7200,
+      "height_px": 4244,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "neff80",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "Same 314 natural proteins; 248B-token MarinFold versus k=10 sequence-KNN over the native decontaminated corpus. P@L/5 and R-precision, all and long-range; unchanged original metrics. Neff is recomputed on the exact frozen predictor alignments: sum of inverse neighbor counts at >=80% identity over jointly non-gap columns. Repeated sequences are downweighted; no alignment or prediction is changed. Bins are labeled <10, 10\u2013100, 100\u20131000 and >=1000; finite upper bounds are exclusive. Means and 95% intervals bootstrap proteins; cohort membership changes relative to raw depth. Split, viral and design views remain separate. Every score, Neff measurement and contributing protein traces through neff_figure_rows.csv, neff_summary.csv and NEFF_ANALYSIS.md.",
+      "files": {
+        "pdf": {
+          "path": "pdf/04b_knn_neff_long.pdf",
+          "sha256": "1fc0e5aab974f7ef80e6b7fa97f50b6bf44d67dcbf6025eaaf4ddc509cddc4d4"
+        },
+        "png": {
+          "path": "png/04b_knn_neff_long.png",
+          "sha256": "3e3e6b52047678468d5432bf0f1d0634ee2637c27baad14ffb6f97439d237a8c"
+        },
+        "svg": {
+          "path": "svg/04b_knn_neff_long.svg",
+          "sha256": "fa3e8ce528cdd8909c71fe04bdab14c004fb5ce6ff0c7d53a7bdb4e9b7ab58c2"
+        }
+      }
+    },
+    {
+      "name": "04b_knn_neff_r_precision",
+      "width_px": 7200,
+      "height_px": 4244,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "neff80",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "Same 314 natural proteins; 248B-token MarinFold versus k=10 sequence-KNN over the native decontaminated corpus. P@L/5 and R-precision, all and long-range; unchanged original metrics. Neff is recomputed on the exact frozen predictor alignments: sum of inverse neighbor counts at >=80% identity over jointly non-gap columns. Repeated sequences are downweighted; no alignment or prediction is changed. Bins are labeled <10, 10\u2013100, 100\u20131000 and >=1000; finite upper bounds are exclusive. Means and 95% intervals bootstrap proteins; cohort membership changes relative to raw depth. Split, viral and design views remain separate. Every score, Neff measurement and contributing protein traces through neff_figure_rows.csv, neff_summary.csv and NEFF_ANALYSIS.md.",
+      "files": {
+        "pdf": {
+          "path": "pdf/04b_knn_neff_r_precision.pdf",
+          "sha256": "242fb9362c7d7c15cd9d3b8aa9a9cf61ec5532f8d0475b081744bdbdb0c3d07d"
+        },
+        "png": {
+          "path": "png/04b_knn_neff_r_precision.png",
+          "sha256": "ca96071ef54681ff5065fe183fdbb344c600292b7432e6bfb0dc7ec66e0677eb"
+        },
+        "svg": {
+          "path": "svg/04b_knn_neff_r_precision.svg",
+          "sha256": "97467647f720d12d4354fa0d56197d0e57c866002f292da683cd7917502d43a3"
+        }
+      }
+    },
+    {
+      "name": "04b_knn_neff_r_precision_long",
+      "width_px": 7200,
+      "height_px": 4244,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "neff80",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "Same 314 natural proteins; 248B-token MarinFold versus k=10 sequence-KNN over the native decontaminated corpus. P@L/5 and R-precision, all and long-range; unchanged original metrics. Neff is recomputed on the exact frozen predictor alignments: sum of inverse neighbor counts at >=80% identity over jointly non-gap columns. Repeated sequences are downweighted; no alignment or prediction is changed. Bins are labeled <10, 10\u2013100, 100\u20131000 and >=1000; finite upper bounds are exclusive. Means and 95% intervals bootstrap proteins; cohort membership changes relative to raw depth. Split, viral and design views remain separate. Every score, Neff measurement and contributing protein traces through neff_figure_rows.csv, neff_summary.csv and NEFF_ANALYSIS.md.",
+      "files": {
+        "pdf": {
+          "path": "pdf/04b_knn_neff_r_precision_long.pdf",
+          "sha256": "0c3053881b428cdfa4671b8930ac578aeefa83e0f658ede2d66670473173ad2d"
+        },
+        "png": {
+          "path": "png/04b_knn_neff_r_precision_long.png",
+          "sha256": "792ff5036d3a0d2af8a75b0d34aad2f329092380f19ff9a2bb36fa3b1c501dd8"
+        },
+        "svg": {
+          "path": "svg/04b_knn_neff_r_precision_long.svg",
+          "sha256": "6ab8df7d83f519d3bb9a6b802af27aa085060932ae052ffa8e5f0c1bf9e2dca2"
+        }
+      }
+    },
+    {
+      "name": "05_folding_neff",
+      "width_px": 7200,
+      "height_px": 4796,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "neff80",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "Same 305 natural proteins. MarinFold supplies exact top-L/2 predicted contacts, with no MSA or oracle seeds; three Helico samples, ranking_score selection. Oracle supplies two random L/2 true-contact subsets, selecting within each and averaging; one target has 109 rather than 110 oracle contacts. All seven predictors and no-contact Helico retained. See MARINFOLD_L2.md and ORACLE_L2.md. Neff is recomputed on the exact frozen predictor alignments: sum of inverse neighbor counts at >=80% identity over jointly non-gap columns. Repeated sequences are downweighted; no alignment or prediction is changed. Bins are labeled <10, 10\u2013100, 100\u20131000 and >=1000; finite upper bounds are exclusive. Means and 95% intervals bootstrap proteins; cohort membership changes relative to raw depth. Split, viral and design views remain separate. Every score, Neff measurement and contributing protein traces through neff_figure_rows.csv, neff_summary.csv and NEFF_ANALYSIS.md.",
+      "files": {
+        "pdf": {
+          "path": "pdf/05_folding_neff.pdf",
+          "sha256": "96087b953b0b9a5faaaebb10bc355de79e30acf682993e3f3c20c17fdbcf405f"
+        },
+        "png": {
+          "path": "png/05_folding_neff.png",
+          "sha256": "7cf95e9307256f6f629995940a75ae6606668264d89a17204591e994340348b9"
+        },
+        "svg": {
+          "path": "svg/05_folding_neff.svg",
+          "sha256": "3aa6af81cbd27d0df6c64402c818cc449ea7bfd801089a50d381c6ff95444ed7"
+        }
+      }
+    },
+    {
+      "name": "05_folding_neff_lddt",
+      "width_px": 7200,
+      "height_px": 4796,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "neff80",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "Same 305 natural proteins. MarinFold supplies exact top-L/2 predicted contacts, with no MSA or oracle seeds; three Helico samples, ranking_score selection. Oracle supplies two random L/2 true-contact subsets, selecting within each and averaging; one target has 109 rather than 110 oracle contacts. All seven predictors and no-contact Helico retained. See MARINFOLD_L2.md and ORACLE_L2.md. Neff is recomputed on the exact frozen predictor alignments: sum of inverse neighbor counts at >=80% identity over jointly non-gap columns. Repeated sequences are downweighted; no alignment or prediction is changed. Bins are labeled <10, 10\u2013100, 100\u20131000 and >=1000; finite upper bounds are exclusive. Means and 95% intervals bootstrap proteins; cohort membership changes relative to raw depth. Split, viral and design views remain separate. Every score, Neff measurement and contributing protein traces through neff_figure_rows.csv, neff_summary.csv and NEFF_ANALYSIS.md.",
+      "files": {
+        "pdf": {
+          "path": "pdf/05_folding_neff_lddt.pdf",
+          "sha256": "205afa44e4951cbf9443c939d2005e4857f20d251b9a3789892749a0c6e8c547"
+        },
+        "png": {
+          "path": "png/05_folding_neff_lddt.png",
+          "sha256": "6e7ca494ca854e9d65bd360537da554a626711a375760ca4442389b550ec35fe"
+        },
+        "svg": {
+          "path": "svg/05_folding_neff_lddt.svg",
+          "sha256": "3609b6560a7ebf4cccecc47e1efe9dc442a9705b69731225a85ccb87849d1abd"
+        }
+      }
+    },
+    {
+      "name": "06_sampling",
+      "width_px": 7200,
+      "height_px": 3826,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "Exp277 step 266,344, 314 natural proteins (97 validation + 217 test), 100 iid rollouts per protein. Consensus and oracle use the same sample pool within each protein. Individual maps are ranked by emission order; short maps retain denominator R, and malformed or unfinished individual maps score zero. The diagnostic consensus uses all parsed maps, following exp321. Oracle selection uses ground truth. This measures contact accuracy, not distinct folds. Scatter colors identify MSA tiers in the interactive view.",
+      "files": {
+        "pdf": {
+          "path": "pdf/06_sampling.pdf",
+          "sha256": "f1814986f890065b230c7e1daf98910f5242634d566c9869eb928a5e3c454aa9"
+        },
+        "png": {
+          "path": "png/06_sampling.png",
+          "sha256": "de24ad5ad32c0f2c9a61e22c649926c1664e7e3e1e9cbcaf8e935e03b69c5867"
+        },
+        "svg": {
+          "path": "svg/06_sampling.svg",
+          "sha256": "ec2a31f4b40bb0e0b096a5d429e6faf5607b365a6541a2d5a5fb73149400b5cd"
+        }
+      }
+    },
+    {
+      "name": "06_sampling_pl5",
+      "width_px": 7200,
+      "height_px": 3806,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "P@L/5 counterpart of the sampling diagnostic: the exact same 314 natural proteins and first 100 iid rollouts per protein. L is frozen input sequence length; k=max(1,floor(L/5)). Individual maps retain emission order after eligibility filtering and deduplication; unfilled ranks receive zero credit and invalid/unfinished maps score zero. Consensus ranks votes from all parsed maps, matching the original diagnostic. Oracle best-of-100 is reselected using P@L/5 and uses ground truth. The scatter pairs consensus with this newly selected oracle per protein. Main contact-panel votes instead omit unfinished maps. This measures contact accuracy, not distinct folds.",
+      "files": {
+        "pdf": {
+          "path": "pdf/06_sampling_pl5.pdf",
+          "sha256": "ca443ecc50adeb9012e5d559adc934a6a09f545acae8e78911d914399cf05712"
+        },
+        "png": {
+          "path": "png/06_sampling_pl5.png",
+          "sha256": "a51af36d017bec5cf3f4c057f8b976571ca4728b796c726178ce226211256c92"
+        },
+        "svg": {
+          "path": "svg/06_sampling_pl5.svg",
+          "sha256": "5084078e4361ee12cb500b04962194ad8fc7ac98ce6e766d5816b42a2e88b873"
+        }
+      }
+    },
+    {
+      "name": "06_sampling_pl5_long",
+      "width_px": 7200,
+      "height_px": 3806,
+      "dpi": 300,
+      "background": "white",
+      "depth_axis": "not stratified",
+      "standard_contact_ranking": "not applicable",
+      "source_summary": "analysis/original_poster_manifest.json",
+      "caption": "P@L/5 counterpart of the sampling diagnostic: the exact same 314 natural proteins and first 100 iid rollouts per protein. L is frozen input sequence length; k=max(1,floor(L/5)). Individual maps retain emission order after eligibility filtering and deduplication; unfilled ranks receive zero credit and invalid/unfinished maps score zero. Consensus ranks votes from all parsed maps, matching the original diagnostic. Oracle best-of-100 is reselected using P@L/5 and uses ground truth. The scatter pairs consensus with this newly selected oracle per protein. Main contact-panel votes instead omit unfinished maps. This measures contact accuracy, not distinct folds.",
+      "files": {
+        "pdf": {
+          "path": "pdf/06_sampling_pl5_long.pdf",
+          "sha256": "f3618b35511d06e0095d8c368d2de8aaa8b321d0b7c63f5e8e43d3e409060a40"
+        },
+        "png": {
+          "path": "png/06_sampling_pl5_long.png",
+          "sha256": "ba2d03c0109e1b1d58ab7befde7caa8247ec63517c437c4db2b4d89c4c9559d8"
+        },
+        "svg": {
+          "path": "svg/06_sampling_pl5_long.svg",
+          "sha256": "3821fa7d1e1e328a86dfb264edaac66db9e5f6dc0af7ccff5bec6ccbcdbf19bf"
+        }
+      }
+    }
+  ],
+  "analysis_sha256": "c90c44c0943bd0c38075c3de53c638a4398482f294cf1ae5dd718e3b54a9b5eb",
+  "base_publication": "hf://buckets/open-athena/MarinFold/data/exp325-writeup-analysis/poster-2026-10-08",
+  "preprocess_command": "uv run python prepare_poster_product.py",
+  "render_command": "uv run python export_poster_neff.py --upload"
+}
