@@ -82,7 +82,15 @@ Precision at L/2 uses a sequence-length-based contact budget.
 
 [Metric details](PL2_ANALYSIS.md) · [L/5 comparison](PL5_ANALYSIS.md).
 
-MarinFold also clears the decontaminated sequence-KNN baseline.
+Ranking structure-derived contacts by predicted lDDT product times contact
+degree improves every predictor's mean P@L/5. Confidence alone usually hurts,
+except for single-sequence Protenix. [Paired comparison and both rankings](CONTACT_CONFIDENCE.md).
+
+![Confidence times degree, precision at L/5](plots/04d_pl5_plddt_degree_neff.png)
+
+![Long-range precision at L/5 with confidence times degree](plots/04d_pl5_plddt_degree_neff_long.png)
+
+MarinFold also clears the Sequence KNN baseline.
 
 ![MarinFold versus KNN across Neff tiers](plots/04b_knn_neff.png)
 

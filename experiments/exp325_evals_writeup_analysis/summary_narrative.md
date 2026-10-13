@@ -199,3 +199,20 @@ All 5,994 predictor and 1,884 sampling R-precision cells reproduce before rescor
 Every static plot has native vector PDF/SVG and a 7,200-pixel-wide PNG.
 At 300 dpi the raster supports 24-inch-wide panels; vector PDFs scale further.
 POSTER.md links the public collection. Preprocessing remains separate from rendering.
+
+## Confidence-weighted contact rankings
+
+Same structures: compare ConFind degree, pLDDT_i × pLDDT_j, and their three-way product.
+Rank all ConFind-positive pairs; keep the same resolved residues and contact truth.
+Use residue-mean heavy-atom predicted confidence; no measured lDDT or truth in ranking.
+Select L/5 after filtering separation >=6 or >=24; unfilled ranks get zero credit.
+
+The three-way product improves every structural predictor in both ranges.
+All-range P@L/5: AF3 0.912 → 0.921; ESMFold2 0.869 → 0.885; ESMFold 0.837 → 0.860.
+Confidence alone usually hurts; single-sequence Protenix instead rises 0.279 → 0.448.
+At Neff<10, ESMFold2 rises 0.668 → 0.712 (all) and 0.646 → 0.671 (long).
+MarinFold and Sequence KNN rankings and scores remain unchanged.
+
+2,331 structures reproduce all original contact degrees exactly; no inference reruns.
+314 natural proteins; 19 designs separate; 5,000 paired protein bootstraps, seed325.
+CONTACT_CONFIDENCE.md links pair features, selected ranks, source hashes and figures.

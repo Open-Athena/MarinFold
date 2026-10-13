@@ -20,6 +20,11 @@ Start with [the interactive preview](site/index.html) or [the PDF](plots/summary
 [FIGURES.md](FIGURES.md) maps each visual element to source rows;
 [RUNBOOK.md](RUNBOOK.md) gives reproduction and restyling commands.
 
+[Confidence-ranked contacts](CONTACT_CONFIDENCE.md) compares ConFind degree,
+residue pLDDT product, and their three-way product on the same archived structures.
+The three-way product improves every structural baseline's mean P@L/5;
+both new rankings have all-range/long-range Neff plots and paired-change panels.
+
 ## Model and scope
 
 Every MarinFold result uses **`contacts-v1-exp277-m2-p06-full-epoch-1.5B`, step

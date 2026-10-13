@@ -24,7 +24,7 @@ METHODS = {
     "marinfold_helico": ("Helico + MarinFold top-L", PALETTE[3], "o"),
     "marinfold_helico_L2": ("Helico + MarinFold top-L/2", PALETTE[5], "P"),
     "marinfold_helico_L5": ("Helico + MarinFold top-L/5", "#D46B31", "X"),
-    "knn": ("Sequence KNN · decontaminated", PALETTE[5], "^"),
+    "knn": ("Sequence KNN", PALETTE[5], "^"),
     "oracle": ("Helico + oracle map*", INK, "D"),
     "oracle_L2": ("Helico + L/2 oracle contacts*", INK, "D"),
     "no_contacts": ("Helico · no contacts", "#817970", "s"),
@@ -123,3 +123,25 @@ for _base in NEFF_FIGURES:
     CAPTIONS[_name] = (_NEFF_PROTOCOLS[_base] + " Neff is recomputed on the exact frozen predictor alignments: sum of inverse neighbor counts at >=80% identity over jointly non-gap columns. Repeated sequences are downweighted; no alignment or prediction is changed. Bins are <10, 10–<100, 100–<1000 and >=1000. Means and 95% intervals bootstrap proteins; cohort membership changes relative to raw depth. Split, viral and design views remain separate. Every score, Neff measurement and contributing protein traces through neff_figure_rows.csv, neff_summary.csv and NEFF_ANALYSIS.md.")
 TITLES["01d_af3_depth_context_neff"] = "Predictor accuracy across effective MSA depths"
 CAPTIONS["01d_af3_depth_context_neff"] = "Mean TM-score regrouped by Neff80 on the same 305 natural proteins and frozen alignments. Archived predictor rows retain their original protocols, including top-L MarinFold contacts and the full-map oracle in this diagnostic. Extended AF3 sampling still covers only the original five raw-depth<10 proteins; its Neff<10 cells explicitly show n=5, a subset of the full tier. Other extended-sampling cells are not run. These are not matched tier-wide AF3 sampling comparisons. Every source score and protein is preserved in neff_af3_context_rows.csv and neff_af3_context_summary.csv. See NEFF_ANALYSIS.md and AF3_SAMPLING.md."
+
+CONFIDENCE_FIGURES = ["04c_pl5_plddt_neff", "04d_pl5_plddt_degree_neff"]
+for _name, _title, _ranking in zip(CONFIDENCE_FIGURES,
+        ["Top L/5: pLDDT × pLDDT", "Top L/5: pLDDT × pLDDT × contact degree"],
+        ["q_i*q_j", "q_i*q_j*degree"], strict=True):
+    ORDER[_name] = ORDER["04_contacts_pl5"]
+    TITLES[_name] = _title
+    CAPTIONS[_name] = (f"Same 314 natural proteins and selected structures, with structural contacts ranked by {_ranking}. "
+        "q is mean predicted lDDT over a residue's deposited heavy atoms, normalized to [0,1]. "
+        "All ConFind degree>0 contacts are considered; eligible residues must be resolved in the frozen truth. "
+        "Filter separation >=6 (all) or >=24 (long) before taking floor(input_L/5); unfilled ranks receive zero credit. "
+        "Truth remains ConFind degree>=0.001, and never enters ranking. Stable (i,j) ties. "
+        "MarinFold and Sequence KNN rankings are unchanged. Neff80 bins and equal-protein bootstrap intervals match "
+        "the original comparison. Every selected contact and confidence traces through contact_confidence_*.csv "
+        "and the published pair-level archive. See CONTACT_CONFIDENCE.md.")
+TITLES["04e_pl5_ranking_deltas"] = "Does confidence improve contact ranking?"
+CAPTIONS["04e_pl5_ranking_deltas"] = ("Paired within-protein P@L/5 changes relative to the original ConFind-degree ranking, "
+    "on the same saved structure for each predictor. Positive means better. Separate all-range (>=6) and "
+    "long-range (>=24) panels; uncertainty is 95% from 5000 protein bootstraps, seed325. "
+    "The low-Neff companion has 15 natural proteins. No truth is used in contact ranking; "
+    "this is an exploratory scoring comparison on previously inspected validation and test sets. "
+    "Prepared values and member lists: data/contact_confidence_deltas.csv. See CONTACT_CONFIDENCE.md.")

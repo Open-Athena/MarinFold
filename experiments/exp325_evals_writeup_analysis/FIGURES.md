@@ -9,6 +9,15 @@ plus `msa_neff.csv` for the exact frozen alignment measurement. The AF3 heatmap
 uses `neff_af3_context_*` and retains explicit per-cell counts for its
 five-protein sampling subset. See [NEFF_ANALYSIS.md](NEFF_ANALYSIS.md).
 
+Confidence-ranked P@L/5 panels `04c_pl5_plddt_neff` and
+`04d_pl5_plddt_degree_neff` use `contact_confidence_summary.csv` →
+`contact_confidence_figure_rows.csv` → `contact_confidence_metrics.csv`.
+The paired-change panel `04e_pl5_ranking_deltas` and its low-Neff companion
+use `contact_confidence_deltas.csv`. Selected ranks, contact degrees and both
+residue confidences are retained in the public pair-level archive described
+in [CONTACT_CONFIDENCE.md](CONTACT_CONFIDENCE.md). `prepare_contact_confidence.py`
+computes every score aggregate and interval; `render.py` only draws them.
+
 | Figure | Question | Prepared tables | Analysis / source |
 |---|---|---|---|
 | 01_predictors | How do existing predictors fare across MSA depth? | `figure_rows.csv`, `summary.csv` (`figure=01_predictors`) | `prepare_structure`; exp250 archived per-target GDT-TS and lDDT plus new AF2/3 and Boltz-2 scores; natural proteins matched across methods |

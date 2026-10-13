@@ -1,0 +1,5 @@
+{
+  "script": "render.py",
+  "args": [],
+  "caption": "Paired within-protein P@L/5 changes relative to the original ConFind-degree ranking, on the same saved structure for each predictor. Positive means better. Separate all-range (>=6) and long-range (>=24) panels; uncertainty is 95% from 5000 protein bootstraps, seed325. The low-Neff companion has 15 natural proteins. No truth is used in contact ranking; this is an exploratory scoring comparison on previously inspected validation and test sets. Prepared values and member lists: data/contact_confidence_deltas.csv. See CONTACT_CONFIDENCE.md."
+}

@@ -43,7 +43,10 @@ rather than re-filtering a curated benchmark
 
 | 20 | 2026-10-13 | #325 Neff80 regrouping of fixed exp277 step266344 and all archived predictors | Explicit user request to replace raw MSA-depth strata with Neff. Recomputed Neff80 on the exact 333 frozen predictor alignments, checking query/count/input hashes; no predictor reruns or changes to scores, checkpoints, contacts or selected structures. Same 10/100/1000 boundaries, recomputed protein-bootstrap intervals. | Among test proteins with Neff<10: MarinFold P@L/2 **0.430682** (n=11); Helico + MarinFold L/2 GDT-TS **0.289811** (n=10). All-natural Neff<10: **0.401313** contact precision (n=15) and **0.284615** GDT-TS (n=14). Overall means unchanged. AF3 expanded-sampling results remain the original five-protein subset, explicitly labeled. Exact alignments, per-record neighbor counts and score/tier provenance retained in exp325 `NEFF_ANALYSIS.md` and `data/*neff*`. |
 
+| 21 | 2026-10-13 | #325 archived structural-contact ranking comparison; exp277 step266344 unchanged | User-requested P@L/5 rankings by residue pLDDT product and pLDDT product × ConFind degree, with previously authorized test reuse. Same selected structures and truth; all raw degree matrices and original scores reproduce. Exploratory scoring comparison after earlier results, no model inference or selection tuning. | 217 test proteins, seven structural arms, both ranges. All-range original / confidence-only / confidence×degree: AF3 **0.912618 / 0.793407 / 0.921443**; ESMFold2 **0.867718 / 0.768199 / 0.883885**; Protenix single sequence **0.278465 / 0.444660 / 0.345789**. Three-way product improves all seven test means in both ranges; paired intervals, raw-depth/Neff strata and contact-level provenance in exp325 `CONTACT_CONFIDENCE.md` and `data/contact_confidence_*`. |
+
 ## What a read costs
+
 
 Nothing in compute — 217 units is ~3 minutes on twelve single-H100 CoreWeave
 shards. The cost is statistical: every look is an opportunity to select, even

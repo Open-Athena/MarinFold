@@ -26,7 +26,8 @@ from render_af3_sampling import main as render_af3_sampling
 from render_af3_context import main as render_af3_context
 from render_oracle_budget import main as render_oracle_budget
 from render_seed_completion import main as render_seed_completion
-from theme import CAPTIONS, COHORTS, FONT, GRID, INK, METHODS, METRICS, NEFF_AXIS, NEFF_FIGURES, NEFF_TIER_LABELS, ORDER, PALETTE, PAPER, TIERS, TITLES
+from render_contact_confidence import render as render_contact_confidence
+from theme import CAPTIONS, COHORTS, CONFIDENCE_FIGURES, FONT, GRID, INK, METHODS, METRICS, NEFF_AXIS, NEFF_FIGURES, NEFF_TIER_LABELS, ORDER, PALETTE, PAPER, TIERS, TITLES
 
 HERE = Path(__file__).resolve().parent
 DATA = HERE / "data"
@@ -484,6 +485,16 @@ def export_plotly(fig: go.Figure, name: str) -> None:
         mobile["layout"]["legend"].update(y=-0.27, font=dict(size=10))
         for index, menu in enumerate(mobile["layout"]["updatemenus"]):
             menu.update(x=0, y=1.3 - index * 0.15, font=dict(size=10))
+    if name == "04e_pl5_ranking_deltas":
+        mobile["layout"].update(height=930, margin=dict(l=152,r=15,t=115,b=130))
+        mobile["layout"]["xaxis"]["domain"] = [0,1]
+        mobile["layout"]["xaxis2"]["domain"] = [0,1]
+        mobile["layout"]["yaxis"]["domain"] = [0.59,1]
+        mobile["layout"]["yaxis2"].update(domain=[0,0.41],showticklabels=True)
+        mobile["layout"]["legend"].update(x=-0.7,y=-0.14)
+        mobile["layout"]["updatemenus"][0].update(x=-0.7,y=1.15)
+        for index, annotation in enumerate(mobile["layout"]["annotations"]):
+            annotation.update(x=0.5,y=1.03 if index==0 else 0.44,font=dict(size=11))
     if name == "03_method":
         steps = [a for a in spec["layout"]["annotations"] if "<b>" in a.get("text", "") and "<br>" in a["text"]]
         mobile["layout"].update(height=850, margin=dict(l=10,r=10,t=15,b=15),
@@ -577,6 +588,14 @@ def preview(names: list[str]) -> None:
                        '<a href="../data/msa_neff.csv">per-alignment Neff and input hashes</a>; '
                        '<a href="../data/neff_tier_migration.csv">raw-depth to Neff tier membership</a>; '
                        '<a href="../NEFF_ANALYSIS.md">definition, results and reproduction</a>. ')
+        if name in CONFIDENCE_FIGURES or name == "04e_pl5_ranking_deltas":
+            manifest = "contact_confidence_analysis.json"
+            table = "contact_confidence_deltas.csv" if name == "04e_pl5_ranking_deltas" else "contact_confidence_summary.csv"
+            lineage = (f'Data: <a href="../data/{table}">means, paired changes and uncertainty</a>; '
+                       '<a href="../data/contact_confidence_figure_rows.csv">per-protein figure rows</a>; '
+                       '<a href="../data/contact_confidence_metrics.csv">precision and contact counts</a>; '
+                       '<a href="../data/contact_confidence_sources.csv">exact selected structures and hashes</a>; '
+                       '<a href="../CONTACT_CONFIDENCE.md">ranking definitions and selected-contact archive</a>. ')
         sections.append(f'<section id="section-{name}"><p class="number">FIGURE {name[:2]}</p>'
                         f'<h2>{html.escape(TITLES[name])}</h2><div class="frame"><div id="{name}" class="chart"></div></div>'
                         f'<p class="caption">{html.escape(CAPTIONS[name])}</p>'
@@ -658,6 +677,16 @@ def main() -> None:
         for metric in metrics:
             static_depth(neff_summary, figure, metric, poster_dir=poster_dir)
         export_plotly(export_depth(neff_summary, figure, metrics), figure)
+    ranking_manifest = json.loads((DATA / "contact_confidence_analysis.json").read_text())
+    for name, expected in ranking_manifest["files"].items():
+        if hashlib.sha256((DATA / name).read_bytes()).hexdigest() != expected:
+            raise ValueError(f"Prepared confidence-ranking data changed: {name}; run prepare_contact_confidence.py")
+    ranking_summary = pd.read_csv(DATA / "contact_confidence_summary.csv")
+    for figure in CONFIDENCE_FIGURES:
+        for metric in ["p_at_l5","p_at_l5_long"]:
+            static_depth(ranking_summary, figure, metric, poster_dir=poster_dir)
+        export_plotly(export_depth(ranking_summary,figure,["p_at_l5","p_at_l5_long"]),figure)
+    export_plotly(render_contact_confidence(poster_dir=poster_dir),"04e_pl5_ranking_deltas")
     names = list(TITLES)
     if (DATA / "seed_completion_analysis.json").exists():
         render_seed_completion(poster_dir=poster_dir)

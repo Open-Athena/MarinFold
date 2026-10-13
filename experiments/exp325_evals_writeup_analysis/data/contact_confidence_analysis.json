@@ -1,0 +1,31 @@
+{
+  "files": {
+    "contact_confidence_metrics.csv": "f1e4cda8a9f30c4f18202723e4e4ce05c5d9cc14a4df9a3890b4021354c22a96",
+    "contact_confidence_sources.csv": "6f58a7fe3c1e29b29bc620212da58dd321cba8333c28feae8e36653788f88434",
+    "contact_confidence_validation.csv": "4c5ea10d64b74e402c55653c2292bfb356ac06c2981c66858614f0c9c83bb3c6",
+    "contact_confidence_figure_rows.csv": "fcb2179a977658f9f8ca86f152053a4ee276228ad2477699acc07d7f857ade3b",
+    "contact_confidence_summary.csv": "954bea5d6bef25e68d06a1bac41b6fd71d3a24e1473fc5c99f3c25b6e7a08cc3",
+    "contact_confidence_deltas.csv": "9b4e1a80427dd79d12ff33ffa1c337f4156c8eabb4b6e992b1e7fb82536aa965"
+  },
+  "sources": {
+    "data/neff_figure_rows.csv": "681e0f9d0f000e8d61e1ee089b34fe4b8205851d08f66341bf77fd00b52932c9",
+    "data/pl5_figure_rows.csv": "7832f14858f0cc2d272b842d5b0a04b4e593810a493dd9251e10d3cd9770aa24",
+    "data/figure_rows.csv": "8cd3a742f313dd6301b47321b7e2b00d29eb51dec0f46b45f8cc98e7b86953c9",
+    "data/msa_neff.csv": "8a451e5e6ec35e50e3fc9fee5d026fa6bd2949298afb39860c1af7d8bc6f63bc",
+    "scratch/contact_confidence/sources.csv": "6f58a7fe3c1e29b29bc620212da58dd321cba8333c28feae8e36653788f88434",
+    "scratch/contact_confidence/archived_contacts.parquet": "179ef91dd97a4049093ab09ddf9e92486be42bfef262541b418ef76649cb3e43",
+    "scratch/contacts/inputs/gt_universe_scored.jsonl": "f30c23e3d2fbab245755fc01548388b41730ddfa45da87325539698cadb153e5"
+  },
+  "code": {
+    "prepare_contact_confidence.py": "2fc378df3ebbcfbb42487a3278fa108de705b35d1abdcea19d08946341e0a2ba",
+    "generation/contact_confidence_sources.py": "eb5c368b6d83f71fb937ee5278d721dcf27ca26ddcbfefb847f61fdd060927f8",
+    "generation/score_contact_confidence.py": "aaf99381726fc49c223f242033955853eff8b0ef6ab32aa5eea417dafa4edbb1"
+  },
+  "definition": "Rank all ConFind degree>0 predicted contacts by q_i*q_j or q_i*q_j*degree; q=residue mean heavy-atom pLDDT normalized to [0,1]",
+  "eligibility": "Frozen resolved pair universe; separation >=6 (all) or >=24 (long); filter before selecting k=max(1,floor(input_L/5)); unfilled ranks receive zero credit",
+  "truth": "Frozen ConFind degree>=0.001; no ground truth in contact ranking; original structure selection unchanged",
+  "ties": "Stable input-sequence (i,j) ordering, same as original degree ranking",
+  "checks": "All 2331 structures reproduce archived P@L/5 and R-precision in both ranges; original degree contacts and scores retained",
+  "uncertainty": "Equal protein weights; 5000 paired bootstrap replicates; seed325",
+  "scope": "333 proteins, 314 natural and 19 designs separately; 7 structure arms; MarinFold and Sequence KNN scores unchanged"
+}

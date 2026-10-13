@@ -17,6 +17,12 @@ and PDF commands. `render.py` verifies prepared hashes and does no network I/O.
 Open `site/index.html` for an offline interactive preview. `plotly.min.js` is
 generated locally from the locked Plotly package and ignored by git.
 
+For the confidence-ranking comparison, `generation/contact_confidence_sources.py`
+resolves archived coordinates/contact tables; `generation/score_contact_confidence.py`
+extracts residue confidences and ranks contacts; `prepare_contact_confidence.py`
+caches matched means and paired intervals. [CONTACT_CONFIDENCE.md](CONTACT_CONFIDENCE.md)
+gives commands, definitions and public artifacts. Restyling uses only `render.py`.
+
 The static deliverables are `plots/*.svg`, `plots/*.png` and `plots/summary.pdf`.
 The PDF uses five `02c_accuracy_confidence_protein_<stem>.png` pages, one per
 protein with all four accuracy views. The combined website scatter exports have

@@ -80,7 +80,7 @@ def main() -> None:
         output = bundle / "fonts" / font.name
         output.parent.mkdir(exist_ok=True)
         shutil.copyfile(font, output)
-    for filename in ("POSTER.md", "FIGURES.md", "PL5_ANALYSIS.md", "PL2_ANALYSIS.md", "NEFF_ANALYSIS.md", "ORACLE_BUDGET.md", "ORACLE_L2.md", "SEED_COMPLETION.md", "MARINFOLD_L2.md", "MARINFOLD_L5.md"):
+    for filename in ("POSTER.md", "FIGURES.md", "PL5_ANALYSIS.md", "PL2_ANALYSIS.md", "NEFF_ANALYSIS.md", "CONTACT_CONFIDENCE.md", "ORACLE_BUDGET.md", "ORACLE_L2.md", "SEED_COMPLETION.md", "MARINFOLD_L2.md", "MARINFOLD_L5.md"):
         shutil.copyfile(HERE / filename, bundle / filename)
     manifest = dict(destination=DESTINATION, generator="export_poster.py", width_px=args.width_px,
                     background="white", background_hex="#FFFFFF",
@@ -98,6 +98,8 @@ def main() -> None:
     # the durable public URLs in pl5_analysis.json.
     for pattern in ("data/pl[25]*", "data/inputs/pl5*", "*pl[25]*.py", "export_poster.py", "render*.py",
                     "data/*neff*", "*neff*.py", "generation/*neff*.py",
+                    "data/contact_confidence*", "*contact_confidence*.py", "generation/*contact_confidence*.py",
+                    "data/af3_notice.txt", "data/af3_output_terms.md",
                     "data/oracle_budget*", "data/helico_oracle_budget*", "*oracle_budget*.py",
                     "data/oracle_l2*", "data/helico_oracle_l2*", "*oracle_l2*.py",
                     "data/seed_completion*", "data/helico_seed_completion*", "*seed_completion*.py", "generation/*seed_completion*.py",
