@@ -1,0 +1,87 @@
+---
+marinfold_experiment:
+  issue: 363
+  title: 'exp: double the channel width of the default exp277 model'
+  kind: models
+  branch: exp363/double-channel-width
+---
+
+# exp: double the channel width of the default exp277 model
+
+**Issue:** [#363](https://github.com/Open-Athena/MarinFold/issues/363) · **Kind:** `models` · **Branch:** `exp363/double-channel-width`
+
+## Question
+
+Does doubling the channel width of the current default exp277 model improve contact accuracy at the same one-epoch training exposure?
+
+## Hypothesis
+
+The wider model will reduce held-out language-model loss and improve natural eval-val contact R-precision by at least 0.005 absolute over exp277. This is a single-seed model-capacity comparison, not a compute-matched comparison.
+
+## Background
+
+The current default is `contacts-v1-exp277-m2-p06-full-epoch-1.5B`, trained from scratch in #277 for one epoch over 232,090,905 native plus ProteinMPNN documents (248.584B raw tokens). Its published step-266344 config has 24 layers, hidden width 2048, MLP width 8192, 32 query heads, 8 KV heads, head dimension 64, vocabulary 2845, and untied embeddings. The exact parameter count including Q/K norms is 1,471,374,336.
+
+The requested variant doubles both hidden and MLP widths, as explicitly confirmed by the requester. Keep head counts fixed so the head dimension doubles too:
+
+| Setting | Current default | Wider variant |
+| --- | ---: | ---: |
+| Hidden width | 2048 | 4096 |
+| MLP width | 8192 | 16384 |
+| Layers | 24 | 24 |
+| Query / KV heads | 32 / 8 | 32 / 8 |
+| Head dimension | 64 | 128 |
+| Parameters | 1,471,374,336 | 5,861,984,256 |
+
+This is approximately 5.862B parameters, 3.984x the default. The parameter calculation includes both vocabulary matrices, attention projections, three gated-MLP matrices per layer, residual/final RMS norms, and Q/K norms. Validate it against the actual model parameter tree before launch.
+
+## Approach
+
+- Train from scratch on the exact four completed exp277 caches, with the same finite globally shuffled epoch: 34,092,146 packed examples and 266,345 optimizer updates at global batch 128 and sequence length 8192.
+- Retain exp277's optimizer/schedule, seeds, RoPE, full validation set, contact document format, and scheduled amino-acid augmentation. Pin the existing tokenizer revision explicitly. This isolates width; optimizer tuning would be follow-up work.
+- Use a feature branch and PR with an experiment-local launcher, committed dependency lock, architecture/count audit, and tests of the resolved training configuration.
+- Inspect live CoreWeave capacity, keep data and training in US-EAST-02A, and run a short GPU smoke before production. Adjust only execution settings such as per-device microbatching to fit the larger model while preserving global batch.
+- Log training to `open-athena/MarinFold`, create run history immediately when W&B initializes, and retain resumable checkpoints with run name and step.
+- Export/publish checkpoints with tokenizer files. Evaluate contact rollout-v2 on eval-val and eval-denovo against exp277, recording per-input timings. Do not use eval-test for routine iteration.
+- Maintain the experiment README and summary slides with observed results and runtime.
+
+## Success criteria
+
+- Exact architecture and parameter-tree count validated before GPU production launch.
+- Smoke completes optimizer updates, validation, and checkpoint writing with finite metrics.
+- Production completes the same full corpus epoch, with durable checkpoints and tokenizer.
+- Report paired contact R-precision differences with protein-bootstrap intervals; a >=0.005 natural eval-val gain supports the stated hypothesis. Report eval-denovo separately and preserve the single-seed and increased-compute caveats.
+
+## Results
+
+The abstract Levanter model-tree audit confirms **5,861,984,256 parameters**, versus **1,471,374,336** for exp277 (3.984x). The audit allocates no model weights; its output is committed in `data/parameter_counts.csv`.
+
+Eleven local tests pass, including the resolved Marin training contract and the inherited finite-epoch dataset tests. Only `hidden_dim` and `intermediate_dim` differ in the model configuration. Per-device microbatch is one; global batch remains 128. The tokenizer is pinned to revision `80f4e411b957641e8c350b07bbe1e2c832697518`.
+
+The live federation inventory at 2026-10-13 14:43 UTC reports 248 available H100s in `cw-us-east-02a`, with no pending tasks. A 16-node / 128-H100 smoke will validate the intended production shape at batch priority. The data is already in the regional CoreWeave bucket; no corpus transfer is required. See `data/launch_capacity.json`.
+
+Production has not started. The ten-update smoke must complete training, validation, and checkpoint writing before production submission.
+
+## Conclusion
+
+The requested architecture is implemented and its exact parameter count is verified. Contact-accuracy and training-quality conclusions await GPU results.
+
+## Reproduction
+
+Run from the repository root:
+
+```bash
+JAX_PLATFORMS=cpu uv run --project experiments/exp363_models_double_channel_width --locked python -m experiments.exp363_models_double_channel_width.count_parameters
+JAX_PLATFORMS=cpu uv run --project experiments/exp363_models_double_channel_width --locked --with pytest python -m pytest -q experiments/exp363_models_double_channel_width/test_train.py experiments/exp277_models_single_mpnn_pilot/test_epoch_data.py
+uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train-smoke --nodes 16
+# After the smoke succeeds:
+uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train --nodes 16
+uv run --no-project --with matplotlib python experiments/exp363_models_double_channel_width/build_summary.py
+```
+
+The launcher submits a CPU parent through the current Iris CLI and bundles the pinned exp277 training runtime. Its GPU child is also batch priority; the parent waits for the child. Production has bounded task-failure recovery and resumes from its own checkpoint. Smoke attempts use separate run identities. No exp277 weights are restored.
+
+Production run name: `contacts-v1-exp363-m2-p06-full-epoch-5.86B`.
+Checkpoints: `s3://marin-us-east-02a/MarinFold/exp363_models_double_channel_width/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B/checkpoints/step-<N>/`.
+
+The implementation reuses exp277's finite-epoch dataset, cache verification, and pinned CUDA setup. It retains the baseline's 1e-3 learning rate; whether that remains optimal at 5.86B is an experimental uncertainty, not a result already established by the smoke.
