@@ -725,7 +725,7 @@
         },
         "svg": {
           "path": "svg/03_method.svg",
-          "sha256": "c558532d71a81f7448dbcc36a40d2406cccbe75a69d6629897ec1f11e8c6442e"
+          "sha256": "53d22b8f94396d51981c202ad5db1e35f86eb1f88d77305e1162e148fa54658b"
         }
       }
     },
@@ -750,7 +750,7 @@
         },
         "svg": {
           "path": "svg/04_contacts_neff.svg",
-          "sha256": "559cc69563a65a8605b88f8aafae70c9dc23fb287cfab58eeb30ea6b64051f6e"
+          "sha256": "e3b392a5b8f6b978f164b7d026fa9faccdc88f9ee7f9178b84aa588a1f2040ca"
         }
       }
     },
@@ -775,7 +775,7 @@
         },
         "svg": {
           "path": "svg/04_contacts_neff_long.svg",
-          "sha256": "428799f2f04fed1a7ed8efea217817a12474878ba0f53e58a2bcf2909774257f"
+          "sha256": "158f466aeefd024bd1c3efe06860f2b00e2fab2ea72adb73b3851c7ca0d1917f"
         }
       }
     },
@@ -800,7 +800,7 @@
         },
         "svg": {
           "path": "svg/04_contacts_pl2_neff.svg",
-          "sha256": "a3d12887f9ac8c30a99a7f598a73c4f018863c0ba8f7cb17e8a478355e2e4042"
+          "sha256": "76be22499e8bbd785688a91e252fabfccc310f8f79465d3a7e7efbb5f3b05f02"
         }
       }
     },
@@ -825,7 +825,7 @@
         },
         "svg": {
           "path": "svg/04_contacts_pl2_neff_long.svg",
-          "sha256": "51db48899b76a35705e07e3b989b9e4f991d61748c4bd1337071bbbafac65067"
+          "sha256": "451436db090e1d353cb8c7fd3c832e00d90a150bceb2788cbe1068391c89afb2"
         }
       }
     },
@@ -850,7 +850,7 @@
         },
         "svg": {
           "path": "svg/04_contacts_pl5_neff.svg",
-          "sha256": "4e2c0a68d081cbe545c6e838748b8535c5ab47c08327a1e39cb133f6ed20559e"
+          "sha256": "e8cf0328af498562663667e69555b10ebfe4a7c7f704f4d73945e1ad3bf48803"
         }
       }
     },
@@ -875,7 +875,7 @@
         },
         "svg": {
           "path": "svg/04_contacts_pl5_neff_long.svg",
-          "sha256": "c898466afa89e526ccbefbc8aed5d483c78994e817449e67017e143712e8d4dc"
+          "sha256": "3866e24287ec351964992090295aa513ef185c1cec96354a3c170fdceed491d1"
         }
       }
     },
@@ -1057,50 +1057,50 @@
     {
       "name": "06_sampling_pl2",
       "width_px": 7200,
-      "height_px": 3406,
+      "height_px": 3371,
       "dpi": 300,
       "background": "white",
       "depth_axis": "not stratified",
       "standard_contact_ranking": "plddt_product_degree",
       "source_summary": "analysis/pl2_sampling_comparison_summary.csv",
-      "caption": "Precision @ L/2 on the same 314 natural proteins (97 validation + 217 test) for every method. MarinFold uses the fixed 248B-token model and the original 100 iid samples per protein: mean single, consensus and ground-truth oracle best-of-100. Standard predictors use the same selected archived structures, ranking emitted ConFind-positive contacts by pLDDT_i \u00d7 pLDDT_j \u00d7 contact degree. Filter resolved endpoints and separation >=6 (all) or >=24 (long) before selecting floor(input L/2); unfilled ranks score zero. Original sampling consensus votes over all parsed maps; main contact-panel votes omit unfinished maps. Points are equal-protein means with existing 95% protein-bootstrap intervals. No scores, intervals or predictions were recomputed for this comparison. Sources: pl2_sampling_comparison_summary.csv and pl2_sampling_comparison_rows.csv, which retain pointers into the original sampling and poster-product tables. See SAMPLING_L2.md.",
+      "caption": "Precision @ L/2 on the same 314 natural proteins (97 validation + 217 test) for every method. MarinFold uses the fixed 248B-token model and the original 100 iid samples per protein: mean single, consensus and ground-truth oracle best-of-100. Standard predictors use the same selected archived structures, ranking emitted ConFind-positive contacts by pLDDT_i \u00d7 pLDDT_j \u00d7 contact degree. Filter resolved endpoints and separation >=6 (all) or >=24 (long) before selecting floor(input L/2); unfilled ranks score zero. Original sampling consensus votes over all parsed maps; main contact-panel votes omit unfinished maps. Bars are equal-protein means with existing 95% protein-bootstrap error bars. No scores, intervals or predictions were recomputed for this comparison. Sources: pl2_sampling_comparison_summary.csv and pl2_sampling_comparison_rows.csv, which retain pointers into the original sampling and poster-product tables. See SAMPLING_L2.md.",
       "files": {
         "pdf": {
           "path": "pdf/06_sampling_pl2.pdf",
-          "sha256": "be3b4af3a4847cf53fac2a309129c2c388cec00c46b146076bb2b1213605efa2"
+          "sha256": "2c71b0d4e44b2288dba82c319cb15591a6e3b59512a46b971e0707de6853cef2"
         },
         "png": {
           "path": "png/06_sampling_pl2.png",
-          "sha256": "3a9e6cbdf57c0ac493e2a19c6ea6c3ea867a7deacef7246f04681bf25b2df9bc"
+          "sha256": "cabd5bf011219f0370694d3bc4c242b2a3410f3f070f905b65ad30012e97e01d"
         },
         "svg": {
           "path": "svg/06_sampling_pl2.svg",
-          "sha256": "a2f3d9c7233832501c767a802c1a47594981ce17785dafb05078571e56ab5068"
+          "sha256": "a2e0554b68777e11eeb7e5308068862a2ffe5acd0d1fb6c54ec8d67c61ddb542"
         }
       }
     },
     {
       "name": "06_sampling_pl2_long",
       "width_px": 7200,
-      "height_px": 3406,
+      "height_px": 3371,
       "dpi": 300,
       "background": "white",
       "depth_axis": "not stratified",
       "standard_contact_ranking": "plddt_product_degree",
       "source_summary": "analysis/pl2_sampling_comparison_summary.csv",
-      "caption": "Precision @ L/2 on the same 314 natural proteins (97 validation + 217 test) for every method. MarinFold uses the fixed 248B-token model and the original 100 iid samples per protein: mean single, consensus and ground-truth oracle best-of-100. Standard predictors use the same selected archived structures, ranking emitted ConFind-positive contacts by pLDDT_i \u00d7 pLDDT_j \u00d7 contact degree. Filter resolved endpoints and separation >=6 (all) or >=24 (long) before selecting floor(input L/2); unfilled ranks score zero. Original sampling consensus votes over all parsed maps; main contact-panel votes omit unfinished maps. Points are equal-protein means with existing 95% protein-bootstrap intervals. No scores, intervals or predictions were recomputed for this comparison. Sources: pl2_sampling_comparison_summary.csv and pl2_sampling_comparison_rows.csv, which retain pointers into the original sampling and poster-product tables. See SAMPLING_L2.md.",
+      "caption": "Precision @ L/2 on the same 314 natural proteins (97 validation + 217 test) for every method. MarinFold uses the fixed 248B-token model and the original 100 iid samples per protein: mean single, consensus and ground-truth oracle best-of-100. Standard predictors use the same selected archived structures, ranking emitted ConFind-positive contacts by pLDDT_i \u00d7 pLDDT_j \u00d7 contact degree. Filter resolved endpoints and separation >=6 (all) or >=24 (long) before selecting floor(input L/2); unfilled ranks score zero. Original sampling consensus votes over all parsed maps; main contact-panel votes omit unfinished maps. Bars are equal-protein means with existing 95% protein-bootstrap error bars. No scores, intervals or predictions were recomputed for this comparison. Sources: pl2_sampling_comparison_summary.csv and pl2_sampling_comparison_rows.csv, which retain pointers into the original sampling and poster-product tables. See SAMPLING_L2.md.",
       "files": {
         "pdf": {
           "path": "pdf/06_sampling_pl2_long.pdf",
-          "sha256": "dc1382902e999cc9fb09c6461a8fab5618574c2725eeb62d9bc12391957c3734"
+          "sha256": "379447e0969ff20ed7f214ed908b506424f959abf4de86e0301a125a30e8b94f"
         },
         "png": {
           "path": "png/06_sampling_pl2_long.png",
-          "sha256": "492d0798e8216e7e5c3163dfaa6b2bd92284dab848be5eee21e6af858e44598f"
+          "sha256": "64d585f10f47fc2c064dabda32cda3dc3d9c4bb9d80f9880fbb15346543347d9"
         },
         "svg": {
           "path": "svg/06_sampling_pl2_long.svg",
-          "sha256": "9a62547485245c88d3d8c0fc6bf7574dc2eed248c72081f508e71e9bd84c5fbc"
+          "sha256": "4c1f439f9051829ff5bcc8253b81b4009110073d88c8a3b730329a68e8a5a5a1"
         }
       }
     },

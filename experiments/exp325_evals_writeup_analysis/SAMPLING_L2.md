@@ -45,12 +45,12 @@ rank each selected structure's emitted ConFind-positive contacts by
 **pLDDT(i) × pLDDT(j) × contact degree(i,j)** before taking L/2 eligible pairs.
 Protein membership, contact truth, denominator and separation ranges match
 MarinFold. The existing predictor protocols (including MSA use) are unchanged;
-the three MarinFold points summarize their original 100-sample pool. See
+the three MarinFold bars summarize their original 100-sample pool. See
 [POSTER_NEFF.md](POSTER_NEFF.md) for standard-predictor contact scoring.
 
-The scatter panel has been removed. Points show means and 95% intervals;
+The comparison uses bars with 95% bootstrap error bars;
 method colors match the other poster figures. Both all-range and long-range
-versions use this layout. The interactive mobile view rotates the same means
+versions use this layout without an asterisk or oracle footnote. The interactive mobile view rotates the same means
 and intervals horizontally to keep all ten method labels readable.
 
 ## Exact scoring

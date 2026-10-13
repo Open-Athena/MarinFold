@@ -297,11 +297,11 @@ def sampling_comparison_figure(summary: pd.DataFrame, metric: str, *, poster_dir
     subset = summary[summary.metric == metric].set_index("method").loc[methods]
     positions = np.arange(len(methods), dtype=float)
     positions[3:] += 0.65
-    labels = ["Mean\nsingle", "Consensus\nof 100", "Oracle\nbest of 100*", "AlphaFold3\n+ MSA",
+    labels = ["Mean\nsingle", "Consensus\nof 100", "Oracle\nbest of 100", "AlphaFold3\n+ MSA",
               "AlphaFold2\n+ MSA", "Boltz-2\n+ MSA", "Protenix-v2\n+ MSA", "ESMFold2", "ESMFold",
               "Protenix-v2\nsingle sequence"]
     fig, ax = plt.subplots(figsize=(13, 6.1), facecolor=PAPER)
-    fig.subplots_adjust(left=0.075, right=0.985, bottom=0.27, top=0.74)
+    fig.subplots_adjust(left=0.075, right=0.985, bottom=0.22, top=0.74)
     fig.text(0.075, 0.94, TITLES[figure], fontsize=20, weight="bold")
     fig.text(0.075, 0.875, "314 natural proteins in every arm · 95% protein-bootstrap intervals", fontsize=12)
     style_axes(ax)
@@ -313,21 +313,20 @@ def sampling_comparison_figure(summary: pd.DataFrame, metric: str, *, poster_dir
             transform=ax.get_xaxis_transform())
     for x, method in zip(positions, methods, strict=True):
         row = subset.loc[method]
-        _, color, marker = METHODS[method]
-        ax.errorbar(x, row["mean"], yerr=[[row["mean"] - row.ci_low], [row.ci_high - row["mean"]]],
-                    fmt=marker, color=color, markersize=9, capsize=5)
+        color = METHODS[method][1]
+        ax.bar(x, row["mean"], width=0.65, color=color, zorder=2,
+               yerr=[[row["mean"] - row.ci_low], [row.ci_high - row["mean"]]],
+               error_kw=dict(ecolor=INK, elinewidth=1.2, capsize=4, capthick=1.2))
         ax.text(x, row.ci_high + 0.035, f"{row['mean']:.3f}", ha="center", color=color, fontsize=11)
     ax.set_xticks(positions, labels, fontsize=10)
     ax.set(xlim=(-0.65, positions[-1] + 0.65), ylabel=METRICS[metric])
-    fig.text(0.075, 0.105, "Structure contacts ranked by pLDDT × pLDDT × contact degree.", fontsize=10)
-    fig.text(0.075, 0.045, "*Oracle uses ground truth to select MarinFold's best individual sample of 100.", fontsize=10)
+    fig.text(0.075, 0.055, "Structure contacts ranked by pLDDT × pLDDT × contact degree.", fontsize=10)
     save(fig, figure, CAPTIONS[figure], "_long" if metric.endswith("long") else "", poster_dir=poster_dir)
-    interactive = go.Figure(go.Scatter(
-        x=positions.tolist(), y=subset["mean"].tolist(), mode="markers",
-        marker=dict(color=[METHODS[m][1] for m in methods], size=12,
-                    symbol=[{"o": "circle", "s": "square", "D": "diamond", "^": "triangle-up", "v": "triangle-down"}[METHODS[m][2]] for m in methods]),
+    interactive = go.Figure(go.Bar(
+        x=positions.tolist(), y=subset["mean"].tolist(), width=0.65,
+        marker=dict(color=[METHODS[m][1] for m in methods]),
         error_y=dict(type="data", array=(subset.ci_high - subset["mean"]).tolist(),
-                     arrayminus=(subset["mean"] - subset.ci_low).tolist()),
+                     arrayminus=(subset["mean"] - subset.ci_low).tolist(), color=INK, thickness=1.2, width=4),
         customdata=[[label.replace("\n", " "), float(row["mean"]), int(row.n), float(row.ci_low), float(row.ci_high)]
                     for label, (_, row) in zip(labels, subset.iterrows(), strict=True)],
         hovertemplate="%{customdata[0]}<br>Precision %{customdata[1]:.3f}<br>95% CI %{customdata[3]:.3f}–%{customdata[4]:.3f}<br>n=%{customdata[2]}<extra></extra>"))
@@ -533,6 +532,7 @@ def export_plotly(fig: go.Figure, name: str) -> None:
         mobile["layout"].update(height=690, margin=dict(l=132, r=15, t=40, b=55), annotations=[])
         for trace in mobile["data"]:
             trace["x"], trace["y"] = trace["y"], trace["x"]
+            trace["orientation"] = "h"
             trace["error_x"] = trace.pop("error_y")
             trace["customdata"][0][0] = "MarinFold mean single"
             trace["customdata"][1][0] = "MarinFold consensus of 100"
@@ -540,7 +540,7 @@ def export_plotly(fig: go.Figure, name: str) -> None:
         mobile["layout"]["xaxis"] = dict(title=spec["layout"]["yaxis"]["title"], range=[0, 1.03], dtick=0.2,
                                           gridcolor=GRID, zeroline=False)
         labels = list(spec["layout"]["xaxis"]["ticktext"])
-        labels[:3] = ["MarinFold<br>mean single", "MarinFold<br>consensus of 100", "MarinFold<br>oracle best of 100*"]
+        labels[:3] = ["MarinFold<br>mean single", "MarinFold<br>consensus of 100", "MarinFold<br>oracle best of 100"]
         mobile["layout"]["yaxis"] = dict(tickvals=spec["layout"]["xaxis"]["tickvals"], ticktext=labels,
                                           range=[10.3, -0.65], showgrid=False, zeroline=False)
     if name == "02b_confidence":

@@ -219,7 +219,7 @@ and poster renderers. Changing the displayed methods never reruns analysis.
 
 `06_sampling_pl2{,_long}` shows MarinFold's mean single sample, consensus and
 oracle best-of-100 alongside seven standard predictors in one mean/interval
-panel. The scatter has been removed. All ten arms use the same 314 natural
+bar panel with 95% bootstrap error bars. All ten arms use the same 314 natural
 proteins; standard predictors use the poster's three-way contact ranking.
 
 `prepare_sampling_pl2.py` retains the original 100-rollout scoring.
