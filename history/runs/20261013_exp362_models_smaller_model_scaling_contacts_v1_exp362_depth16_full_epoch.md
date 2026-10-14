@@ -15,8 +15,8 @@ marinfold_run:
   git_sha: 5c036e962efe4b8f4156b1d8d89623c968bd1ab2
   iris_job_ids:
   - /bizon/exp362-depth16-train-a01
+  - /bizon/exp362-depth16-train-a01/exp362-train-8f65895e
 ---
-
 # 2026-10-13 · exp362_models_smaller_model_scaling · contacts-v1-exp362-depth16-full-epoch
 
 **Launched:** 2026-10-13T14:59:08Z by bizon  
@@ -39,4 +39,4 @@ _(Bullet list of differences from the last run of this kind.)_
 
 ## Notes
 
-_(Anything else worth remembering — preemptions, midway tweaks, etc.)_
+At 2026-10-14T20:33Z, W&B retained a high water of 67,623 completed updates and marked the interrupted process crashed; its last heartbeat was 17:23:39Z. The exact child reported two preemptions, zero failures, and all eight tasks gated on Kueue admission. Preserve the queued dispatch while the eligible east02 cluster has no free H100s. Native step-53268 metadata, manifests and OCDBT data are reachable; the state was not loaded, and an HF export at that intermediate step is absent. Updates after that native checkpoint may need to repeat on resume.

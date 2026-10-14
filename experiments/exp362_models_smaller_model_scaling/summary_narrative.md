@@ -14,9 +14,11 @@ TRC preflight found no complete regional MPNN caches.
 Proceeding with existing CoreWeave inputs at batch priority.
 All three smoke gates passed, including native/HF checkpoints and tokenizers.
 All three production runs submitted for all 266,345 updates, using 128 H100s.
-Fresh W&B/Iris observation at 2026-10-14 14:09 UTC confirms all three running.
-255M: 39.4%; 498M: 3.6%; 985M: 21.2% of the full schedule.
-Scheduled observation permissions remain unverified after 32 blocked passes.
+Fresh W&B/Iris observation at 2026-10-14 20:33 UTC:
+255M: 53.3% and advancing; 498M: 11.9% and advancing.
+985M reached 25.4%; preempted and waiting for eight nodes again.
+Native checkpoint at step 53268 is reachable; later updates may repeat.
+Scheduled monitoring remains blocked by runtime permissions.
 Full training and contact accuracy results are pending.
 
 ## Interpretation
