@@ -14,8 +14,8 @@ marinfold_run:
   git_sha: 9accbfa72c2fd66159478fd5f2a8a16a6eb13b77
   iris_job_ids:
   - /bizon/exp364-lr2e-3-train-a01
+  - /bizon/exp364-lr2e-3-train-a02
 ---
-
 # 2026-10-13 · exp364_models_mpnn_only_lr_sweep · contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B
 
 **Launched:** 2026-10-13T15:10:50Z by bizon  
