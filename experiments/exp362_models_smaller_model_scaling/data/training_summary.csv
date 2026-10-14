@@ -1,2 +1,5 @@
 run_id,parameters,wandb_state,run_progress,final_eval_loss
+contacts-v1-exp362-depth4-full-epoch,254941696,running,0.3942705888978581,
+contacts-v1-exp362-depth8-full-epoch,498228224,running,0.036047231973568114,
+contacts-v1-exp362-depth16-full-epoch,984801280,running,0.212525108412022,
 contacts-v1-exp277-m2-p06-full-epoch-1.5B,1471374336,finished,1.0,2.984407424926758
