@@ -17,6 +17,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+tpu = [
+    "marin-core[tpu]==0.2.86.dev32222909699",
+    "torch==2.11.0+cpu",
+    "torchvision==0.26.0+cpu",
+]
 gpu = [
     "marin-core[gpu]==0.2.86.dev32222909699; sys_platform == 'linux'",
     # Preserve exp199's exact CUDA 13 environment. Use the direct x86 wheel to
@@ -33,6 +38,7 @@ dev = []
 
 [tool.uv]
 package = false
+conflicts = [[{extra = "gpu"}, {extra = "tpu"}]]
 fork-strategy = "fewest"
 prerelease = "allow"
 environments = [
@@ -45,6 +51,17 @@ name = "pytorch-cu128"
 url = "https://download.pytorch.org/whl/cu128"
 explicit = true
 
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
 [tool.uv.sources]
-torch = [{ index = "pytorch-cu128", extra = "gpu", marker = "sys_platform == 'linux'" }]
-torchvision = [{ index = "pytorch-cu128", extra = "gpu", marker = "sys_platform == 'linux'" }]
+torch = [
+    { index = "pytorch-cu128", extra = "gpu", marker = "sys_platform == 'linux'" },
+    { index = "pytorch-cpu", extra = "tpu", marker = "sys_platform == 'linux'" },
+]
+torchvision = [
+    { index = "pytorch-cu128", extra = "gpu", marker = "sys_platform == 'linux'" },
+    { index = "pytorch-cpu", extra = "tpu", marker = "sys_platform == 'linux'" },
+]

@@ -1,4 +1,4 @@
-"""Submit the width experiment at batch priority and wait for its GPU gang."""
+"""Submit the width experiment at batch priority and wait for its accelerator gang."""
 
 import os
 import sys
@@ -6,7 +6,7 @@ import uuid
 from functools import partial
 
 from fray.current_client import current_client
-from fray.types import Entrypoint, JobRequest, create_environment
+from fray.types import Entrypoint, JobRequest, TpuConfig, create_environment
 from iris.cluster.setup_scripts import default_setup_script
 from marin.training.training import (
     TrainLmOnPodConfig,
@@ -22,7 +22,18 @@ from experiments.exp277_models_single_mpnn_pilot.runtime import (
 def run_train_job(config: TrainLmOnPodConfig) -> None:
     """Keep the CPU parent alive and allow bounded production recovery."""
     env = resolve_training_env(config.env_vars, config.resources)
-    env.update({key: os.environ[key] for key in ("WANDB_API_KEY", "FSSPEC_S3")})
+    tpu = isinstance(config.resources.device, TpuConfig)
+    keys = ("WANDB_API_KEY",) if tpu else ("WANDB_API_KEY", "FSSPEC_S3")
+    env.update({key: os.environ[key] for key in keys})
+    extras = ["tpu"] if tpu else ["gpu"]
+    setup_scripts = [
+        default_setup_script(
+            extras=extras,
+            python_version=f"{sys.version_info.major}.{sys.version_info.minor}",
+        )
+    ]
+    if not tpu:
+        setup_scripts.append(_pinned_cuda_toolchain_setup_script())
     smoke = "smoke" in config.train_config.trainer.id
     handle = current_client().submit(
         JobRequest(
@@ -30,15 +41,9 @@ def run_train_job(config: TrainLmOnPodConfig) -> None:
             entrypoint=Entrypoint.from_callable(partial(run_levanter_train_lm, config)),
             resources=config.resources,
             environment=create_environment(
-                extras=["gpu"],
+                extras=extras,
                 env_vars=env,
-                setup_scripts=[
-                    default_setup_script(
-                        extras=["gpu"],
-                        python_version=f"{sys.version_info.major}.{sys.version_info.minor}",
-                    ),
-                    _pinned_cuda_toolchain_setup_script(),
-                ],
+                setup_scripts=setup_scripts,
             ),
             priority=3,
             max_task_failures=0 if smoke else 20,
