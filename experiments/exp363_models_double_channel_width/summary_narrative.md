@@ -15,10 +15,11 @@ Keep data, optimizer schedule, seeds and global batch fixed.
 Compressed smoke schedule was spiky; this is an execution check.
 
 ## Current status
-Full 266,345-update epoch started on 32 H100s in US-EAST-02A.
-W&B initialized at 2026-10-13 15:15:36 UTC; data initialization in progress.
-Other production jobs left 56 free GPUs; allocation reduced to fit.
-Global batch 128 retained through four-way gradient accumulation.
-Production uses the original 10% warmup and 1e-3 peak LR.
-Linear compute-only estimate: 17.4 days, pending measured production speed.
+GPU production queued after eleven preemptions; step-3848 checkpoint saved.
+Measured speed: 5.6 seconds/update, excluding interruptions.
+TPU trial submitted on 2026-10-14: v6e-32, 32 chips, us-east5-b.
+Twenty updates on existing regional native caches; same model/batch shape.
+TPU Splash attention, fresh initialization, compressed smoke schedule.
+Production migration requires 320.4 GB of MPNN caches and optimizer state.
+No bulk transfer performed; explicit cross-region transfer approval required.
 Contact-accuracy results are pending.

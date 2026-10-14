@@ -62,15 +62,49 @@ The live federation inventory at 2026-10-13 14:43 UTC reports 248 available H100
 
 The 64-H100 smoke completed successfully: ten optimizer updates, final train loss **8.56948**, two-batch validation loss **8.03575**, and **2.821 seconds/update**. Native and HF step-9 checkpoints are present; the HF export includes tokenizer files. `data/smoke_metrics.json` records the final W&B summary and exported file sizes. The compressed ten-step LR schedule produced finite but spiky training losses (including 31.25); the smoke establishes execution/memory/checkpoint correctness, not convergence. Production retains exp277's full 10% warmup (~26,634 updates), with no LR retuning.
 
-Production uses **four nodes / 32 H100s**, microbatch one per GPU and accumulation four, preserving global batch 128 and all 266,345 updates. Driver [`/bizon/exp363-train-a02`](https://iris.oa.dev/#/job/%2Fbizon%2Fexp363-train-a02), source `56f10733`, submitted at 2026-10-13 15:14:24 UTC. Child: `/bizon/exp363-train-a02/exp363-train-4fae9eab`. The [production W&B run](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B) initialized at 15:15:36 UTC and reports 32 H100 devices; full-corpus initialization is in progress. See `data/production_startup.json` and the committed run history. The first production submission requested 64 H100s but was cancelled before GPU/W&B initialization because other full training runs left only 56 H100s available. The smaller allocation starts within that capacity. The original smoke remains the 64-H100 execution check; the resolved 32-H100 production configuration also passed the batch/update-count check.
+Production uses **four nodes / 32 H100s**, microbatch one per GPU and accumulation four, preserving global batch 128 and all 266,345 updates. Driver [`/bizon/exp363-train-a02`](https://iris.oa.dev/#/job/%2Fbizon%2Fexp363-train-a02), source `56f10733`, submitted at 2026-10-13 15:14:24 UTC. Child: `/bizon/exp363-train-a02/exp363-train-4fae9eab`. The [production W&B run](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B) initialized at 15:15:36 UTC and reports 32 H100 devices. Subsequent progress and TPU exploration are recorded below. See `data/production_startup.json` and the committed run history. The first production submission requested 64 H100s but was cancelled before GPU/W&B initialization because other full training runs left only 56 H100s available. The smaller allocation starts within that capacity. The original smoke remains the 64-H100 execution check; the resolved 32-H100 production configuration also passed the batch/update-count check.
 
-The 64-H100 smoke measured 2.821 seconds/update. Linear scaling to 32 GPUs estimates **17.4 days of optimizer time**, excluding validation, checkpointing, and preemptions; this estimate needs replacement with production measurements. The CPU parent has a 30-day timeout and waits for the GPU child. Production retains the baseline's full validation schedule.
+Production measured **5.608 seconds/update** on 32 H100s, approximately **17.3 days of optimizer time** for the full epoch, excluding validation, checkpointing, and preemptions. Repeated preemptions make a calendar completion estimate unreliable. The CPU parent has a 30-day timeout and waits for the GPU child. Production retains the baseline's full validation schedule.
 
 The first GPU smoke `/bizon/exp363-train-smoke-a01` failed before model/W&B initialization because this Levanter release passes `repo@revision` to Hugging Face without parsing it. The tokenizer is now bundled as an unmodified, explicitly revisioned local snapshot using the loader's supported directory interface. A new integration test loads it through the actual training backend and checks the exported HF tokenizer vocabulary. The second smoke was cancelled before GPU startup because other jobs consumed capacity, leaving 88 free H100s. The third smoke uses eight nodes / 64 H100s and gradient accumulation to retain global batch 128. Its run is [contacts-v1-exp363-m2-p06-full-epoch-5.86B-smoke-n8-a03](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B-smoke-n8-a03), Iris `/bizon/exp363-train-smoke-a03/exp363-train-ecf49211`, source `65e00f6332d7ca39580d69c4eac8f900aebc2b26`. All eight workers completed distributed initialization and W&B reports 64 H100 devices.
 
 ## Conclusion
 
-The requested architecture is implemented and its exact parameter count is verified. Contact-accuracy and training-quality conclusions await GPU results.
+The requested architecture is implemented and its exact parameter count is verified. Contact-accuracy and training-quality conclusions await completed training.
+
+## TPU trial (2026-10-14)
+
+The GPU job has encountered eleven preemptions and is again queued. A completed
+step-3848 optimizer checkpoint exists on CoreWeave. Its observed steady compute
+speed is approximately 5.6 seconds/update; interrupted wall time is much longer.
+
+The requester asked to try TPUs. `tpu_smoke.py` runs twenty updates on **v6e-32
+(32 actual chips), pinned to us-east5-b**, at global batch 128, sequence length
+8192, per-device microbatch one, and tensor parallelism one. It changes only the
+attention implementation to the TPU Splash kernel; architecture and parameter
+count are unchanged. Native AFDB/ESM and validation caches already exist under
+`gs://marin-us-east5/protein-structure/MarinFold/exp232_train_trc/tokenized/`.
+The trial uses those native caches, a fresh initialization and compressed smoke
+schedule. It measures hardware compatibility/throughput, not production
+convergence or a continuation of the native/MPNN epoch.
+
+The initial v5p-64 attempt was cancelled before execution because the pool was
+in degraded provisioning backoff. The replacement uses the same data region.
+Driver: `/bizon/exp363-tpu-smoke-v6e-32-a01`; child:
+`/bizon/exp363-tpu-smoke-v6e-32-a01/exp363-train-952f2c08`; source:
+`8ddd24eba02e501d6314ba022d3af20782bf7f1f`. Submitted at
+2026-10-14 20:43:52 UTC; awaiting TPU slice startup. The CPU driver and TPU child
+use batch priority. All trial inputs, compilation caches, checkpoints and
+exports remain in us-east5. Seven architecture, tokenizer and resolved GPU/TPU
+configuration tests pass. The dependency lock adds libtpu and CPU Torch wheels
+without removing or changing an existing package version.
+
+Migrating production requires **250,073,316,791 bytes** of MPNN caches plus
+**70,326,053,055 bytes** for the observed full step-3848 checkpoint: **320.4 GB**
+total from CoreWeave to GCS. Native and validation caches need no copy.
+`data/tpu_migration_assessment.json` records source prefixes, object counts and
+byte totals. No bulk transfer has been performed; root AGENTS.md requires
+explicit human sign-off for cross-region copies larger than 10 GB.
 
 ## Reproduction
 
@@ -82,6 +116,7 @@ JAX_PLATFORMS=cpu uv run --project experiments/exp363_models_double_channel_widt
 uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train-smoke --nodes 8 --attempt 3
 # After the smoke succeeds:
 uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train --nodes 4 --attempt 2
+uv run --no-project python experiments/exp363_models_double_channel_width/launch.py tpu-smoke --tpu v6e-32 --attempt 1
 uv run --no-project --with matplotlib python experiments/exp363_models_double_channel_width/build_summary.py
 ```
 
