@@ -106,6 +106,24 @@ total from CoreWeave to GCS. Native and validation caches need no copy.
 byte totals. No bulk transfer has been performed; root AGENTS.md requires
 explicit human sign-off for cross-region copies larger than 10 GB.
 
+### 2026-10-15 recovery
+
+The first v6e trial never initialized W&B or reached training. Its CPU driver
+was preempted five times, killing and requeuing the TPU children, then exceeded
+the two-hour execution timeout. The launcher now explicitly pins the CPU driver
+to non-preemptible workers and allows 24 hours for queueing and the short test;
+the TPU allocation remains preemptible. The replacement driver is
+`/bizon/exp363-tpu-smoke-v6e-32-a02`, source
+`288a63cdbf7a0aacde5b7ba389b72ae6c37eab83`, submitted 2026-10-15 14:39 UTC.
+TPU optimizer throughput remains unmeasured.
+
+GPU production has twelve preemptions and is queued. Last reported optimizer
+step is 3918 (1.47% of the epoch), train loss 3.45197; the last validation loss
+is 3.68509. Those metrics were logged on 2026-10-14 at 20:03:50 UTC, so they do
+not establish overnight progress. The complete step-3848 checkpoint remains
+reachable. The 320.4 GB production migration is still awaiting explicit transfer
+approval; no bulk copy has been started.
+
 ## Reproduction
 
 Run from the repository root:
@@ -116,7 +134,7 @@ JAX_PLATFORMS=cpu uv run --project experiments/exp363_models_double_channel_widt
 uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train-smoke --nodes 8 --attempt 3
 # After the smoke succeeds:
 uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train --nodes 4 --attempt 2
-uv run --no-project python experiments/exp363_models_double_channel_width/launch.py tpu-smoke --tpu v6e-32 --attempt 1
+uv run --no-project python experiments/exp363_models_double_channel_width/launch.py tpu-smoke --tpu v6e-32 --attempt 2
 uv run --no-project --with matplotlib python experiments/exp363_models_double_channel_width/build_summary.py
 ```
 

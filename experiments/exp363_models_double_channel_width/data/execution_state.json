@@ -52,8 +52,8 @@
   "production_child_job_id": "/bizon/exp363-train-a02/exp363-train-4fae9eab",
   "production_submitted_at": "2026-10-13T15:14:24.763Z",
   "production_wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B",
-  "production_observed_at": "2026-10-14T20:34:09Z",
-  "production_preemptions": 11,
+  "production_observed_at": "2026-10-15T14:37:28Z",
+  "production_preemptions": 12,
   "tpu_trials": [
     {
       "job_id": "/bizon/exp363-tpu-smoke-v5p-64-a01",
@@ -73,12 +73,28 @@
       "tpu": "v6e-32",
       "chips": 32,
       "zone": "us-east5-b",
-      "state": "pending_slice_startup",
+      "state": "failed_before_training",
       "git_sha": "8ddd24eba02e501d6314ba022d3af20782bf7f1f",
       "steps": 20,
       "data": "Native AFDB/ESM only; existing regional exp232 mirrors. Hardware test, not production continuation.",
       "run_id": "contacts-v1-exp363-m2-p06-full-epoch-5.86B-tpu-smoke-v6e-32-a01",
-      "child_job_id": "/bizon/exp363-tpu-smoke-v6e-32-a01/exp363-train-952f2c08"
+      "child_job_id": "/bizon/exp363-tpu-smoke-v6e-32-a01/exp363-train-952f2c08",
+      "reason": "CPU parent preempted five times, then exceeded its two-hour execution timeout. No W&B run initialized."
+    },
+    {
+      "job_id": "/bizon/exp363-tpu-smoke-v6e-32-a02",
+      "tpu": "v6e-32",
+      "chips": 32,
+      "zone": "us-east5-b",
+      "state": "submitted",
+      "git_sha": "288a63cdbf7a0aacde5b7ba389b72ae6c37eab83",
+      "steps": 20,
+      "driver_preemptible": false,
+      "driver_timeout_seconds": 86400,
+      "data": "Native AFDB/ESM only; existing regional exp232 mirrors. Hardware test, not production continuation.",
+      "run_id": "contacts-v1-exp363-m2-p06-full-epoch-5.86B-tpu-smoke-v6e-32-a02"
     }
-  ]
+  ],
+  "production_last_reported_step": 3918,
+  "production_last_complete_checkpoint_step": 3848
 }

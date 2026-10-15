@@ -15,11 +15,11 @@ Keep data, optimizer schedule, seeds and global batch fixed.
 Compressed smoke schedule was spiky; this is an execution check.
 
 ## Current status
-GPU production queued after eleven preemptions; step-3848 checkpoint saved.
-Measured speed: 5.6 seconds/update, excluding interruptions.
-TPU trial submitted on 2026-10-14: v6e-32, 32 chips, us-east5-b.
-Twenty updates on existing regional native caches; same model/batch shape.
-TPU Splash attention, fresh initialization, compressed smoke schedule.
-Production migration requires 320.4 GB of MPNN caches and optimizer state.
-No bulk transfer performed; explicit cross-region transfer approval required.
+GPU production queued after 12 preemptions; step-3848 checkpoint saved.
+Last logged step 3918 (1.47%); train loss 3.452, validation loss 3.685.
+No overnight progress confirmed; measured compute is 5.6 seconds/update.
+First TPU attempt never trained: CPU parent preemptions, then timeout.
+Replacement v6e-32 trial submitted 2026-10-15 with a stable CPU parent.
+Twenty native-only updates; TPU throughput remains unmeasured.
+Production migration: 320.4 GB; transfer approval still pending.
 Contact-accuracy results are pending.
