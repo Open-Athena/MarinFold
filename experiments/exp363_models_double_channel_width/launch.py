@@ -71,7 +71,11 @@ def main() -> None:
     if token_path.exists():
         env["HF_TOKEN"] = token_path.read_text().strip()
     zone = "us-east5-a" if args.tpu.startswith("v5p") else "us-east5-b"
-    placement = ["--zone", zone] if tpu else ["--target-cluster", "cw-us-east-02a"]
+    # A preempted CPU parent kills its TPU children, even while they are queued.
+    placement = (
+        ["--zone", zone, "--no-preemptible"]
+        if tpu else ["--target-cluster", "cw-us-east-02a"]
+    )
     job_name = f"exp363-{args.phase}"
     if tpu:
         job_name += f"-{args.tpu}"
@@ -82,7 +86,7 @@ def main() -> None:
         "--no-wait", "--enable-extra-resources",
         "--cpu", "2" if tpu else "4",
         "--memory", "8GB" if tpu else "16GB", "--disk", "32GB",
-        "--timeout", "7200" if tpu else "2592000",
+        "--timeout", "86400" if tpu else "2592000",
     ]
     for key, value in env.items():
         command.extend(["-e", key, value])
