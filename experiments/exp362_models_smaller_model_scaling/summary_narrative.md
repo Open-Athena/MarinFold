@@ -13,11 +13,15 @@ Experiment #362 registered. Resolved configuration and finite-data tests pass.
 TRC preflight found no complete regional MPNN caches.
 Proceeding with existing CoreWeave inputs at batch priority.
 All three smoke gates passed, including native/HF checkpoints and tokenizers.
-All three production runs submitted for all 266,345 updates, using 128 H100s.
-Fresh W&B/Iris observation at 2026-10-14 20:33 UTC:
-255M: 53.3% and advancing; 498M: 11.9% and advancing.
+All three production runs retain the full 266,345-update schedule.
+Fresh W&B/Iris observation at 2026-10-15 14:37 UTC:
+255M reached 65.3%; 498M at 35.2% and advancing.
 985M reached 25.4%; preempted and waiting for eight nodes again.
-Native checkpoint at step 53268 is reachable; later updates may repeat.
+255M also preempted; resubmitted on one node after 12.5 hours waiting.
+Replacement started, was preempted once, and awaits admission again.
+104 H100s requested; permanent checkpoints at steps 159804 and 53268.
+Newer temporary checkpoints at 172859 and 66936 are reachable.
+Trainer restoration and new updates remain unverified.
 Scheduled monitoring remains blocked by runtime permissions.
 Full training and contact accuracy results are pending.
 
