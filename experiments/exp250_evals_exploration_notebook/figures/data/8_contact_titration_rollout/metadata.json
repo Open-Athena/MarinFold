@@ -1,0 +1,185 @@
+{
+  "dataset": "8_contact_titration_rollout",
+  "notebook": "8_make_titration_data.py",
+  "generated_utc": "2026-09-22T20:09:20+00:00",
+  "parameters": {
+    "protein": "8ubs_A",
+    "pdb_id": "8ubs-assembly1",
+    "chain": "A",
+    "order": "rollout",
+    "featured_rollout": 42,
+    "k_max": 153,
+    "n_samples": 3,
+    "n_cycles": 6,
+    "seed": 0,
+    "ranking_dataset": "8_contact_ranking"
+  },
+  "git": {
+    "commit": "37b20ee6844c26dd709729628575ad65a51b10d3",
+    "branch": "claude/top7-heatmap-animated-gif-3ecdeb",
+    "dirty": true,
+    "dirty_files": [
+      "M experiments/exp250_evals_exploration_notebook/figures/7_plot_rollout_animation.py",
+      " M experiments/exp250_evals_exploration_notebook/figures/8_make_titration_data.py",
+      " M experiments/exp250_evals_exploration_notebook/figures/8_plot_contact_titration.py",
+      " M experiments/exp250_evals_exploration_notebook/figures/README.md",
+      " M experiments/exp250_evals_exploration_notebook/figures/figlib.py",
+      " M experiments/exp250_evals_exploration_notebook/figures/output/contact_titration_8ubs.gif",
+      " M experiments/exp250_evals_exploration_notebook/figures/output/contact_titration_8ubs.png",
+      "D  experiments/exp250_evals_exploration_notebook/figures/output/contact_titration_lddt.pdf",
+      "D  experiments/exp250_evals_exploration_notebook/figures/output/contact_titration_lddt.png",
+      "D  experiments/exp250_evals_exploration_notebook/figures/output/contact_titration_lddt.svg",
+      " M experiments/exp250_evals_exploration_notebook/figures/test_contact_titration.py",
+      "?? experiments/exp250_evals_exploration_notebook/figures/data/8_contact_titration_rollout/",
+      "?? experiments/exp250_evals_exploration_notebook/figures/output/contact_titration_8ubs_lddt.pdf",
+      "?? experiments/exp250_evals_exploration_notebook/figures/output/contact_titration_8ubs_lddt.png",
+      "?? experiments/exp250_evals_exploration_notebook/figures/output/contact_titration_8ubs_lddt.svg",
+      "?? experiments/exp250_evals_exploration_notebook/figures/output/contact_titration_8ubs_light.gif",
+      "?? experiments/exp250_evals_exploration_notebook/figures/output/contact_titration_8ubs_light.png"
+    ]
+  },
+  "machine": {
+    "hostname": "ip1",
+    "hostname_overridden": false,
+    "user": "bizon",
+    "platform": "Linux-5.15.0-33-generic-x86_64-with-glibc2.35",
+    "python": "3.13.11",
+    "gpu": {
+      "name": "NVIDIA RTX A5000",
+      "compute_capability": "8.6",
+      "memory_gib": 23.7,
+      "count": 1
+    }
+  },
+  "packages": {
+    "marinfold": null,
+    "torch": "2.10.0",
+    "transformers": null,
+    "vllm": null,
+    "numpy": "2.4.4",
+    "pandas": "2.3.3",
+    "matplotlib": "3.10.8"
+  },
+  "inputs": [
+    {
+      "path": "/home/bizon/git/MarinFold/.claude/worktrees/top7-heatmap-animated-gif-3ecdeb/experiments/exp250_evals_exploration_notebook/figures/data/8_contact_ranking/score.npy",
+      "bytes": 91332,
+      "sha256": "2059b5ac137653b5ddd3acc186dfa1a07bc86ad347c6e5bfd4b454d81381a364"
+    },
+    {
+      "path": "/home/bizon/git/MarinFold/.claude/worktrees/top7-heatmap-animated-gif-3ecdeb/experiments/exp250_evals_exploration_notebook/figures/data/8_contact_ranking/votes.npy",
+      "bytes": 45730,
+      "sha256": "ff6ac27ffe925c27726c411fa0e2d647356b6ac786a2e10a87ee533f80bf823b"
+    },
+    {
+      "path": "/home/bizon/git/MarinFold/.claude/worktrees/top7-heatmap-animated-gif-3ecdeb/experiments/exp250_evals_exploration_notebook/figures/data/8_contact_ranking/target.json",
+      "bytes": 298,
+      "sha256": "0a379efb21b82640cef90e049b50b011a49b7e90856a59ae2609b97fe01d429d"
+    },
+    {
+      "path": "/home/bizon/.cache/helico/data/benchmarks/FoldBench/examples/ground_truths/8ubs-assembly1.cif.gz",
+      "bytes": 78599,
+      "sha256": "c793c97165648d08aef2698f8c026caa2a332368504df3b38ee61d747b882c13"
+    }
+  ],
+  "outputs": {
+    "pred_coords.npy": {
+      "bytes": 2188160,
+      "sha256": "b53acb9b096de3c4cf5815170231b86e58103cf5764133b3b9e8b82a237c7296"
+    },
+    "gt_coords.npy": {
+      "bytes": 14336,
+      "sha256": "dc9e4c947a2ed56cd8033652f89c64b651d95b4e3d532984b3de23b14d5ea1e8"
+    },
+    "atom_index.csv": {
+      "bytes": 21504,
+      "sha256": "dc587d93b15b9442d40e2593dff1f4d05ed89976fb7c065819716a9a2f20acbf"
+    },
+    "metrics.csv": {
+      "bytes": 15957,
+      "sha256": "d97f1359a34bdeda9639c1474d1b54cee6c440dcb9e5da406f6bef9b59783e51"
+    },
+    "ranked_contacts.csv": {
+      "bytes": 4091,
+      "sha256": "fc6c0038422d39a4bae5c3e5bc0e4bb56e569a955fd59bcf4e65ae8baa2a3e10"
+    },
+    "true_contacts.npy": {
+      "bytes": 22628,
+      "sha256": "a772c3c8188c89acff2fde848920441d73c4eb371abc03226ec6449291ef2e1e"
+    },
+    "sequence.txt": {
+      "bytes": 150,
+      "sha256": "e407cda1fc3fb7be39eacede7e0bd4615325f448b5490e934b3e57df6fefad91"
+    }
+  },
+  "order": {
+    "kind": "rollout",
+    "featured_rollout": 42,
+    "note": "confidence = vote count over the 100 rollouts (the deployment order). rollout = the order the median-accuracy rollout wrote its contacts in; the model is never asked to emit its best guess first."
+  },
+  "model": {
+    "nickname": "helico contacts-msafree-01",
+    "marinfold": {
+      "nickname": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+      "path": "/home/bizon/.cache/huggingface/hub/buckets/open-athena/MarinFold/checkpoints/contacts-v1-exp277-m2-p06-full-epoch-1.5B/hf/step-266344",
+      "files": [
+        "config.json",
+        "config.json.lock",
+        "model-00001-of-00002.safetensors",
+        "model-00001-of-00002.safetensors.lock",
+        "model-00002-of-00002.safetensors",
+        "model-00002-of-00002.safetensors.lock",
+        "model.safetensors.index.json",
+        "model.safetensors.index.json.lock",
+        "publication_manifest.json",
+        "publication_manifest.json.lock",
+        "tokenizer.json",
+        "tokenizer.json.lock",
+        "tokenizer_config.json",
+        "tokenizer_config.json.lock"
+      ],
+      "config_sha256": "03cd68867df12e95cb18cb689c0cbfc3adc96acd9b6eb8b344a28e7ab4e5fc0f",
+      "tokenizer_sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24",
+      "rope_theta": 500000,
+      "rope_scaling": {
+        "factor": 8.0,
+        "low_freq_factor": 1.0,
+        "high_freq_factor": 4.0,
+        "original_max_position_embeddings": 8192,
+        "rope_type": "llama3"
+      },
+      "vocab_size": 2845,
+      "num_hidden_layers": 24,
+      "weight_bytes": 5885527576
+    },
+    "note": "Helico folds; the contacts it conditions on come from the MarinFold checkpoint recorded under `marinfold`."
+  },
+  "recipe": {
+    "n_samples": 3,
+    "n_cycles": 6,
+    "seed": 0,
+    "min_seq_separation": 6,
+    "note": "helico exp14's published sampling, one fixed seed per fold"
+  },
+  "protein": {
+    "stem": "8ubs_A",
+    "pdb_id": "8ubs-assembly1",
+    "chain": "A",
+    "L_prompt": 151,
+    "L_folded": 150,
+    "offset": 1,
+    "n_tokens": 156,
+    "n_matched_atoms": 1184,
+    "n_true_contacts": 162
+  },
+  "titration": {
+    "k_max": 153,
+    "n_candidates": 153,
+    "n_dropped_off_chain": 0,
+    "precision_at_k_max": 0.738562091503268,
+    "lddt_k0": 0.2208571015631704,
+    "lddt_kmax": 0.856872349362492,
+    "lddt_best": 0.8676544313916779,
+    "k_best": 56
+  }
+}
