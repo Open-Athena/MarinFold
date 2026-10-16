@@ -41,6 +41,7 @@ def main() -> None:
     project = Path(__file__).resolve().parent
     root = project.parents[1]
     tpu = args.phase == "tpu-smoke"
+    priority = "interactive" if tpu else "batch"
     prefix = (
         "gs://marin-us-east5/protein-structure/MarinFold/exp363_models_double_channel_width"
         if tpu else PREFIX
@@ -87,7 +88,7 @@ def main() -> None:
         job_name += f"-{args.tpu}"
     command = [
         args.iris_bin, "--cluster", "marin", "job", "run",
-        *placement, "--priority", "batch",
+        *placement, "--priority", priority,
         "--job-name", f"{job_name}-a{args.attempt:02d}",
         "--no-wait", "--enable-extra-resources",
         "--cpu", "0.5" if tpu else "4",
@@ -120,7 +121,7 @@ def main() -> None:
         )
         hardware = f"{args.tpu}, {zone}" if tpu else f"{args.nodes * 8} H100, cw-us-east-02a"
         print(
-            f"{args.phase}: {hardware}, batch; "
+            f"{args.phase}: {hardware}, {priority}; "
             f"{len(sources)} source files, commit {env['GIT_COMMIT']}",
             flush=True,
         )

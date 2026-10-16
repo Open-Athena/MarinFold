@@ -1,4 +1,4 @@
-"""Submit the width experiment at batch priority and wait for its accelerator gang."""
+"""Submit the width experiment and wait for its accelerator gang."""
 
 import json
 import os
@@ -9,6 +9,7 @@ from functools import partial
 import fsspec
 from fray.current_client import current_client
 from fray.types import Entrypoint, JobRequest, TpuConfig, create_environment
+from iris.rpc.job_pb2 import PRIORITY_BAND_BATCH, PRIORITY_BAND_INTERACTIVE
 from iris.cluster.setup_scripts import default_setup_script
 from marin.training.training import (
     TrainLmOnPodConfig,
@@ -64,7 +65,8 @@ def run_train_job(config: TrainLmOnPodConfig) -> None:
                 env_vars=env,
                 setup_scripts=setup_scripts,
             ),
-            priority=3,
+            # Set the accelerator gang's band as well as the CPU driver's band.
+            priority=PRIORITY_BAND_INTERACTIVE if tpu else PRIORITY_BAND_BATCH,
             max_task_failures=0 if smoke else 20,
             max_retries_failure=0 if smoke else 5,
         )
