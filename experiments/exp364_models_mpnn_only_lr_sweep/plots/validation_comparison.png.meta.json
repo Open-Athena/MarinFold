@@ -1,0 +1,5 @@
+{
+  "script": "compare_validation.py",
+  "args": [],
+  "caption": "Exp364 validation against exp277 first epoch and its pre-cooldown continuation. Left: matched-step early curves. Right: full training with a zoomed loss range; shading marks completed-run cooldowns. Raw points are saved in data/validation_comparison.csv; no smoothing."
+}
