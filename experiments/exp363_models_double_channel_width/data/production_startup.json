@@ -1,0 +1,30 @@
+{
+  "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B",
+  "state": "running",
+  "summary": {
+    "backend": "gpu",
+    "num_devices": 32,
+    "num_hosts": 4
+  },
+  "config": {
+    "model": {
+      "hidden_dim": 4096,
+      "intermediate_dim": 16384,
+      "num_layers": 24,
+      "num_heads": 32,
+      "num_kv_heads": 8
+    },
+    "trainer": {
+      "num_train_steps": 266345,
+      "train_batch_size": 128,
+      "per_device_parallelism": 1,
+      "seed": 0
+    },
+    "optimizer": {
+      "learning_rate": 0.001,
+      "warmup": 0.1,
+      "decay": 0.2,
+      "weight_decay": 0.2
+    }
+  }
+}

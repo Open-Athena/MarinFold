@@ -1,0 +1,25 @@
+{
+  "observed_at": "2026-10-16T15:55:42.346041+00:00",
+  "scale_group": "tpu_v5p-preemptible_64-us-east5-a",
+  "workers": 16,
+  "healthy_workers": 16,
+  "worker_counts_by_tpu_job_priority": {
+    "PRIORITY_BAND_BATCH": 16
+  },
+  "note": "Counts TPU jobs only; CPU jobs sharing a worker are excluded. No TPU job reported does not guarantee schedulability.",
+  "trial_jobs": [
+    {
+      "job_id": "/bizon/exp363-tpu-smoke-v5p-64-a03/exp363-train-3f5081a0",
+      "state": "JOB_STATE_PENDING",
+      "priority": "PRIORITY_BAND_INTERACTIVE",
+      "pending_reason": "Scheduler: Coscheduling: need 8 workers in 'tpu-name' group 't1v-n-b9dfa532', only 0 of 8 have capacity:\nInsufficient memory (need 224.0GB, available 176.8GB) - 8 worker(s)\n\nAutoscaler: Unsatisfied autoscaler demand: tier_blocked: 1 matching group(s) blocked by quota-pool tier monotonicity"
+    },
+    {
+      "job_id": "/bizon/exp363-tpu-smoke-v5p-64-a03",
+      "state": "JOB_STATE_RUNNING",
+      "priority": "PRIORITY_BAND_INTERACTIVE",
+      "pending_reason": ""
+    }
+  ],
+  "trial_observed_at": "2026-10-16T15:56:54.666640+00:00"
+}
