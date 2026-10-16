@@ -1,10 +1,12 @@
 """Submit the width experiment at batch priority and wait for its accelerator gang."""
 
+import json
 import os
 import sys
 import uuid
 from functools import partial
 
+import fsspec
 from fray.current_client import current_client
 from fray.types import Entrypoint, JobRequest, TpuConfig, create_environment
 from iris.cluster.setup_scripts import default_setup_script
@@ -19,8 +21,25 @@ from experiments.exp277_models_single_mpnn_pilot.runtime import (
 )
 
 
+def require_final_checkpoint(output_path: str, num_train_steps: int) -> None:
+    """Reject a zero-exit training job that stopped before its final checkpoint."""
+    expected_step = num_train_steps - 1
+    path = f"{output_path}/checkpoints/step-{expected_step}/metadata.json"
+    try:
+        with fsspec.open(path, "rt") as handle:
+            metadata = json.load(handle)
+    except FileNotFoundError as error:
+        raise RuntimeError(
+            f"Training job exited without its final step-{expected_step} checkpoint: {path}"
+        ) from error
+    if metadata["step"] != expected_step:
+        raise ValueError(f"Final checkpoint step mismatch at {path}: {metadata['step']}")
+
+
 def run_train_job(config: TrainLmOnPodConfig) -> None:
     """Keep the CPU parent alive and allow bounded production recovery."""
+    if config.output_path is None:
+        raise ValueError("Training requires an output path for its completion checkpoint")
     env = resolve_training_env(config.env_vars, config.resources)
     tpu = isinstance(config.resources.device, TpuConfig)
     keys = ("WANDB_API_KEY",) if tpu else ("WANDB_API_KEY", "FSSPEC_S3")
@@ -51,3 +70,4 @@ def run_train_job(config: TrainLmOnPodConfig) -> None:
         )
     )
     handle.wait(raise_on_failure=True)
+    require_final_checkpoint(config.output_path, config.train_config.trainer.num_train_steps)

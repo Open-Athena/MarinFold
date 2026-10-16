@@ -29,9 +29,15 @@ def main() -> None:
     parser.add_argument("--nodes", type=int, choices=(1, 2, 4, 8, 16), default=4)
     parser.add_argument("--tpu", choices=("v5p-64", "v6e-32"), default="v5p-64")
     parser.add_argument("--attempt", type=int, default=1)
+    parser.add_argument(
+        "--resume", action="store_true",
+        help="Rebuild the GPU training step and resume its checkpoint.",
+    )
     parser.add_argument("--iris-bin", default=os.environ.get("IRIS_BIN", DEFAULT_IRIS))
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
+    if args.resume and args.phase != "train":
+        parser.error("--resume applies only to production train")
     project = Path(__file__).resolve().parent
     root = project.parents[1]
     tpu = args.phase == "tpu-smoke"
@@ -84,16 +90,19 @@ def main() -> None:
         *placement, "--priority", "batch",
         "--job-name", f"{job_name}-a{args.attempt:02d}",
         "--no-wait", "--enable-extra-resources",
-        "--cpu", "2" if tpu else "4",
-        "--memory", "8GB" if tpu else "16GB", "--disk", "32GB",
+        "--cpu", "0.5" if tpu else "4",
+        "--memory", "2GB" if tpu else "16GB", "--disk", "32GB",
         "--timeout", "86400" if tpu else "2592000",
     ]
     for key, value in env.items():
         command.extend(["-e", key, value])
     module = "tpu_smoke" if tpu else "train"
+    # Inputs have explicit immutable versions. Only the training step is deferred;
+    # a mutable version bypasses a stale executor success marker on recovery.
+    version = "dev" if args.resume else ("2026.10.14.1" if tpu else VERSION)
     command.extend([
         "--", "python", "-m", f"experiments.exp363_models_double_channel_width.{module}",
-        "--version", "2026.10.14.1" if tpu else VERSION, "--run",
+        "--version", version, "--run",
     ])
     with tempfile.TemporaryDirectory(prefix="exp363-bundle-") as directory:
         bundle = Path(directory)

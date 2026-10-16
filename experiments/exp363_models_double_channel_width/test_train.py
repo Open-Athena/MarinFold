@@ -106,6 +106,26 @@ def test_unsupported_gang_rejected() -> None:
         build_run(smoke=False, nodes=3)
 
 
+def test_recovery_rebuilds_training_with_fixed_inputs_and_same_checkpoint_path() -> None:
+    with build_context(BuildContext(VersionCodex("dev"))):
+        step = build_run(smoke=False, nodes=4)
+        assert step.version == "dev"
+        assert all(dep.version != "dev" for dep in step.deps)
+        step.fingerprint()
+        context = StepContext.for_run(
+            output_path=step.path(PREFIX),
+            prefix=PREFIX,
+            runtime_args=step.runtime_args,
+            deps=step.deps,
+        )
+        pod = step.build_config(context)
+        config = apply_output_path(pod.train_config, pod.output_path)
+    assert pod.output_path == f"{PREFIX}/runs/{RUN_ID}"
+    assert config.trainer.checkpointer.base_path == f"{pod.output_path}/checkpoints"
+    assert config.trainer.load_checkpoint is not False
+    assert config.trainer.num_train_steps == EPOCH_TRAIN_STEPS
+
+
 def test_pinned_tokenizer_loads_through_the_training_backend() -> None:
     tokenizer = load_tokenizer(TOKENIZER)
     assert len(tokenizer) == 2845
