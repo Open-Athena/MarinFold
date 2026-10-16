@@ -19,8 +19,8 @@ GPU reached step 8438 (3.17%); train loss 3.158, validation loss 3.465.
 Checkpoint barrier timeout stopped training; complete step 8120 remains.
 Scheduler falsely reported success; runtime now verifies final checkpoint.
 32-H100 restart in startup; checkpoint restoration not yet confirmed.
-TPU trial moved to v5p-64 (32 chips); v6e cancelled before training.
+v5p-64 trial resubmitted with Interactive driver and TPU-worker priority.
 v5p offers more memory/bandwidth; twenty native-only updates planned.
-Placement and TPU throughput remain unconfirmed.
+Both Interactive bands verified; eight-worker placement still pending.
 Production migration: 320.4 GB; transfer approval still pending.
 Contact-accuracy results are pending.

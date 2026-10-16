@@ -179,6 +179,34 @@ At 15:49 UTC the regional v5p-64 pool reported one ready slice and one booting,
 but provisioning health remained degraded with recent failures. Ready does not
 establish that a slice is free. Placement and TPU optimizer results are pending.
 
+### Interactive TPU priority (2026-10-16)
+
+The requester shared prior cluster guidance that batch jobs occupied much of
+the TPU fleet and Interactive jobs could obtain capacity promptly. The old
+screenshot is historical evidence, not current availability. Both the CPU
+driver and accelerator child had been explicitly submitted at Batch priority.
+The launcher and runtime now explicitly select Interactive for TPU trials;
+setting only the driver would leave our previously explicit child band at Batch.
+The GPU production submission settings are unaffected.
+
+The batch v5p a02 child remained pending while requesting eight co-scheduled
+workers. It was cancelled before training and replaced by
+`/bizon/exp363-tpu-smoke-v5p-64-a03`, source
+`2bc4cf065a95da2bd4244afe04bb050216238328`, submitted at 15:54:20 UTC.
+Both requested bands are Interactive. The non-preemptible CPU driver and
+preemptible TPU hardware settings are separate from scheduler priority.
+Ten existing architecture, configuration, tokenizer and recovery tests pass.
+At 15:55:42 UTC, all 16 healthy workers across the two regional v5p-64
+slices reported Batch TPU jobs. Iris recorded the replacement driver as
+Interactive. Its child `/bizon/exp363-tpu-smoke-v5p-64-a03/exp363-train-3f5081a0`
+submitted at 15:56:03 UTC and also has verified Interactive priority. It remains
+pending: eight-worker coscheduling requires 224 GB host RAM per worker while
+the reported slice has 176.8 GB free, and the autoscaler reports quota-pool tier
+monotonicity blocking additional provisioning. The account budget permits
+Interactive and reports no spend against its 75,000 limit. See
+`data/priority_capacity_20261016.json`. Optimizer execution and throughput
+must still be established.
+
 ## Reproduction
 
 Run from the repository root:
@@ -190,7 +218,7 @@ uv run --no-project python experiments/exp363_models_double_channel_width/launch
 # After the smoke succeeds:
 uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train --nodes 4 --attempt 2
 uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train --nodes 4 --attempt 3 --resume
-uv run --no-project python experiments/exp363_models_double_channel_width/launch.py tpu-smoke --tpu v5p-64 --attempt 2
+uv run --no-project python experiments/exp363_models_double_channel_width/launch.py tpu-smoke --tpu v5p-64 --attempt 3
 uv run --no-project --with matplotlib python experiments/exp363_models_double_channel_width/build_summary.py
 ```
 
