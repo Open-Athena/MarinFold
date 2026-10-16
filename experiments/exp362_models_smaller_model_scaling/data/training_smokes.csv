@@ -1,0 +1,4 @@
+trial,run_id,parameters,train_loss,eval_loss,seconds_per_step,run_progress,nodes,checkpoint_step
+depth16,contacts-v1-exp362-depth16-full-epoch-smoke-cw-us-east-02a-n8-a01,984801280,6.511687755584717,6.339901447296143,0.9960934959817678,1,8,9
+depth4,contacts-v1-exp362-depth4-full-epoch-smoke-cw-us-east-02a-n4-a01,254941696,7.2815165519714355,6.74395751953125,0.4888715820852667,1,4,9
+depth8,contacts-v1-exp362-depth8-full-epoch-smoke-cw-us-east-02a-n2-a01,498228224,6.8787431716918945,6.760240077972412,1.787071987055242,1,2,9
