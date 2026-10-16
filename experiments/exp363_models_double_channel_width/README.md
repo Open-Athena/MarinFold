@@ -155,6 +155,30 @@ The migration assessment now references the complete step-8120 checkpoint
 (70,326,130,929 bytes). Together with MPNN caches it remains approximately
 **320.4 GB**. Transfer approval is still pending and no bulk copy has occurred.
 
+### TPU selection revision (2026-10-16)
+
+The requester questioned the v6e choice. v6e was an availability fallback after
+v5p provisioning failures; it had not demonstrated better training performance.
+The v6e a03 TPU child was still pending and was cancelled before training.
+The preferred trial is now **v5p-64: 32 chips across eight VMs in us-east5-a**,
+submitted as `/bizon/exp363-tpu-smoke-v5p-64-a02` from source
+`3ee08a5cf209e7d7e4b9d3af75ab13f03da757a9`. The existing tested configuration,
+20-step budget, regional native data and stable CPU-driver settings apply.
+
+Google documents v6e as supporting transformer training and serving; the
+single-VM v6e-8 configuration is specifically optimized for inference. v5p
+provides 95 GiB HBM/chip and 2,765 GB/s HBM bandwidth, versus v6e's reported
+32 GB and 1,638 GB/s. v5p also has higher per-chip bidirectional ICI bandwidth
+(1,200 versus 800 GB/s), while v6e has higher peak BF16 compute (918 versus
+459 TFLOP/s/chip). We prioritize v5p's memory and communication headroom for
+5.862B training at 8K context; superior measured throughput is not established.
+Sources: [v5p](https://docs.cloud.google.com/tpu/docs/v5p),
+[v6e](https://docs.cloud.google.com/tpu/docs/v6e).
+
+At 15:49 UTC the regional v5p-64 pool reported one ready slice and one booting,
+but provisioning health remained degraded with recent failures. Ready does not
+establish that a slice is free. Placement and TPU optimizer results are pending.
+
 ## Reproduction
 
 Run from the repository root:
@@ -166,7 +190,7 @@ uv run --no-project python experiments/exp363_models_double_channel_width/launch
 # After the smoke succeeds:
 uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train --nodes 4 --attempt 2
 uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train --nodes 4 --attempt 3 --resume
-uv run --no-project python experiments/exp363_models_double_channel_width/launch.py tpu-smoke --tpu v6e-32 --attempt 3
+uv run --no-project python experiments/exp363_models_double_channel_width/launch.py tpu-smoke --tpu v5p-64 --attempt 2
 uv run --no-project --with matplotlib python experiments/exp363_models_double_channel_width/build_summary.py
 ```
 

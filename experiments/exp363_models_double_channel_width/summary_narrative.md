@@ -19,7 +19,8 @@ GPU reached step 8438 (3.17%); train loss 3.158, validation loss 3.465.
 Checkpoint barrier timeout stopped training; complete step 8120 remains.
 Scheduler falsely reported success; runtime now verifies final checkpoint.
 32-H100 restart in startup; checkpoint restoration not yet confirmed.
-TPU CPU parent started setup after reducing its request to 2 GB.
-Twenty native-only updates planned; TPU throughput remains unmeasured.
+TPU trial moved to v5p-64 (32 chips); v6e cancelled before training.
+v5p offers more memory/bandwidth; twenty native-only updates planned.
+Placement and TPU throughput remain unconfirmed.
 Production migration: 320.4 GB; transfer approval still pending.
 Contact-accuracy results are pending.
