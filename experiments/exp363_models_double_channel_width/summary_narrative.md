@@ -15,11 +15,11 @@ Keep data, optimizer schedule, seeds and global batch fixed.
 Compressed smoke schedule was spiky; this is an execution check.
 
 ## Current status
-GPU production queued after 12 preemptions; step-3848 checkpoint saved.
-Last logged step 3918 (1.47%); train loss 3.452, validation loss 3.685.
-No overnight progress confirmed; measured compute is 5.6 seconds/update.
-First TPU attempt never trained: CPU parent preemptions, then timeout.
-Replacement v6e-32 trial submitted 2026-10-15 with a stable CPU parent.
-Twenty native-only updates; TPU throughput remains unmeasured.
+GPU reached step 8438 (3.17%); train loss 3.158, validation loss 3.465.
+Checkpoint barrier timeout stopped training; complete step 8120 remains.
+Scheduler falsely reported success; runtime now verifies final checkpoint.
+32-H100 restart in startup; checkpoint restoration not yet confirmed.
+TPU CPU parent started setup after reducing its request to 2 GB.
+Twenty native-only updates planned; TPU throughput remains unmeasured.
 Production migration: 320.4 GB; transfer approval still pending.
 Contact-accuracy results are pending.

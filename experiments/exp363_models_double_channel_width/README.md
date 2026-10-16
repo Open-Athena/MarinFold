@@ -124,6 +124,37 @@ not establish overnight progress. The complete step-3848 checkpoint remains
 reachable. The 320.4 GB production migration is still awaiting explicit transfer
 approval; no bulk copy has been started.
 
+### 2026-10-16 checkpoint failure and recovery
+
+GPU training reached step **8438** (8,439 updates, **3.17%**), with train loss
+**3.15777**, last validation loss **3.46485**, and **5.638 seconds/update**.
+The job then failed in the asynchronous checkpoint barrier
+`tensorstore_checkpoint_28::0` after a 30-minute timeout. Iris and W&B marked
+the run finished despite the incomplete epoch. The last complete checkpoint is
+**step 8120**, committed at 02:02:09 UTC; step 8279 has no completion metadata.
+See `data/recovery_20261016.json` for the observed metrics and storage evidence.
+
+The runtime now requires a committed final step-266344 checkpoint before
+recording production success. Recovery bypasses the stale executor success
+marker while retaining the fixed input versions, run identity, checkpoint path,
+and full training schedule. Ten architecture, GPU/TPU configuration, tokenizer,
+and recovery tests pass. Restart `/bizon/exp363-train-a03`, source
+`241b26c99ea261a57a2695fe3b937471968e4da7`, was submitted at 15:42:01 UTC
+on 32 H100s. Child `/bizon/exp363-train-a03/exp363-train-0cdc9fb5` is running
+startup. Checkpoint restoration and new updates are not yet confirmed; this restart does not establish a fix for the underlying
+checkpoint barrier failure.
+
+The TPU a02 driver remained pending because it requested 8 GB while 2.1 GB was
+available. Building and fingerprinting its actual plan used 451,380 KB peak RSS
+locally, so the replacement requests 0.5 CPU and 2 GB on non-preemptible workers.
+Trial `/bizon/exp363-tpu-smoke-v6e-32-a03` was submitted at 15:41:57 UTC from
+the same source revision. Its CPU driver has started dependency setup; no TPU
+child or optimizer throughput is confirmed yet.
+
+The migration assessment now references the complete step-8120 checkpoint
+(70,326,130,929 bytes). Together with MPNN caches it remains approximately
+**320.4 GB**. Transfer approval is still pending and no bulk copy has occurred.
+
 ## Reproduction
 
 Run from the repository root:
@@ -134,7 +165,8 @@ JAX_PLATFORMS=cpu uv run --project experiments/exp363_models_double_channel_widt
 uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train-smoke --nodes 8 --attempt 3
 # After the smoke succeeds:
 uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train --nodes 4 --attempt 2
-uv run --no-project python experiments/exp363_models_double_channel_width/launch.py tpu-smoke --tpu v6e-32 --attempt 2
+uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train --nodes 4 --attempt 3 --resume
+uv run --no-project python experiments/exp363_models_double_channel_width/launch.py tpu-smoke --tpu v6e-32 --attempt 3
 uv run --no-project --with matplotlib python experiments/exp363_models_double_channel_width/build_summary.py
 ```
 

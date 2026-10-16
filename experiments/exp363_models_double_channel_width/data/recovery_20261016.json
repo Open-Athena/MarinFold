@@ -1,0 +1,27 @@
+{
+  "observed_at": "2026-10-16T15:42:30.182020+00:00",
+  "wandb_state": "finished",
+  "summary": {
+    "global_step": 8438,
+    "train/loss": 3.1577723026275635,
+    "eval/loss": 3.4648473262786865,
+    "throughput/duration": 5.6382127340184525,
+    "throughput/tokens_per_second": 185976.66485220785,
+    "parameter_count": 5861984256,
+    "total_tokens": null,
+    "_timestamp": 1792119822.7095444
+  },
+  "checkpoint": {
+    "source": "s3://marin-us-east-02a/tmp/ttl=14d/checkpoints-temp/marin-us-east-02a/MarinFold/exp363_models_double_channel_width/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B/checkpoints/step-8120",
+    "bytes": 70326130929,
+    "objects": 68,
+    "metadata": {
+      "step": 8120,
+      "timestamp": "2026-10-16T02:02:09.197461",
+      "is_temporary": true
+    },
+    "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp363_models_double_channel_width/checkpoints/contacts-v1-exp363-m2-p06-full-epoch-5.86B/step-8120"
+  },
+  "partial_step_8279_has_metadata": false,
+  "failure": "Checkpoint barrier tensorstore_checkpoint_28::0 timed out; Iris incorrectly reported succeeded. Final step-266344 checkpoint absent."
+}
