@@ -1,0 +1,5 @@
+{
+  "script": "plot_report.py",
+  "args": [],
+  "caption": "Figure 3. Development evidence. A\u2013B: matched-step architecture comparison over all validation structures. C: fixed 256-rollout diagnostic sample, averaging prefixes 1, 4, 16 and full. D: final selection on all validation structures, averaging eight prefix-specific BCE + recall-MSE objectives. Step 18,000 was selected before the reserved test was evaluated."
+}

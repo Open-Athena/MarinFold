@@ -10,6 +10,8 @@ marinfold_experiment:
 
 **Issue:** [#356](https://github.com/Open-Athena/MarinFold/issues/356) · **Kind:** `models` · **Branch:** `codex/exp356-proofreader`
 
+**Detailed report:** [Setup, results, and six figures](report.md), with [public figures and reproducibility inputs](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp356/written-report).
+
 ## Question
 
 Can a model identify incorrect contacts in actual MarinFold rollouts using all supplied evidence, from a single contact through a complete rollout, and estimate current precision and recall?

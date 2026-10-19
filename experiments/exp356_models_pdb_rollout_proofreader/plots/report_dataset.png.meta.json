@@ -1,0 +1,5 @@
+{
+  "script": "plot_report.py",
+  "args": [],
+  "caption": "Figure 2. Supplied sequence lengths and experimental methods in the 53,025-structure corpus. Length histograms are normalized separately within each split; method counts combine all splits. These are chain structures, not independent sequences."
+}
