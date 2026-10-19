@@ -23,6 +23,8 @@ def main() -> None:
             "audit",
             "train-smoke",
             "train",
+            "cooldown-smoke",
+            "cooldown",
         ),
     )
     parser.add_argument("--nodes", type=int, default=8)
@@ -33,6 +35,8 @@ def main() -> None:
     )
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
+    if args.phase.startswith("cooldown") and args.trial != "lr5e-4":
+        parser.error("The one-epoch cooldown forks only --trial lr5e-4")
     root = Path(__file__).resolve().parents[2]
     project = Path(__file__).resolve().parent
     credentials = configparser.ConfigParser()
@@ -71,12 +75,13 @@ def main() -> None:
     if args.phase == "audit":
         entry = ["python", "-m", module + "audit_epoch"]
     else:
-        env["SMOKE"] = "1" if args.phase == "train-smoke" else "0"
-        entry = ["python", "-m", module + "train", "--version", "2026.10.13.1", "--run"]
+        env["SMOKE"] = "1" if args.phase.endswith("-smoke") else "0"
+        driver = "cooldown_train" if args.phase.startswith("cooldown") else "train"
+        entry = ["python", "-m", module + driver, "--version", "2026.10.13.1", "--run"]
     # Retry multi-day production drivers after transient worker failures;
     # the stable trial output path restores its own latest checkpoint.
     # Smokes and audits remain fail-fast gates with isolated identities.
-    max_retries = 3 if args.phase == "train" else 0
+    max_retries = 3 if args.phase in {"train", "cooldown"} else 0
     # The CLI and workers use the same committed lock. Credentials are passed
     # only to the child process,
     # never written into source files, command transcripts, or state artifacts.
