@@ -217,9 +217,15 @@ RNG and corpus cursors without writing the production checkpoint prefix.
 All 36 local tests pass, including injected storage hangs, request cancellation,
 retry exhaustion and preservation of the previous pointer. Ruff and Pyrefly pass.
 The new put/read/marker/delete path also passed against the actual co-located S3
-service. GPU recovery replay is queued as
-`/timodonnell/exp347-qwen35-4b-corpus235m-recovery-debug-a02`; the east H100 pool
-currently has no free GPUs. Production recovery is awaiting that validation.
+service. Production resumes are queued as
+`/timodonnell/exp347-qwen35-4b-contacts_v1-corpus235m-100bt-a02` and
+`/timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a02`, on the existing
+validated eight-H100 profile. The east pool currently has no free GPUs, so
+first-update checkpoint verification remains pending. The bounded diagnostic
+jobs were canceled before allocation; neither used GPUs or produced results.
+The resumes restore the full saved optimizer/RNG/data state and retain the
+100B-token budgets and periodic evaluation schedule. RNO placement is awaiting
+explicit approval for this experiment's cross-region storage traffic.
 
 `eval_contract.py` freezes the **97-protein eval-val set** from exp245's pinned
 membership, sequences, and resolved-residue ground truth. It never selects

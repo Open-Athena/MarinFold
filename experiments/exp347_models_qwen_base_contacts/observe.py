@@ -72,7 +72,7 @@ def main() -> None:
                     now,
                     run.state if run else None,
                     progress,
-                    int(not terminal),
+                    int(state == "running"),
                 ),
             )
             if run:
@@ -81,7 +81,11 @@ def main() -> None:
                     (
                         run.url,
                         progress or 0,
-                        "awaiting_checkpoint" if terminal else "running",
+                        "awaiting_checkpoint"
+                        if terminal
+                        else "running"
+                        if state == "running" and run.state == "running"
+                        else "pending",
                         row["trial_id"],
                     ),
                 )

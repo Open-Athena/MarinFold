@@ -73,7 +73,7 @@ Nested storage retries could outlast the ten-minute NCCL timeout.
 Fix: bounded per-operation retries and an eight-minute checkpoint storage budget.
 Previous recovery pointers survive failed uploads; add pre-timeout stack dumps.
 36 local tests, Ruff, Pyrefly and a real CoreWeave storage probe passed.
-Eight-H100 recovery replay is queued; east-region capacity is currently full.
+Both eight-H100 production resumes are queued; east-region capacity is full.
 No new full-corpus R-precision measurement is available.
 
 ## Periodic R-precision contract
