@@ -4,6 +4,7 @@ import argparse
 import csv
 import hashlib
 import json
+import math
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
@@ -22,6 +23,7 @@ RUNS = {
     "lr5e-4": "contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
     "lr1e-3": "contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B",
     "lr2e-3": "contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B",
+    "lr5e-4-cooldown": "contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B",
 }
 REFERENCE_FILES = {
     "full_epoch1": BASELINE / "data/epoch_validation_progress.csv",
@@ -33,6 +35,7 @@ STYLES = {
     "lr5e-4": ("MPNN only: LR 5e-4", "#0072b2", "-"),
     "lr1e-3": ("MPNN only: LR 1e-3", "#d55e00", "-"),
     "lr2e-3": ("MPNN only: LR 2e-3", "#009e73", "-"),
+    "lr5e-4-cooldown": ("MPNN only: LR 5e-4, one-epoch fork", "#aa4499", "--"),
 }
 
 
@@ -65,6 +68,7 @@ def snapshot() -> None:
             "Equal steps mean equal packed token slots, not equal real tokens or proteins.",
             "Training duration stretches both LR and amino-acid augmentation schedules.",
             "The full-data continuation restores step 213072, before first-epoch cooldown; it is not an independent seed.",
+            "The one-epoch cooldown fork inherits the 5e-4 run through step 139053; only newly measured validation points are plotted for the fork.",
             "This is language-model validation loss, not a contact-accuracy evaluation.",
         ],
     }
@@ -118,6 +122,14 @@ def snapshot() -> None:
                     f"Saved final validation differs from W&B for {run_id}"
                 )
         else:
+            first_step = 0
+            if key == "lr5e-4-cooldown":
+                source = json.loads((DATA / "cooldown_source.json").read_text())
+                if trainer["initialize_from"] != source["destination"]:
+                    raise ValueError(f"Unexpected fork source for {run_id}")
+                first_step = source["step"] + 1
+                details["source_checkpoint_step"] = source["step"]
+                details["source_run_id"] = RUNS["lr5e-4"]
             history = run.history(
                 keys=["_step", "eval/loss"], samples=10000, pandas=False
             )
@@ -126,24 +138,26 @@ def snapshot() -> None:
                 for row in history
                 if row["_step"] <= summary["_step"]
             }
-            expected = set(
-                range(
+            expected = {
+                step
+                for step in range(
                     trainer["steps_per_eval"],
                     summary["_step"] + 1,
                     trainer["steps_per_eval"],
                 )
-            )
+                if step >= first_step
+            }
             if summary["run_progress"] >= 1:
                 expected.add(trainer["num_train_steps"] - 1)
             if set(curve) != expected:
                 raise ValueError(
-                    f"Incomplete validation history for {run_id}: missing {sorted(expected - set(curve))}"
+                    f"Incomplete validation history for {run_id}: missing {sorted(expected - set(curve))}; unexpected {sorted(set(curve) - expected)}"
                 )
             details["curve_source"] = (
                 "W&B full sparse eval/loss history; cadence coverage checked"
             )
-        details["latest_eval_step"] = max(curve)
-        details["latest_eval_loss"] = curve[max(curve)]
+        details["latest_eval_step"] = max(curve) if curve else None
+        details["latest_eval_loss"] = curve[max(curve)] if curve else None
         metadata["runs"][key] = details
         rows.extend(
             {"run": key, "step": step, "validation_loss": loss}
@@ -151,7 +165,9 @@ def snapshot() -> None:
         )
     DATA.mkdir(exist_ok=True)
     with (DATA / "validation_comparison.csv").open("w", newline="") as output:
-        writer = csv.DictWriter(output, fieldnames=["run", "step", "validation_loss"])
+        writer = csv.DictWriter(
+            output, fieldnames=["run", "step", "validation_loss"], lineterminator="\n"
+        )
         writer.writeheader()
         writer.writerows(rows)
     (DATA / "validation_comparison.json").write_text(
@@ -168,6 +184,8 @@ def plot() -> None:
     metadata = json.loads((DATA / "validation_comparison.json").read_text())
     fig, axes = plt.subplots(1, 2, figsize=(14, 5.8))
     for key, curve in curves.items():
+        if not curve:
+            continue
         label, color, style = STYLES[key]
         steps = sorted(curve)
         for axis in axes:
@@ -182,10 +200,11 @@ def plot() -> None:
             axis.scatter(
                 steps[-1] / 1000, curve[steps[-1]], color=color, s=22, zorder=3
             )
+    sweep_max_step = max(max(curves[key]) for key in ("lr5e-4", "lr1e-3", "lr2e-3"))
     axes[0].set(
-        xlim=(0, 100),
+        xlim=(0, math.ceil(sweep_max_step / 25_000) * 25),
         ylim=(3.04, 4.02),
-        title="Early training at matched optimizer steps",
+        title="Current sweep at matched optimizer steps",
     )
     axes[1].set(
         xlim=(20, 490), ylim=(2.96, 3.32), title="Full trajectories — zoomed loss range"
@@ -219,7 +238,12 @@ def plot() -> None:
     fig.text(
         0.5,
         0.015,
-        f"Snapshot: {metadata['observed_at_utc'][:16]} UTC  |  Same full validation cache, tokenizer, 1.47B model and 128 × 8192 training slots/step.\nSchedules differ in absolute steps. Full-data continuation branches from step 213,072; it is not a separate seed.",
+        f"Snapshot: {metadata['observed_at_utc'][:16]} UTC  |  Same full validation cache, tokenizer, 1.47B model and 128 × 8192 training slots/step.\nSchedules differ in absolute steps. Full-data continuation branches from step 213,072; it is not a separate seed.\n"
+        + (
+            "One-epoch 5e-4 fork: awaiting its first validation result."
+            if not curves["lr5e-4-cooldown"]
+            else "One-epoch 5e-4 fork branches from step 139,053; only new validation measurements are shown."
+        ),
         ha="center",
         fontsize=9,
     )
@@ -227,7 +251,7 @@ def plot() -> None:
     save_plot_with_meta(
         fig,
         HERE / "plots/validation_comparison.png",
-        caption="Exp364 validation against exp277 first epoch and its pre-cooldown continuation. Left: matched-step early curves. Right: full training with a zoomed loss range; shading marks completed-run cooldowns. Raw points are saved in data/validation_comparison.csv; no smoothing.",
+        caption="Exp364 validation against exp277 first epoch and its pre-cooldown continuation. Left: matched-step curves through the current sweep. Right: full training with a zoomed loss range; shading marks completed-run cooldowns. The one-epoch fork appears only once it has new validation measurements. Raw points are saved in data/validation_comparison.csv; no smoothing.",
         script="compare_validation.py",
         args=[],
         dpi=170,
@@ -272,10 +296,14 @@ def publish() -> None:
     for relative in (
         "data/validation_comparison.csv",
         "data/validation_comparison.json",
+        "data/cooldown_source.json",
         "plots/validation_comparison.png",
         "plots/validation_comparison.pdf",
         "plots/validation_comparison.png.meta.json",
         "compare_validation.py",
+        "build_summary.py",
+        "summary_narrative.md",
+        "plots/summary.pdf",
     ):
         subprocess.run(
             [

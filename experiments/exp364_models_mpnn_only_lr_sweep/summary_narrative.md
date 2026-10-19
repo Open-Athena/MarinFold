@@ -16,7 +16,7 @@ No native training documents. Fresh global shuffle each epoch.
 
 23,921,189 packed examples per epoch; 373,769 updates for two passes.
 
-Live regional audit passed: both source ledgers, raw tokens, packing and clipping exactly match the default corpus subset. Six CPU tests passed.
+Live regional audit passed: both source ledgers, raw tokens, packing and clipping exactly match the default corpus subset. Ten CPU tests, including the cooldown fork, passed.
 
 The 64-H100 smoke passed ten updates with finite losses. Native checkpoint and HF weights plus tokenizer were verified.
 
@@ -24,13 +24,13 @@ All three production trials were launched on 32 H100s each, 96 total, using regi
 
 All trials are training; the two-epoch runs are not yet complete.
 
-## Validation comparison — 2026-10-16
+## Validation comparison — 2026-10-19
 
 Redesign-only training is behind the completed native-plus-redesign baseline at matched steps on the same full LM validation set.
 
-At step 38,052: full data 3.12896; redesign-only LR 5e-4 / 1e-3 / 2e-3: 3.18634 / 3.19716 / 3.20600.
+At step 78,218: full data 3.08355; redesign-only LR 5e-4 / 1e-3 / 2e-3: 3.13308 / 3.14290 / 3.16297.
 
-At step 80,332: LR 5e-4 has loss 3.13276 versus full data 3.08213 (+0.05062 nats/token). The lowest LR currently leads this sweep.
+Latest LR 5e-4 validation: loss 3.10369 at step 139,524 versus full data 3.06630 (+0.03738 nats/token). LR 1e-3 is at 3.12081 at step 167,006. The lowest LR continues to lead this sweep.
 
 ## Completed references and interpretation
 
@@ -48,4 +48,4 @@ Keep the first-epoch shuffle, data offset, optimizer state, and original augment
 
 Stop after 186,885 total updates (final checkpoint 186,884): exactly 23,921,189 packed examples, with 37 real examples in the final batch. The fork adds 47,831 updates to the inherited prefix.
 
-The source is frozen in same-region S3; restored optimizer counters verified. All ten CPU tests pass. Results are pending.
+The source is frozen in same-region S3; restored optimizer counters verified. The fork is training on 8 H100s, with its first validation still pending at this snapshot. Its parent continues independently on 32 H100s. All ten CPU tests pass.
