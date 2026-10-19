@@ -1,0 +1,5 @@
+{
+  "script": "plot_report.py",
+  "args": [],
+  "caption": "Figure 5. Paired first-contact Brier reduction relative to supplying only the first contact. Positive values mean improvement. Each comparison uses the same eligible trajectories in both conditions; n denotes structures. Bars are 95% group-bootstrap intervals. Explicit fixed prefixes exclude the later end marker; full includes a genuine end marker when present."
+}

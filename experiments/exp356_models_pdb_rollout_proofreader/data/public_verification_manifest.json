@@ -1,0 +1,56 @@
+{
+  "checkpoint": "hf://buckets/open-athena/MarinFold/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18000",
+  "anonymous_download": true,
+  "all_file_hashes_verified": true,
+  "inference_code": "published infer.py",
+  "offline_inference": true,
+  "example_identity": "1bzb_A:r0",
+  "job_id": "/bizon/exp356-verify-public-a01",
+  "predictions": {
+    "one": {
+      "estimated_precision": 0.053403329104185104,
+      "estimated_recall": 0.009125636890530586,
+      "n_unique_contacts": 1,
+      "n_residues": 32,
+      "finished": false
+    },
+    "full": {
+      "estimated_precision": 0.06480750100066264,
+      "estimated_recall": 0.07696083933115005,
+      "n_unique_contacts": 12,
+      "n_residues": 32,
+      "finished": true
+    }
+  },
+  "verified_at": "2026-10-10T01:15:29.961960+00:00",
+  "files": {
+    "full_input.json": {
+      "size": 521,
+      "sha256": "832001558893b648e3fe29ac258453970463b11c063016a43265e4d35caba01a"
+    },
+    "full_prediction.json": {
+      "size": 1493,
+      "sha256": "3527c5375e518c574285447c67d9fc18130d27d047d16c8634845a12fe8780d4"
+    },
+    "full_prediction.timings.csv": {
+      "size": 494,
+      "sha256": "4a314eb2bc57718c749faf7f51c8c75154db9d68c07d767c947c38c9d592a00b"
+    },
+    "one_input.json": {
+      "size": 374,
+      "sha256": "d4a6cf7f8b0e21f69130de16b32b5fa5c604094e6cd3af9947f25e45d9f86305"
+    },
+    "one_prediction.json": {
+      "size": 291,
+      "sha256": "6353c8f39725e046690ef382fa7c83d0b14537b2fafaf596d7fad237e0abcbf4"
+    },
+    "one_prediction.timings.csv": {
+      "size": 493,
+      "sha256": "41861b4f263c5d167fb3ebef53b508875d8670bddff466a2f68365958bea56cb"
+    },
+    "verification.json": {
+      "size": 806,
+      "sha256": "405aefc99a4e42f30cbce6b4d749251e5eef91622af3a75d164f0a53da4ed0f0"
+    }
+  }
+}

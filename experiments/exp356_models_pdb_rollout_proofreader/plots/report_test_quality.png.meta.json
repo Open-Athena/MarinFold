@@ -1,0 +1,5 @@
+{
+  "script": "plot_report.py",
+  "args": [],
+  "caption": "Figure 4. Reserved-test quality at the selected step-18,000 checkpoint. Calibration pools contacts within probability bins. MAE first averages rollouts within each structure and then structures; bars are saved 95% intervals from 1,000 related-group bootstrap replicates. Longer fixed prefixes include only sufficiently long rollouts. Full is a separate variable-length condition."
+}

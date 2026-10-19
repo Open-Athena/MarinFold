@@ -1,0 +1,68 @@
+{
+  "selected": {
+    "label": "final_validation_best",
+    "checkpoint": "s3://marin-us-east-02a/MarinFold/exp356/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18000",
+    "objective": 0.4311663432858481,
+    "per_prefix_objective": {
+      "1": 0.420968705549602,
+      "2": 0.41761730325576135,
+      "4": 0.4195484689380629,
+      "8": 0.4207639584320079,
+      "16": 0.42854348685279264,
+      "32": 0.43521200941587057,
+      "64": 0.441843544343414,
+      "full": 0.4648332694992732
+    }
+  },
+  "candidates": [
+    {
+      "label": "frozen_validation_step7500",
+      "checkpoint": "s3://marin-us-east-02a/MarinFold/exp356/retained/exp356-exp277-frozen-contact-pdb50k-v2/step-7500",
+      "objective": 0.44798468020394944,
+      "per_prefix_objective": {
+        "1": 0.44866407254581575,
+        "2": 0.4426930641630962,
+        "4": 0.4369105403168074,
+        "8": 0.43531393609430524,
+        "16": 0.441731027203662,
+        "32": 0.4480397365026258,
+        "64": 0.45467759290058624,
+        "full": 0.47584747190469673
+      }
+    },
+    {
+      "label": "final_validation_best",
+      "checkpoint": "s3://marin-us-east-02a/MarinFold/exp356/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18000",
+      "objective": 0.4311663432858481,
+      "per_prefix_objective": {
+        "1": 0.420968705549602,
+        "2": 0.41761730325576135,
+        "4": 0.4195484689380629,
+        "8": 0.4207639584320079,
+        "16": 0.42854348685279264,
+        "32": 0.43521200941587057,
+        "64": 0.441843544343414,
+        "full": 0.4648332694992732
+      }
+    },
+    {
+      "label": "final_validation_last",
+      "checkpoint": "s3://marin-us-east-02a/MarinFold/exp356/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18714",
+      "objective": 0.43461241317614824,
+      "per_prefix_objective": {
+        "1": 0.43257528022875674,
+        "2": 0.42478215513102807,
+        "4": 0.4239418394331138,
+        "8": 0.42324256036721997,
+        "16": 0.42960489878696795,
+        "32": 0.43570402910610123,
+        "64": 0.4421975472018594,
+        "full": 0.4648509951541385
+      }
+    }
+  ],
+  "data_fingerprint": "00918af16a5b876eb79a3e1df2dd61886c4138128cbb8efcab2ac555e9402fc0",
+  "criterion": "Mean over eight prefix lengths of protein-mean (contact BCE + recall squared error)",
+  "reserved_test_evaluated_at_selection": false,
+  "selected_at": "2026-10-10T01:00:10.703182+00:00"
+}

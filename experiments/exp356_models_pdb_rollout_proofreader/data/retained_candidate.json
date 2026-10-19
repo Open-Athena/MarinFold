@@ -1,0 +1,8 @@
+{
+  "source": "s3://marin-us-east-02a/MarinFold/exp356/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-7500",
+  "retained": "s3://marin-us-east-02a/MarinFold/exp356/retained/exp356-exp277-frozen-contact-pdb50k-v2/step-7500",
+  "purpose": "Final validation candidate after one complete epoch",
+  "copy": "Server-side within the same CoreWeave bucket; optimizer excluded",
+  "retained_at": "2026-10-09T23:44:51.932855+00:00",
+  "note": "Step7000 was already retired by the rotating checkpoint policy; its evaluation reports remain preserved."
+}

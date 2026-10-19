@@ -1,0 +1,58 @@
+{
+  "target_sha256": "d264c3784def4c2b2fdf0906643cd9114f9bdb012c4aa5ce99a29890ecd0b064",
+  "target_bytes": 39745586,
+  "counts": {
+    "source_chains": 602859,
+    "equivalent_asu_chain": 188081,
+    "fewer_than_5_contacts": 9257,
+    "length_outside_32_1000": 36097,
+    "insufficient_sequence_coverage": 120424,
+    "resolution_above_4": 39773,
+    "complete_canonical_chain": 65742,
+    "terminally_cropped_chain": 92994,
+    "incomplete_or_noncanonical_chain": 50491,
+    "complete_eligible": 158736,
+    "candidate_families": 20077,
+    "family_ordered_candidates": 158736,
+    "benchmark_homologs_removed": 37209,
+    "cross_split_groups_removed": 161,
+    "train_structures": 50000,
+    "train_groups": 9074,
+    "train_unique_sequences": 34894,
+    "train_terminally_cropped": 33432,
+    "train_largest_group": 409,
+    "validation_structures": 1552,
+    "validation_groups": 287,
+    "validation_unique_sequences": 1061,
+    "validation_terminally_cropped": 898,
+    "validation_largest_group": 96,
+    "test_structures": 1473,
+    "test_groups": 295,
+    "test_unique_sequences": 1085,
+    "test_terminally_cropped": 958,
+    "test_largest_group": 66,
+    "mmseqs_version": "4fe20e6bb0aa219a35f6190322a91ab19cb6898d"
+  },
+  "eligibility": {
+    "version": 2,
+    "source": "/data/exp222_pdb_curation/docs/monomers",
+    "cif_dir": "/data/tim/af3-db/mmcif_files",
+    "max_terminal_crop": 20,
+    "minimum_coverage": 0.9
+  },
+  "reference": {
+    "source_experiment": "exp222_data_pdb_curation_monomers_multimers",
+    "definition": "contacts-v1 pyconfind native-only",
+    "contact_distance_angstrom": 3.0,
+    "dcut_angstrom": 25.0,
+    "clash_distance_angstrom": 2.0,
+    "minimum_contact_degree": 0.001,
+    "minimum_sequence_separation": 6,
+    "unresolved_residues": "not supplied to the predictor; only bounded contiguous terminal cropping allowed"
+  },
+  "homology": {
+    "minimum_identity": 0.3,
+    "minimum_shorter_sequence_coverage": 0.5,
+    "benchmark_queries_sha256": "b875fb5072638637c79e52fbb3418eafad78bacd75ef3b70ca86b4bf7de9ab6d"
+  }
+}

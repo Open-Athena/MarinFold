@@ -1,0 +1,13 @@
+{
+  "created_at": "2026-10-09T23:44:51.932728+00:00",
+  "candidate_pool": [
+    "retained step7500 first-epoch candidate",
+    "lowest fixed-sample validation loss at training completion",
+    "final step18714 checkpoint"
+  ],
+  "selection_metric": "Equal mean over 1,2,4,8,16,32,64,full prefixes of protein-mean (contact BCE + recall squared error)",
+  "validation_structures": 1552,
+  "reserved_test_structures": 1473,
+  "test_policy": "Freeze release_selection.json before evaluating the reserved test; evaluate only the selected checkpoint",
+  "calibration": "No post-hoc calibration planned; full step7000 reliability curves are close to diagonal"
+}

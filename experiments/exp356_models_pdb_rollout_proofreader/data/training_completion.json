@@ -1,0 +1,17 @@
+{
+  "complete": {
+    "step": 18714,
+    "max_steps": 18714,
+    "best_validation_loss": 0.4132416447291689,
+    "completed_at": "2026-10-10T00:51:56.179463+00:00"
+  },
+  "best": {
+    "step": 18000,
+    "path": "s3://marin-us-east-02a/MarinFold/exp356/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18000",
+    "validation_loss": 0.4132416447291689
+  },
+  "resume": {
+    "path": "s3://marin-us-east-02a/MarinFold/exp356/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18714",
+    "step": 18714
+  }
+}
