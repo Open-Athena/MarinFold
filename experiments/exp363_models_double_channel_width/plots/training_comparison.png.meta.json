@@ -1,0 +1,5 @@
+{
+  "script": "plot_training_comparison.py",
+  "args": [],
+  "caption": "Full-validation observations through step 46,508, exported October 19, 2026. Exact-step comparison; no interpolation or smoothing. Same logical training recipe, different hardware/gradient accumulation; single seed, incomplete epoch. The right panel zooms into observations after step 25,000."
+}

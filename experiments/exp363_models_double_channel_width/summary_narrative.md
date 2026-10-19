@@ -28,3 +28,21 @@ Native and HF step-19 checkpoints verified; tokenizer included.
 Median steps 5–19: 7.40 s/update, about 32% longer than GPU steps.
 Short native-only smoke; throughput is preliminary, not cost-normalized.
 Production continues on GPUs. No bulk transfer or migration performed.
+
+## Matched validation: no width benefit yet
+Same native + MPNN corpus, global batch, validation and optimizer schedule.
+Wider model led early; default overtook it between steps 33,824 and 35,938.
+Default has lower loss at all six subsequent full evaluations.
+At step 46,508: default 3.11447; wider 3.12334.
+Gap +0.00887 nats/token, or 0.89% higher perplexity.
+Single seed, about 18% of the epoch; baseline LR retained without retuning.
+Both losses keep falling. No contact-accuracy evaluation for the wider model yet.
+
+## Other architectures: context, not a common leaderboard
+exp108 depth-scaled 2.93B: all three LR trials unstable around 6.8k updates.
+exp108 width-scaled 2.78B: all three trials finished; older recipe and validation.
+exp262 NoPE + smear: final loss 3.00207 versus its control's 2.97454.
+Its early advantage reversed, illustrating why interim rankings can mislead.
+exp157 learned RoPE deltas: corrected CE 3.0654 versus vanilla 3.0815.
+Only exp277 provides the same native + MPNN recipe as the current wider run.
+Raw historical validation losses cannot be pooled across cache/logging paths.

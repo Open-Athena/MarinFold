@@ -45,6 +45,70 @@ Evidence: `data/progress_20261019.json`,
 `data/checkpoint_verification_20261019.json`, and the TPU run history. The
 historical launch/recovery notes below preserve what was known at each stage.
 
+## Comparison with previous architectures (2026-10-19)
+
+**Optimization is progressing, but extra width has not improved validation at
+the latest matched exposure.** The wider model led at the first 16 evaluations;
+exp277 overtook it between steps 33,824 and 35,938 and has lower loss at all six
+subsequent observations. At step 46,508, exp363 is **3.12334** versus exp277's
+**3.11447**: **+0.00887 nats/token**, equivalent to **0.89% higher perplexity**.
+This is a small, consistent recent gap, not evidence of divergence. Both curves
+continue downward. The production run was at step 48,568 when the comparison
+was fetched; 46,508 was its latest completed full validation.
+
+| Exact matched step | Default 1.471B | Double width 5.862B | Wider minus default |
+| ---: | ---: | ---: | ---: |
+| 10,570 | 3.38477 | 3.29881 | -0.08595 |
+| 21,140 | 3.19945 | 3.18248 | -0.01696 |
+| 33,824 | 3.14812 | 3.14168 | -0.00644 |
+| 35,938 | 3.13426 | 3.13841 | +0.00415 |
+| 46,508 | 3.11447 | 3.12334 | +0.00887 |
+
+![Matched validation comparison](plots/training_comparison.png)
+
+This is the strongest available comparison: the recorded optimizer configs are
+identical, data configs differ only in the tokenizer location (the wider run
+bundles the verified pinned snapshot), and model configs differ only in
+`hidden_dim` and `intermediate_dim`. Both use the same four caches, full
+validation cache, global batch 128, sequence length 8192, 266,345-update schedule,
+augmentation and seeds. Hardware allocation and gradient accumulation differ.
+This is one seed and about 18% of an epoch; the baseline learning rate was
+retained without tuning for the larger model. Exp277 eventually reached 2.98441
+at step 266,344, which is a final target rather than a matched-exposure comparison.
+[Default run](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B)
+and [wider run](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B).
+
+Earlier architecture experiments provide context, with their own controls:
+
+| Experiment / architecture | Observed result | How it informs this run |
+| --- | --- | --- |
+| #108: 48 layers, 2048 hidden, 2.931B, Q/K norm off | All three LR trials became unstable around 6.8–6.9k updates and were stopped | The present width-scaled run has passed that stage with decreasing full-validation loss. This does not isolate depth: Q/K normalization and training recipes also differ. |
+| #108: 24 layers, 2816 hidden, 2.776B, Q/K norm on | All three width-scaled trials completed; best final logged loss 2.74185 | Width scaling has trained successfully before. Its older corpus, repeated epochs and validation path prevent ranking that raw loss against this run. |
+| #262: NoPE + causal token smear versus its 1.471B control | Final 3.00207 versus 2.97454, a +0.02752 penalty after 145,200 updates | An early advantage reversed at full scale/budget; mid-run rankings can mislead. Different native-only corpus and schedule from exp363. |
+| #157: learned RoPE position deltas versus vanilla input embeddings | Corrected same-cache final CE 3.0654 versus 3.0815 | A small positive result within that older recipe; not a direct comparison to the current native-plus-MPNN model. |
+
+Sources: [#108 architecture and stability record](../exp108_models_qwen_3b_contacts_v1/README.md),
+[#262 full-budget comparison](../exp262_models_nope_token_smearing/README.md),
+and [#157 corrected validation comparison](../exp157_models_fixed_position_embeddings/README.md).
+In particular, #157's direct reevaluation of the old vanilla checkpoint changed
+its apparent CE from the old logged 2.7037 to 3.0815 on the comparison cache;
+historical raw W&B loss values are not a common leaderboard.
+
+The committed `data/training_comparison_curves.csv` contains all 22 wider-model
+and 126 baseline full-validation observations available at export time.
+`data/matched_width_comparison.csv` is the exact-step join, and
+`data/training_comparison_provenance.json` records W&B links, configs and the
+historical run inventory. Every baseline observation was checked against
+exp277's committed epoch-validation CSV. `plot_training_comparison.py` regenerates
+the figure offline without interpolation or smoothing.
+
+**Interpretation:** training remains numerically healthy, but the nearly 4x
+parameter increase has not yet earned a validation improvement over the default.
+Continue the fixed-recipe comparison; no new learning-rate or architecture change
+was made in response to these interim results. Contact accuracy for exp363 has
+not yet been evaluated, so these language-model losses do not establish its
+protein-contact quality.
+
 ## Question
 
 Does doubling the channel width of the current default exp277 model improve contact accuracy at the same one-epoch training exposure?
@@ -105,7 +169,11 @@ The first GPU smoke `/bizon/exp363-train-smoke-a01` failed before model/W&B init
 
 ## Conclusion
 
-The requested architecture is implemented and its exact parameter count is verified. Contact-accuracy and training-quality conclusions await completed training.
+The requested architecture is implemented and its exact parameter count is verified.
+At the October 19 snapshot, full-validation loss decreases steadily but is
+0.00887 nats/token worse than exp277 at matched step 46,508, after an early lead
+reversed. The run is incomplete; final training-quality and contact-accuracy
+conclusions remain open.
 
 ## TPU trial (2026-10-14)
 
