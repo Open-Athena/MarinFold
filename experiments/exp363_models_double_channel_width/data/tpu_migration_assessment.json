@@ -1,5 +1,5 @@
 {
-  "observed_at": "2026-10-16T15:42:30.182020+00:00",
+  "observed_at": "2026-10-19T13:19:11.593969+00:00",
   "destination_region": "us-east5",
   "native_caches": "Existing exp232_train_trc regional mirrors verified reachable; no transfer needed.",
   "missing_caches": [
@@ -23,15 +23,16 @@
   "checkpoint_transfer": "Additionally requires the latest completed full optimizer checkpoint to resume.",
   "approval_requirement": "Root AGENTS.md requires explicit human sign-off for cross-region copies larger than 10 GB.",
   "checkpoint": {
-    "source": "s3://marin-us-east-02a/tmp/ttl=14d/checkpoints-temp/marin-us-east-02a/MarinFold/exp363_models_double_channel_width/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B/checkpoints/step-8120",
-    "bytes": 70326130929,
-    "objects": 68,
+    "source": "s3://marin-us-east-02a/tmp/ttl=14d/checkpoints-temp/marin-us-east-02a/MarinFold/exp363_models_double_channel_width/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B/checkpoints/step-48452",
+    "bytes": 70326141053,
+    "objects": 71,
     "metadata": {
-      "step": 8120,
-      "timestamp": "2026-10-16T02:02:09.197461",
+      "step": 48452,
+      "timestamp": "2026-10-19T13:18:46.300250",
       "is_temporary": true
     },
-    "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp363_models_double_channel_width/checkpoints/contacts-v1-exp363-m2-p06-full-epoch-5.86B/step-8120"
+    "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp363_models_double_channel_width/checkpoints/contacts-v1-exp363-m2-p06-full-epoch-5.86B/step-48452"
   },
-  "total_transfer_bytes": 320399447720
+  "total_transfer_bytes": 320399457844,
+  "current_decision": "Continue production on GPUs. TPU hardware trial succeeded, but initial step time was 7.40 s versus 5.61 s on GPUs; no migration performed."
 }

@@ -46,3 +46,5 @@ _(Bullet list of differences from the last run of this kind.)_
 ## Notes
 
 2026-10-16: reached step 8438 (3.17%), train loss 3.15777 and last eval loss 3.46485. Checkpoint barrier timeout stopped training despite Iris success. Last complete checkpoint: step 8120; step 8279 lacks completion metadata. Restart a03 submitted from commit 241b26c9 with the same run ID and data/optimizer schedule; runtime now requires the final checkpoint before success.
+
+2026-10-19: a03 is running after two preemptions and no recorded failures. Latest observed W&B step 48,451 (18.19%), train loss 2.89288 and last full eval loss 3.12334. Complete rolling checkpoint step 48,452 and permanent step 26,634 verified. Optimizer time 5.612 s/update on 32 H100s. The successful 32-chip v5p smoke measured 7.399 s/update; production remains on GPUs.

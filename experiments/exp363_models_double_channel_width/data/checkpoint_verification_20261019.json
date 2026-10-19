@@ -1,0 +1,52 @@
+{
+  "observed_at": "2026-10-19T13:19:11.593969+00:00",
+  "gpu_complete_checkpoints": [
+    {
+      "path": "s3://marin-us-east-02a/MarinFold/exp363_models_double_channel_width/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B/checkpoints/step-26634",
+      "metadata": {
+        "step": 26634,
+        "timestamp": "2026-10-18T00:18:50.922604",
+        "is_temporary": false
+      }
+    },
+    {
+      "path": "s3://marin-us-east-02a/tmp/ttl=14d/checkpoints-temp/marin-us-east-02a/MarinFold/exp363_models_double_channel_width/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B/checkpoints/step-48452",
+      "metadata": {
+        "step": 48452,
+        "timestamp": "2026-10-19T13:18:46.300250",
+        "is_temporary": true
+      }
+    }
+  ],
+  "gpu_latest_complete_checkpoint": {
+    "path": "s3://marin-us-east-02a/tmp/ttl=14d/checkpoints-temp/marin-us-east-02a/MarinFold/exp363_models_double_channel_width/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B/checkpoints/step-48452",
+    "metadata": {
+      "step": 48452,
+      "timestamp": "2026-10-19T13:18:46.300250",
+      "is_temporary": true
+    }
+  },
+  "tpu_final_checkpoint": {
+    "path": "gs://marin-us-east5/protein-structure/MarinFold/exp363_models_double_channel_width/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B-tpu-smoke-v5p-64-a03/checkpoints/step-19",
+    "metadata": {
+      "step": 19,
+      "timestamp": "2026-10-16T17:14:50.797869",
+      "is_temporary": false
+    }
+  },
+  "tpu_hf_export": {
+    "path": "gs://marin-us-east5/protein-structure/MarinFold/exp363_models_double_channel_width/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B-tpu-smoke-v5p-64-a03/hf/step-19",
+    "files": {
+      "config.json": 1728,
+      "model-00001-of-00005.safetensors": 4958809552,
+      "model-00002-of-00005.safetensors": 4865567936,
+      "model-00003-of-00005.safetensors": 4865567920,
+      "model-00004-of-00005.safetensors": 4865567896,
+      "model-00005-of-00005.safetensors": 3892454288,
+      "model.safetensors.index.json": 20883,
+      "tokenizer.json": 64407,
+      "tokenizer_config.json": 295
+    },
+    "total_bytes": 23448054905
+  }
+}

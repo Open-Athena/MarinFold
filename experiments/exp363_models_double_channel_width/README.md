@@ -10,6 +10,41 @@ marinfold_experiment:
 
 **Issue:** [#363](https://github.com/Open-Athena/MarinFold/issues/363) · **Kind:** `models` · **Branch:** `exp363/double-channel-width`
 
+## Current status (2026-10-19)
+
+**GPU production is running at 18.19% of its epoch.** The latest observed W&B
+step is 48,451 (48,452 optimizer updates of 266,345), train loss **2.89288** and
+last full validation loss **3.12334**, improved from 3.46485 on October 16.
+A subsequently committed rolling checkpoint at **step 48,452** was verified at
+13:19 UTC; permanent step 26,634 is also present. The recovery a03 child has had
+two preemptions and no recorded failures. Its current optimizer time is
+**5.612 seconds/update** on 32 H100s, implying approximately **14.2 remaining
+compute days**, excluding validation, checkpointing, queueing and preemptions.
+[Production W&B](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B).
+
+**The Interactive v5p-64 trial succeeded on October 16.** All eight workers
+completed; no failures or preemptions. The child began at 17:04 UTC, roughly
+68 minutes after submission, and finished at 17:18 UTC. It completed 20 updates,
+validation, a native step-19 checkpoint, and a 23.448 GB HF export including
+`tokenizer.json` and `tokenizer_config.json`. The final smoke losses were 6.64660
+train and 6.56125 validation. Its fresh initialization, native-only data and
+compressed LR schedule make these smoke losses unsuitable for comparison with
+production convergence.
+[TPU W&B](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B-tpu-smoke-v5p-64-a03).
+
+The median TPU optimizer time for steps 5–19 is **7.399 seconds/update**
+(about 142k tokens/s), versus approximately 5.612 seconds/update (187k tokens/s)
+on the current GPU run. This is about **32% longer per update** on 32 v5p chips.
+It is an initial execution comparison with different data mixes and attention
+kernels, not a tuned hardware benchmark or cost comparison. Production continues
+on GPUs; no bulk transfer or production migration has occurred. The previously
+estimated migration remains approximately 320.4 GB and would require explicit
+cross-region transfer approval.
+
+Evidence: `data/progress_20261019.json`,
+`data/checkpoint_verification_20261019.json`, and the TPU run history. The
+historical launch/recovery notes below preserve what was known at each stage.
+
 ## Question
 
 Does doubling the channel width of the current default exp277 model improve contact accuracy at the same one-epoch training exposure?

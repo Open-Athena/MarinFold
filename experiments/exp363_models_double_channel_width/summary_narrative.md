@@ -9,18 +9,22 @@ Keep data, optimizer schedule, seeds and global batch fixed.
 
 ## Architecture and smoke verified
 5,861,984,256 parameters, versus exp277's 1,471,374,336 (3.984x).
-12 local configuration/tokenizer/data checks passed.
+Architecture, tokenizer, data and recovery checks passed.
 64-H100 smoke: ten updates, train loss 8.56948, eval loss 8.03575.
 2.821 seconds/update; native and HF checkpoints saved with tokenizer.
 Compressed smoke schedule was spiky; this is an execution check.
 
-## Current status
-GPU reached step 8438 (3.17%); train loss 3.158, validation loss 3.465.
-Checkpoint barrier timeout stopped training; complete step 8120 remains.
-Scheduler falsely reported success; runtime now verifies final checkpoint.
-32-H100 restart in startup; checkpoint restoration not yet confirmed.
-v5p-64 trial resubmitted with Interactive driver and TPU-worker priority.
-v5p offers more memory/bandwidth; twenty native-only updates planned.
-Both Interactive bands verified; eight-worker placement still pending.
-Production migration: 320.4 GB; transfer approval still pending.
-Contact-accuracy results are pending.
+## Current status — October 19
+GPU production running: step 48,451, 18.19% of one epoch.
+Train loss 2.893; validation loss 3.123, previously 3.465.
+Complete rolling checkpoint step 48,452; permanent step 26,634.
+32 H100s: 5.61 s/update; about 14.2 compute days remaining.
+Queueing, validation, checkpoints and preemptions add wall time.
+
+## TPU trial succeeded
+Interactive v5p-64: 32 chips across 8 VMs; all 20 updates completed.
+Finished October 16; no worker failures or preemptions.
+Native and HF step-19 checkpoints verified; tokenizer included.
+Median steps 5–19: 7.40 s/update, about 32% longer than GPU steps.
+Short native-only smoke; throughput is preliminary, not cost-normalized.
+Production continues on GPUs. No bulk transfer or migration performed.
