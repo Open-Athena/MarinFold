@@ -9,6 +9,7 @@ and next-document cursor; HF exports always include the pretrained tokenizer.
 import argparse
 import contextlib
 import csv
+import faulthandler
 import hashlib
 import json
 import math
@@ -35,16 +36,17 @@ from transformers import AutoTokenizer, PreTrainedTokenizerBase, Qwen3_5ForCausa
 from transformers.models.qwen3_5.modeling_qwen3_5 import is_fast_path_available
 
 import wandb
+from checkpoint_io import CheckpointIO
 from common import FORMATS, MAX_LENGTH, MODELS, ROOT, SEED, TOKEN_BUDGET, run_name
 from corpus_stream import COUNTERS, CorpusStream
 
 
-def copy_tree_to_remote(local: Path, uri: str) -> None:
+def copy_tree_to_remote(local: Path, uri: str, io: CheckpointIO) -> None:
     """Upload a complete directory before its separate completion marker."""
-    fs, remote = fsspec.core.url_to_fs(uri)
+    remote = io.fs._strip_protocol(uri)
     for path in sorted(local.rglob("*")):
         if path.is_file():
-            fs.put_file(str(path), remote + "/" + str(path.relative_to(local)))
+            io.call("put_file", str(path), remote + "/" + str(path.relative_to(local)))
 
 
 def copy_tree_from_remote(uri: str, local: Path) -> None:
@@ -178,6 +180,8 @@ def checkpoint(
 ) -> str:
     """Commit all resume shards and an HF export, then move the resume pointer."""
     uri = f"{root}/step-{step}"
+    fs, path = fsspec.core.url_to_fs(uri)
+    io = CheckpointIO(fs)
     local = Path(f"/tmp/exp347-checkpoint-rank{rank}")
     local.mkdir(exist_ok=True)
     state = {
@@ -192,14 +196,13 @@ def checkpoint(
         "world": world,
     }
     torch.save(state, local / f"rank-{rank}.pt")
-    fs, path = fsspec.core.url_to_fs(uri)
-    fs.put_file(str(local / f"rank-{rank}.pt"), f"{path}/resume/rank-{rank}.pt")
+    io.call("put_file", str(local / f"rank-{rank}.pt"), f"{path}/resume/rank-{rank}.pt")
     if rank == 0:
         # Keep FP32 weights for exact continuation; publish the final inference
         # export in BF16 separately without mutating the live training model.
         model.save_pretrained(local / "model", max_shard_size="4GB")
         tokenizer.save_pretrained(local / "model")
-        copy_tree_to_remote(local / "model", uri + "/model")
+        copy_tree_to_remote(local / "model", uri + "/model", io)
         if final or evaluation_export:
             weights = inference_state_dict(model)
             model.save_pretrained(
@@ -211,12 +214,12 @@ def checkpoint(
             export_config["dtype"] = "bfloat16"
             config_path.write_text(json.dumps(export_config, indent=2) + "\n")
             if final:
-                copy_tree_to_remote(local / "hf", uri + "/hf")
+                copy_tree_to_remote(local / "hf", uri + "/hf", io)
             if evaluation_export:
                 # Periodic inference exports have independent lifetimes from the
                 # rolling optimizer checkpoint. Evaluation can run asynchronously
                 # after newer training checkpoints prune their predecessor.
-                copy_tree_to_remote(local / "hf", f"{root}/hf/step-{step}")
+                copy_tree_to_remote(local / "hf", f"{root}/hf/step-{step}", io)
     dist.barrier()
     if rank == 0:
         marker = {
@@ -227,19 +230,16 @@ def checkpoint(
             "final": final,
             "evaluation_export": evaluation_export,
         }
-        with fsspec.open(uri + "/complete.json", "w") as handle:
-            json.dump(marker, handle)
+        io.call("pipe_file", uri + "/complete.json", json.dumps(marker).encode())
         pointer = root + "/resume.json"
         previous = None
-        if fs.exists(pointer):
-            with fsspec.open(pointer) as handle:
-                previous = json.load(handle)["uri"]
-        with fsspec.open(pointer, "w") as handle:
-            json.dump(marker, handle)
+        if io.call("exists", pointer):
+            previous = json.loads(io.call("cat_file", pointer))["uri"]
+        io.call("pipe_file", pointer, json.dumps(marker).encode())
         # Retain one committed resumable checkpoint per trial. Never delete
         # until its successor and pointer have both been durably written.
         if previous and previous != uri:
-            fs.rm(previous, recursive=True)
+            io.call("rm", previous, recursive=True)
     dist.barrier()
     shutil.rmtree(local)
     return uri
@@ -341,11 +341,24 @@ def main() -> None:
     parser.add_argument("--eval-documents", type=int, default=64)
     parser.add_argument("--run-id")
     parser.add_argument(
+        "--resume-from", help="Committed checkpoint for an isolated recovery replay"
+    )
+    parser.add_argument(
+        "--stop-after-steps", type=int, help="Save and stop a bounded recovery replay"
+    )
+    parser.add_argument("--trace-steps", action="store_true")
+    parser.add_argument(
         "--initialize-from",
         help="HF-format FP32 weights; start fresh optimizer and data cursor",
     )
     parser.add_argument("--eval-every-tokens", type=int, default=0)
     args = parser.parse_args()
+    if args.resume_from and (not args.run_id or not args.stop_after_steps):
+        raise ValueError(
+            "An isolated recovery replay needs its own run ID and a step limit"
+        )
+    if args.stop_after_steps is not None and args.stop_after_steps <= 0:
+        raise ValueError("Step limit must be positive")
     if args.checkpoint_seconds <= 0:
         raise ValueError("Checkpoint interval must be positive")
     if args.run_id and not re.fullmatch(r"[a-zA-Z0-9_-]+", args.run_id):
@@ -371,15 +384,18 @@ def main() -> None:
     name = args.run_id or run_name(args.size, args.format, args.smoke)
     run_id = name
     root = f"{ROOT}/checkpoints/{name}"
+    if args.resume_from and args.resume_from.startswith(root + "/"):
+        raise ValueError("Use normal resume for this run's own checkpoint")
     fs, root_path = fsspec.core.url_to_fs(root)
     resume = None
+    if args.resume_from:
+        with fsspec.open(args.resume_from + "/complete.json") as handle:
+            resume = json.load(handle)
     if fs.exists(root_path + "/resume.json"):
         with fsspec.open(root + "/resume.json") as handle:
             resume = json.load(handle)
-        if resume["world"] != world:
-            raise ValueError(
-                "This optimizer checkpoint requires the original world size"
-            )
+    if resume is not None and resume["world"] != world:
+        raise ValueError("This optimizer checkpoint requires the original world size")
     with fsspec.open(args.data + "/manifest.json") as handle:
         data_manifest = json.load(handle)
     if data_manifest["max_length"] != MAX_LENGTH or data_manifest["tokenizer"] != list(
@@ -486,7 +502,12 @@ def main() -> None:
                     filename: hashlib.sha256(
                         Path(__file__).with_name(filename).read_bytes()
                     ).hexdigest()
-                    for filename in ["common.py", "corpus_stream.py", "train.py"]
+                    for filename in [
+                        "common.py",
+                        "corpus_stream.py",
+                        "checkpoint_io.py",
+                        "train.py",
+                    ]
                 },
             },
         )
@@ -540,7 +561,11 @@ def main() -> None:
         else None
     )
     logged_evaluations: set[str] = set()
+    faulthandler.enable()
     while tokens < args.tokens or (args.resume_check and step == resumed_step):
+        # Capture Python stacks before NCCL's ten-minute watchdog terminates the
+        # gang. Re-arm on progress so healthy training produces no stack dumps.
+        faulthandler.dump_traceback_later(180, repeat=True)
         began = time.perf_counter()
         batch = [stream.next() for _ in range(args.accumulation)]
         data_seconds = time.perf_counter() - began
@@ -554,6 +579,10 @@ def main() -> None:
             dtype=torch.int64,
         )
         dist.all_reduce(counts)
+        if args.trace_steps:
+            print(
+                f"TRACE rank={rank} step={step + 1} phase=forward_backward", flush=True
+            )
         ratio = min(tokens / args.tokens, 1.0)
         lr_factor = (
             max(0.01, ratio / 0.01)
@@ -578,9 +607,15 @@ def main() -> None:
         grad_norm = torch.nn.utils.clip_grad_norm_(
             ddp.parameters(), 1.0, error_if_nonfinite=True
         )
+        if args.trace_steps:
+            print(f"TRACE rank={rank} step={step + 1} phase=optimizer", flush=True)
         optimizer.step()
+        if args.trace_steps:
+            print(f"TRACE rank={rank} step={step + 1} phase=token_count", flush=True)
         tokens += int(counts[0])
         step += 1
+        if args.trace_steps:
+            print(f"TRACE rank={rank} step={step} phase=loss_reduce", flush=True)
         dist.all_reduce(total_loss)
         elapsed = time.perf_counter() - began
         metrics = {
@@ -620,6 +655,10 @@ def main() -> None:
         if run:
             run.log(metrics)
         final = tokens >= args.tokens
+        bounded_stop = (
+            args.stop_after_steps is not None
+            and step - resumed_step >= args.stop_after_steps
+        )
         evaluation_due = next_evaluation is not None and (
             tokens >= next_evaluation or final
         )
@@ -627,6 +666,7 @@ def main() -> None:
             [
                 int(
                     final
+                    or bounded_stop
                     or evaluation_due
                     or (not args.smoke and step == resumed_step + 1)
                     or time.monotonic() - last_checkpoint >= args.checkpoint_seconds
@@ -704,6 +744,9 @@ def main() -> None:
                         "run_progress": tokens / args.tokens,
                     }
                 )
+        if bounded_stop:
+            break
+    faulthandler.cancel_dump_traceback_later()
     if run:
         run.finish()
     dist.destroy_process_group()

@@ -31,6 +31,9 @@ def main() -> None:
     parser.add_argument("--tokens", type=int)
     parser.add_argument("--accumulation", type=int)
     parser.add_argument("--run-id")
+    parser.add_argument("--resume-from")
+    parser.add_argument("--stop-after-steps", type=int)
+    parser.add_argument("--trace-steps", action="store_true")
     parser.add_argument("--data")
     parser.add_argument("--initialize-from")
     parser.add_argument("--eval-every-tokens", type=int, default=0)
@@ -121,6 +124,12 @@ def main() -> None:
         command += ["--initialize-from", args.initialize_from]
     if args.eval_every_tokens:
         command += ["--eval-every-tokens", str(args.eval_every_tokens)]
+    if args.resume_from:
+        command += ["--resume-from", args.resume_from]
+    if args.stop_after_steps:
+        command += ["--stop-after-steps", str(args.stop_after_steps)]
+    if args.trace_steps:
+        command.append("--trace-steps")
     redacted = shlex.join(command)
     print(redacted, flush=True)
     if args.dry_run:
@@ -146,6 +155,14 @@ def main() -> None:
                     "initialize_from": args.initialize_from,
                     "eval_every_tokens": args.eval_every_tokens,
                     "nodes": args.nodes,
+                }
+            )
+        if args.resume_from or args.stop_after_steps or args.trace_steps:
+            configuration.update(
+                {
+                    "resume_from": args.resume_from,
+                    "stop_after_steps": args.stop_after_steps,
+                    "trace_steps": args.trace_steps,
                 }
             )
         config = json.dumps(configuration)
