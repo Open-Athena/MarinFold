@@ -25,7 +25,7 @@ The 2B prompted trial failed October 3 at 79.61M tokens with a distributed
 communication timeout; no preceding out-of-memory error was recorded.
 A single controlled resume was submitted October 5, retaining its optimizer,
 data cursor, RNG state, run identity, and scientific settings on eight H100s.
-It restored 78.14M tokens and has advanced beyond 137M tokens.
+It subsequently stopped at 332.0M tokens; its 330.25M-token checkpoint is intact.
 All five final checkpoints and their model/tokenizer/HF exports are verified.
 The other five successful runs use the same training code.
 The approved 4B model transfer is complete.
@@ -36,7 +36,7 @@ Both 4B pilot checkpoints now have complete eval-val contact evaluations.
 Contacts-v1 final NLL: 0.51342 (0.8B), 0.50577 (2B), 0.49301 (4B).
 Prompted final NLL: 1.15186 (0.8B), 1.06211 (4B).
 These use the same 64 held-out AFDB documents; larger models score better.
-The latest partial 2B prompted NLL is about 1.20954.
+The latest partial 2B prompted NLL is about 1.17544.
 NLLs across the two tokenizations are not directly comparable.
 A greedy generation canary ran on both 2B smoke checkpoints: all 16 outputs
 hit the 256-token cap, produced zero valid pairs, and scored F1 zero.
@@ -61,9 +61,20 @@ E8 reference passed: all R=0.42438, long R=0.36599; all 554 units, no truncated 
 Two-node training/export passed, but socket networking was slower than one node.
 The pinned image lacks libibverbs; production uses the proven 8-GPU profile.
 Source-stream GPU recovery passed: restored loss exactly; new step8 checkpoint verified.
-Both corrected phases are training on 8 H100s each from the original pilot weights.
+Both corrected phases stopped October 5 at 204.0M / 44.9M additional tokens.
 Eval every 1B additional tokens; baseline 0 is the corresponding 1Bpilot.
 Checkpointed 90-day jobs; the 100B budget may outlast that execution window.
+
+## Checkpoint recovery — October 19
+
+The stalled scalar collective was the checkpoint barrier.
+All optimizer shards uploaded; rank-zero model/tokenizer uploads were incomplete.
+Nested storage retries could outlast the ten-minute NCCL timeout.
+Fix: bounded per-operation retries and an eight-minute checkpoint storage budget.
+Previous recovery pointers survive failed uploads; add pre-timeout stack dumps.
+36 local tests, Ruff, Pyrefly and a real CoreWeave storage probe passed.
+Eight-H100 recovery replay is queued; east-region capacity is currently full.
+No new full-corpus R-precision measurement is available.
 
 ## Periodic R-precision contract
 

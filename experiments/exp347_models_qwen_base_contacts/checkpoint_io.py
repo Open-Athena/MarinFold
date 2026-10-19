@@ -32,6 +32,10 @@ class CheckpointIO:
 
     def call(self, operation: str, *args: Any, **kwargs: Any) -> Any:
         """Retry timed-out requests within a shared budget; propagate other errors."""
+        context = {
+            "checkpoint_io": operation,
+            "path": str(args[1] if operation == "put_file" else args[0]),
+        }
         for attempt in range(1, self.attempts + 1):
             remaining = self.deadline - time.monotonic()
             if remaining <= 0:
@@ -40,9 +44,7 @@ class CheckpointIO:
                 )
             began = time.monotonic()
             print(
-                json.dumps(
-                    {"checkpoint_io": operation, "attempt": attempt, "state": "started"}
-                ),
+                json.dumps({**context, "attempt": attempt, "state": "started"}),
                 flush=True,
             )
             try:
@@ -53,7 +55,7 @@ class CheckpointIO:
                 print(
                     json.dumps(
                         {
-                            "checkpoint_io": operation,
+                            **context,
                             "attempt": attempt,
                             "state": "timeout",
                         }
@@ -68,7 +70,7 @@ class CheckpointIO:
                 print(
                     json.dumps(
                         {
-                            "checkpoint_io": operation,
+                            **context,
                             "state": "finished",
                             "seconds": time.monotonic() - began,
                         }

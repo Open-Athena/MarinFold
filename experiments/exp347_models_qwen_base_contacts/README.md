@@ -176,7 +176,7 @@ BF16 export, and all eight optimizer shards were verified. `data/corpus235m/`
 contains the audit, CPU/GPU checks, and measured validation timings. Thirty-two
 local tests passed; Ruff and Pyrefly passed for changed Python files.
 
-The corrected raw and prompted production jobs are running as
+The corrected raw and prompted production jobs launched on October 5 as
 `/timodonnell/exp347-qwen35-4b-contacts_v1-corpus235m-100bt-a01` and
 `/timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a01`. Their curves are in
 [contacts-v1 training](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-4b-contacts_v1-corpus235m-100bt)
@@ -189,6 +189,37 @@ persistent evaluation drivers are running and have logged the
 reused pilot baselines under
 [contacts-v1 eval-val](https://wandb.ai/open-athena/MarinFold/runs/exp347-4b-contacts-v1-corpus235m-eval-val)
 and [prompted eval-val](https://wandb.ai/open-athena/MarinFold/runs/exp347-4b-prompted-corpus235m-eval-val).
+
+### October 19 checkpoint recovery
+
+Both corrected training jobs stopped on October 5: contacts-v1 at 204,014,298
+additional tokens and prompted at 44,888,932. Neither reached its first 1B-token
+evaluation. The latest complete recovery checkpoints remain raw step 2048
+(201,217,252 tokens) and prompted step 1602 (43,906,634 tokens), with all model,
+tokenizer and optimizer files verified on October 19.
+
+Retained logs show a ten-minute NCCL barrier timeout. The failed checkpoint
+prefixes at raw step 2077 and prompted step 1638 contain every optimizer shard
+but incomplete rank-zero model uploads; the remaining 2B pilot shows the same
+pattern at step 7486. This localizes the failure to checkpoint publication rather
+than a gradient collective. The storage configuration permits nested retries
+with 120-second reads, exceeding the GPU barrier's timeout. The individual
+storage request that first stalled was not captured in the original logs.
+
+`checkpoint_io.py` adds a 90-second outer deadline per storage operation, up to
+three attempts for timeouts, and a shared 480-second checkpoint storage budget.
+Other exceptions propagate immediately. Complete markers and the recovery
+pointer are written only after all uploads finish; prior checkpoints are deleted
+only after the new pointer commits. Python stack dumps identify future stalls
+before the NCCL watchdog. A separate bounded replay can restore model, optimizer,
+RNG and corpus cursors without writing the production checkpoint prefix.
+
+All 36 local tests pass, including injected storage hangs, request cancellation,
+retry exhaustion and preservation of the previous pointer. Ruff and Pyrefly pass.
+The new put/read/marker/delete path also passed against the actual co-located S3
+service. GPU recovery replay is queued as
+`/timodonnell/exp347-qwen35-4b-corpus235m-recovery-debug-a02`; the east H100 pool
+currently has no free GPUs. Production recovery is awaiting that validation.
 
 `eval_contract.py` freezes the **97-protein eval-val set** from exp245's pinned
 membership, sequences, and resolved-residue ground truth. It never selects
