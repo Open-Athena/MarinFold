@@ -16,6 +16,7 @@ marinfold_run:
   iris_job_ids:
   - /bizon/exp362-depth16-train-a01
   - /bizon/exp362-depth16-train-a01/exp362-train-8f65895e
+  - /bizon/exp362-depth16-train-a01/exp362-train-a45b279a
 ---
 # 2026-10-13 · exp362_models_smaller_model_scaling · contacts-v1-exp362-depth16-full-epoch
 

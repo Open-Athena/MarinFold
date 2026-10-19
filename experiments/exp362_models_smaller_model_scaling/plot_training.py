@@ -45,7 +45,7 @@ def main() -> None:
         progress = float(run.summary.get("run_progress", 0))
         rows = [
             {"run_id": run_id, "parameters": parameters, "step": int(row["_step"]), "eval_loss": float(row["eval/loss"])}
-            for row in run.scan_history(keys=["_step", "eval/loss"])
+            for row in run.scan_history(keys=["_step", "eval/loss"], page_size=10_000)
             if row["eval/loss"] is not None
         ]
         rows.sort(key=lambda row: row["step"])

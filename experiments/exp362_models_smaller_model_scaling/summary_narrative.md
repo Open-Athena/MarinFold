@@ -14,16 +14,16 @@ TRC preflight found no complete regional MPNN caches.
 Proceeding with existing CoreWeave inputs at batch priority.
 All three smoke gates passed, including native/HF checkpoints and tokenizers.
 All three production runs retain the full 266,345-update schedule.
-Fresh W&B/Iris observation at 2026-10-16 15:34 UTC:
-255M reached 68.6%; 498M reached 67.2% and is advancing.
-985M reached 25.4%; waiting for eight nodes after another preemption.
-255M resumed training on one node, then was preempted again.
-255M / 985M report 13 / 3 preemptions and zero job failures.
-104 H100s requested; east02 has no free GPUs for a better placement.
-Latest temporary native checkpoints: 182441 (255M), 67180 (985M).
-Metadata/manifests reachable; latest checkpoint payloads not load-tested.
+Fresh W&B/Iris observation at 2026-10-19 13:18 UTC:
+255M and 498M completed all 266,345 updates; Iris jobs succeeded.
+Final validation loss: 255M 3.2483; 498M 3.0834; 1.47B control 2.9844.
+Both final native checkpoints and HF exports include the expected tokenizer.
+Metadata, tensor headers and object sizes verified; payloads not yet hashed.
+985M reached 70.4% and is advancing; latest validation loss 3.0998.
+Its final 20% learning-rate decay is still ahead.
+64 H100s remain active; preserve the progressing eight-node dispatch.
 Scheduled monitoring remains blocked by runtime permissions.
-Full training and contact accuracy results are pending.
+Contact evaluations, public publication and final conclusions remain pending.
 
 ## Interpretation
 Use final validation loss and matched eval-val / eval-denovo contact accuracy.

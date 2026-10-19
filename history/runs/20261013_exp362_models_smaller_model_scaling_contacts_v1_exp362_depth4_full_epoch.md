@@ -17,6 +17,7 @@ marinfold_run:
   - /bizon/exp362-depth4-train-a02
   - /bizon/exp362-depth4-train-a02/exp362-train-275539ff
   - /bizon/exp362-depth4-train-a01/exp362-train-0a9a5492
+  - /bizon/exp362-depth4-train-a02/exp362-train-f3e68aae
 ---
 # 2026-10-13 · exp362_models_smaller_model_scaling · contacts-v1-exp362-depth4-full-epoch
 
@@ -45,3 +46,5 @@ At 2026-10-15 14:37 UTC, W&B had reached 173,896 updates (65.3%) but last report
 After approximately 12.5 hours without progress, the old root and child were cancelled and verified killed. Attempt 2 was submitted at 2026-10-15T14:40:00.233Z on one node/eight H100s at batch priority, using source `14b2a33243bcd1eea576444b61747d91ab45a7e3`. The larger depth8 smoke's per-device batch eight supports this placement's memory feasibility. Global batch 128, the complete 266,345-update recipe, W&B identity, and checkpoint root are unchanged. Approximately 14,091 updates beyond step 159804 may repeat. Child `/bizon/exp362-depth4-train-a02/exp362-train-275539ff` is submitted; admission and trainer restoration await verification.
 
 At 14:43 UTC the replacement had initialized JAX and resumed the W&B identity, but Iris reported one startup preemption, zero failures, and its single worker waiting at the admission gate again. No new optimizer updates or successful trainer restoration were verified. Its startup found temporary checkpoint step 172859; metadata, manifests, and 23 data objects are reachable under `s3://marin-us-east-02a/tmp/ttl=14d/checkpoints-temp/marin-us-east-02a/MarinFold/exp362_models_smaller_model_scaling/runs/contacts-v1-exp362-depth4-full-epoch/checkpoints/step-172859`. Successful restoration there would reduce repeated updates to approximately 1,036.
+
+Verified completed at 2026-10-19 13:18 UTC: W&B `run_progress=1`, `_step=266344`, final validation loss 3.2482898235321045; exact Iris root and replacement child succeeded. Final native checkpoint timestamp: 2026-10-19T09:23:24.542317 UTC. Native metadata/manifests and HF architecture, tokenizer, tensor headers and object sizes passed verification; payload bytes were not downloaded or hashed. Source paths and object identities are recorded in `experiments/exp362_models_smaller_model_scaling/data/final_depth4_checkpoint.json`. Contact evaluation and public HF publication remain pending.
