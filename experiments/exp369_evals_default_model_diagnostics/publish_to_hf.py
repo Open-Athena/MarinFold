@@ -13,6 +13,27 @@ HERE = Path(__file__).resolve().parent
 DESTINATION = "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics"
 
 
+def build_archive(files: dict[str, Path], archive: Path) -> dict:
+    """Write a deterministic archive with a checksum manifest for every member."""
+    manifest = {name: {"size": path.stat().st_size, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+                for name, path in sorted(files.items())}
+    archive.parent.mkdir(parents=True, exist_ok=True)
+    with archive.open("wb") as output, gzip.GzipFile(fileobj=output, mode="wb", mtime=0) as compressed:
+        with tarfile.open(fileobj=compressed, mode="w|") as tar:
+            for name, path in sorted(files.items()):
+                info = tarfile.TarInfo(name)
+                info.size = path.stat().st_size
+                with path.open("rb") as stream:
+                    tar.addfile(info, stream)
+            payload = (json.dumps(manifest, indent=2) + "\n").encode()
+            info = tarfile.TarInfo("manifest.json")
+            info.size = len(payload)
+            tar.addfile(info, io.BytesIO(payload))
+    with archive.open("rb") as stream:
+        digest = hashlib.file_digest(stream, "sha256").hexdigest()
+    return {"sha256": digest, "size_bytes": archive.stat().st_size, "n_files": len(files)}
+
+
 def main() -> None:
     """Build a deterministic archive of public inputs, results, and source code."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -34,24 +55,10 @@ def main() -> None:
     for run_dir in args.run_dir:
         files.update({f"predictions/{run_dir.name}/{path.relative_to(run_dir)}": path
                       for path in run_dir.rglob("*") if path.is_file() and not path.name.endswith(".partial")})
-    manifest = {name: {"size": path.stat().st_size, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
-                for name, path in sorted(files.items())}
     archive = args.work / "public-results.tar.gz"
-    with archive.open("wb") as output, gzip.GzipFile(fileobj=output, mode="wb", mtime=0) as compressed:
-        with tarfile.open(fileobj=compressed, mode="w|") as tar:
-            for name, path in sorted(files.items()):
-                payload = path.read_bytes()
-                info = tarfile.TarInfo(name)
-                info.size = len(payload)
-                tar.addfile(info, io.BytesIO(payload))
-            payload = (json.dumps(manifest, indent=2) + "\n").encode()
-            info = tarfile.TarInfo("manifest.json")
-            info.size = len(payload)
-            tar.addfile(info, io.BytesIO(payload))
-    digest = hashlib.sha256(archive.read_bytes()).hexdigest()
-    uri = f"{DESTINATION}/{digest}/results.tar.gz"
-    publication = {"uri": uri, "sha256": digest, "size_bytes": archive.stat().st_size,
-                   "n_files": len(files), "uploaded": False}
+    metadata = build_archive(files, archive)
+    uri = f"{DESTINATION}/{metadata['sha256']}/results.tar.gz"
+    publication = {"uri": uri, **metadata, "uploaded": False}
     print(json.dumps(publication, indent=2), flush=True)
     if args.upload:
         subprocess.run(["hf", "buckets", "cp", str(archive), uri], check=True)

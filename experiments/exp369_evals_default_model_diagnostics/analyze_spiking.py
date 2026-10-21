@@ -34,7 +34,12 @@ def main() -> None:
     rows, timings = [], []
     for target in plan["targets"]:
         for repeat in range(plan["repeats"]):
-            grid = target["doses_by_repeat"][str(repeat)]
+            # The one zero-dose sample is shared across axis labels as well as
+            # policies, so an already-accurate protein needs zero intervention.
+            grid = target["doses_by_repeat"][str(repeat)] + [
+                {"axis": "fraction", "dose": 0., "k": 0},
+                {"axis": "sse_round", "dose": 0, "k": 0},
+            ]
             conditions = [(policy, k) for k in sorted({d["k"] for d in grid})
                           for policy in (["random"] if k == 0 else ["random", "sse_balanced"])]
             matrices = {}
@@ -117,8 +122,8 @@ def main() -> None:
     for contact_range in ("all", "long"):
         fig, axes = plt.subplots(2, 3, figsize=(14, 8), layout="constrained")
         for column, (axis, title) in enumerate((("count", "Number of supplied true contacts"),
-                                                ("fraction", "Fraction of all true contacts supplied"),
-                                                ("sse_round", "Contacts per coverable secondary-structure element"))):
+                                                ("fraction", "Target fraction of true contacts supplied"),
+                                                ("sse_round", "Contacts per element in balanced policy"))):
             for policy, color, label in (("random", "#007A87", "Random"), ("sse_balanced", "#C15C20", "SSE-balanced")):
                 data = summary.loc[(summary["range"] == contact_range) & (summary.axis == axis) & (summary.policy == policy)].sort_values("dose")
                 for index, metric in enumerate(("r_precision", "delta")):
@@ -134,12 +139,16 @@ def main() -> None:
                         ax.set_xscale("symlog", linthresh=1)
             axes[0, column].set_ylim(0, 1)
             axes[1, column].axhline(0, color="gray", linewidth=.7)
+            if axis == "count":
+                axes[0, column].text(.03, .97, "Eligible n: 97 through 16; 32: 96; 64: 89; 128: 74",
+                                     transform=axes[0, column].transAxes, va="top", fontsize=8)
         axes[0, 0].set_ylabel("Remaining-contact R-precision")
         axes[1, 0].set_ylabel("Gain over matched unconditioned baseline")
-        axes[0, 0].legend(frameon=False)
+        axes[0, 0].plot([], [], color="#606870", linestyle="--", label="Unconditioned, same remaining pairs")
+        axes[0, 0].legend(frameon=False, fontsize=8, loc="lower left")
         fig.suptitle(f"exp277 step 266344 • eval-val • {contact_range}-range contacts\n100 rollouts × 2 context draws; 95% protein-bootstrap intervals", fontsize=13)
         save_plot_with_meta(fig, str(HERE / f"plots/spiking_{contact_range}.png"),
-                            caption="Supplied pairs never score. Dashed curves: unconditioned scores on the identical remaining pair universe. Count doses omit proteins with no truth remaining; see CSV denominators. SSE quotas saturate elements with too few available contacts; random uses the same contact count.")
+                            caption="Supplied pairs never score. Dashed curves: unconditioned scores on the identical remaining pair universe. Count doses omit proteins with no truth remaining; see CSV denominators. Fraction budgets floor to integer contacts, with a minimum of one for nonzero doses. SSE quotas saturate elements with too few available contacts; random uses the same contact count. Zero-dose predictions are shared across axes and policies.")
         plt.close(fig)
     thresholds = []
     for (policy, axis), group in summary.loc[summary["range"] == "all"].groupby(["policy", "axis"]):

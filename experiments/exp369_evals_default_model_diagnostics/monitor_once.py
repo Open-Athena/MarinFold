@@ -28,11 +28,11 @@ def main() -> None:
                           config_kwargs={"s3": {"addressing_style": "virtual"}})
     objects = fs.find(launch["out"].removeprefix("s3://"), detail=True)
     complete = Counter(name.split("/")[-2] for name in objects if name.endswith(".complete.json"))
-    prefix = launch["job_ids"][0].rsplit("-s", 1)[0]
+    prefix = launch.get("job_prefix", launch["job_ids"][0].rsplit("-s", 1)[0])
     with open_iris_client(config_file=args.iris_config, workspace=None) as client:
         jobs = client.list_jobs(prefix=prefix, limit=100)
     states = {str(job.job_id): {"state": job.state.value, "error": job.error_message, "pending_reason": job.pending_reason}
-              for job in jobs}
+              for job in jobs if str(job.job_id) in launch["job_ids"]}
     snapshot = {"timestamp_utc": datetime.now(UTC).isoformat(), "complete_conditions": sum(complete.values()),
                 "expected_conditions": sum(expected.values()), "complete_proteins": sum(complete[stem] == n for stem, n in expected.items()),
                 "expected_proteins": len(expected), "artifact_bytes": sum(item["size"] for item in objects.values()),

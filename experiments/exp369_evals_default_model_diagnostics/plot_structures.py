@@ -42,6 +42,7 @@ def main() -> None:
         combined = np.concatenate((a, p))
         center = combined.mean(axis=0)
         _, _, vt = np.linalg.svd(combined - center, full_matrices=False)
+        vt[-1] *= np.linalg.det(vt)
         a, p = (a - center) @ vt.T, (p - center) @ vt.T
         ax = fig.add_subplot(2, 3, number, projection="3d")
         breaks = np.flatnonzero(np.diff(indices) > 1) + 1
