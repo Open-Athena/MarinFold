@@ -16,19 +16,27 @@ RESULT_FILES = ("manifest.json", "contact_precision_all.csv", "timings.csv")
 LOW_MSA = HERE.parent / "exp260_evals_msa_depth_stratified/data/low_msa_depth_set.csv"
 
 
-def collect(plan: dict) -> list[str]:
+def result_directory(checkpoint: dict, eval_set: str) -> Path:
+    """Keep independently evaluated sets separate from the combined run."""
+    directory = DATA / "results" / checkpoint["trial"]
+    return directory if eval_set == "all" else directory / "sets" / eval_set
+
+
+def collect(plan: dict, eval_set: str = "all") -> list[str]:
     """Download only complete small result sets; never download model weights."""
     fs = fsspec.filesystem("hf", token=False)
     completed = []
     for checkpoint in plan["checkpoints"]:
         remote = plan["artifact_root"] + "/" + checkpoint["label"]
+        if eval_set != "all":
+            remote += "/sets/" + eval_set
         if not all(
             fs.exists(remote.removeprefix("hf://") + "/" + name)
             for name in RESULT_FILES
         ):
             print("PENDING", checkpoint["trial"])
             continue
-        destination = DATA / "results" / checkpoint["trial"]
+        destination = result_directory(checkpoint, eval_set)
         destination.mkdir(parents=True, exist_ok=True)
         for name in RESULT_FILES:
             subprocess.run(
@@ -47,7 +55,9 @@ def validate_result(
 ) -> None:
     """Require the requested universe and full, uncapped per-input measurements."""
     units = set(zip(targets.dataset, targets.stem, strict=True))
-    if len(precision) != 116 * 20 or set(precision.model) != {checkpoint["label"]}:
+    if len(precision) != len(targets) * 20 or set(precision.model) != {
+        checkpoint["label"]
+    }:
         raise ValueError("Wrong checkpoint identity or metric-row count")
     keys = ["dataset", "stem", "range", "cut"]
     if precision.duplicated(keys).any():
@@ -63,7 +73,7 @@ def validate_result(
     if set(zip(precision.dataset, precision.stem, strict=True)) != units:
         raise ValueError("Metric coverage differs from the requested universe")
     if (
-        len(timings) != 116
+        len(timings) != len(targets)
         or set(zip(timings.dataset, timings.stem, strict=True)) != units
     ):
         raise ValueError("Timing coverage differs from the requested universe")
@@ -83,15 +93,20 @@ def validate_result(
         raise ValueError("Evaluation-set labels changed")
 
 
-def summarize(plan: dict) -> None:
+def summarize(plan: dict, eval_set: str = "all") -> None:
     """Report macro means and protein-bootstrap intervals without pooling sets."""
     targets = pd.read_csv(DATA / "targets.csv")
+    if eval_set != "all":
+        targets = targets[targets.eval_set == eval_set].copy()
+    expected_units = {"all": 116, "eval-val": 97, "eval-denovo": 19}[eval_set]
+    if len(targets) != expected_units:
+        raise ValueError("Unexpected target count for the selected evaluation set")
     rng = np.random.default_rng(20261021)
     low_msa = pd.read_csv(LOW_MSA)
     low_msa_units = set(zip(low_msa.dataset, low_msa.stem, strict=True))
     rows, subgroup_rows, identities = [], [], []
     for checkpoint in plan["checkpoints"]:
-        directory = DATA / "results" / checkpoint["trial"]
+        directory = result_directory(checkpoint, eval_set)
         if not all((directory / name).exists() for name in RESULT_FILES):
             continue
         precision = pd.read_csv(directory / "contact_precision_all.csv")
@@ -103,12 +118,12 @@ def summarize(plan: dict) -> None:
             manifest["units"],
             manifest["rollouts"],
             manifest["unfinished_rollouts"],
-        ) != (116, 11600, 0):
+        ) != (expected_units, expected_units * 100, 0):
             raise ValueError("Result manifest has incomplete or capped rollouts")
         if manifest["sampling"] != plan["sampling"]:
             raise ValueError("Sampling recipe differs from the approved plan")
         validate_result(checkpoint, precision, timings, targets)
-        for (eval_set, contact_range), group in precision[
+        for (result_set, contact_range), group in precision[
             (precision.cut == "R") & precision.range.isin(["all", "long"])
         ].groupby(["eval_set", "range"], sort=True):
             values = group.precision.dropna().to_numpy()
@@ -122,7 +137,7 @@ def summarize(plan: dict) -> None:
                 {
                     "trial": checkpoint["trial"],
                     "step": checkpoint["step"],
-                    "eval_set": eval_set,
+                    "eval_set": result_set,
                     "range": contact_range,
                     "n": len(values),
                     "r_precision": values.mean(),
@@ -139,14 +154,14 @@ def summarize(plan: dict) -> None:
             unit in low_msa_units
             for unit in zip(annotated.dataset, annotated.stem, strict=True)
         ]
-        for eval_set in ("eval-val", "eval-denovo"):
+        for result_set in sorted(targets.eval_set.unique()):
             for subgroup, mask in (
                 ("viral", annotated.is_viral == 1),
                 ("nonviral", annotated.is_viral == 0),
                 ("low_msa", annotated.low_msa),
             ):
                 selected = annotated[
-                    mask & (annotated.eval_set == eval_set) & (annotated.cut == "R")
+                    mask & (annotated.eval_set == result_set) & (annotated.cut == "R")
                 ]
                 for contact_range in ("all", "long"):
                     values = selected.loc[selected.range == contact_range, "precision"]
@@ -154,7 +169,7 @@ def summarize(plan: dict) -> None:
                         {
                             "trial": checkpoint["trial"],
                             "step": checkpoint["step"],
-                            "eval_set": eval_set,
+                            "eval_set": result_set,
                             "subgroup": subgroup,
                             "range": contact_range,
                             "n": len(values),
@@ -177,9 +192,12 @@ def summarize(plan: dict) -> None:
         print("No complete checkpoint results yet.")
         return
     frame = pd.DataFrame(rows)
-    frame.to_csv(DATA / "r_precision.csv", index=False)
-    pd.DataFrame(subgroup_rows).to_csv(DATA / "r_precision_subgroups.csv", index=False)
-    (DATA / "report_manifest.json").write_text(
+    suffix = "" if eval_set == "all" else "_" + eval_set
+    frame.to_csv(DATA / f"r_precision{suffix}.csv", index=False)
+    pd.DataFrame(subgroup_rows).to_csv(
+        DATA / f"r_precision_subgroups{suffix}.csv", index=False
+    )
+    (DATA / f"report_manifest{suffix}.json").write_text(
         json.dumps(
             {
                 "completed_checkpoints": len(identities),
@@ -190,6 +208,7 @@ def summarize(plan: dict) -> None:
                     LOW_MSA.read_bytes()
                 ).hexdigest(),
                 "scope": "eval-val and eval-denovo only; no eval-test or legacy read",
+                "eval_set": eval_set,
                 "matched_sequence_knn_null": None,
             },
             indent=2,
@@ -206,11 +225,24 @@ def summarize(plan: dict) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fetch", action="store_true")
+    parser.add_argument(
+        "--eval-set", choices=("all", "eval-val", "eval-denovo"), default="all"
+    )
+    parser.add_argument("--trials", nargs="+")
     args = parser.parse_args()
     plan = json.loads((DATA / "plan.json").read_text())
+    if args.trials:
+        plan = {
+            **plan,
+            "checkpoints": [
+                c for c in plan["checkpoints"] if c["trial"] in args.trials
+            ],
+        }
+        if len(plan["checkpoints"]) != len(set(args.trials)):
+            raise ValueError("Unknown requested trial")
     if args.fetch:
-        collect(plan)
-    summarize(plan)
+        collect(plan, args.eval_set)
+    summarize(plan, args.eval_set)
 
 
 if __name__ == "__main__":

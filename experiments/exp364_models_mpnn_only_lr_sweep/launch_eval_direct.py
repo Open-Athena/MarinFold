@@ -28,6 +28,9 @@ def main() -> None:
     parser.add_argument("--submit", action="store_true")
     parser.add_argument("--attempt", type=int, default=3)
     parser.add_argument(
+        "--eval-set", choices=("all", "eval-val", "eval-denovo"), default="all"
+    )
+    parser.add_argument(
         "--trials", nargs="+", choices=("lr5e-4", "lr1e-3", "lr2e-3", "lr5e-4-cooldown")
     )
     args = parser.parse_args()
@@ -42,7 +45,9 @@ def main() -> None:
         f"Source bundle: {archive.stat().st_size} bytes; SHA-256 {digest}", flush=True
     )
     if not args.submit:
-        print("Dry run: four independent batch H100 jobs, no Iris workspace upload")
+        print(
+            f"Dry run: {args.trials or 'all trials'}, set={args.eval_set}, one batch H100 per trial, no Iris workspace upload"
+        )
         return
     subprocess.run(["hf", "buckets", "cp", str(archive), destination], check=True)
     credentials = configparser.ConfigParser()
@@ -84,12 +89,12 @@ def main() -> None:
                     "set -euo pipefail",
                     "python3 -c " + shlex.quote(download),
                     "cd " + shlex.quote(workdir),
-                    local_entrypoint(checkpoint["trial"])[-1],
+                    local_entrypoint(checkpoint["trial"], args.eval_set)[-1],
                 ]
             )
             job = client.submit(
                 JobRequest(
-                    name=f"exp364-contact-eval-{checkpoint['trial']}-a{args.attempt:02d}",
+                    name=f"exp364-contact-eval-{checkpoint['trial']}{'-' + args.eval_set if args.eval_set != 'all' else ''}-a{args.attempt:02d}",
                     entrypoint=Entrypoint.from_binary("bash", ["-lc", shell]),
                     resources=ResourceConfig.with_gpu(
                         "H100",
@@ -114,6 +119,7 @@ def main() -> None:
                     "job_id": job.job_id,
                     "trial": checkpoint["trial"],
                     "step": checkpoint["step"],
+                    "eval_set": args.eval_set,
                     "bundle_sha256": digest,
                     "bundle_uri": destination,
                     "git_commit": env["GIT_COMMIT"],

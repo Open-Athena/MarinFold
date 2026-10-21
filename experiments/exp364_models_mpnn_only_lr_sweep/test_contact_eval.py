@@ -10,7 +10,10 @@ import pandas as pd
 import pytest
 
 from experiments.exp364_models_mpnn_only_lr_sweep.eval_export import stage_native_local
-from experiments.exp364_models_mpnn_only_lr_sweep.eval_local import completed_files
+from experiments.exp364_models_mpnn_only_lr_sweep.eval_local import (
+    completed_files,
+    select_eval_set,
+)
 from experiments.exp364_models_mpnn_only_lr_sweep.eval_prepare import select_targets
 from experiments.exp364_models_mpnn_only_lr_sweep.eval_report import validate_result
 from experiments.exp364_models_mpnn_only_lr_sweep.eval_run import (
@@ -27,8 +30,13 @@ SOURCE = HERE.parent / "exp245_evals_foldbench_held_out_monomers/data"
 @pytest.mark.parametrize(
     "fault", [None, "identity", "duplicate", "capped", "set", "timing"]
 )
-def test_report_rejects_inconsistent_published_results(fault: str | None) -> None:
+@pytest.mark.parametrize("eval_set", ["all", "eval-val"])
+def test_report_rejects_inconsistent_published_results(
+    fault: str | None, eval_set: str
+) -> None:
     targets = pd.read_csv(HERE / "data/contact_eval/targets.csv")
+    if eval_set != "all":
+        targets = targets[targets.eval_set == eval_set].reset_index(drop=True)
     checkpoint = {"label": "test-step-123"}
     precision = pd.DataFrame(
         [
@@ -67,6 +75,19 @@ def test_report_rejects_inconsistent_published_results(fault: str | None) -> Non
     else:
         with pytest.raises(ValueError):
             validate_result(checkpoint, precision, timings, targets)
+
+
+def test_natural_evaluation_is_independent_of_failed_designs(published_inputs) -> None:
+    inputs, sets, truth = published_inputs
+    selected, selected_truth = select_targets(inputs, sets, truth)
+    targets, natural_inputs, natural_truth = select_eval_set(
+        selected, inputs, selected_truth, "eval-val"
+    )
+    assert len(targets) == len(natural_inputs) == len(natural_truth) == 97
+    assert set(targets.eval_set) == {"eval-val"}
+    assert "5sbj_A" not in set(targets.stem)
+    with pytest.raises(ValueError, match="ground truth"):
+        select_eval_set(selected, inputs, natural_truth[:-1], "eval-val")
 
 
 @pytest.fixture

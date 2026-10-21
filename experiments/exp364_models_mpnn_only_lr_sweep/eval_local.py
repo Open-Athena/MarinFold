@@ -86,11 +86,41 @@ def run_worker(command: list[str], directory: Path, remote: str) -> None:
         raise subprocess.CalledProcessError(returncode, command)
 
 
+def select_eval_set(
+    targets: pd.DataFrame, inputs: pd.DataFrame, truth: list[dict], eval_set: str
+) -> tuple[pd.DataFrame, pd.DataFrame, list[dict]]:
+    """Select a complete requested set without including designs in natural scores."""
+    expected = {"all": 116, "eval-val": 97, "eval-denovo": 19}[eval_set]
+    selected = (
+        targets if eval_set == "all" else targets[targets.eval_set == eval_set].copy()
+    )
+    units = set(zip(selected.dataset, selected.stem, strict=True))
+    selected_inputs = inputs.merge(
+        selected[["dataset", "stem"]], on=["dataset", "stem"], validate="one_to_one"
+    )
+    selected_truth = [r for r in truth if (r["dataset"], r["stem"]) in units]
+    if (
+        len(units) != expected
+        or len(selected) != expected
+        or len(selected_inputs) != expected
+    ):
+        raise ValueError("Selected evaluation inputs have incomplete coverage")
+    if (
+        len(selected_truth) != expected
+        or {(r["dataset"], r["stem"]) for r in selected_truth} != units
+    ):
+        raise ValueError("Selected evaluation ground truth has incomplete coverage")
+    return selected, selected_inputs, selected_truth
+
+
 def main() -> None:
-    """Export locally, gate one protein, then score all 116 requested proteins."""
+    """Export locally, gate one protein, then score the selected evaluation sets."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--trial", required=True)
     parser.add_argument("--vllm-python", required=True)
+    parser.add_argument(
+        "--eval-set", choices=("all", "eval-val", "eval-denovo"), default="all"
+    )
     args = parser.parse_args()
     plan = json.loads((DATA / "plan.json").read_text())
     checkpoint = next(c for c in plan["checkpoints"] if c["trial"] == args.trial)
@@ -101,9 +131,13 @@ def main() -> None:
     if hashlib.sha256(WORKER.read_bytes()).hexdigest() != WORKER_SHA256:
         raise ValueError("The validated worker changed")
     scratch = Path("/tmp/exp364-contact-eval") / checkpoint["trial"]
+    if args.eval_set != "all":
+        scratch = scratch / "sets" / args.eval_set
     outputs = scratch / "outputs"
     outputs.mkdir(parents=True, exist_ok=True)
     remote = plan["artifact_root"] + "/" + checkpoint["label"]
+    if args.eval_set != "all":
+        remote += "/sets/" + args.eval_set
     public_fs, public_path = fsspec.core.url_to_fs(remote)
     if public_fs.exists(public_path):
         subprocess.run(
@@ -137,6 +171,17 @@ def main() -> None:
         json.loads(line)
         for line in (DATA / "ground_truth.jsonl").read_text().splitlines()
     ]
+    target_path = DATA / "targets.parquet"
+    targets, selected_inputs, truth = select_eval_set(
+        pd.read_csv(DATA / "targets.csv"),
+        pd.read_parquet(target_path),
+        truth,
+        args.eval_set,
+    )
+    if args.eval_set != "all":
+        target_path = scratch / "targets.parquet"
+        selected_inputs.to_parquet(target_path, index=False)
+    expected_units = len(targets)
     for phase in ("smoke", "rollout"):
         command = [
             args.vllm_python,
@@ -146,7 +191,7 @@ def main() -> None:
             "--model-manifest-b64",
             base64.b64encode(json.dumps(export).encode()).decode(),
             "--targets",
-            str(DATA / "targets.parquet"),
+            str(target_path),
             "--out",
             str(outputs / phase),
             "--label",
@@ -172,7 +217,7 @@ def main() -> None:
         markers = markers_for(
             fs,
             str(outputs / phase / checkpoint["label"]),
-            1 if phase == "smoke" else 116,
+            1 if phase == "smoke" else expected_units,
         )
         units = {(u["dataset"], u["stem"]) for m in markers for u in m["units"]}
         selected = [r for r in truth if (r["dataset"], r["stem"]) in units]
@@ -181,7 +226,6 @@ def main() -> None:
         )
         if phase == "smoke":
             print(f"SMOKE PASSED {checkpoint['label']}", flush=True)
-    targets = pd.read_csv(DATA / "targets.csv")
     merged = precision.merge(
         targets.drop(columns="L"), on=["dataset", "stem"], validate="many_to_one"
     )
@@ -207,8 +251,9 @@ def main() -> None:
             ).read_bytes()
         ).hexdigest(),
         "marinfold_revision": MARINFOLD_REVISION,
-        "units": 116,
-        "rollouts": 11600,
+        "eval_set": args.eval_set,
+        "units": expected_units,
+        "rollouts": expected_units * 100,
         "unfinished_rollouts": 0,
         "sampling": plan["sampling"],
         "model_egress": False,

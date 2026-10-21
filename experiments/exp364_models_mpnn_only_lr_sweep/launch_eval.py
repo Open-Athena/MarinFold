@@ -55,7 +55,7 @@ def build_bundle() -> Path:
     return bundle
 
 
-def local_entrypoint(trial: str) -> list[str]:
+def local_entrypoint(trial: str, eval_set: str = "all") -> list[str]:
     """Bootstrap the validated vLLM image and isolated CPU export environment."""
     package = "marinfold @ git+https://github.com/Open-Athena/MarinFold.git@d1bea417a64cc042ad931422200c3edeb873f2e0#subdirectory=marinfold"
     shell = "\n".join(
@@ -69,6 +69,8 @@ def local_entrypoint(trial: str) -> list[str]:
             '"$VLLM_PY" -m pip install --quiet --no-deps ' + shlex.quote(package),
             "exec uv run --frozen --with scikit-learn==1.7.2 python -m experiments.exp364_models_mpnn_only_lr_sweep.eval_local --trial "
             + shlex.quote(trial)
+            + " --eval-set "
+            + shlex.quote(eval_set)
             + ' --vllm-python "$VLLM_PY"',
         ]
     )
