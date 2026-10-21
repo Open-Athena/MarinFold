@@ -1,0 +1,15 @@
+{
+  "question": "Are coherent accurate maps present among individual rollouts, and does marginal voting hide alternative contact-map patterns?",
+  "checkpoint": "contacts-v1-exp277-m2-p06-full-epoch2-from213072-1.5B-step-479417",
+  "cohort": "97 eval-val natural proteins only",
+  "samples": "200 independent resampled prompts per protein, fixed as pools A and B of 100",
+  "primary_comparison": "Complete-map F1 for mean, oracle-best and blind-selected individual rollouts versus top-R pooled-vote maps; full-map precision, recall and cardinality accompany F1",
+  "secondary_comparison": "Emission-order fixed-R precision, with unfilled slots scoring zero; not a substitute for unordered-map F1",
+  "oracle": "Ground-truth-selected best F1 among 100 or 200 samples; diagnostic upper bound only",
+  "blind_selectors": ["highest mean Jaccard to the opposite independent pool", "highest mean generated-token log probability"],
+  "cluster_probe": "Average-linkage clustering of pool A on whole-map Jaccard distance, k=2 and k=4; assign B to A's medoids. Evaluate pooled B votes within clusters of at least 10 B members, report both A-largest-cluster selection and truth-oracle best cluster. Repeat with pools reversed. Clustering never uses truth.",
+  "ranges": ["all: separation >=6", "long: separation >=24"],
+  "summary": "Unweighted mean over proteins, paired differences with 10000 protein bootstrap resamples, seed 345. Report valid denominators and all failures.",
+  "validation": "Verify all model source sizes and ETags; smoke before production; all 19400 maps must terminate and pass bounds/duplicate/sample-identity checks. Compare each fresh 100-sample pool's mean canonical R-precision to the saved epoch-2 evaluation; investigate discrepancies exceeding 0.005.",
+  "causal_limits": "Contact-map coherence and 3D geometric feasibility are distinct. No individual rollout is claimed to be a valid structure without a structural check. Selection with truth is never presented as a deployable improvement. No new eval-test read."
+}

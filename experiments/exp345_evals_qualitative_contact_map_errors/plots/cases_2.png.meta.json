@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "Selected exploratory cases: predicted top-R, truth, and errors. Both halves mirrored; gray bands are unresolved residues."
+}

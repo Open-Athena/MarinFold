@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "All 97 eval-val proteins. Local correction uses a truth-informed maximum one-to-one matching, fixing exact matches first; it is an upper bound, not an improved predictor."
+}

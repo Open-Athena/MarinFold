@@ -1,0 +1,5 @@
+{
+  "script": "plot_whole_map.py",
+  "args": [],
+  "caption": "97 eval-val proteins, 200 samples each. Means weight proteins equally. Truth-oracle selectors are upper bounds within these samples; they do not establish physically valid structures. Cluster results use independent-pool assignment and voting, with \u226510 assigned samples."
+}

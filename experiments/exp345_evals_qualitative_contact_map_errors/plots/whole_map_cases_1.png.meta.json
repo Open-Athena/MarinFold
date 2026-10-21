@@ -1,0 +1,5 @@
+{
+  "script": "plot_whole_map.py",
+  "args": [],
+  "caption": "Original eight case studies revisited using fresh samples. The oracle is the individual map maximizing all-range F1 across 200 samples; consensus chooses from A by similarity to B without truth. Gray marks unresolved residues. Samples have variable contact counts; pooled top-R has exactly the truth contact count."
+}
