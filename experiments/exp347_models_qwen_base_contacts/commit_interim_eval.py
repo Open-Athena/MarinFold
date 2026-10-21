@@ -26,6 +26,7 @@ def main() -> None:
         "training_run": request["run_id"],
         "final": request["final"],
     }
+    write_json(dispatch["out"] + "/summary.json", result)
     write_json(dispatch["out"] + "/dispatch.json", dispatch)
     filename = f"{request['run_id']}/step-{request['step']}.json"
     # The persistent driver sees the request only once the complete result is

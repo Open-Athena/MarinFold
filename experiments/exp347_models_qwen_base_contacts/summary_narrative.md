@@ -54,7 +54,8 @@ Current source pool: 235,490,905 documents in 9,112 audited shards (exp343).
 Native AFDB/ESM + both MPNN redesign corpora + 3.4M complex train documents.
 Stream and tokenize online; preserve lineage holdouts and paired 16K filtering.
 235.49M is before filtering, not a measured eligible-protein count.
-Allocation: 8 training  + up to 4 evaluation H100s per 4B arm, plus 8 for the 2B pilot.
+Allocation: 8 training + up to 4 periodic evaluation H100s per 4B arm.
+The partial 2B pilot is inactive; October 21 interim evaluations used 12 workers each.
 Continue the respective 1B weights with fresh optimizer and data cursor.
 Both 4B single-protein 100-rollout evaluation smokes passed without truncation.
 E8 reference passed: all R=0.42438, long R=0.36599; all 554 units, no truncated rollouts.
@@ -84,7 +85,9 @@ Two-rank regression covers restored Adam state, gradients, updates, and shared s
 Both corrected 8-H100 runs passed the first restored update and saved checkpoints.
 Verified raw step4621 and prompted step12157, including all8 optimizer shards.
 37 tests, Ruff and Pyrefly pass; implementation commit d2836a26.
-Interim eval-val: raw step4620/498.97M tokens; prompted step12051/450.59M tokens.
+Interim eval-val completed: raw step4620/498.97M; prompted step12051/450.59M tokens.
+Prompted was briefly paused for scoring capacity, then resumed as a04.
+Its new step12219 full recovery checkpoint was independently verified at 14:47 UTC.
 
 ## Periodic R-precision contract
 
@@ -111,3 +114,16 @@ One prompted rollout needed continuation of its original sampled prefix.
 All 97 per-protein metric/timing records per arm are in data/eval_val_pilot.
 Small result tables are also public in the HF bucket.
 The full-scale curves will show whether more protein training improves accuracy.
+
+## Interim full-corpus R-precision — October 21
+
+Each checkpoint: 97 eval-val proteins, 100 completed rollouts, zero unfinished.
+Raw step4620, +498,970,942 tokens: all R=0.14481; long R=0.10787.
+Prompted step12051, +450,586,475 tokens: all R=0.15239; long R=0.10738.
+Changes from pilots: raw +0.00471 / +0.00704; prompted +0.00889 / +0.00844.
+Accuracy remains low; raw overall gain is below the approximate 0.005 resolution.
+Long-range scores are tied; unequal token/protein exposure limits format comparisons.
+Only 0.45–0.50% of the 100B additional-token targets has been evaluated.
+One prompted sample needed two continuation rounds; all samples terminated.
+Metrics, per-protein timings, dispatches, and provenance are committed and public.
+Periodic eval-val remains every 1B additional tokens; eval-test is untouched.

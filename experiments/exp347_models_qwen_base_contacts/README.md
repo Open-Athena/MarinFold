@@ -258,6 +258,13 @@ of rolling checkpoint pruning. `export_eval_checkpoint.py` converts their FP32
 weight shards to BF16 without changing tensor names, shapes, or integer buffers,
 and includes the tokenizer. Exports remain in the east-region checkpoint bucket.
 The same validated 97-protein, 100-rollout evaluation contract applies below.
+Both interim evaluations completed on October 21. Prompted training was briefly
+paused to release eight H100s for the queued evaluation workers, then resumed as
+`/timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a04` with the same saved
+optimizer, data cursor, run identity, and 100B-token target. Raw a03 remained live.
+At 14:47 UTC, prompted a04 had advanced to step 12219 and committed a new
+20-object recovery checkpoint, including all eight optimizer shards, indexed
+model weights, and tokenizer. Raw's step-4839 checkpoint passed the same check.
 
 `eval_contract.py` freezes the **97-protein eval-val set** from exp245's pinned
 membership, sequences, and resolved-residue ground truth. It never selects
@@ -350,6 +357,44 @@ and the E8 reference are also in the
 [public HF bucket](https://huggingface.co/buckets/open-athena/MarinFold),
 published by `publish_to_hf.py`.
 
+### Interim full-corpus evaluation — October 21
+
+Both preserved checkpoints completed **97 proteins × 100 rollouts**, with zero
+unfinished samples and all 1,940 metric rows per arm. Token counts below are
+**additional full-corpus training**, after the respective approximately 1B-token
+AFDB pilots. The 235,490,905-document source pool is before training filters.
+
+| 4B format | Checkpoint step | Additional tokens | All-range R | Long-range R | Change from pilot, all / long |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| contacts-v1 | 4,620 | 498,970,942 | 0.14481 | 0.10787 | +0.00471 / +0.00704 |
+| prompted | 12,051 | 450,586,475 | 0.15239 | 0.10738 | +0.00889 / +0.00844 |
+
+Accuracy remains low, with modest numerical gains over the pilots. The raw
+all-range increase is below the approximately 0.005 evaluation resolution.
+Long-range scores are tied at that resolution. The two checkpoints have different
+native-token exposure, and the formats encode different numbers of proteins per
+token; this does not establish a causal format or pretrained-transfer advantage.
+These measurements cover only about 0.45–0.50% of each 100B-token continuation.
+
+All-range viral R is 0.13019 raw / 0.12634 prompted (six proteins), and nonviral
+R is 0.14578 / 0.15411 (91 proteins). One prompted rollout required two
+prefix-preserving continuation rounds; all 9,700 final rollouts per arm
+terminated. No raw rollout needed continuation. Eval-test remains untouched.
+
+[`data/eval_val_interim_20261021`](data/eval_val_interim_20261021) contains the
+summaries, complete metric and timing CSVs, 12-worker dispatch records, per-worker
+checkpoint/code provenance, and viral strata. `summarize_eval_val.py --root
+data/eval_val_interim_20261021` regenerates the strata. The same small artifacts
+are published under `data/exp347-qwen-base-contacts/data/eval_val_interim_20261021/`
+in the public HF bucket. The immutable BF16 model/tokenizer exports remain at
+`s3://marin-us-east-02a/MarinFold/exp347_qwen_base_contacts/checkpoints/<training-run>/hf/step-<N>/`.
+Results are committed to the existing periodic evaluation queue and W&B runs:
+[raw](https://wandb.ai/open-athena/MarinFold/runs/exp347-4b-contacts-v1-corpus235m-eval-val)
+and [prompted](https://wandb.ai/open-athena/MarinFold/runs/exp347-4b-prompted-corpus235m-eval-val).
+The regular schedule remains one evaluation per additional 1B tokens.
+
+![4B eval-val progression](plots/eval_val_progress.png)
+
 The one-shard data smoke succeeded on 2026-10-02:
 `/timodonnell/exp347-data-smoke-a01`. Of 1,887 source rows, 98 exceeded 16K and one
 had no contacts. The retained 1,766 training / 22 validation rows preserve all
@@ -396,9 +441,12 @@ Measured per-input validation times are retained in [`data/timings.csv`](data/ti
 
 Five of six pilot training trials have completed. Larger models have lower
 validation contact-token NLL within each format. The two 4B pilots have similar,
-low eval-val R-precision (0.14010 / 0.14350 overall); the full-scale phase will
-measure whether additional protein training improves this. The matched-budget
-2B prompted result remains outstanding.
+low pilot eval-val R-precision (0.14010 / 0.14350 overall). After approximately
+499M / 451M additional full-corpus tokens, overall R is 0.14481 / 0.15239 and
+long-range R is 0.10787 / 0.10738. Gains are modest and long-range performance is
+tied at the evaluator's resolution. Both 4B continuations retain their 100B-token
+targets and periodic eval-val scoring. The matched-budget 2B prompted result
+remains outstanding.
 
 ## Production training
 

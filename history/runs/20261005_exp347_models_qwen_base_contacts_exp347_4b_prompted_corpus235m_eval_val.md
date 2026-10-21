@@ -26,6 +26,7 @@ marinfold_run:
   - /timodonnell/exp347-prompt-step12051-eval-a01-s09
   - /timodonnell/exp347-prompt-step12051-eval-a01-s10
   - /timodonnell/exp347-prompt-step12051-eval-a01-s11
+  - /timodonnell/exp347-prompt-step12051-eval-smoke-a01-s00
 ---
 # 2026-10-05 · exp347_models_qwen_base_contacts · exp347-4b-prompted-corpus235m-eval-val
 
@@ -49,4 +50,13 @@ _(Bullet list of differences from the last run of this kind.)_
 
 ## Notes
 
-_(Anything else worth remembering — preemptions, midway tweaks, etc.)_
+October 21 interim checkpoint: step 12051 / 450,586,475 additional tokens.
+All 97 eval-val proteins completed 100 rollouts each, with zero unfinished samples.
+All-range R-precision 0.15239278226983136; long-range 0.10738360714287244.
+One sampled prefix required two continuation rounds; all final samples terminated.
+The one-protein smoke and 12 direct root workers contributed to this measurement;
+the persistent driver imported the committed aggregate and logged it to this run.
+Metrics, timings, dispatches, and per-worker provenance are under
+`experiments/exp347_models_qwen_base_contacts/data/eval_val_interim_20261021/prompted/`
+and the public HF bucket at `data/exp347-qwen-base-contacts/data/eval_val_interim_20261021/prompted/`.
+The regular driver remains active at the 1B-additional-token cadence.

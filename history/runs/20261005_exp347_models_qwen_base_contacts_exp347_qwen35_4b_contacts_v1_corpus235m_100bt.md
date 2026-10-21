@@ -39,4 +39,11 @@ _(Bullet list of differences from the last run of this kind.)_
 
 ## Notes
 
-_(Anything else worth remembering — preemptions, midway tweaks, etc.)_
+October 19 bounded checkpoint I/O repair passed production saves. A subsequent
+October 20 restart failed at the first backward after restoring step 4620, with
+NCCL reporting CUDA out of memory. Commit d2836a26 synchronizes the first
+microbatch after DDP construction to establish shared gradient bucket storage.
+Attempt a03 passed step 4621 and saved the model, tokenizer, and all eight
+optimizer shards; continued progress was observed beyond step 4800.
+The immutable step-4620 BF16 export scored eval-val all R=0.14481 / long R=0.10787.
+The full 100B-additional-token target and 235.49M-document source pool are unchanged.

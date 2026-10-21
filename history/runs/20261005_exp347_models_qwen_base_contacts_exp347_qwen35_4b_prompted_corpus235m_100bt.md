@@ -16,6 +16,7 @@ marinfold_run:
   - /timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a01
   - /timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a02
   - /timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a03
+  - /timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a04
 ---
 # 2026-10-05 · exp347_models_qwen_base_contacts · exp347-qwen35-4b-prompted-corpus235m-100bt
 
@@ -39,4 +40,13 @@ _(Bullet list of differences from the last run of this kind.)_
 
 ## Notes
 
-_(Anything else worth remembering — preemptions, midway tweaks, etc.)_
+Attempt a03 deployed the first-update DDP memory repair from d2836a26 on
+October 21. It passed step 12157, saved all eight optimizer shards plus model
+and tokenizer, and continued through step 12251. It was deliberately paused
+for evaluation capacity, with complete step-12218 recovery state verified.
+Attempt a04 was submitted at 2026-10-21 14:42:58 UTC after a03 was terminal;
+it retains the same optimizer/data/RNG state, run identity, world size, and
+100B-additional-token budget. The immutable step-12051 BF16 export scored
+all R=0.15239 / long R=0.10738 on all 97 eval-val proteins.
+At 14:47 UTC, a04 had advanced to step 12219 / 460,005,111 tokens and saved
+a new complete 20-object checkpoint with all eight optimizer shards and tokenizer.
