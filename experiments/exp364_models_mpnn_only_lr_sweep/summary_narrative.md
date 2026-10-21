@@ -63,7 +63,7 @@ Production was submitted at 16:33 UTC from commit 33cc077f and registered in W&B
 
 Score the latest saved checkpoints of all three learning rates plus the GPU cooldown fork on eval-val (97 natural proteins) and eval-denovo (19 designs). Eval-test is excluded. The four snapshots were pinned before the TPU copy began advancing.
 
-Use the validated exp277 worker and exp89 metrics: 100 resampled rollouts, temperature 1, top-p 0.95, top-k disabled, 6L+128 budget. Gate each model on a real-protein smoke; require complete coverage and no capped rollouts. Twenty-two local checks pass. There are no new R-precision results yet.
+Use the validated exp277 worker and exp89 metrics: 100 resampled rollouts, temperature 1, top-p 0.95, top-k disabled, 6L+128 budget. Gate each model on a real-protein smoke; require complete coverage and no capped rollouts. Twenty-nine local checks pass. There are no new R-precision results yet.
 
 ## Contact evaluation: execution status
 
@@ -71,4 +71,4 @@ The user selected CoreWeave. Storage writes are suspended, so each checkpoint is
 
 Full-data first-epoch reference R-precision: eval-val 0.55510 / 0.53706 and eval-denovo 0.69640 / 0.67497 (all / long). The latest redesign-only checkpoints have unequal training exposure; comparisons are preliminary.
 
-The one-epoch fork hit the prescribed token cap on 2/100 smoke rollouts for 5sbj_A. It is paused pending the user's token-budget choice. The earlier full-data continuation also had capped samples on this design, so that comparison needs an explicit qualification.
+The one-epoch fork hit the prescribed token cap on 2/100 smoke rollouts for 5sbj_A. Its design evaluation is paused pending the user's token-budget choice. A separate eval-val job was submitted at 18:02 UTC, preserving all 97 natural targets and the original budget. The earlier full-data continuation also had capped samples on this design, so that comparison needs an explicit qualification.

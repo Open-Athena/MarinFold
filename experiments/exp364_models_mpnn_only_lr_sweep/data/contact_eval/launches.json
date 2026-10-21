@@ -54,5 +54,14 @@
     "bundle_sha256": "338640902ec4908b4ca34dd3f2900108a97a2ecbcd9eb6c1006658d8065447bc",
     "bundle_uri": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-10-21/latest-01/source/338640902ec4908b4ca34dd3f2900108a97a2ecbcd9eb6c1006658d8065447bc.zip",
     "git_commit": "50f6a029c92dfbf050720b169e19a1734a71dcaf"
+  },
+  {
+    "job_id": "/bizon/exp364-contact-eval-lr5e-4-cooldown-eval-val-a04",
+    "trial": "lr5e-4-cooldown",
+    "step": 146158,
+    "eval_set": "eval-val",
+    "bundle_sha256": "07c04948f0a3fbf9d33c5834d41327ed9393c7658a4180416eed8d1fe2132c18",
+    "bundle_uri": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-10-21/latest-01/source/07c04948f0a3fbf9d33c5834d41327ed9393c7658a4180416eed8d1fe2132c18.zip",
+    "git_commit": "9eb8136fd58b503b27f1733910183e069a895730"
   }
 ]
