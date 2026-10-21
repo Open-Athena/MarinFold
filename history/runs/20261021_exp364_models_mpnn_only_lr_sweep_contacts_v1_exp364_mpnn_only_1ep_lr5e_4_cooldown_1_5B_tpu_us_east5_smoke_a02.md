@@ -41,3 +41,5 @@ Uses four-chip v5p-8 in us-east5-a, regional GCS inputs, Splash attention and mi
 ## Notes
 
 Registered in W&B at 2026-10-21 16:15 UTC. Validation is capped at two batches for this pipeline check and must not be compared with full production validation.
+
+Completed at 16:32 UTC, with exact Iris root succeeded and zero failures/preemptions. All ten updates and expected LR values verified; train loss range 2.7705–2.8203, final 2.80761. Independent artifact verification at 16:33 UTC confirmed native counters of 139064 and both indexed HF shards plus tokenizer. See experiment data/tpu_smoke.csv and data/tpu_smoke_verification.json. Steady four-chip update time was approximately 27.09 s.
