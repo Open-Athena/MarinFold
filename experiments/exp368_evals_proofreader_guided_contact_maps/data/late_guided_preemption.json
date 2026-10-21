@@ -20,5 +20,18 @@
   ],
   "checkpoint_granularity": "Completed trajectories only. The unfinished trajectory must restart; its lost work is excluded from successful-trajectory warm timing.",
   "scientific_changes": false,
-  "other_fleet_check": "At 21:39 UTC, the East H100 fleet reported zero available H100s. No cross-region model transfer or alternate job was launched."
+  "other_fleet_check": "At 21:39 UTC, the East H100 fleet reported zero available H100s. No cross-region model transfer or alternate job was launched.",
+  "resumed_observed_at": "2026-10-21T21:56:07.355653+00:00",
+  "resumed_pods": [
+    {
+      "name": "exp368-native-guided-v1-003-hjdht",
+      "created_at": "2026-10-21T21:55:42Z",
+      "phase": "Pending"
+    }
+  ],
+  "second_late_preemption": {
+    "at": "2026-10-21T21:56:17Z",
+    "reason": "Higher-priority workload preempted the newly admitted pod before observed model startup. Existing Job remains queued.",
+    "observed_at": "2026-10-21T21:59:25.697147+00:00"
+  }
 }

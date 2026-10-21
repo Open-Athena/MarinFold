@@ -171,3 +171,9 @@ contact prefixes. The other two active lookahead workers continued, and shard
 No sampling rule, priority, model, or seed changed. This lost work is excluded
 from the successful-inference timing tables. `data/late_guided_preemption.json`
 records the job UID, task and affected trajectory identities.
+
+The same Job was admitted at 21:55:42 UTC without changing resources or
+priority, but was preempted again at 21:56:17 before observed model startup.
+The pod had remained Pending; an active Job did not mean GPU computation had
+resumed. The existing Job returned to the queue. No duplicate replacement
+or additional regional mirror was submitted.
