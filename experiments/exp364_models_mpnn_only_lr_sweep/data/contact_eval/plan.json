@@ -1,5 +1,5 @@
 {
-  "prepared_at_utc": "2026-10-21T16:40:18.703273+00:00",
+  "prepared_at_utc": "2026-10-21T17:09:18.410664+00:00",
   "root": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-01",
   "cluster": "cw-us-east-02a",
   "priority": "batch",
@@ -451,96 +451,96 @@
     {
       "trial": "lr2e-3",
       "run_id": "contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B",
-      "step": 104842,
-      "label": "contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B-step-104842",
-      "source": "s3://marin-us-east-02a/tmp/ttl=14d/checkpoints-temp/marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B/checkpoints/step-104842",
-      "frozen": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-01/sources/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B/step-104842",
-      "hf_export": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-01/models/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B/hf/step-104842",
+      "step": 105010,
+      "label": "contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B-step-105010",
+      "source": "s3://marin-us-east-02a/tmp/ttl=14d/checkpoints-temp/marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B/checkpoints/step-105010",
+      "frozen": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-01/sources/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B/step-105010",
+      "hf_export": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-01/models/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B/hf/step-105010",
       "objects": [
         {
-          "path": "d/03b2328dea0f05c78cf83b2eed10a7bd",
-          "size": 25380,
-          "etag": "\"537857e1104da1b9d730b05f0402a7fd\""
-        },
-        {
-          "path": "d/1a94a010f69f234ace925172728cd491",
-          "size": 17286,
-          "etag": "\"2d54b92871af0e27030f7c5d79f98ed4\""
-        },
-        {
-          "path": "d/25ff63760d13d779563ba33e3a418a53",
+          "path": "d/27298f4caa781bdedaa933f019fa5f58",
           "size": 100667392,
-          "etag": "\"96493f549686c9d5193ef2d89df3728b\""
+          "etag": "\"3f5b7671361ba0895ecff6e63dc83243\""
         },
         {
-          "path": "d/2d1049c64034a0874c184bac3017183e",
-          "size": 1811955712,
-          "etag": "\"f13a5a4d9deae4a9ed98171b35f390ce\""
+          "path": "d/2a88b4d367aeca5a7923f5178f26d77c",
+          "size": 23310336,
+          "etag": "\"e88cf6a1af0e2fb369c8d34a38ee95da\""
         },
         {
-          "path": "d/2dabc24629fdaad460879a720b696601",
-          "size": 2227388416,
-          "etag": "\"d36e3bd11d5bef0be834a865a168e27b\""
+          "path": "d/60938f653be5d412bdd1c161da8214f2",
+          "size": 17286,
+          "etag": "\"135b51cef66eedd02139452b58ec4262\""
         },
         {
-          "path": "d/30fb674aecd5464573555d89b6e2f1a5",
-          "size": 2214608896,
-          "etag": "\"075881c0005af79bcc47e6199eef3919\""
+          "path": "d/7770391725eda4ef1e035fba4175369c",
+          "size": 301998080,
+          "etag": "\"868461d835320f377009e65d85766a6c\""
         },
         {
-          "path": "d/45d218632762ecaa9ace53435fcb3f27",
-          "size": 340,
-          "etag": "\"6249c0811ae3f7e2e20658e1406fe778\""
+          "path": "d/7f33c3f48c3ad3d3f25cd309e611aee6",
+          "size": 2214617088,
+          "etag": "\"d2e74a6be4b5ff553b4f043cbeeeeca2\""
         },
         {
-          "path": "d/5502706575150655178ef768fe0b1d6f",
-          "size": 310734848,
-          "etag": "\"f0c472a0684d028b471ead9734463bc9\""
+          "path": "d/86406696ed2552c2458546bdf063fe74",
+          "size": 1308631040,
+          "etag": "\"73ff6a2d36bf2c08d9182cbbe17c3b15\""
         },
         {
-          "path": "d/64b4a792989c0425e8f30ce95d7d4386",
-          "size": 100839424,
-          "etag": "\"1482de966b1a08dd7b1e7a0e31acc3d7\""
+          "path": "d/8c7f11be6858b04fcd338428775077c1",
+          "size": 2237,
+          "etag": "\"54114eafc18d8a6a51cfae941cc96c50\""
         },
         {
-          "path": "d/7ef768ed6f90a4125a3a1b0eefa1cd0a",
-          "size": 16496,
-          "etag": "\"698c70c62c5f145cc14966360a11ffb5\""
+          "path": "d/95e44fddd49f1bc33f7b7aa393284cd4",
+          "size": 1811959808,
+          "etag": "\"40be43dd94cb9343588e06eb6cbb29ec\""
         },
         {
-          "path": "d/92dd88c6d62a08af170ce522eafd73c9",
-          "size": 14569472,
-          "etag": "\"4e2cdee35553d989960aaf5f016d2f65\""
+          "path": "d/97dc238e5e30b88f2a6719e9034cbabb",
+          "size": 100667392,
+          "etag": "\"c2fc2a672815496f74779de7509ab3f1\""
         },
         {
-          "path": "d/96af04a1dd4a2ba36c6daed47ee85236",
-          "size": 2237939712,
-          "etag": "\"8307ffa4bbef4427a68f0806e8555793\""
+          "path": "d/99a9b9a2e4f2056552881e62e13f29b7",
+          "size": 929497088,
+          "etag": "\"6a6f5e998114ae9128dc02d71f6e3880\""
         },
         {
-          "path": "d/ce6de5e94228da957452a02aa57b2ca9",
-          "size": 2238119936,
-          "etag": "\"a89a303dcde6d2080e789a06364025f7\""
+          "path": "d/a7cbe58e678ecc45d08d9bf2d549c4c9",
+          "size": 2214801408,
+          "etag": "\"fb26c189788ad4411811dc0f613f0a77\""
         },
         {
-          "path": "d/dc4553737f2d0d2cd3e82081fc32f8af",
-          "size": 1154121728,
-          "etag": "\"b4162b92a928848c97d39f2162b2200a\""
+          "path": "d/b77027aa8c925718bd8d94c406dd1295",
+          "size": 2214617088,
+          "etag": "\"c0934dc40ff4d233d3ff7afb4bc05577\""
         },
         {
-          "path": "d/ee177c0787f60cf997f586d062f34243",
-          "size": 2214805504,
-          "etag": "\"1c008b2a1261ae5e75e65555935488ff\""
+          "path": "d/b87e0dc6458b3b6096b8bf7056271d1c",
+          "size": 1610829824,
+          "etag": "\"5ea42a889b50ec21e7c981ab9857e0bf\""
         },
         {
-          "path": "d/f0300217f5565ba96acd681d6b011b14",
-          "size": 2225532928,
-          "etag": "\"d09e2a2d244bf305051ea65e6702802d\""
+          "path": "d/be8e0d90d075f55a6ff1deb0f537f82e",
+          "size": 2160955392,
+          "etag": "\"8bc989296aa2cfa7f34e19e63fa5df46\""
         },
         {
-          "path": "d/fd82867af655eb1fe86d1865eb64be4f",
-          "size": 805330944,
-          "etag": "\"52f190ba00dfca9d2f4471c7c7158ba2\""
+          "path": "d/dfea368b28f4ca193808c4cdff30f3a1",
+          "size": 1556787200,
+          "etag": "\"33a8d89280982c3750ae4052e7b75aea\""
+        },
+        {
+          "path": "d/e2236b38512c5eb1772bb9f032389ee7",
+          "size": 1107308544,
+          "etag": "\"8e632e136c613b7df669be8885f02916\""
+        },
+        {
+          "path": "d/ee5fd65c84134068cd667e46b64da8ad",
+          "size": 17286,
+          "etag": "\"76714eb275a25aec1c5274ad1bbdc3b7\""
         },
         {
           "path": "manifest.json",
@@ -549,16 +549,16 @@
         },
         {
           "path": "manifest.ocdbt",
-          "size": 479,
-          "etag": "\"65fe849671ea7fdaa5992edd8c0b360e\""
+          "size": 491,
+          "etag": "\"8f2dea7e0cfbca6918a0da9f45e4bd47\""
         },
         {
           "path": "metadata.json",
           "size": 81,
-          "etag": "\"cced7f71028d556cbb0693b2dd4abf45\""
+          "etag": "\"4d4b7e401f36976ea76accb7fcd3d6f8\""
         }
       ],
-      "source_bytes": 17656686188,
+      "source_bytes": 17656696275,
       "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B",
       "model_config": {
         "rope": {
@@ -594,7 +594,7 @@
         "gradient_checkpointing": true,
         "flash_attention_block_size": null
       },
-      "latest_logged_step": 104944,
+      "latest_logged_step": 105176,
       "latest_eval_loss": 3.153707504272461
     },
     {
@@ -775,5 +775,12 @@
     "seed": 0
   },
   "local_option": "Freeze and export each checkpoint in the same CoreWeave bucket; score there on at most 12 H100s. No model egress.",
-  "mirror_option": "Export four float32 HF models and mirror about 23.54 GB to the public HF bucket for reuse elsewhere; additional egress and >10 GB approval required."
+  "mirror_option": "Export four float32 HF models and mirror about 23.54 GB to the public HF bucket for reuse elsewhere; additional egress and >10 GB approval required.",
+  "execution_choice": {
+    "choice": "coreweave_local",
+    "chosen_by": "user",
+    "recorded_at_utc": "2026-10-21T17:09:56.735986+00:00",
+    "max_h100s": 12,
+    "model_egress": false
+  }
 }
