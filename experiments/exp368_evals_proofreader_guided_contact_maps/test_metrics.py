@@ -3,7 +3,7 @@
 import numpy as np
 from sklearn.metrics import average_precision_score
 
-from metrics import aggregate, map_metrics
+from metrics import aggregate, diversity_weights, map_metrics
 
 
 def test_sparse_ap_includes_missing_positives_and_all_zero_ties() -> None:
@@ -30,3 +30,17 @@ def test_raw_frequency_counts_distinct_eligible_votes_without_reader() -> None:
     rows = [dict(L=20, pairs=[[0, 8], [0, 8], [1, 9], [0, 2], [-1, 8], [9, 1], [0, 20]]),
             dict(L=20, pairs=[[0, 8], [2, 10]])]
     assert aggregate(rows, 'frequency') == {(0, 8): 2., (1, 9): 1., (2, 10): 1.}
+
+
+def test_bitset_discounts_match_exact_set_jaccard_with_boundary_and_empty_rows() -> None:
+    rng = np.random.default_rng(368)
+    universe = [(i, i + 6) for i in range(100)]
+    sets = [set(), set(), set(universe[:4]), set(universe[:5]), set(universe[:4])]
+    for _ in range(100):
+        sets.append({pair for pair in universe if rng.random() < .85})
+    expected = [1 / max(1, sum(bool(a | b) and len(a & b) / len(a | b) >= .8 for b in sets))
+                for a in sets]
+    actual = diversity_weights([{pair: .5 for pair in row} for row in sets])
+    np.testing.assert_array_equal(actual, expected)
+    assert actual[0] == actual[1] == 1.
+    assert actual[2] == actual[3] == actual[4] == 1 / 3

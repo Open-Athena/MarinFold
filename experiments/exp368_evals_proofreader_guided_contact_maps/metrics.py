@@ -6,6 +6,35 @@ from collections import Counter, defaultdict
 import numpy as np
 
 
+def diversity_weights(observations: list[dict[tuple[int, int], float]]) -> np.ndarray:
+    """Compute exact 0.8-Jaccard neighbor discounts using integer bitsets.
+
+    Each observed pair has a unique bit, so intersection popcounts are exact.
+    This avoids constructing two Python sets for every trajectory comparison;
+    the original threshold and empty-trajectory behavior remain unchanged.
+    """
+    vocabulary = dict.fromkeys(pair for row in observations for pair in row)
+    vocabulary = {pair: i for i, pair in enumerate(vocabulary)}
+    encoded, sizes = [], [len(row) for row in observations]
+    for row in observations:
+        packed = bytearray((len(vocabulary) + 7) // 8)
+        for pair in row:
+            bit = vocabulary[pair]
+            packed[bit // 8] |= 1 << (bit % 8)
+        encoded.append(int.from_bytes(packed, 'little'))
+    neighbors = np.array([int(size > 0) for size in sizes])
+    for i, left in enumerate(encoded):
+        for j in range(i + 1, len(encoded)):
+            if 5 * min(sizes[i], sizes[j]) < 4 * max(sizes[i], sizes[j]):
+                continue
+            intersection = (left & encoded[j]).bit_count()
+            union = sizes[i] + sizes[j] - intersection
+            if union and 5 * intersection >= 4 * union:
+                neighbors[i] += 1
+                neighbors[j] += 1
+    return 1. / np.maximum(1, neighbors)
+
+
 def aggregate(rollouts: list[dict], method: str) -> dict[tuple[int, int], float]:
     """Combine unique per-rollout observations, with optional trajectory discount."""
     if method == 'frequency':
@@ -23,10 +52,7 @@ def aggregate(rollouts: list[dict], method: str) -> dict[tuple[int, int], float]
         observations.append(pairs)
     weights = np.ones(len(observations))
     if method == 'diversity_sumq':
-        sets = [set(row) for row in observations]
-        for i, a in enumerate(sets):
-            neighbors = sum(bool(a | b) and len(a & b) / len(a | b) >= .8 for b in sets)
-            weights[i] = 1 / max(1, neighbors)
+        weights = diversity_weights(observations)
     if method == 'f1_weighted_frequency':
         for i, row in enumerate(rollouts):
             unique = {}

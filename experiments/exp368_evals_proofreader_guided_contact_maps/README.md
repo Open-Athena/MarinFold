@@ -36,9 +36,10 @@ At least one guided policy should improve final contact-map quality over ordinar
 
 ## Results
 
-Implementation and validation are in progress on 2026-10-21. Seven CPU tests
+Implementation and validation are in progress on 2026-10-21. Eight CPU tests
 cover cache isolation, full-forward equivalence, proposal resampling, lookahead
-commit boundaries, repair-prefix reconstruction, and full-universe AP. The first
+commit boundaries, repair-prefix reconstruction, full-universe AP, and exact
+diversity-discount equivalence to a set-based reference. The first
 H100 smoke test verified that every frozen backbone weight matches the original
 generator. It also caught a BF16 incremental/full-forward discrepancy (maximum
 0.02394 contact probability); the experiment therefore tests FP32 cached search
@@ -343,7 +344,7 @@ location and separation from H100 results before reading GB200 cohort accuracy.
 
 ### Native H100 recovery through the existing batch queue
 
-At 19:07 UTC, a read-only Kubernetes check found 320 unallocated H100s in RNO
+During recovery, a read-only Kubernetes check found 320 unallocated H100s in RNO
 and an active Kueue queue despite the unavailable Iris controller. Owned native
 `batch/v1` jobs were submitted to the existing `cw-rno2a-lq` / `iris-cq`, using
 `iris-accelerator-batch` workload priority and `iris-batch` pod priority. Kueue
@@ -380,7 +381,36 @@ The complete 32-protein GB200 replication has eight-rollout sum-q R-precision
 and 5.204 seconds for 128-rollout sum q. Data are in `data/pilot_direct_gb200/`.
 These are a separate hardware/runtime cohort: vLLM 0.14.1 on GB200 differs from
 the H100 vLLM 0.9.2 baseline, so the timing difference does not isolate GPU speed.
-The larger GB200 pools and validation extension remain in progress.
+The 512- and 2,048-rollout pools are also complete for all 32 structures:
+
+| Independent rollouts | Frequency R-precision | Long-range R-precision | Native contacts present | Mean warm GB200 seconds |
+| ---: | ---: | ---: | ---: | ---: |
+| 128 | 0.60248 | 0.58597 | 95.20% | 3.471 |
+| 512 | 0.60319 | 0.58579 | 98.60% | 18.404 |
+| 2,048 | 0.60257 | 0.58449 | 99.33% | 82.198 |
+
+Relative to 128 rollouts, 2,048 changes all-contact R-precision by +0.00009
+(95% paired interval −0.00426–0.00503) and long-range R-precision by −0.00148
+(−0.00687–0.00411), at 23.68 times the measured cost. This does not establish
+an accuracy benefit. Candidate coverage approaches saturation while frequency
+ranking plateaus; recovering additional true contacts requires better ranking
+of the candidate pool. These results do not test proofreader ranking at 2,048.
+Data and paired comparisons are in `data/pilot_large_gb200/`; the combined
+frequency curve is in `data/pilot_pool_scaling_gb200/`.
+
+![Frequency ranking and candidate coverage through 2,048 rollouts](plots/pilot_large_gb200.png)
+
+The separate larger GB200 validation panel is complete for frequency ranking:
+1,375 structures from 255 groups, with 1,371 contributing long-range metrics.
+Eight versus 128 rollouts gives R-precision 0.50086 versus 0.54779, a paired
+gain of 0.04693 (95% interval 0.04052–0.05353). Long-range R-precision rises
+from 0.47099 to 0.52194, a gain of 0.05096 (0.04338–0.05915). Mean warm cost
+is 1.196 versus 3.054 GB200 seconds. These reproduce the H100 frequency result
+under a separate runtime; the timings are not pooled across hardware. Fresh
+full-forward proofreader scoring of these pools is still running. Data are in
+`data/validation_frequency_gb200/`.
+
+![GB200 larger validation frequency comparison](plots/validation_frequency_gb200.png)
 
 ## Current scientific conclusion
 

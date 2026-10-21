@@ -214,3 +214,25 @@ Mean warm times are 1.511 seconds for eight-rollout sum q, 3.471 seconds for
 128-rollout frequency, and 5.204 seconds for 128-rollout sum q. These use
 vLLM 0.14.1 rather than the H100 baseline's 0.9.2; this is a separate runtime
 cohort and not a controlled measurement of hardware speed alone.
+
+## Larger pools reach a frequency-ranking plateau
+
+The complete GB200 pilot gives frequency R-precision 0.60248, 0.60319 and
+0.60257 at 128, 512 and 2,048 rollouts. Native-contact coverage rises from
+95.20% to 98.60% and 99.33%, while long-range R-precision is essentially flat.
+
+The paired 2,048-minus-128 all-contact difference is +0.00009 (95% interval
+−0.00426 to 0.00503); long-range difference is −0.00148 (−0.00687 to 0.00411).
+Mean warm cost rises from 3.471 to 82.198 GB200 seconds, a factor of 23.68.
+This does not establish an accuracy gain. Proofreader ranking at 2,048 is untested.
+
+## Larger validation replication on GB200
+
+All 1,375 structures from 255 groups are complete for frequency ranking.
+Eight versus 128 rollouts gives R-precision 0.50086 versus 0.54779; the paired
+gain is 0.04693 (95% interval 0.04052 to 0.05353). Long-range R-precision rises
+from 0.47099 to 0.52194, a gain of 0.05096 (0.04338 to 0.05915).
+
+Mean warm cost is 1.196 versus 3.054 GB200 seconds. This separate runtime
+replicates the H100 frequency result. Full-forward proofreader scoring is still
+running. No new reserved-test scores have been computed or inspected.
