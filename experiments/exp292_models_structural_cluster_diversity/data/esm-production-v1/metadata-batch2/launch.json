@@ -1,0 +1,282 @@
+{
+  "status": "partially_launched",
+  "region": "us-west-2",
+  "source": "s3://marinfold-exp91-usw2/exp292/production-v1/esm/metadata/launches/exp292-esm-metadata-batch2/source.tar.gz",
+  "located": "s3://marinfold-exp91-usw2/exp292/production-v1/esm/locator/located",
+  "results": "s3://marinfold-exp91-usw2/exp292/production-v1/esm/metadata",
+  "bundle_sha256": "d81bc13d7c1e281330bfb4631b31b085d49a93b5e21897a41f1d2785f0816163",
+  "bundle_bytes": 98679,
+  "shards": [
+    "09",
+    "0a",
+    "0b",
+    "0c",
+    "0d",
+    "0e",
+    "0f",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "1a",
+    "1b",
+    "1c",
+    "1d",
+    "1e",
+    "1f",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+    "25",
+    "26",
+    "27",
+    "28",
+    "29",
+    "2a",
+    "2b",
+    "2c",
+    "2d",
+    "2e",
+    "2f",
+    "30",
+    "31",
+    "32",
+    "33",
+    "34",
+    "35",
+    "36",
+    "37",
+    "38",
+    "39",
+    "3a",
+    "3b",
+    "3c",
+    "3d",
+    "3e",
+    "3f",
+    "40",
+    "41",
+    "42",
+    "43",
+    "44",
+    "45",
+    "46",
+    "47",
+    "48"
+  ],
+  "max_clusters": null,
+  "instances": [
+    {
+      "shard": "09",
+      "instance_id": "i-08d5aa76551d1626d"
+    },
+    {
+      "shard": "0a",
+      "instance_id": "i-0419bec748c2bd78b"
+    },
+    {
+      "shard": "0b",
+      "instance_id": "i-0b3e0f2931143217b"
+    },
+    {
+      "shard": "0c",
+      "instance_id": "i-04fdea92591cfe3dc"
+    },
+    {
+      "shard": "0d",
+      "instance_id": "i-078afb22b89ee7d39"
+    },
+    {
+      "shard": "0e",
+      "instance_id": "i-0cbf1276cdcea7cc5"
+    },
+    {
+      "shard": "0f",
+      "instance_id": "i-070f69fc627f11175"
+    },
+    {
+      "shard": "10",
+      "instance_id": "i-0687b9542e64e2328"
+    },
+    {
+      "shard": "11",
+      "instance_id": "i-0a419c4e8dd3127b2"
+    },
+    {
+      "shard": "12",
+      "instance_id": "i-0d13eaaa95dbca599"
+    },
+    {
+      "shard": "13",
+      "instance_id": "i-06a19dd30a65ad02e"
+    },
+    {
+      "shard": "14",
+      "instance_id": "i-05585d4b4f200dd5f"
+    },
+    {
+      "shard": "15",
+      "instance_id": "i-0e38f99ccd524b8cb"
+    },
+    {
+      "shard": "16",
+      "instance_id": "i-0e62b8951ac884a6e"
+    },
+    {
+      "shard": "17",
+      "instance_id": "i-05718ccd79039c89f"
+    },
+    {
+      "shard": "18",
+      "instance_id": "i-0b73f718faf85d1aa"
+    },
+    {
+      "shard": "19",
+      "instance_id": "i-0139962962c6c1b25"
+    },
+    {
+      "shard": "1a",
+      "instance_id": "i-0b95a7a3a82075400"
+    },
+    {
+      "shard": "1b",
+      "instance_id": "i-0455d22f60efdfc70"
+    },
+    {
+      "shard": "1c",
+      "instance_id": "i-079f57c3b00f4eb9a"
+    },
+    {
+      "shard": "1d",
+      "instance_id": "i-074152b5febc750a9"
+    },
+    {
+      "shard": "1e",
+      "instance_id": "i-0502f687259052ddc"
+    },
+    {
+      "shard": "1f",
+      "instance_id": "i-0316a1e8cabc306b9"
+    },
+    {
+      "shard": "20",
+      "instance_id": "i-0427d11583c2c1019"
+    },
+    {
+      "shard": "21",
+      "instance_id": "i-0abbd3048d7b6fec1"
+    },
+    {
+      "shard": "22",
+      "instance_id": "i-0091bb21441ceb096"
+    },
+    {
+      "shard": "23",
+      "instance_id": "i-039974c06bab6a254"
+    }
+  ],
+  "launched_shards": [
+    "09",
+    "0a",
+    "0b",
+    "0c",
+    "0d",
+    "0e",
+    "0f",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "1a",
+    "1b",
+    "1c",
+    "1d",
+    "1e",
+    "1f",
+    "20",
+    "21",
+    "22",
+    "23"
+  ],
+  "requested_shards": [
+    "09",
+    "0a",
+    "0b",
+    "0c",
+    "0d",
+    "0e",
+    "0f",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "1a",
+    "1b",
+    "1c",
+    "1d",
+    "1e",
+    "1f",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+    "25",
+    "26",
+    "27",
+    "28",
+    "29",
+    "2a",
+    "2b",
+    "2c",
+    "2d",
+    "2e",
+    "2f",
+    "30",
+    "31",
+    "32",
+    "33",
+    "34",
+    "35",
+    "36",
+    "37",
+    "38",
+    "39",
+    "3a",
+    "3b",
+    "3c",
+    "3d",
+    "3e",
+    "3f",
+    "40",
+    "41",
+    "42",
+    "43",
+    "44",
+    "45",
+    "46",
+    "47",
+    "48"
+  ],
+  "note": "RunInstances refused the 28th worker with VcpuLimitExceeded (account limit 445 vCPUs, 16 per m7i.4xlarge). The 27 that launched are recorded here; the remaining requested shards were relaunched by a later batch. The launcher now drains long shard lists in waves and records each instance before the next call."
+}

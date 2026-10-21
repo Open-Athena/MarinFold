@@ -1,0 +1,16 @@
+{
+  "status": "complete",
+  "queue_rows": 147,
+  "queue_clusters": 22,
+  "selected": 66,
+  "structural_diversity": 0,
+  "quality_fill": 66,
+  "measured_pairs": 125,
+  "all_pairs_avoided": 317,
+  "structure_blob_bytes": 2248547,
+  "atlas_uri": "s3://esm-protein-atlas/v1/folds/folds_1B.lance",
+  "atlas_version": 3,
+  "tmtools_version": "0.3.0",
+  "workers": 24,
+  "elapsed_seconds": 18.937913870000003
+}

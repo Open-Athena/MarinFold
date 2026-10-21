@@ -1,0 +1,12 @@
+{
+  "script": "plot_audit.py",
+  "args": [
+    "--sample-dir",
+    "experiments/exp292_models_structural_cluster_diversity/data/esm-gallery-v1",
+    "--source",
+    "ESMFold2",
+    "--output",
+    "experiments/exp292_models_structural_cluster_diversity/plots"
+  ],
+  "caption": "Small stratified development sample, not a population yield estimate. Provisional means whole-chain TM \u22640.8 versus all retained anchors, length ratio and both coverages \u22650.8, and greedy per-cluster selection. Core TM is a diagnostic with independently masked chains; it is not a training-clearance criterion. Candidate-level evaluation exclusion remains outstanding."
+}

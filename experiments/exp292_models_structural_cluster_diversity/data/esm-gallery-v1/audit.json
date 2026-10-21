@@ -1,0 +1,23 @@
+{
+  "source": "esmfold2",
+  "structures": 346,
+  "pairs": 3408,
+  "candidates": 317,
+  "provisional_diverse": 2,
+  "clusters_with_diverse": 2,
+  "membership_uri": "s3://marinfold-exp91-usw2/exp91/out/clu_cluster.tsv",
+  "membership_etag": "\"916af8a6dfca31c05825dfbb34550e2e-1284\"",
+  "membership_bytes": 10767514098,
+  "membership_rows": 163144153,
+  "membership_seconds": 202.216221636,
+  "atlas_version": 3,
+  "elapsed_seconds": 502.996439882,
+  "tmtools_version": "0.3.0",
+  "hostname": "ip-172-31-44-177",
+  "command": "sample_esm.py --plan inputs/plan.parquet --retained inputs/retained.parquet --output results",
+  "seed": 292,
+  "plan_sha256": "8d965c4f500c269ea73947767d9d31ae733fe66873b04804d26f647210a2a715",
+  "retained_sha256": "a1bc598e14c41f2dc2657e9933c1ec01e95c6c2f135b7fd060ffad0229a5ca7a",
+  "sampling_scope": "stratified developmental sample from supplied original materialization plans; not an unbiased population yield estimate",
+  "status": "visual curation; candidate-level decontamination still required"
+}

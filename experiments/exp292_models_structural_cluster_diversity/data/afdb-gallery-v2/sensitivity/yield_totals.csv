@@ -1,0 +1,7 @@
+mode,tm_threshold,selected_additions,clusters_with_hit,sample_clusters,frame_projected_additions
+whole_chain,0.7,0,0,36,
+whole_chain,0.8,5,5,36,
+whole_chain,0.9,40,18,36,
+whole_and_core,0.7,0,0,36,
+whole_and_core,0.8,2,2,36,
+whole_and_core,0.9,32,16,36,

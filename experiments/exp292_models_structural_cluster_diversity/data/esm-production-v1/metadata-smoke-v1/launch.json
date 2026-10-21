@@ -1,0 +1,19 @@
+{
+  "status": "launched",
+  "region": "us-west-2",
+  "source": "s3://marinfold-exp91-usw2/exp292/production-v1/esm/metadata-smoke-v1/launches/exp292-esm-metadata-smoke-v1/source.tar.gz",
+  "located": "s3://marinfold-exp91-usw2/exp292/production-v1/esm/locator/located",
+  "results": "s3://marinfold-exp91-usw2/exp292/production-v1/esm/metadata-smoke-v1",
+  "bundle_sha256": "f35bfcf6bd486caff8829ec9d89632e60c0302384e0be097df1aa7f725235097",
+  "bundle_bytes": 98144,
+  "shards": [
+    "00"
+  ],
+  "max_clusters": 100,
+  "instances": [
+    {
+      "shard": "00",
+      "instance_id": "i-0c423f5f9c6d79670"
+    }
+  ]
+}

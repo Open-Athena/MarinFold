@@ -1,0 +1,17 @@
+{
+  "metadata_rows": 24009002,
+  "training_anchor_rows": 3963003,
+  "sample_clusters": 1008,
+  "sample_anchors": 4845,
+  "sample_candidates": 19201,
+  "seed": 293,
+  "clusters_per_bin": 112,
+  "candidates_per_cluster": 32,
+  "elapsed_seconds": 7.384299994213507,
+  "metadata": "/home/bizon/exp53_scratch/afdb24m_small/*.parquet",
+  "training_index": "/data/exp225_decontam/index_afdb.parquet",
+  "droplist": "/data/exp225_decontam/droplist_final.parquet",
+  "sample_sha256": "2d3ccfe238387bb6cb61c76ad2a30483ffd64efc0016a664008fb187bcb1d493",
+  "candidate_policy": "pLDDT >=80, length 60-1000, omitted from current AFDB train, absent from known droplist",
+  "status": "visual curation only; candidate sequence decontamination pending"
+}

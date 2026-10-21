@@ -1,0 +1,18 @@
+{
+  "status": "launched",
+  "region": "us-west-2",
+  "source": "s3://marinfold-exp91-usw2/exp292/production-v1/esm/structures-smoke-v1/launches/exp292-esm-structures-smoke-v1/source.tar.gz",
+  "metadata": "s3://marinfold-exp91-usw2/exp292/production-v1/esm/metadata-smoke-v1",
+  "results": "s3://marinfold-exp91-usw2/exp292/production-v1/esm/structures-smoke-v1",
+  "bundle_sha256": "699778927ca4b8cadcff29052ca338d898c973d6060b5146fd2fe0aa48af18f5",
+  "bundle_bytes": 99767,
+  "shards": [
+    "00"
+  ],
+  "instances": [
+    {
+      "shard": "00",
+      "instance_id": "i-067b2e0da6d9c6c3b"
+    }
+  ]
+}

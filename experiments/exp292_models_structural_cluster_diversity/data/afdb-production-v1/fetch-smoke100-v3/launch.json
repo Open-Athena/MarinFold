@@ -1,0 +1,20 @@
+{
+  "status": "launched",
+  "iris_job": "/bizon/exp292-afdb-fetch-smoke100-v3",
+  "dashboard": "https://iris.oa.dev/#/job/%2Fbizon%2Fexp292-afdb-fetch-smoke100-v3",
+  "output": "gs://marin-us-central1/protein-structure/MarinFold/exp292/production-v1/afdb/fetch-smoke100-v3/validated.parquet",
+  "input": "gs://marin-us-central1/protein-structure/MarinFold/exp292/production-v1/afdb/plan/shard=07/data_8.parquet",
+  "num_docs": 100,
+  "zone": "us-central1-a",
+  "worker_region": "us-central1",
+  "worker_cpu": 1,
+  "worker_memory": "4g",
+  "worker_disk": "8g",
+  "max_workers": 1,
+  "fetch_concurrency": 16,
+  "root_priority": "batch",
+  "root_preemptible": true,
+  "python": ">=3.12,<3.13",
+  "iris_client": "marin-iris==0.2.112.dev34958292874",
+  "input_reader": "full-object parquet"
+}
