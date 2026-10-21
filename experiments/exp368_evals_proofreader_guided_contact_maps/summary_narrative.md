@@ -120,20 +120,20 @@ one-pass repair, plus ordinary vLLM pools of 8, 32 and 128 rollouts.
 
 Measure full-universe AP, all/long-range R-precision and complete search cost.
 Select policies on validation, then lock a reserved-test confirmation plan.
-Jobs use co-located CoreWeave H100s and resumable per-rollout artifacts.
+Jobs use co-located CoreWeave storage and resumable per-rollout artifacts.
+H100 and GB200 execution phases retain separate timing provenance.
 
-## Execution recovery
+## Execution and recoverability
 
-An eight-H100 RNO worker was preempted repeatedly. Iris failure-retry limits do
-not limit preemption retries, so the worker repeated its shared model transfer
-and lost local progress. It was canceled on detection; the incident is recorded.
+A repeatedly preempted shared worker was canceled after repeated model staging
+exceeded its intended transfer budget. The incident is recorded. Recovery jobs
+use immutable source bundles, per-trajectory commit markers and durable S3.
+Regional model mirrors use persistent reservations with a 7 GB cap each.
 
-Recovery uses original source snapshots and durable S3 trajectories. After East
-capacity remained full, a durable 6.014 GB RNO2A input mirror was completed with
-per-chunk reservations and a restart-safe 7 GB cap. Regional H100 smoke tests
-verify identical model and target hashes. The complete guided comparison is pending.
-Ordinary generation is nearly complete for 1,375 structures from 255 validation
-groups outside the pilot. New job starts are delayed by a regional controller outage. No new reserved-test scores have been computed or inspected.
+The complete H100 ordinary baselines are saved. H100 guided and fixed-length
+runs were interrupted again at 18:15 UTC, and both H100 controllers stopped
+reporting. No shared controller, priority or other user's workload was changed.
+The healthy GB200 region is being evaluated as a separate hardware phase.
 
 ## Numerical validation
 
@@ -143,17 +143,17 @@ drift of up to 0.02394 in one contact probability. FP32 cached search passes on
 three real proteins, with maximum error 0.00000358. Final maps use the released
 BF16 full-pass reader for comparison.
 
-## Regional recovery status at 1730 UTC
+## GB200 verification and its limits
 
-East-region output writes failed after 16:55. All affected workers stopped, and
-4,446 saved objects were copied to the GPU region. Source checksums and complete
-destination readbacks verified every file. Original code, sharding and seeds
-are preserved, with new results resuming from the verified regional snapshot.
+Tiny-model cache checks and production ordinary generation passed on GB200.
+The production proofreader's CUDA 13 replay failed: the largest BF16 contact-score
+difference from saved H100 predictions was 0.0800, against a 0.01 guard. A real
+prefix also exceeded the unchanged 1e-5 FP32 cache-equivalence threshold.
 
-The regional controller stopped responding after 17:14. Thirteen replacement
-and smoke jobs remain queued. Existing validation-generation workers continue
-writing outputs. These are infrastructure delays; guided-policy conclusions
-remain pending. No shared cluster state has been changed.
+Forcing math attention did not meet the BF16 guard; memory-efficient attention
+was unsupported for this cache path. A matching CUDA 12.8 build is being checked.
+Failed checks are retained. No full guided GB200 campaign is authorized by them,
+and cost plots reject mixtures of GPU models.
 
 ## How to interpret the eventual comparison
 
@@ -168,22 +168,9 @@ have not been inspected. Generator pretraining decontamination is not establishe
 Search timings describe this implementation, including discarded work, and are
 not hardware-independent lower bounds on the cost of these policy families.
 
-## Execution resumed through the healthy East controller
-
-East H100 capacity and object writes recovered while RNO's controller remained
-unresponsive. Verified copies of the 14.2 MB guided snapshot and 404.6 MB complete
-validation outputs now live in East. Pending RNO replacements were canceled
-before new East jobs were submitted. Existing East weights keep large reads
-colocated, with no new cross-region model staging.
-
-The new fixed-length GPU smoke passed exact L and 2L contact counts, nested-prefix
-checks, model hashes and FP32 cache errors below 9e-7. Four validation-scoring
-jobs, four fixed-length shards and twelve original guided shards are submitted
-through the healthy controller. No shared cluster restart was performed.
-
 ## Stronger comparisons at larger compute budgets
 
-Two additional ordinary-generation jobs request 512 and 2,048 independent
+A separate GB200 ordinary-generation phase requests 512 and 2,048 independent
 rollouts per pilot structure. These sizes were frozen before complete guided
 results were available. Observed lookahead costs already greatly exceeded the
 128-rollout baseline, motivating a wider ordinary-sampling cost curve.

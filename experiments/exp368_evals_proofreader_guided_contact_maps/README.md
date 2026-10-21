@@ -313,7 +313,11 @@ check, with error 1.2279e-5. These failures are preserved in
 `data/backend_check_gb200_default*`; they do not authorize switching the production
 campaign to this runtime. Explicit math and memory-efficient attention backends
 with full-precision reductions are being tested without changing acceptance
-thresholds. PyTorch documents that [different attention implementations can
+thresholds. The forced math backend still failed (maximum BF16 probability
+error 0.0342); the forced memory-efficient backend was unsupported for the FP32
+cache path. A subsequent check pins the official ARM CUDA 12.8 wheel to match
+the original H100 proofreader's `torch==2.10.0+cu128`, instead of CUDA 13.
+PyTorch documents that [different attention implementations can
 produce different numerical results](https://docs.pytorch.org/docs/main/generated/torch.nn.functional.scaled_dot_product_attention.html);
 that is a possible explanation, not a diagnosis established by these checks.
 The separate vLLM 0.14.1 ARM generation smoke completed all six ordinary pool
