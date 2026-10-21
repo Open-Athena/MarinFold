@@ -173,6 +173,13 @@ def main() -> None:
                     prompt_ids=prompt, completion_ids=completion, finished=state.finished,
                     probabilities=q[0].tolist(), predicted_recall=recall[0].item(),
                     gt_count=len(target['contacts']), **parsed))
+                if engine.candidate_diagnostics:
+                    native = set(map(tuple, target['contacts']))
+                    diagnostics = [dict(row, label=int(tuple(row['pair']) in native))
+                                   for row in engine.candidate_diagnostics]
+                    api.storage.write_rows(diagnostics, args.out + '/' + sample_key + '.candidates.parquet')
+                    api.storage.write_json(dict(rows=len(diagnostics), **pin),
+                                           args.out + '/' + sample_key + '.candidates.done.json')
                 api.storage.write_rows([rows[-1]], args.out + '/' + sample_key + '.parquet')
                 timing = dict(stem=target['entry_id'], n_residues=target['L'], n_pairs=state.count,
                     mode=policy.name, sample=sample, elapsed_seconds=elapsed, model_load_seconds=load_seconds,

@@ -101,6 +101,7 @@ class Engine:
                                          for i in range(2000)], device=device)
         self.generated_tokens = 0
         self.scored_contacts = 0
+        self.candidate_diagnostics = []
 
     def autocast(self):
         """Keep cached search in FP32; BF16 incremental/full GEMMs drifted."""
@@ -215,12 +216,13 @@ class Engine:
         """Branch, optionally look ahead, then commit only one proposed contact."""
         if policy.candidates == 1:
             return self.extend(state, length, offset, rng)
-        objectives, completions, pairs = [], [], []
+        objectives, completions, pairs, immediate = [], [], [], []
         batch_limit = min(policy.candidate_batch, 4) if policy.lookahead else policy.candidate_batch
         for start in range(0, policy.candidates, batch_limit):
             batch = min(batch_limit, policy.candidates - start)
             candidates = self.extend(select(state, state.tokens.new_zeros(batch)), length, offset, rng)
             q, _ = self.score(candidates)
+            immediate.append(q[:, -1].clone())
             objective = q[:, -1] if policy.objective == 'new' else q.sum(-1)
             depth = min(policy.lookahead, max_contacts - candidates.count)
             if depth:
@@ -239,6 +241,15 @@ class Engine:
             del candidates, q
         objective = torch.cat(objectives)
         chosen = torch.multinomial(selection_weights(objective, policy), 1, generator=rng)
+        if state.count < 4 or state.count % 8 == 0:
+            candidate_pairs = torch.cat(pairs)[:, 0].tolist()
+            immediate_q = torch.cat(immediate).tolist()
+            score_values = objective.tolist()
+            selected = chosen.item()
+            for index, pair in enumerate(candidate_pairs):
+                self.candidate_diagnostics.append(dict(prefix_contacts=state.count, proposal=index,
+                    pair=pair, immediate_probability=immediate_q[index], selection_score=score_values[index],
+                    selected=index == selected, lookahead=min(policy.lookahead, max_contacts - state.count - 1)))
         # Recompute only the selected triple, keeping memory independent of K.
         committed, hidden = self.advance(state, torch.cat(completions).index_select(0, chosen))
         return replace(committed, triples=torch.cat([state.triples, hidden.flatten(1)[:, None]], dim=1),
@@ -248,6 +259,7 @@ class Engine:
                 seed: int, contact_limit: int | None = None) -> State:
         """Run one guided trajectory with generator-controlled termination."""
         rng = torch.Generator(device=self.device).manual_seed(seed)
+        self.candidate_diagnostics = []
         state = self.start(prompt)
         budget = min(6 * length + 128, 8192 - len(prompt) - 1)
         maximum = min(budget // 3, contact_limit or 8192, (length - 6) * (length - 5) // 2)
