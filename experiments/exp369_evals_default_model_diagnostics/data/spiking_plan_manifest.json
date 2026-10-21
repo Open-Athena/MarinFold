@@ -1,0 +1,14 @@
+{
+  "plan_sha256": "439f3f8932a182cb398924757501ed5ca32aeb2874310baf5372a0c7357acbed",
+  "n_proteins": 97,
+  "n_conditions": 6664,
+  "n_completions": 666400,
+  "plan_bytes": 1548456,
+  "mdtraj_version": "1.11.2",
+  "gemmi_version": "0.7.5",
+  "source_files": {
+    "experiments/exp245_evals_foldbench_held_out_monomers/data/eval_sets.csv": "b13d060a091240921bc8466acecc9fa6ccbb45a56de4efda02cd903f6abf9861",
+    "experiments/exp245_evals_foldbench_held_out_monomers/data/gt_universe_scored.jsonl": "f30c23e3d2fbab245755fc01548388b41730ddfa45da87325539698cadb153e5",
+    "experiments/exp245_evals_foldbench_held_out_monomers/data/eval_targets_foldbench_monomers.parquet": "2eb4f1fee148fe2d6601bd171ef6e9431b96f38c82eaed1ad119a069a13f1fb8"
+  }
+}

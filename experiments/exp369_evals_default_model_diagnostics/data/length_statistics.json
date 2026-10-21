@@ -1,0 +1,26 @@
+{
+  "all": {
+    "n": 97,
+    "mean_r_precision": 0.5537468341913647,
+    "mean_ci95": [
+      0.5117574814414151,
+      0.5940292472964059
+    ],
+    "spearman_rho": -0.06814759784116793,
+    "spearman_pvalue": 0.5071725198695312
+  },
+  "long": {
+    "n": 97,
+    "mean_r_precision": 0.5380178272779218,
+    "mean_ci95": [
+      0.49404751976003086,
+      0.5802736400233842
+    ],
+    "spearman_rho": -0.0360116905177673,
+    "spearman_pvalue": 0.7261962831066269
+  },
+  "source_files_sha256": {
+    "experiments/exp277_models_single_mpnn_pilot/data/eval_rollout_v2/contact_precision_all.csv": "f8dba35fc697e37e5a383567946efee613948e736607ce7d01486243d0c079c5",
+    "experiments/exp245_evals_foldbench_held_out_monomers/data/eval_sets.csv": "b13d060a091240921bc8466acecc9fa6ccbb45a56de4efda02cd903f6abf9861"
+  }
+}
