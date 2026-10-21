@@ -5,6 +5,8 @@ from collections import Counter, defaultdict
 
 import numpy as np
 
+F1_WEIGHT_POWERS = {'f1_weighted_frequency': 1, 'f1_power2': 2, 'f1_power4': 4, 'f1_power8': 8}
+
 
 def diversity_weights(observations: list[dict[tuple[int, int], float]]) -> np.ndarray:
     """Compute exact 0.8-Jaccard neighbor discounts using integer bitsets.
@@ -53,20 +55,20 @@ def aggregate(rollouts: list[dict], method: str) -> dict[tuple[int, int], float]
     weights = np.ones(len(observations))
     if method == 'diversity_sumq':
         weights = diversity_weights(observations)
-    if method == 'f1_weighted_frequency':
+    if method in F1_WEIGHT_POWERS:
         for i, row in enumerate(rollouts):
             unique = {}
             for pair, probability in zip(row['pairs'], row['probabilities'], strict=True):
                 unique.setdefault(tuple(pair), probability)
             precision = float(np.mean(list(unique.values()))) if unique else 0.
             recall = row['predicted_recall']
-            weights[i] = max(1e-8, 2 * precision * recall / max(1e-8, precision + recall))
+            weights[i] = max(1e-8, 2 * precision * recall / max(1e-8, precision + recall)) ** F1_WEIGHT_POWERS[method]
     count, total = defaultdict(float), defaultdict(float)
     for pairs, weight in zip(observations, weights, strict=True):
         for pair, probability in pairs.items():
             count[pair] += weight
             total[pair] += weight * probability
-    if method == 'f1_weighted_frequency':
+    if method in F1_WEIGHT_POWERS:
         return dict(count)
     if method == 'frequency_then_meanq':
         # Integer vote counts remain strictly ordered. Confidence can resolve a

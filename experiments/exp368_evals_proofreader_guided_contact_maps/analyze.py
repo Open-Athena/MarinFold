@@ -8,21 +8,25 @@ import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
 
-from metrics import aggregate, bootstrap, map_metrics
+from metrics import F1_WEIGHT_POWERS, aggregate, bootstrap, map_metrics
 
 METHODS = ['frequency', 'sumq', 'meanq', 'sqrt_frequency_meanq', 'diversity_sumq',
            'frequency_then_meanq', 'f1_weighted_frequency']
+SUPPORTED_METHODS = METHODS + [method for method in F1_WEIGHT_POWERS if method not in METHODS]
 
 
 def evaluation_methods(plan: dict, policy: str, rollouts: int) -> list[str]:
     """Restrict reserved-test metrics to the two configurations frozen in its plan."""
     if plan['split'] != 'test':
-        return METHODS
+        methods = plan.get('analysis_methods', METHODS)
+        if not methods or len(set(methods)) != len(methods) or not set(methods) <= set(SUPPORTED_METHODS):
+            raise ValueError('Invalid explicitly planned aggregation methods')
+        return methods
     configs = plan.get('evaluation_configs', [])
     if len(configs) != 2 or len(set(configs)) != 2:
         raise ValueError('Reserved-test analysis requires exactly two frozen configurations')
     prefix = f'{policy}:{rollouts}:'
-    return [method for method in METHODS if prefix + method in configs]
+    return [method for method in SUPPORTED_METHODS if prefix + method in configs]
 
 
 def require_complete_test_inputs(plan: dict, guided: Path | None, pool: Path | None) -> None:
@@ -33,7 +37,7 @@ def require_complete_test_inputs(plan: dict, guided: Path | None, pool: Path | N
     for spec in plan['evaluation_configs']:
         policy, count, method = spec.split(':')
         n = int(count)
-        if method not in METHODS or n <= 0:
+        if method not in SUPPORTED_METHODS or n <= 0:
             raise ValueError('Invalid reserved-test configuration: ' + spec)
         ordinary = policy in {'ordinary', 'ordinary-direct'}
         root = pool if ordinary else guided

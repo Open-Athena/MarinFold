@@ -32,6 +32,17 @@ def test_raw_frequency_counts_distinct_eligible_votes_without_reader() -> None:
     assert aggregate(rows, 'frequency') == {(0, 8): 2., (1, 9): 1., (2, 10): 1.}
 
 
+def test_f1_power_emphasizes_quality_without_changing_single_power_weights() -> None:
+    rows = [dict(L=32, pairs=[[0, 24]], probabilities=[.6], predicted_recall=.6),
+            dict(L=32, pairs=[[0, 24]], probabilities=[.6], predicted_recall=.6),
+            dict(L=32, pairs=[[1, 25]], probabilities=[.9], predicted_recall=.9)]
+    linear = aggregate(rows, 'f1_weighted_frequency')
+    squared = aggregate(rows, 'f1_power2')
+    np.testing.assert_allclose([linear[(0, 24)], linear[(1, 25)]], [1.2, .9], rtol=1e-12)
+    assert linear[(0, 24)] > linear[(1, 25)]
+    assert squared[(0, 24)] < squared[(1, 25)]
+
+
 def test_bitset_discounts_match_exact_set_jaccard_with_boundary_and_empty_rows() -> None:
     rng = np.random.default_rng(368)
     universe = [(i, i + 6) for i in range(100)]
