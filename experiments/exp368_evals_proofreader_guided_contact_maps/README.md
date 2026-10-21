@@ -197,8 +197,14 @@ copy. The streaming mirror completed successfully in about 70 seconds.
 `regional_inputs.py` checks the full reader, head, reconstructed-generator and
 target hashes against the original pilot. Regional recovery jobs use identical
 H100 hardware and original frozen task bundles, with large weight reads now
-colocated. New larger phases also write to the regional bucket. The small
-existing guided results retain their original durable prefix for resumption.
+colocated. New larger phases also write to the regional bucket. After East result writes began timing out at 16:55 UTC, five guided workers
+exhausted their failure retries and the remaining seven were canceled. The
+14,227,449-byte snapshot (4,446 objects) was copied to
+`s3://marinfold-exp368-rno2a/MarinFold/exp368/results/pilot-guided/`.
+Every local object matched its source ETag and every destination object was
+read back and checked against SHA256. The original immutable tasks resume from
+this regional copy. `data/storage_write_incident.json` and
+`data/guided_results_migration.json` retain the evidence and complete file audit.
 
 The regional ordinary-generation bootstrap now uses the vLLM container's existing
 interpreter instead of installing a second CUDA/PyTorch environment solely for
