@@ -51,3 +51,6 @@ Stop after 186,885 total updates (final checkpoint 186,884): exactly 23,921,189 
 At Oct 21, the fork has reached step 145,821: latest validation 3.10221 at 143,752 versus its parent's 3.10134 at the same step. Cooldown has not started yet. The parent remains independent. All ten CPU tests pass.
 
 Repeated batch-priority preemptions have delayed progress, especially for the fork. Automatic checkpoint resumes are working, but calendar finish estimates remain sensitive to GPU availability.
+
+## Additional v5p cooldown copy prepared
+The requested independent TPU replica restores the same step-139053 full state and finishes at step 186884. Prepared shape: v5p-64 (32 chips), us-east5-a, global batch 128, batch priority. Existing GPU fork and parent continue independently. Local tests preserve the scientific recipe, data order, schedule and isolated outputs. Training is not submitted: the 250.07 GB redesign caches and 17.66 GB checkpoint need a 267.73 GB approved transfer from CoreWeave. Matching validation is already local. Exact paths, counts and inventory hashes are in data/tpu_transfer_plan.json; the full-state TPU smoke follows approved staging.

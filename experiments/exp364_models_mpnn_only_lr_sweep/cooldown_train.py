@@ -8,6 +8,7 @@ from marin.execution.lazy import ArtifactStep, StepContext
 from marin.experiment.cli import build_options
 from marin.training.training import LevanterCheckpoint, TrainLmOnPodConfig
 
+from experiments.exp277_models_single_mpnn_pilot.config import Corpus
 from experiments.exp277_models_single_mpnn_pilot.epoch_data import one_epoch_data
 from experiments.exp277_models_single_mpnn_pilot.prepare import verify_cache
 from experiments.exp364_models_mpnn_only_lr_sweep.config import (
@@ -15,6 +16,7 @@ from experiments.exp364_models_mpnn_only_lr_sweep.config import (
     EPOCH_PACKED_EXAMPLES,
     PREFIX,
     TRAIN_STEPS,
+    VALIDATION_CACHE,
     VERSION,
     run_id_for,
 )
@@ -28,7 +30,14 @@ EPOCH_STEPS = (EPOCH_PACKED_EXAMPLES + 127) // 128
 
 
 def build_cooldown_run(
-    *, smoke: bool, nodes: int, attempt: int = 1
+    *,
+    smoke: bool,
+    nodes: int,
+    attempt: int = 1,
+    corpora: tuple[Corpus, ...] = CORPORA,
+    validation_cache: str = VALIDATION_CACHE,
+    prefix: str = PREFIX,
+    source_root: str = SOURCE_ROOT,
 ) -> ArtifactStep[LevanterCheckpoint]:
     """Keep the parent's recipe and data prefix, changing only its future LR/end.
 
@@ -37,13 +46,21 @@ def build_cooldown_run(
     The original augmentation ramp and warmup duration remain unchanged. A smoke
     uses ten additional updates with an accelerated ten-update cooldown.
     """
-    parent = build_run(trial="lr5e-4", smoke=False, nodes=nodes, attempt=attempt)
+    parent = build_run(
+        trial="lr5e-4",
+        smoke=False,
+        nodes=nodes,
+        attempt=attempt,
+        corpora=corpora,
+        validation_cache=validation_cache,
+        prefix=prefix,
+    )
     run_id = f"{RUN_ID}-smoke-a{attempt:02d}" if smoke else RUN_ID
     end_step = SOURCE_STEP + 1 + 10 if smoke else EPOCH_STEPS
     source = ArtifactStep[LevanterCheckpoint].adopt(
         "input/one-epoch-cooldown/source-from139053",
         VERSION,
-        source=SOURCE_ROOT,
+        source=source_root,
         kind=LevanterCheckpoint,
         config={"source_run": SOURCE_RUN_ID, "checkpoint_step": SOURCE_STEP},
     )
@@ -110,7 +127,7 @@ def build_cooldown_run(
         name=f"runs/{run_id}",
         deps=(*parent.deps, source),
         build_config=build_config,
-        override_path=f"{PREFIX}/runs/{run_id}",
+        override_path=f"{prefix}/runs/{run_id}",
     )
 
 

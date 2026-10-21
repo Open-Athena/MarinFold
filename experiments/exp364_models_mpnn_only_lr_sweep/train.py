@@ -28,6 +28,7 @@ from experiments.exp232_sweep_cv1_decontam.training_contract import (
     WARMUP,
     existing_cache,
 )
+from experiments.exp277_models_single_mpnn_pilot.config import Corpus
 from experiments.exp277_models_single_mpnn_pilot.prepare import verify_cache
 from experiments.exp364_models_mpnn_only_lr_sweep.config import (
     CORPORA,
@@ -47,7 +48,14 @@ from experiments.exp364_models_mpnn_only_lr_sweep.runtime import run_train_job
 
 
 def build_run(
-    *, trial: str, smoke: bool, nodes: int, attempt: int = 1
+    *,
+    trial: str,
+    smoke: bool,
+    nodes: int,
+    attempt: int = 1,
+    corpora: tuple[Corpus, ...] = CORPORA,
+    validation_cache: str = VALIDATION_CACHE,
+    prefix: str = PREFIX,
 ) -> ArtifactStep[LevanterCheckpoint]:
     """Preserve the default recipe, changing training subset, duration, and LR."""
     if nodes not in (1, 2, 4, 8, 16):
@@ -56,7 +64,7 @@ def build_run(
     run_id = run_id_for(trial, smoke=smoke, attempt=attempt)
     steps = 10 if smoke else TRAIN_STEPS
     env = {
-        "MARIN_PREFIX": PREFIX,
+        "MARIN_PREFIX": prefix,
         "WANDB_ENTITY": "open-athena",
         "WANDB_PROJECT": "MarinFold",
     }
@@ -71,12 +79,12 @@ def build_run(
             source=corpus.cache,
             tags=["contacts-v1", "decontaminated", corpus.name],
         ): 1.0
-        for corpus in CORPORA
+        for corpus in corpora
     }
     validation = existing_cache(
         name="input/validation",
         version="2026.07.25",
-        source=VALIDATION_CACHE,
+        source=validation_cache,
         tags=["contacts-v1", "validation"],
     )
     step = train_lm(
@@ -181,7 +189,7 @@ def build_run(
         step,
         build_config=build_config,
         run=run_train_job,
-        override_path=f"{PREFIX}/runs/{run_id}",
+        override_path=f"{prefix}/runs/{run_id}",
     )
 
 
