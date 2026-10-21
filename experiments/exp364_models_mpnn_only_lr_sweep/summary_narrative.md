@@ -69,7 +69,7 @@ Thirty-five CPU checks pass. Natural/design results and viral/low-MSA cuts stay 
 
 ## Contact evaluation: durable sources restored
 
-CoreWeave writes recovered after the account suspension. All four refreshed native sources are frozen and independently verified: 124 files, 70.63 GB. CPU export jobs are preparing reusable HF weights and tokenizers on CoreWeave. GPU retries will load those exports; model bytes stay regional.
+CoreWeave writes recovered after the account suspension. All four refreshed native sources are frozen and independently verified: 124 files, 70.63 GB. All four CPU exports passed verification, including both weight shards and tokenizer files. Four one-H100 batch evaluation jobs are queued as of 21:08 UTC; model bytes stay regional.
 
 The earlier attempt lost temporary source objects during repeated preemptions. Its diagnostics and snapshot are preserved; no full evaluation groups completed. The fork smoke capped 2/100 samples on 5sbj_A, motivating the approved continuation.
 

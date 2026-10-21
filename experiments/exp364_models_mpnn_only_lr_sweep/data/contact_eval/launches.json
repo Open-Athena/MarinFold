@@ -103,5 +103,45 @@
     "bundle_sha256": "0b012b0c330899b9b7944e34694f5bfa54164e7065bb894e1eb56b9ebfa9c0fd",
     "bundle_uri": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-10-21/latest-02/source/0b012b0c330899b9b7944e34694f5bfa54164e7065bb894e1eb56b9ebfa9c0fd.zip",
     "git_commit": "fd1e25f3349dc5f66d86a73ea6f70337688bdbbe"
+  },
+  {
+    "job_id": "/bizon/exp364-contact-eval-lr5e-4-a05",
+    "trial": "lr5e-4",
+    "step": 184314,
+    "eval_set": "all",
+    "export_only": false,
+    "bundle_sha256": "c50f4c6f761eacfcf4a78d7df16e90098c65a8e2a940d19b9420746c640e11b3",
+    "bundle_uri": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-10-21/latest-02/source/c50f4c6f761eacfcf4a78d7df16e90098c65a8e2a940d19b9420746c640e11b3.zip",
+    "git_commit": "dd87fca4667ad26c19f758d60c853c577059a486"
+  },
+  {
+    "job_id": "/bizon/exp364-contact-eval-lr1e-3-a05",
+    "trial": "lr1e-3",
+    "step": 207865,
+    "eval_set": "all",
+    "export_only": false,
+    "bundle_sha256": "2995c6e9e16064020f315d2cfe46657adc31d1055f753db57da1361ab1c7ce88",
+    "bundle_uri": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-10-21/latest-02/source/2995c6e9e16064020f315d2cfe46657adc31d1055f753db57da1361ab1c7ce88.zip",
+    "git_commit": "dd87fca4667ad26c19f758d60c853c577059a486"
+  },
+  {
+    "job_id": "/bizon/exp364-contact-eval-lr2e-3-a05",
+    "trial": "lr2e-3",
+    "step": 105722,
+    "eval_set": "all",
+    "export_only": false,
+    "bundle_sha256": "2995c6e9e16064020f315d2cfe46657adc31d1055f753db57da1361ab1c7ce88",
+    "bundle_uri": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-10-21/latest-02/source/2995c6e9e16064020f315d2cfe46657adc31d1055f753db57da1361ab1c7ce88.zip",
+    "git_commit": "dd87fca4667ad26c19f758d60c853c577059a486"
+  },
+  {
+    "job_id": "/bizon/exp364-contact-eval-lr5e-4-cooldown-a05",
+    "trial": "lr5e-4-cooldown",
+    "step": 146264,
+    "eval_set": "all",
+    "export_only": false,
+    "bundle_sha256": "2995c6e9e16064020f315d2cfe46657adc31d1055f753db57da1361ab1c7ce88",
+    "bundle_uri": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-10-21/latest-02/source/2995c6e9e16064020f315d2cfe46657adc31d1055f753db57da1361ab1c7ce88.zip",
+    "git_commit": "dd87fca4667ad26c19f758d60c853c577059a486"
   }
 ]
