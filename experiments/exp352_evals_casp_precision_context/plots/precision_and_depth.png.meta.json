@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "CASP-style contacts on eval-val. Top-k precision and MSA-depth strata, with 20,000 protein-bootstrap draws. The depth strata describe the targets; MarinFold receives a single sequence."
+}
