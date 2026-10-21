@@ -339,7 +339,50 @@ baseline was also launched on the original 1,375-structure validation extension.
 `data/gb200_ordinary_phase.json` freezes the exact plan hashes, runtime, output
 location and separation from H100 results before reading GB200 cohort accuracy.
 
-## Conclusion
+## Recovery and replication
+
+### Native H100 recovery through the existing batch queue
+
+At 19:07 UTC, a read-only Kubernetes check found 320 unallocated H100s in RNO
+and an active Kueue queue despite the unavailable Iris controller. Owned native
+`batch/v1` jobs were submitted to the existing `cw-rno2a-lq` / `iris-cq`, using
+`iris-accelerator-batch` workload priority and `iris-batch` pod priority. Kueue
+admission was verified from the job events. No shared controller or scheduling
+policy was changed. This follows Kueue's [documented Job admission interface](https://kueue.sigs.k8s.io/docs/tasks/manage/run_job_with_workload_priority/).
+
+The real-model smoke completed all eight exact-length maps and passed the
+original FP32 cache tolerance, with maximum error 8.94e-7. The stopped guided
+snapshot was verified and repartitioned from 12 to 48 independent workers.
+Only execution partitioning changed: original source bundles, plans, protein
+cohort, policies, per-trajectory seeds and saved outputs are unchanged. Original
+shard pins are archived with an explicit repartition ledger. Four fixed-length
+workers also resumed, and the two large-pool baseline workers were submitted.
+All 22 stranded East replacements were canceled; a direct check confirmed no
+remaining exp368 pods there.
+
+The native job specifications, source hashes, object UIDs and actual submission
+backend are recorded in `data/native_dispatches.jsonl`. Immutable scientific
+workers retain the original `runner_tag=iris` timing convention; that field is
+not evidence of which controller submitted the recovery pod. Per-input GPU,
+host, software and wall-time records remain measured by the unchanged workers.
+Native storage credentials are held only in an owned Kubernetes Secret and are
+excluded from reports and source archives. Bootstrap failures before inference
+(system-pip installation, then an absent `python` alias in the vLLM image) were
+fixed with an isolated installer and explicit `python3`; they produced no
+scientific results.
+
+### Separate GB200 ordinary-pool replication
+
+The complete 32-protein GB200 replication has eight-rollout sum-q R-precision
+0.5783 and long-range R-precision 0.5591. At 128 rollouts, frequency achieves
+0.6025 and 0.5860, while sum-q achieves 0.5995 and 0.5846. Mean warm costs are
+1.511 seconds for eight-rollout sum q, 3.471 seconds for 128-rollout frequency
+and 5.204 seconds for 128-rollout sum q. Data are in `data/pilot_direct_gb200/`.
+These are a separate hardware/runtime cohort: vLLM 0.14.1 on GB200 differs from
+the H100 vLLM 0.9.2 baseline, so the timing difference does not isolate GPU speed.
+The larger GB200 pools and validation extension remain in progress.
+
+## Current scientific conclusion
 
 The completed 32-protein pilot supports larger ordinary rollout pools: 128
 frequency-ranked rollouts improve both all-contact and long-range R-precision

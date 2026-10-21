@@ -133,7 +133,8 @@ Regional model mirrors use persistent reservations with a 7 GB cap each.
 The complete H100 ordinary baselines are saved. H100 guided and fixed-length
 runs were interrupted again at 18:15 UTC, and both H100 controllers stopped
 reporting. No shared controller, priority or other user's workload was changed.
-The healthy GB200 region is being evaluated as a separate hardware phase.
+The separate GB200 ordinary phase passed full-forward scoring checks. Native
+H100 jobs now use the existing Kueue batch queue despite the Iris outage.
 
 ## Numerical validation
 
@@ -190,3 +191,26 @@ With 128 rollouts, it changes 7.62% of slots; the net effect is −0.0031
 The diagnostic counts true contacts entering and leaving the map. Those counts
 exactly reproduce the observed metric difference for every protein. All 32 pilot
 structures are included; these results do not replace the larger validation test.
+
+## H100 execution restored without a controller restart
+
+Kubernetes showed 320 unallocated H100s and a healthy existing batch queue.
+Native jobs were admitted through cw-rno2a-lq / iris-cq at the original batch
+priority. The real-model smoke passed, with maximum cache error 8.94e-7.
+All 22 stranded East replacements were canceled.
+
+The saved guided campaign now resumes on 48 H100 workers. Original model,
+source, plans, per-trajectory seeds and saved predictions remain unchanged;
+only execution partitioning changes. Four fixed-length workers also resumed.
+Native job IDs and exact specifications are retained separately from Iris IDs.
+
+## Separate ordinary-pool replication on GB200
+
+All 32 pilot proteins are complete for independent pools of 8, 32 and 128.
+Eight-rollout sum q gives all-contact R-precision 0.5783 and long-range 0.5591.
+At 128 rollouts, frequency gives 0.6025 and 0.5860; sum q gives 0.5995 and 0.5846.
+
+Mean warm times are 1.511 seconds for eight-rollout sum q, 3.471 seconds for
+128-rollout frequency, and 5.204 seconds for 128-rollout sum q. These use
+vLLM 0.14.1 rather than the H100 baseline's 0.9.2; this is a separate runtime
+cohort and not a controlled measurement of hardware speed alone.
