@@ -319,7 +319,7 @@ that is a possible explanation, not a diagnosis established by these checks.
 The separate vLLM 0.14.1 ARM generation smoke completed all six ordinary pool
 waves. Cost plots now require recorded, consistent GPU hardware.
 
-At 18:58 UTC, before inspecting new GB200 pilot accuracy, the ordinary baseline
+At 18:56 UTC, before inspecting new GB200 pilot accuracy, the ordinary baseline
 phase was expanded to the same complete 32-protein cohort on GB200: independent
 pools of 8, 32, 128, 512 and 2,048 rollouts. These reuse the frozen cohort, plans
 and seeds. Their outputs and timings are separate from the H100 phase. The larger
