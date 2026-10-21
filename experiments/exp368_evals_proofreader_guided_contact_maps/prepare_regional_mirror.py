@@ -1,5 +1,6 @@
-"""Make one durable, bounded regional input copy for restartable H100 work."""
+"""Make one durable, bounded regional input copy for restartable GPU work."""
 
+import argparse
 import json
 import os
 from datetime import UTC, datetime
@@ -9,9 +10,6 @@ import s3fs
 
 from runtime import HERE, READER, ROOT, TARGETS
 
-REGIONAL = 's3://marinfold-exp368-rno2a/MarinFold/exp368/inputs-v1'
-
-
 class SingleAttemptS3(s3fs.S3FileSystem):
     """Do not silently repeat a cross-region copy after a transport failure."""
 
@@ -20,13 +18,18 @@ class SingleAttemptS3(s3fs.S3FileSystem):
 
 def main() -> None:
     """Reserve bytes durably before each copy; refuse a cumulative 7 GB excess."""
+    manifests = json.loads((HERE / 'regional_inputs_manifest.json').read_text())
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--region', choices=sorted(manifests['mirrors']), default='RNO2A')
+    args = parser.parse_args()
+    regional = manifests['mirrors'][args.region]
     fs = SingleAttemptS3(**({} if os.environ.get('FSSPEC_S3') else {'profile': 'cw'}),
         endpoint_url='https://cwobject.com',
         config_kwargs={'s3': {'addressing_style': 'virtual'}, 'retries': {'max_attempts': 0},
                        'connect_timeout': 10, 'read_timeout': 300})
-    location = fs.call_s3('head_bucket', Bucket='marinfold-exp368-rno2a')
-    if location['ResponseMetadata']['HTTPHeaders']['x-amz-bucket-region'] != 'RNO2A':
-        raise ValueError('Mirror bucket is not colocated with the RNO H100 pool')
+    location = fs.call_s3('head_bucket', Bucket=regional.removeprefix('s3://').split('/')[0])
+    if location['ResponseMetadata']['HTTPHeaders']['x-amz-bucket-region'] != args.region:
+        raise ValueError('Mirror bucket is not colocated with the selected GPU region')
     inputs = []
     for source, subdir in [(READER, 'reader'), (ROOT + '/shared-generator-v1', 'head')]:
         for item in fs.ls(source.removeprefix('s3://'), detail=True):
@@ -39,7 +42,7 @@ def main() -> None:
     size = sum(item['bytes'] for item in inputs)
     if size >= 7_000_000_000:
         raise ValueError(f'Input mirror exceeds its 7 GB cap: {size}')
-    root = REGIONAL.removeprefix('s3://')
+    root = regional.removeprefix('s3://')
     ledger_key = root + '/transfer-stream.json'
     if fs.exists(ledger_key):
         ledger = json.loads(fs.cat(ledger_key))
@@ -47,7 +50,7 @@ def main() -> None:
             raise ValueError('Source inventory differs from the frozen mirror plan')
     else:
         ledger = dict(inputs=inputs, input_bytes=size, reserved_bytes=0, completed=[], objects={},
-                      created_at=datetime.now(UTC).isoformat(), destination=REGIONAL)
+                      created_at=datetime.now(UTC).isoformat(), destination=regional)
         bucket, key = ledger_key.split('/', 1)
         fs.call_s3('put_object', Bucket=bucket, Key=key, Body=json.dumps(ledger).encode(), IfNoneMatch='*')
     for item in sorted(inputs, key=lambda item: item['bytes'], reverse=True):
@@ -94,7 +97,7 @@ def main() -> None:
     fs.pipe_file(root + '/complete.json', json.dumps(ledger, indent=2).encode())
     (HERE / 'data').mkdir(exist_ok=True)
     (HERE / 'data/regional_mirror.json').write_text(json.dumps(ledger, indent=2) + '\n')
-    print(json.dumps(dict(destination=REGIONAL, bytes=size, objects=len(inputs))))
+    print(json.dumps(dict(destination=regional, bytes=size, objects=len(inputs))))
 
 
 if __name__ == '__main__':

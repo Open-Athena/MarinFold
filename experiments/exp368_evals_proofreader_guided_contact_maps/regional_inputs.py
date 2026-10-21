@@ -1,4 +1,4 @@
-"""Stage verified model inputs from the durable RNO2A mirror."""
+"""Stage verified model inputs from the selected durable regional mirror."""
 
 import json
 import os
@@ -10,21 +10,20 @@ from safetensors.torch import load_file, save_file
 
 from runtime import HERE, digest_file
 
-REGIONAL = 's3://marinfold-exp368-rno2a/MarinFold/exp368/inputs-v1'
-
-
-def stage_regional(api) -> dict[str, str]:
+def stage_regional(api, region: str = 'RNO2A') -> dict[str, str]:
     """Rebuild the exact original generator using only regional weight reads."""
-    fs, root = api.storage.filesystem(REGIONAL)
-    location = fs.call_s3('head_bucket', Bucket='marinfold-exp368-rno2a')
-    if location['ResponseMetadata']['HTTPHeaders']['x-amz-bucket-region'] != 'RNO2A':
+    expected = json.loads((HERE / 'regional_inputs_manifest.json').read_text())
+    regional = expected['mirrors'][region]
+    fs, root = api.storage.filesystem(regional)
+    location = fs.call_s3('head_bucket', Bucket=root.split('/')[0])
+    if location['ResponseMetadata']['HTTPHeaders']['x-amz-bucket-region'] != region:
         raise ValueError('Regional inputs are not in the GPU region')
     complete = json.loads(fs.cat(root + '/complete.json'))
     if len(complete['completed']) != len(complete['inputs']) or complete['reserved_bytes'] > 7_000_000_000:
         raise ValueError('Input mirror is incomplete or exceeds its transfer reservation')
     reader, generator, head = [Path('/tmp/exp368-' + name) for name in ['reader', 'generator', 'head']]
-    api.storage.stage_directory(REGIONAL + '/reader', reader)
-    api.storage.stage_directory(REGIONAL + '/head', head)
+    api.storage.stage_directory(regional + '/reader', reader)
+    api.storage.stage_directory(regional + '/head', head)
     release = json.loads((HERE / 'release_manifest.json').read_text())
     for name in ['model.safetensors', 'heads.pt', 'config.json', 'proofreader.json',
                  'tokenizer.json', 'tokenizer_config.json']:
@@ -48,7 +47,6 @@ def stage_regional(api) -> dict[str, str]:
         shutil.copyfile(head / name, generator / name)
     targets = Path('/tmp/exp368-targets.parquet')
     fs.get_file(root + '/targets.parquet', str(targets))
-    expected = json.loads((HERE / 'regional_inputs_manifest.json').read_text())
     if digest_file(targets) != expected['targets_sha256']:
         raise ValueError('Regional target hash mismatch')
     if digest_file(generator / 'model.safetensors') != expected['generator_weights_sha256']:

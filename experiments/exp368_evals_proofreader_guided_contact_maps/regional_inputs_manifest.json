@@ -1,5 +1,9 @@
 {
   "input_transfer_bytes": 6014167823,
+  "mirrors": {
+    "RNO2A": "s3://marinfold-exp368-rno2a/MarinFold/exp368/inputs-v1",
+    "US-EAST-08A": "s3://marin-us-east-08a/MarinFold/exp368/inputs-v1"
+  },
   "reader": "s3://marin-us-east-02a/MarinFold/exp356/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18000",
   "generator": "s3://marin-us-east-02a/MarinFold/exp304/model/exp277-step-266344",
   "targets_sha256": "d264c3784def4c2b2fdf0906643cd9114f9bdb012c4aa5ce99a29890ecd0b064",

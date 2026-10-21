@@ -286,6 +286,25 @@ alongside the resumed original pilot and larger validation scoring. Large model
 reads in East use the existing East checkpoints; no new cross-region model copy
 was needed. Recovery manifests and cancellation audits are retained in `data/`.
 
+### GB200 fallback checks
+
+After the active East workers were preempted at 18:15 UTC, all replacement pods
+waited for batch admission; the East controller also stopped reporting briefly.
+The healthy `cw-us-east-08a` fleet admitted a small ARM/GB200 runtime check promptly.
+It passed on PyTorch 2.10.0+cu130: maximum cached/full-forward probability and
+recall errors were 5.96e-8, and lookahead committed only one contact. This used a
+tiny random Qwen3 model and transferred zero trained-weight bytes. It validates
+the runtime, not the production model. The exact result and timing are in
+`data/runtime_smoke_gb200.json` and `data/runtime_smoke_gb200_timings.csv`.
+
+The CUDA wheel is hash-pinned from the [official PyTorch CUDA 13 index](https://download.pytorch.org/whl/cu130/torch/).
+A production-model check will use one 6,014,167,823-byte mirror to the existing
+`marin-us-east-08a` bucket, with the same durable 7 GB reservation cap and full
+input hash checks as the RNO mirror. GB200 results require separate hardware
+provenance and timing comparisons. The existing vLLM 0.9.2 image is amd64-only;
+the pinned official 0.14.1-cu130 ARM image would constitute a separately verified
+ordinary-generation backend, not a bitwise reproduction of the H100 baseline.
+
 ## Conclusion
 
 The completed 32-protein pilot supports larger ordinary rollout pools: 128

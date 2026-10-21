@@ -25,6 +25,7 @@ def main() -> None:
     parser.add_argument('--control', default=ROOT + '/server-v1')
     parser.add_argument('--task', required=True)
     parser.add_argument('--regional', action='store_true')
+    parser.add_argument('--region', choices=['RNO2A', 'US-EAST-08A'], default='RNO2A')
     parser.add_argument('--result-root', help='Durable result root; defaults to the original server results')
     args = parser.parse_args()
     if '/' in args.task or '..' in args.task:
@@ -55,7 +56,7 @@ def main() -> None:
     env.pop('EXP368_SHARED_MODELS', None)
     env.pop('EXP368_TARGETS', None)
     if args.regional:
-        env = stage_regional(api)
+        env = stage_regional(api, args.region)
     print('[exp368-recovery] frozen task ' + args.task, flush=True)
     subprocess.run(command, cwd=source, env=env, check=True)
 
