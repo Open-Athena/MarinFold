@@ -22,7 +22,10 @@ def main() -> None:
                                          'regional-recover', 'regional-pool', 'runtime-smoke', 'backend-check'], default='guided')
     parser.add_argument('--cluster', default='cw-us-east-02a')
     parser.add_argument('--dry-run', action='store_true')
+    parser.add_argument('--failure-retries', type=int)
     args, remaining = parser.parse_known_args()
+    if args.failure_retries is not None and args.failure_retries < 0:
+        raise ValueError('Failure retries must be nonnegative')
     if remaining and remaining[0] == '--':
         remaining = remaining[1:]
     load_release(('records', 'storage', 'model'))
@@ -47,6 +50,8 @@ def main() -> None:
         raise ValueError('All new jobs must be colocated with storage; preemption can repeat model staging')
     region = 'US-EAST-08A' if gb200 else 'RNO2A'
     pool = args.kind in {'pool', 'regional-pool'}
+    failure_retries = args.failure_retries if args.failure_retries is not None else (
+        0 if server or runtime_smoke or backend_check else 2)
     entrypoint = (['bash', 'bootstrap_gb200.sh', '--runtime-smoke'] if runtime_smoke else
                  ['bash', 'bootstrap_gb200.sh', '--backend-check'] if backend_check else
                  ['uv', 'run', '--no-project', '--with', 's3fs==2026.2.0', '--with',
@@ -69,7 +74,7 @@ def main() -> None:
         '--enable-extra-resources', '--cpu', '32' if server else '2' if mirror else '8',
         '--memory', '512GB' if server else '8GB' if mirror else '64GB', '--disk', '16GB' if mirror else '256GB',
         '--no-sync', '--timeout', '1800' if runtime_smoke or backend_check else '259200',
-        '--max-retries', '0' if server or runtime_smoke or backend_check else '2', '--task-image', task_image,
+        '--max-retries', str(failure_retries), '--task-image', task_image,
         '--exclude', r'(^|/)(_cache|\.venv|wandb|data|plots|__pycache__)/',
         '--include', 'release_api/*.py',
         '--include', 'code_manifest.json',

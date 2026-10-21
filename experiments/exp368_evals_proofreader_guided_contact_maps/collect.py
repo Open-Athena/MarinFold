@@ -22,6 +22,7 @@ def main() -> None:
     entries = [(name, item['size'], item.get('ETag')) for name, item in objects.items() if item['type'] == 'file']
     if sum(size for _, size, _ in entries) > 5 * 10**9:
         raise ValueError('Result collection exceeds its 5 GB transfer ceiling; consolidate in-region first')
+    args.local.mkdir(parents=True, exist_ok=True)
     ledger_path = args.local / '_collection.json'
     previous = json.loads(ledger_path.read_text()) if ledger_path.exists() else {}
 

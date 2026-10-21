@@ -12,8 +12,8 @@ from runtime import HERE, digest_file
 
 def stage_regional(api, region: str = 'RNO2A') -> dict[str, str]:
     """Rebuild the exact original generator using only regional weight reads."""
-    expected = json.loads((HERE / 'regional_inputs_manifest.json').read_text())
-    regional = expected['mirrors'][region]
+    input_manifest = json.loads((HERE / 'regional_inputs_manifest.json').read_text())
+    regional = input_manifest['mirrors'][region]
     fs, root = api.storage.filesystem(regional)
     location = fs.call_s3('head_bucket', Bucket=root.split('/')[0])
     if location['ResponseMetadata']['HTTPHeaders']['x-amz-bucket-region'] != region:
@@ -30,8 +30,8 @@ def stage_regional(api, region: str = 'RNO2A') -> dict[str, str]:
         if digest_file(reader / name) != release['files'][name]['sha256']:
             raise ValueError('Regional reader hash mismatch: ' + name)
     head_manifest = json.loads((HERE / 'shared_generator_manifest.json').read_text())
-    for name, expected in head_manifest.items():
-        if digest_file(head / name) != expected['sha256']:
+    for name, file_manifest in head_manifest.items():
+        if digest_file(head / name) != file_manifest['sha256']:
             raise ValueError('Regional generator-head hash mismatch: ' + name)
     generator.mkdir(parents=True, exist_ok=True)
     weights = load_file(head / 'lm_head.safetensors')
@@ -47,9 +47,9 @@ def stage_regional(api, region: str = 'RNO2A') -> dict[str, str]:
         shutil.copyfile(head / name, generator / name)
     targets = Path('/tmp/exp368-targets.parquet')
     fs.get_file(root + '/targets.parquet', str(targets))
-    if digest_file(targets) != expected['targets_sha256']:
+    if digest_file(targets) != input_manifest['targets_sha256']:
         raise ValueError('Regional target hash mismatch')
-    if digest_file(generator / 'model.safetensors') != expected['generator_weights_sha256']:
+    if digest_file(generator / 'model.safetensors') != input_manifest['generator_weights_sha256']:
         raise ValueError('Reconstructed regional generator differs from the verified pilot generator')
     print('[exp368-regional] all input hashes verified against the original pilot', flush=True)
     return dict(os.environ, EXP368_SHARED_MODELS='1', EXP368_TARGETS=str(targets))
