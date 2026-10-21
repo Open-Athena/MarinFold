@@ -174,6 +174,14 @@ eventual report; generator pretraining decontamination is not established.
 
 ### Exploratory fixed-length control
 
+An additional compute-envelope baseline, `pilot_large.json`, requests independent
+ordinary pools of 512 and 2,048 rollouts on the same 32 pilot structures. It was
+added before the full guided pilot was available because observed lookahead cost
+already substantially exceeded the 128-rollout baseline. Pool sizes were fixed
+before these runs; frequency ranking can be evaluated directly from raw outputs.
+This adaptive baseline measures the benefit of spending more compute on ordinary
+sampling and does not claim exact matching to every guided policy's cost.
+
 While the original pilot was running, five short proteins had complete results
 for every policy. On this shared, incomplete cohort, top-10% filtering increased
 mean per-rollout precision from 0.5862 to 0.6956, but emitted 26.10 rather than
