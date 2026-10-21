@@ -58,3 +58,13 @@ The independent TPU replica restores the same step-139053 full state and finishe
 The approved 267.73 GB transfer finished at 15:59 UTC. All 21,936 objects passed independent inventory/checksum verification. The v5p-8 restore smoke passed ten updates (139054–139063) with finite losses and the expected accelerated LR decay. Final optimizer counters, both HF weight shards and tokenizer files were verified. Steady time: 27.09 s/update on four chips; its capped validation is not a full-data comparison.
 
 Production was submitted at 16:33 UTC from commit 33cc077f; v5p-64 admission remains pending during intermittent provisioning backoff. The source remains the original frozen checkpoint, not the smoke endpoint. Evidence: data/tpu_transfer_plan.json, tpu_input_verification.json, tpu_smoke.csv and tpu_smoke_verification.json.
+
+## Contact evaluation: prepared, awaiting execution choice
+
+Score the latest saved checkpoints of all three learning rates plus the GPU cooldown fork on eval-val (97 natural proteins) and eval-denovo (19 designs). Eval-test is excluded. The TPU production copy has no checkpoint yet.
+
+Use the validated exp277 worker and exp89 metrics: 100 resampled rollouts, temperature 1, top-p 0.95, top-k disabled, 6L+128 budget. Gate each model on a real-protein smoke; require complete coverage and no capped rollouts. Eleven local checks pass. There are no new R-precision results yet.
+
+Recommended execution keeps checkpoints and exports on CoreWeave and uses at most 12 batch H100s. The skill requires a user choice before submission; the alternative adds about 23.54 GB of model egress to public HF storage. No evaluation job or checkpoint copy has started.
+
+Full-data first-epoch reference R-precision: eval-val 0.55510 / 0.53706 and eval-denovo 0.69640 / 0.67497 (all / long). The latest redesign-only checkpoints have unequal training exposure; comparisons are preliminary.
