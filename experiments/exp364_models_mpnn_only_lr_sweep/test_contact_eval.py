@@ -12,6 +12,7 @@ import pytest
 from experiments.exp364_models_mpnn_only_lr_sweep.eval_export import stage_native_local
 from experiments.exp364_models_mpnn_only_lr_sweep.eval_local import completed_files
 from experiments.exp364_models_mpnn_only_lr_sweep.eval_prepare import select_targets
+from experiments.exp364_models_mpnn_only_lr_sweep.eval_report import validate_result
 from experiments.exp364_models_mpnn_only_lr_sweep.eval_run import (
     markers_for,
     score_checkpoint,
@@ -21,6 +22,51 @@ from experiments.exp364_models_mpnn_only_lr_sweep.launch_eval import build_bundl
 
 HERE = Path(__file__).resolve().parent
 SOURCE = HERE.parent / "exp245_evals_foldbench_held_out_monomers/data"
+
+
+@pytest.mark.parametrize(
+    "fault", [None, "identity", "duplicate", "capped", "set", "timing"]
+)
+def test_report_rejects_inconsistent_published_results(fault: str | None) -> None:
+    targets = pd.read_csv(HERE / "data/contact_eval/targets.csv")
+    checkpoint = {"label": "test-step-123"}
+    precision = pd.DataFrame(
+        [
+            {
+                "dataset": row.dataset,
+                "stem": row.stem,
+                "eval_set": row.eval_set,
+                "model": checkpoint["label"],
+                "range": contact_range,
+                "cut": cut,
+                "precision": 0.5,
+            }
+            for row in targets.itertuples()
+            for contact_range in ("all", "short", "medium", "long")
+            for cut in ("L", "L/2", "L/5", "R", "AUC")
+        ]
+    )
+    timings = targets[["dataset", "stem"]].assign(
+        checkpoint=checkpoint["label"],
+        n_rollouts=100,
+        stopped_rollouts=100,
+        unfinished_rollouts=0,
+    )
+    if fault == "identity":
+        precision.loc[0, "model"] = "another-step-456"
+    elif fault == "duplicate":
+        precision.iloc[0] = precision.iloc[1]
+    elif fault == "capped":
+        timings.loc[0, ["stopped_rollouts", "unfinished_rollouts"]] = [99, 1]
+    elif fault == "set":
+        precision.loc[0, "eval_set"] = "eval-test"
+    elif fault == "timing":
+        timings = timings.iloc[:-1]
+    if fault is None:
+        validate_result(checkpoint, precision, timings, targets)
+    else:
+        with pytest.raises(ValueError):
+            validate_result(checkpoint, precision, timings, targets)
 
 
 @pytest.fixture

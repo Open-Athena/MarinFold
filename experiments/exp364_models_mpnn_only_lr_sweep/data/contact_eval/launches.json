@@ -1,0 +1,58 @@
+[
+  {
+    "job_id": "/bizon/exp364-contact-eval-lr5e-4-a03",
+    "trial": "lr5e-4",
+    "step": 184238,
+    "bundle_sha256": "f99f1cf3fa85d327429dbe68b28327e95d6d9f7e6bdd3e46ee299d26b5687047",
+    "bundle_uri": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-10-21/latest-01/source/f99f1cf3fa85d327429dbe68b28327e95d6d9f7e6bdd3e46ee299d26b5687047.zip",
+    "git_commit": "af0c7e245d3cfab17c827df765af49ef5cc01322"
+  },
+  {
+    "job_id": "/bizon/exp364-contact-eval-lr1e-3-a03",
+    "trial": "lr1e-3",
+    "step": 207782,
+    "bundle_sha256": "f99f1cf3fa85d327429dbe68b28327e95d6d9f7e6bdd3e46ee299d26b5687047",
+    "bundle_uri": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-10-21/latest-01/source/f99f1cf3fa85d327429dbe68b28327e95d6d9f7e6bdd3e46ee299d26b5687047.zip",
+    "git_commit": "af0c7e245d3cfab17c827df765af49ef5cc01322"
+  },
+  {
+    "job_id": "/bizon/exp364-contact-eval-lr2e-3-a03",
+    "trial": "lr2e-3",
+    "step": 105010,
+    "bundle_sha256": "f99f1cf3fa85d327429dbe68b28327e95d6d9f7e6bdd3e46ee299d26b5687047",
+    "bundle_uri": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-10-21/latest-01/source/f99f1cf3fa85d327429dbe68b28327e95d6d9f7e6bdd3e46ee299d26b5687047.zip",
+    "git_commit": "af0c7e245d3cfab17c827df765af49ef5cc01322"
+  },
+  {
+    "job_id": "/bizon/exp364-contact-eval-lr5e-4-cooldown-a03",
+    "trial": "lr5e-4-cooldown",
+    "step": 146158,
+    "bundle_sha256": "f99f1cf3fa85d327429dbe68b28327e95d6d9f7e6bdd3e46ee299d26b5687047",
+    "bundle_uri": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-10-21/latest-01/source/f99f1cf3fa85d327429dbe68b28327e95d6d9f7e6bdd3e46ee299d26b5687047.zip",
+    "git_commit": "af0c7e245d3cfab17c827df765af49ef5cc01322"
+  },
+  {
+    "job_id": "/bizon/exp364-contact-eval-lr5e-4-a04",
+    "trial": "lr5e-4",
+    "step": 184238,
+    "bundle_sha256": "338640902ec4908b4ca34dd3f2900108a97a2ecbcd9eb6c1006658d8065447bc",
+    "bundle_uri": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-10-21/latest-01/source/338640902ec4908b4ca34dd3f2900108a97a2ecbcd9eb6c1006658d8065447bc.zip",
+    "git_commit": "50f6a029c92dfbf050720b169e19a1734a71dcaf"
+  },
+  {
+    "job_id": "/bizon/exp364-contact-eval-lr1e-3-a04",
+    "trial": "lr1e-3",
+    "step": 207782,
+    "bundle_sha256": "338640902ec4908b4ca34dd3f2900108a97a2ecbcd9eb6c1006658d8065447bc",
+    "bundle_uri": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-10-21/latest-01/source/338640902ec4908b4ca34dd3f2900108a97a2ecbcd9eb6c1006658d8065447bc.zip",
+    "git_commit": "50f6a029c92dfbf050720b169e19a1734a71dcaf"
+  },
+  {
+    "job_id": "/bizon/exp364-contact-eval-lr2e-3-a04",
+    "trial": "lr2e-3",
+    "step": 105010,
+    "bundle_sha256": "338640902ec4908b4ca34dd3f2900108a97a2ecbcd9eb6c1006658d8065447bc",
+    "bundle_uri": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-10-21/latest-01/source/338640902ec4908b4ca34dd3f2900108a97a2ecbcd9eb6c1006658d8065447bc.zip",
+    "git_commit": "50f6a029c92dfbf050720b169e19a1734a71dcaf"
+  }
+]

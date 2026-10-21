@@ -57,14 +57,18 @@ The independent TPU replica restores the same step-139053 full state and finishe
 
 The approved 267.73 GB transfer finished at 15:59 UTC. All 21,936 objects passed independent inventory/checksum verification. The v5p-8 restore smoke passed ten updates (139054–139063) with finite losses and the expected accelerated LR decay. Final optimizer counters, both HF weight shards and tokenizer files were verified. Steady time: 27.09 s/update on four chips; its capped validation is not a full-data comparison.
 
-Production was submitted at 16:33 UTC from commit 33cc077f; v5p-64 admission remains pending during intermittent provisioning backoff. The source remains the original frozen checkpoint, not the smoke endpoint. Evidence: data/tpu_transfer_plan.json, tpu_input_verification.json, tpu_smoke.csv and tpu_smoke_verification.json.
+Production was submitted at 16:33 UTC from commit 33cc077f and registered in W&B at 16:51:58 UTC. At 17:50 UTC it reached step 139702, with full validation loss 3.10391 and throughput about 244k token slots/s. Roughly 56 compute hours remain at that rate, before validation or interruptions. The source remains the original frozen checkpoint, not the smoke endpoint. Evidence: data/tpu_transfer_plan.json, tpu_input_verification.json, tpu_smoke.csv and tpu_smoke_verification.json.
 
-## Contact evaluation: prepared, awaiting execution choice
+## Contact evaluation: recipe and comparison
 
-Score the latest saved checkpoints of all three learning rates plus the GPU cooldown fork on eval-val (97 natural proteins) and eval-denovo (19 designs). Eval-test is excluded. The TPU production copy has no checkpoint yet.
+Score the latest saved checkpoints of all three learning rates plus the GPU cooldown fork on eval-val (97 natural proteins) and eval-denovo (19 designs). Eval-test is excluded. The four snapshots were pinned before the TPU copy began advancing.
 
-Use the validated exp277 worker and exp89 metrics: 100 resampled rollouts, temperature 1, top-p 0.95, top-k disabled, 6L+128 budget. Gate each model on a real-protein smoke; require complete coverage and no capped rollouts. Eleven local checks pass. There are no new R-precision results yet.
+Use the validated exp277 worker and exp89 metrics: 100 resampled rollouts, temperature 1, top-p 0.95, top-k disabled, 6L+128 budget. Gate each model on a real-protein smoke; require complete coverage and no capped rollouts. Twenty-two local checks pass. There are no new R-precision results yet.
 
-Recommended execution keeps checkpoints and exports on CoreWeave and uses at most 12 batch H100s. The skill requires a user choice before submission; the alternative adds about 23.54 GB of model egress to public HF storage. No evaluation job or checkpoint copy has started.
+## Contact evaluation: execution status
+
+The user selected CoreWeave. Storage writes are suspended, so each checkpoint is staged and exported on regional worker disk. Only small results and source/input files go to public HF. All four checkpoints exported successfully. The three two-epoch models passed their smoke; a local output-directory bug was fixed and regression-tested. Replacement a04 jobs started full evaluation, then were preempted and requeued. No full-set scores are complete. Model bytes remain on CoreWeave; existing training jobs are retained.
 
 Full-data first-epoch reference R-precision: eval-val 0.55510 / 0.53706 and eval-denovo 0.69640 / 0.67497 (all / long). The latest redesign-only checkpoints have unequal training exposure; comparisons are preliminary.
+
+The one-epoch fork hit the prescribed token cap on 2/100 smoke rollouts for 5sbj_A. It is paused pending the user's token-budget choice. The earlier full-data continuation also had capped samples on this design, so that comparison needs an explicit qualification.

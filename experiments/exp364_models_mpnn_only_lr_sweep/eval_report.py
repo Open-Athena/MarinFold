@@ -1,0 +1,217 @@
+"""Fetch completed public evaluations and summarize natural/design R-precision."""
+
+import argparse
+import hashlib
+import json
+import subprocess
+from pathlib import Path
+
+import fsspec
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+DATA = HERE / "data/contact_eval"
+RESULT_FILES = ("manifest.json", "contact_precision_all.csv", "timings.csv")
+LOW_MSA = HERE.parent / "exp260_evals_msa_depth_stratified/data/low_msa_depth_set.csv"
+
+
+def collect(plan: dict) -> list[str]:
+    """Download only complete small result sets; never download model weights."""
+    fs = fsspec.filesystem("hf", token=False)
+    completed = []
+    for checkpoint in plan["checkpoints"]:
+        remote = plan["artifact_root"] + "/" + checkpoint["label"]
+        if not all(
+            fs.exists(remote.removeprefix("hf://") + "/" + name)
+            for name in RESULT_FILES
+        ):
+            print("PENDING", checkpoint["trial"])
+            continue
+        destination = DATA / "results" / checkpoint["trial"]
+        destination.mkdir(parents=True, exist_ok=True)
+        for name in RESULT_FILES:
+            subprocess.run(
+                ["hf", "buckets", "cp", remote + "/" + name, str(destination / name)],
+                check=True,
+            )
+        completed.append(checkpoint["trial"])
+    return completed
+
+
+def validate_result(
+    checkpoint: dict,
+    precision: pd.DataFrame,
+    timings: pd.DataFrame,
+    targets: pd.DataFrame,
+) -> None:
+    """Require the requested universe and full, uncapped per-input measurements."""
+    units = set(zip(targets.dataset, targets.stem, strict=True))
+    if len(precision) != 116 * 20 or set(precision.model) != {checkpoint["label"]}:
+        raise ValueError("Wrong checkpoint identity or metric-row count")
+    keys = ["dataset", "stem", "range", "cut"]
+    if precision.duplicated(keys).any():
+        raise ValueError("Duplicate per-protein metric")
+    expected_rows = {
+        (*unit, contact_range, cut)
+        for unit in units
+        for contact_range in ("all", "short", "medium", "long")
+        for cut in ("L", "L/2", "L/5", "R", "AUC")
+    }
+    if set(precision[keys].itertuples(index=False, name=None)) != expected_rows:
+        raise ValueError("Metric ranges/cuts do not cover every requested protein")
+    if set(zip(precision.dataset, precision.stem, strict=True)) != units:
+        raise ValueError("Metric coverage differs from the requested universe")
+    if (
+        len(timings) != 116
+        or set(zip(timings.dataset, timings.stem, strict=True)) != units
+    ):
+        raise ValueError("Timing coverage differs from the requested universe")
+    if not (
+        (timings.n_rollouts == 100)
+        & (timings.stopped_rollouts == 100)
+        & (timings.unfinished_rollouts == 0)
+    ).all():
+        raise ValueError("Incomplete or capped rollouts cannot enter the report")
+    if set(timings.checkpoint) != {checkpoint["label"]}:
+        raise ValueError("Timings identify a different checkpoint")
+    expected = targets[["dataset", "stem", "eval_set"]].rename(
+        columns={"eval_set": "expected_set"}
+    )
+    joined = precision.merge(expected, on=["dataset", "stem"], validate="many_to_one")
+    if not (joined.eval_set == joined.expected_set).all():
+        raise ValueError("Evaluation-set labels changed")
+
+
+def summarize(plan: dict) -> None:
+    """Report macro means and protein-bootstrap intervals without pooling sets."""
+    targets = pd.read_csv(DATA / "targets.csv")
+    rng = np.random.default_rng(20261021)
+    low_msa = pd.read_csv(LOW_MSA)
+    low_msa_units = set(zip(low_msa.dataset, low_msa.stem, strict=True))
+    rows, subgroup_rows, identities = [], [], []
+    for checkpoint in plan["checkpoints"]:
+        directory = DATA / "results" / checkpoint["trial"]
+        if not all((directory / name).exists() for name in RESULT_FILES):
+            continue
+        precision = pd.read_csv(directory / "contact_precision_all.csv")
+        timings = pd.read_csv(directory / "timings.csv")
+        manifest = json.loads((directory / "manifest.json").read_text())
+        if manifest["checkpoint"]["label"] != checkpoint["label"]:
+            raise ValueError("Result manifest identifies another checkpoint")
+        if (
+            manifest["units"],
+            manifest["rollouts"],
+            manifest["unfinished_rollouts"],
+        ) != (116, 11600, 0):
+            raise ValueError("Result manifest has incomplete or capped rollouts")
+        if manifest["sampling"] != plan["sampling"]:
+            raise ValueError("Sampling recipe differs from the approved plan")
+        validate_result(checkpoint, precision, timings, targets)
+        for (eval_set, contact_range), group in precision[
+            (precision.cut == "R") & precision.range.isin(["all", "long"])
+        ].groupby(["eval_set", "range"], sort=True):
+            values = group.precision.dropna().to_numpy()
+            if len(values) != len(group) or not np.isfinite(values).all():
+                raise ValueError("Undefined headline R-precision")
+            means = values[
+                rng.integers(0, len(values), size=(10000, len(values)))
+            ].mean(axis=1)
+            low, high = np.quantile(means, [0.025, 0.975])
+            rows.append(
+                {
+                    "trial": checkpoint["trial"],
+                    "step": checkpoint["step"],
+                    "eval_set": eval_set,
+                    "range": contact_range,
+                    "n": len(values),
+                    "r_precision": values.mean(),
+                    "ci_low": low,
+                    "ci_high": high,
+                }
+            )
+        annotated = precision.merge(
+            targets[["dataset", "stem", "is_viral"]],
+            on=["dataset", "stem"],
+            validate="many_to_one",
+        )
+        annotated["low_msa"] = [
+            unit in low_msa_units
+            for unit in zip(annotated.dataset, annotated.stem, strict=True)
+        ]
+        for eval_set in ("eval-val", "eval-denovo"):
+            for subgroup, mask in (
+                ("viral", annotated.is_viral == 1),
+                ("nonviral", annotated.is_viral == 0),
+                ("low_msa", annotated.low_msa),
+            ):
+                selected = annotated[
+                    mask & (annotated.eval_set == eval_set) & (annotated.cut == "R")
+                ]
+                for contact_range in ("all", "long"):
+                    values = selected.loc[selected.range == contact_range, "precision"]
+                    subgroup_rows.append(
+                        {
+                            "trial": checkpoint["trial"],
+                            "step": checkpoint["step"],
+                            "eval_set": eval_set,
+                            "subgroup": subgroup,
+                            "range": contact_range,
+                            "n": len(values),
+                            "r_precision": values.mean(),
+                            "status": "scored"
+                            if len(values)
+                            else "outside requested sets",
+                        }
+                    )
+        identities.append(
+            {
+                "trial": checkpoint["trial"],
+                "files": {
+                    name: hashlib.sha256((directory / name).read_bytes()).hexdigest()
+                    for name in RESULT_FILES
+                },
+            }
+        )
+    if not rows:
+        print("No complete checkpoint results yet.")
+        return
+    frame = pd.DataFrame(rows)
+    frame.to_csv(DATA / "r_precision.csv", index=False)
+    pd.DataFrame(subgroup_rows).to_csv(DATA / "r_precision_subgroups.csv", index=False)
+    (DATA / "report_manifest.json").write_text(
+        json.dumps(
+            {
+                "completed_checkpoints": len(identities),
+                "requested_checkpoints": len(plan["checkpoints"]),
+                "results": identities,
+                "bootstrap": {"replicates": 10000, "seed": 20261021, "unit": "protein"},
+                "low_msa_membership_sha256": hashlib.sha256(
+                    LOW_MSA.read_bytes()
+                ).hexdigest(),
+                "scope": "eval-val and eval-denovo only; no eval-test or legacy read",
+                "matched_sequence_knn_null": None,
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+    print(
+        frame.sort_values(
+            ["eval_set", "trial", "range"], ascending=[False, True, True]
+        ).to_string(index=False)
+    )
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--fetch", action="store_true")
+    args = parser.parse_args()
+    plan = json.loads((DATA / "plan.json").read_text())
+    if args.fetch:
+        collect(plan)
+    summarize(plan)
+
+
+if __name__ == "__main__":
+    main()
