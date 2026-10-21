@@ -107,6 +107,17 @@ per-input generation timings are in `data/validation_frequency/`.
 
 ![Larger validation comparison of frequency-ranked pools](plots/validation_frequency.png)
 
+Across the larger validation panel, 1,196 structures improve with 128 votes,
+63 tie and 116 worsen; the median R-precision gain is 0.0392. Descriptive
+stratification at 128, 256 and 512 residues finds positive mean gains in every
+length band, for both all-contact and long-range R-precision. The 128-rollout
+median warm latency is 4.345 seconds, its 95th percentile is 17.024 seconds,
+and the maximum is 63.331 seconds. These measured times exclude model loading
+and output writes. Fixed length strata and underlying values are saved beside
+the full-panel metrics.
+
+![Latency and protein-level effects of larger rollout pools](plots/validation_pool_scaling.png)
+
 ### Frozen pilot protocol
 
 `pilot.json` fixes 32 validation proteins from 32 distinct homology groups,

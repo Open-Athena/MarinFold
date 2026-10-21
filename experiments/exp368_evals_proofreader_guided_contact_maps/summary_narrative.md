@@ -79,6 +79,18 @@ from 2.431 to 6.599 H100 seconds. Both sides use frequency ranking; fresh
 proofreader-weighted validation scoring remains pending. The long-range mean
 covers 1,371 structures with nonempty long-range references.
 
+## Benefit across lengths and measured latency
+
+Increasing frequency-ranked pools from eight to 128 improves R-precision on
+1,196 of 1,375 validation structures; 63 tie and 116 worsen. The median paired
+gain is 0.0392. Descriptive bands of 32–127, 128–255, 256–511 and 512–1000
+residues all have positive mean all-contact and long-range gains.
+
+For 128 rollouts, median warm generation latency is 4.345 H100 seconds, the
+95th percentile is 17.024 seconds and the maximum is 63.331 seconds. Long
+proteins dominate the tail. Every plotted latency comes from its saved timing
+record; model loading and artifact writes are excluded from warm inference.
+
 ## Exploratory length control
 
 On the five short proteins completed by every original policy, top-10% filtering
