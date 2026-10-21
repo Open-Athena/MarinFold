@@ -55,7 +55,7 @@ def main() -> None:
         caption='Paired differences on identical generated pools. Error bars are 95% homology-group '
         'bootstrap intervals, without multiplicity adjustment. All planned structures are included; '
         'long-range metrics exclude structures with no native contact at sequence separation ≥24. '
-        'F1 weighting and confidence tie-breaking were added after the pilot and remain exploratory. '
+        'F1 weighting and confidence tie-breaking were added after the ordinary-pool pilot and remain exploratory. '
         'No new reserved-test scores are shown.')
     plt.close(fig)
 

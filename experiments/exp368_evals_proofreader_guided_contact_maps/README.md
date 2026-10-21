@@ -45,10 +45,11 @@ At least one guided policy should improve final contact-map quality over ordinar
 
 ## Results
 
-Implementation and validation are in progress on 2026-10-21. Eight CPU tests
+Implementation and validation are in progress on 2026-10-21. Ten CPU tests
 cover cache isolation, full-forward equivalence, proposal resampling, lookahead
-commit boundaries, repair-prefix reconstruction, full-universe AP, and exact
-diversity-discount equivalence to a set-based reference. The first
+commit boundaries, repair-prefix reconstruction, full-universe AP, exact
+diversity-discount equivalence to a set-based reference, and restriction of
+reserved-test analysis to one frozen pair on a complete cohort. The first
 H100 smoke test verified that every frozen backbone weight matches the original
 generator. It also caught a BF16 incremental/full-forward discrepancy (maximum
 0.02394 contact probability); the experiment therefore tests FP32 cached search
@@ -169,10 +170,11 @@ poorly: R-precision is 0.47455 at eight and 0.45504 at 128 rollouts.
 The exploratory rollout-F1 weighting is more promising at 128: relative to
 frequency, its gains are 0.00426 (0.00173–0.00763) overall and 0.00412
 (0.00129–0.00781) for long-range contacts, at 1.352 times the measured cost.
-Every unique contact in a rollout receives that rollout's predicted F1 as
-its vote weight. Predicted precision is the mean contact confidence and
-predicted recall is the reader's rollout-level output; native labels are
-not used to set weights. This variant was added after the pilot, and these
+Every unique eligible contact in a rollout receives that rollout's predicted
+F1 as its vote weight. Predicted precision is the mean confidence over all
+unique parsed contact pairs, including invalid pairs; predicted recall is the
+reader's rollout-level output. Only eligible pairs vote in the final map, and
+native labels are not used to set weights. This variant was added after the ordinary-pool pilot, and these
 intervals are not adjusted for selecting among aggregation rules. This is
 validation evidence, not a reserved-test confirmation.
 
@@ -275,6 +277,14 @@ Aggregation compares frequency, sum q, mean q, sqrt(frequency)*mean q, and sum q
 with inverse-neighbor weights for trajectories whose Jaccard similarity is at
 least 0.8. These pool comparisons retain the actual generator's invalid and
 duplicate diagnostics; map metrics consider only eligible unique pairs.
+
+The cost comparison evaluates the implementations actually run: ordinary pools
+use vLLM batching, while guided search uses the verified PyTorch cache and
+explicit branching. Search timings include discarded candidate and lookahead
+work. They do not establish a lower bound on the achievable cost of guidance
+with a different inference engine. Completed-trajectory timings exclude queue
+waits and work lost to preemption; job and recovery ledgers separately record
+those operational interruptions.
 
 Primary outcomes are all-contact and long-range (separation at least 24)
 R-precision and AP over the complete eligible pair universe, including all
@@ -500,7 +510,7 @@ Relative to 128 rollouts, 2,048 changes all-contact R-precision by +0.00009
 (−0.00687–0.00411), at 23.68 times the measured cost. This does not establish
 an accuracy benefit. Candidate coverage approaches saturation while frequency
 ranking plateaus; recovering additional true contacts requires better ranking
-of the candidate pool. These results do not test proofreader ranking at 2,048.
+of the candidate pool. The frequency-only comparison is followed by an adaptive proofreading check below.
 Data and paired comparisons are in `data/pilot_large_gb200/`; the combined
 frequency curve is in `data/pilot_pool_scaling_gb200/`.
 
@@ -512,7 +522,19 @@ rollouts. Its primary contrast is 2,048 versus 128 with F1-weighted votes;
 all seven existing aggregation rules will also be reported. It generates no
 new rollouts, changes no weights, and uses no new reserved-test metrics.
 This is an adaptive validation extension, not a prespecified confirmation.
-Four workers score the complete 32-protein cohort before any selection.
+All 64 pools have now been scored. F1-weighted R-precision is 0.60378,
+0.60503 and 0.60380 at 128, 512 and 2,048 rollouts. The primary 2,048-minus-128
+difference is +0.00002 (95% paired interval −0.00463–0.00500); long-range
+changes by −0.00269 (−0.00911–0.00317). Mean warm generation-plus-proofreading
+time rises from 5.204 to 108.403 GB200 seconds, a factor of 20.83. Thus larger
+pools do not establish an R-precision gain even with this weighting. Secondary
+full-universe average precision improves by 0.00897 (0.00480–0.01397), from
+0.63904 to 0.64801. This is consistent with improved recovery below the top-R
+cutoff, rather than a better top-R map. All seven aggregators and both same-pool
+and across-pool comparisons are in `data/pilot_large_scored_gb200/`; the combined
+curve is in `data/pilot_pool_scaling_scored_gb200/`.
+
+![Proofreader aggregation through 2,048 ordinary rollouts](plots/pilot_large_scored_gb200.png)
 
 ![Frequency ranking and candidate coverage through 2,048 rollouts](plots/pilot_large_gb200.png)
 
@@ -540,6 +562,55 @@ all 5,500 stage timings are in `data/validation_pool_gb200/`.
 
 ![GB200 replication of paired aggregation effects](plots/validation_aggregation_effects_gb200.png)
 
+### Larger ordinary pools on H100
+
+All 64 independent 512/2,048-rollout pools are complete on the 32-protein pilot.
+Frequency R-precision is 0.60276 and 0.60299 respectively, versus 0.60365 at
+128 rollouts. The 2,048-minus-128 paired difference is −0.00066
+(95% interval −0.00489–0.00352); long-range difference is −0.00241
+(−0.00656–0.00191). Mean warm H100 time rises from 7.165 to 109.962 seconds,
+a factor of 15.35. Full-universe AP improves by 0.01334 (0.00847–0.01985).
+Candidate coverage reaches 99.21%, but this does not translate into a better
+top-R map. These H100 results corroborate the separately timed GB200 frequency
+plateau. Data are in `data/pilot_large/` and `data/pilot_pool_scaling/`.
+
+![Larger ordinary pools on H100](plots/pilot_large.png)
+
+### Fixed-length contact selection and overconfidence
+
+All 256 continuations and their 512 nested L/2L prefix maps are complete on the
+same 32 pilot proteins. EOS is disabled, and each trajectory contains exactly
+L or 2L unique contacts. This adaptive diagnostic was added after observing five
+short pilot proteins, before the original 15-policy pilot completed; it is not
+a prespecified confirmation. The L prefix is scored before generation continues.
+
+| Budget | Policy | Mean rollout precision | Mean rollout recall | Predicted precision | Four-rollout sum-q R-precision | Mean warm H100 seconds |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| L | Ordinary control | 0.43345 | 0.50986 | 0.44090 | 0.57152 | 32.183 |
+| L | Top 10% of 16 proposals | 0.49286 | 0.57157 | 0.49471 | 0.57084 | 104.599 |
+| 2L | Ordinary control | 0.27788 | 0.63900 | 0.36290 | 0.56116 | 64.270 |
+| 2L | Top 10% of 16 proposals | 0.28286 | 0.64964 | 0.52488 | 0.53276 | 267.704 |
+
+At L, filtering improves average individual-rollout precision and recall, but
+with four rollouts the R-precision difference is −0.00068 (95% paired interval
+−0.01806–0.01717), at 3.25 times the cost. At 2L the reader becomes particularly
+overconfident on guided contacts. Four-rollout R-precision loses 0.02839
+(−0.04961 to −0.00827) and long-range R-precision loses 0.03341
+(−0.05675 to −0.01023), at 4.17 times the cost. With a single 2L rollout,
+all-contact R-precision loses 0.10258 (−0.14695 to −0.05601).
+
+These results are consistent with distribution shift and score exploitation
+when guidance is forced far beyond normal stopping; they do not identify a
+unique causal mechanism. Better per-rollout precision need not produce a better
+ensemble map. Neither fixed-length filtering curve improves on the measured
+ordinary-pool accuracy/cost frontier. Results, paired comparisons and timings
+are in `data/length_probe/`. L and 2L outputs share trajectories and must not be
+treated as independent samples; intervals resample the same 32 homology groups.
+
+![Fixed-length rollout quality and reader predictions](plots/length_probe_quality.png)
+
+![Fixed-length map accuracy and measured GPU cost](plots/length_probe_frontier.png)
+
 ## Current scientific conclusion
 
 The completed 32-protein pilot supports larger ordinary rollout pools: 128
@@ -551,6 +622,6 @@ proofreader validation confirms that sum q helps small pools; at 128 rollouts,
 weighting votes by predicted rollout F1 adds a smaller exploratory gain of
 0.00426 (0.00173–0.00763). On GB200, increasing ordinary pools to 2,048
 does not establish an accuracy gain over 128 despite 23.68 times the cost.
-The guided-policy and fixed-length
-comparisons remain incomplete, so there is no conclusion yet about whether
-proofreader-guided sampling improves the final accuracy/cost tradeoff.
+The fixed-length comparison is complete and does not improve the measured
+accuracy/cost frontier. The original 15-policy guided comparison remains
+incomplete, so policy selection still waits for that full cohort.

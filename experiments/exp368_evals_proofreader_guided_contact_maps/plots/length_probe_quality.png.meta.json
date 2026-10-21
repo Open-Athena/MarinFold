@@ -1,0 +1,16 @@
+{
+  "script": "plot_trajectory_quality.py",
+  "args": [
+    "--data",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/data/length_probe",
+    "--plan",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/length_probe.json",
+    "--out",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/plots/length_probe_quality.png",
+    "--table",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/data/length_probe/trajectory_summary.csv",
+    "--title",
+    "32 validation proteins: fixed contact budgets"
+  ],
+  "caption": "32 proteins, equally weighted after averaging trajectories within each protein. Blue intervals resample homology groups. Orange crosses show mean critic predictions. Fixed-length L and 2L maps are nested prefixes of the same continuations."
+}

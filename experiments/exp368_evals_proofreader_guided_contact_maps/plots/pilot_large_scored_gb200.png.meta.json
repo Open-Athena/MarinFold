@@ -1,0 +1,18 @@
+{
+  "script": "plot_pools.py",
+  "args": [
+    "--data",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/data/pilot_pool_scaling_scored_gb200",
+    "--out",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/plots/pilot_large_scored_gb200.png",
+    "--title",
+    "32 validation proteins: proofreading larger pools on GB200",
+    "--methods",
+    "frequency",
+    "sumq",
+    "f1_weighted_frequency",
+    "--coverage-method",
+    "f1_weighted_frequency"
+  ],
+  "caption": "Mean over the same validation structures. Error bars are 95% homology-group bootstrap intervals. Oracle coverage measures whether a native contact was proposed; it is not an attainable ranking result. Long-range means sequence separation at least 24. No test-set results appear here."
+}

@@ -224,7 +224,7 @@ The complete GB200 pilot gives frequency R-precision 0.60248, 0.60319 and
 The paired 2,048-minus-128 all-contact difference is +0.00009 (95% interval
 −0.00426 to 0.00503); long-range difference is −0.00148 (−0.00687 to 0.00411).
 Mean warm cost rises from 3.471 to 82.198 GB200 seconds, a factor of 23.68.
-This does not establish an accuracy gain. Proofreader ranking at 2,048 is untested.
+This does not establish an accuracy gain. The subsequent proofreading check is reported below.
 
 ## Larger validation replication on GB200
 
@@ -256,7 +256,7 @@ the paired gains are 0.00426 (95% interval 0.00173 to 0.00763) and 0.00412
 (0.00129 to 0.00781). Mean warm H100 time is 8.921 versus 6.599 seconds.
 
 The weight uses predicted precision and recall only. This aggregation rule was
-added after the pilot; intervals are not adjusted for method selection. It is a
+added after the ordinary-pool pilot; intervals are not adjusted for method selection. It is a
 promising validation result, not a reserved-test confirmation. Guided-policy
 selection still waits for the complete pilot.
 
@@ -282,14 +282,38 @@ Mean warm generation-plus-proofreading time is 4.622 GB200 seconds, versus
 3.054 for frequency alone. These are the same validation proteins as the H100
 phase, so this is a runtime/stochastic replication, not a new biological cohort.
 
-## Exploratory scoring of the larger existing pools
+## Exploratory scoring of the larger existing pools: complete
 
 At 20:15 UTC, the frequency plateau and the 128-rollout F1-weighting gains
-motivated one further validation check. Four GB200 workers score the existing
-512- and 2,048-rollout pools on all 32 pilot proteins. No new rollouts or model
+motivated one further validation check. All 64 existing 512- and 2,048-rollout pools on the 32 pilot proteins have now been scored. No new rollouts or model
 updates are involved, and no new reserved-test scores have been inspected.
 
-The frozen primary contrast is 2,048 versus 128 with F1-weighted votes. All
-seven existing aggregators will also be reported, with paired group intervals
-and generation-plus-proofreading costs. This adaptive extension is documented
+The primary 2,048-minus-128 F1-weighted R-precision difference is +0.00002
+(95% interval −0.00463 to 0.00500), at 20.83 times the warm GPU cost.
+Secondary average precision improves by 0.00897 (0.00480 to 0.01397).
+All seven aggregators are reported. This adaptive extension was documented
 before scoring and is not a prespecified confirmation.
+
+## Fixed-length filtering: better individual precision, weaker maps
+
+All 512 L/2L maps from 256 continuations are complete on the same 32 proteins.
+At L contacts, top-10% filtering raises mean individual-rollout precision from
+0.43345 to 0.49286, but four-rollout map R-precision is 0.57084 versus 0.57152
+for control, at 3.25 times the cost. The paired interval includes zero.
+
+At 2L, four-rollout R-precision falls from 0.56116 to 0.53276: difference
+−0.02839 (95% interval −0.04961 to −0.00827), at 4.17 times the cost.
+The reader predicts precision 0.52488 on guided 2L rollouts; actual precision
+is 0.28286. This is consistent with distribution shift and score exploitation.
+
+## Larger pools also plateau on the H100 baseline
+
+All 64 H100 pools at 512 and 2,048 rollouts are complete. Frequency R-precision
+is 0.60276 and 0.60299, versus 0.60365 at 128. The 2,048-minus-128 difference
+is −0.00066 (95% interval −0.00489 to 0.00352), with 15.35 times the warm cost.
+Long-range difference is −0.00241 (−0.00656 to 0.00191).
+
+Full-universe average precision improves by 0.01334 (0.00847 to 0.01985), and
+native-contact coverage reaches 99.21%. The same distinction appears on GB200:
+additional sampling improves coverage and ranking below the top-R cutoff,
+without establishing a better top-R map.

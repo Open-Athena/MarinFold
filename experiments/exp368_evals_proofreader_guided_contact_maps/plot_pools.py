@@ -15,9 +15,10 @@ def main() -> None:
     parser.add_argument('--data', type=Path, required=True)
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--title', default='32 validation proteins: ordinary rollout pools')
-    parser.add_argument('--methods', nargs='+', choices=['frequency', 'sumq', 'meanq'],
+    methods = ['frequency', 'sumq', 'meanq', 'f1_weighted_frequency']
+    parser.add_argument('--methods', nargs='+', choices=methods,
                         default=['frequency', 'sumq', 'meanq'])
-    parser.add_argument('--coverage-method', choices=['frequency', 'sumq', 'meanq'], default='sumq')
+    parser.add_argument('--coverage-method', choices=methods, default='sumq')
     args = parser.parse_args()
     summary = pd.read_csv(args.data / 'summary.csv')
     if summary.structures.nunique() != 1:
@@ -29,8 +30,10 @@ def main() -> None:
     if not set(args.methods + [args.coverage_method]) <= set(summary.method):
         raise ValueError('Requested plot methods are absent from the summary')
     fig, axes = plt.subplots(1, 3, figsize=(14, 4.2))
-    colors = {'frequency': '#2563eb', 'sumq': '#d97706', 'meanq': '#64748b'}
-    for method, label in [('frequency', 'Frequency'), ('sumq', 'Sum proofreader q'), ('meanq', 'Mean q')]:
+    colors = {'frequency': '#2563eb', 'sumq': '#d97706', 'meanq': '#64748b',
+              'f1_weighted_frequency': '#9333ea'}
+    for method, label in [('frequency', 'Frequency'), ('sumq', 'Sum proofreader q'),
+                          ('meanq', 'Mean q'), ('f1_weighted_frequency', 'Rollout F1-weighted votes')]:
         if method not in args.methods:
             continue
         rows = summary[summary.method == method].sort_values('rollouts')

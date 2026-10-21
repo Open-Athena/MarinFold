@@ -27,7 +27,7 @@ def main() -> None:
         raise ValueError('Duplicate map metrics across inputs')
     ordinary = frame.policy.isin(['ordinary', 'ordinary-direct'])
     frame = frame[(~ordinary & (frame.method == 'sumq')) |
-                  (ordinary & frame.method.isin(['sumq', 'frequency']))]
+                  (ordinary & frame.method.isin(['sumq', 'frequency', 'f1_weighted_frequency']))]
     if frame.hardware.isna().any() or frame.hardware.nunique() != 1 or frame.hardware.str.contains(';').any():
         raise ValueError('A compute frontier must use one GPU model throughout; plot hardware cohorts separately')
     hardware = frame.hardware.iloc[0]
@@ -41,7 +41,9 @@ def main() -> None:
     fig, axes = plt.subplots(1, 2, figsize=(13, 6))
     for index, ((policy, method), rows) in enumerate(summary.groupby(['policy', 'method'])):
         rows = rows.sort_values('rollouts')
-        label = policy + (' / ' + method if policy.startswith('ordinary') else ' / sum q')
+        aggregation = {'frequency': 'frequency', 'sumq': 'sum q',
+                       'f1_weighted_frequency': 'F1-weighted votes'}[method]
+        label = policy + ' / ' + aggregation
         color = plt.get_cmap('tab20')(index)
         marker = 's' if policy.startswith('ordinary') else 'o'
         for axis, metric, title in zip(axes, ['r_precision', 'long_r_precision'],
@@ -56,7 +58,8 @@ def main() -> None:
     fig.tight_layout(rect=(0, .23, 1, .96))
     save_plot_with_meta(fig, args.out, dpi=180,
         caption=f'GPU model: {hardware}. Each point averages the same planned structures. Guided curves use sum-q aggregation over increasing '
-        'independent trajectories; ordinary curves show both frequency and sum q. Search cost includes discarded '
+        'independent trajectories; ordinary curves show frequency, sum q and predicted-rollout-F1-weighted votes. '
+        'The F1 rule is an exploratory addition after the ordinary-pool pilot. Search cost includes discarded '
         'proposals, lookahead, population branches, repair and final scoring. Ordinary frequency omits proofreader cost. '
         'GPU resource seconds sum the work for all trajectories; they are not parallel serving latency. Model staging '
         'and loading are excluded. These are measured compute envelopes, not exactly cost-matched experiments.')
