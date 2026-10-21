@@ -191,3 +191,14 @@ results were available. Observed lookahead costs already greatly exceeded the
 Frequency ranking needs no proofreader pass. These are measured compute
 envelopes, not exact budget matching. The same 32 validation structures are used,
 and the reserved test remains untouched for new policy metrics.
+
+## Reranking helps the small pilot pools
+
+Replacing frequency by sum q changes 15.37% of top-R slots with eight rollouts
+and improves R-precision by 0.0163 (paired 95% interval 0.0090–0.0248).
+With 128 rollouts, it changes 7.62% of slots; the net effect is −0.0031
+(−0.0099–0.0039), which does not establish a difference.
+
+The diagnostic counts true contacts entering and leaving the map. Those counts
+exactly reproduce the observed metric difference for every protein. All 32 pilot
+structures are included; these results do not replace the larger validation test.

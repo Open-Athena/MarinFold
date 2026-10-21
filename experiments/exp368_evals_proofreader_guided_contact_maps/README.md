@@ -87,6 +87,19 @@ batch sizes or deployments as identical. Data are in `data/pilot_direct/`.
 
 ![Contact-map accuracy from pools requested in a single batch](plots/pilot_direct_pool.png)
 
+On the same complete pilot, `analyze_reranking.py` identifies exactly which
+contacts enter and leave the top R when frequency ranking is replaced by sum q.
+At eight rollouts, sum q changes 15.37% of those prediction slots on average and
+improves all-contact R-precision by 0.0163 (95% paired interval 0.0090–0.0248).
+At 128 rollouts, it changes 7.62% of slots and the mean effect is −0.0031
+(−0.0099–0.0039), which does not establish a difference. True contacts gained
+and lost by these swaps exactly reproduce the per-protein metric differences.
+Thus the pilot supports proofreading small pools, but does not establish an
+additional ranking benefit at 128 rollouts. This is a retrospective diagnostic
+of existing complete pools; the larger validation comparison remains pending.
+
+![True contacts gained and lost by proofreader reranking](plots/pilot_reranking.png)
+
 ### Larger validation frequency baseline
 
 Ordinary generation is complete for all 1,375 structures in the 255 validation
