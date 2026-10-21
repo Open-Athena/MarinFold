@@ -1,0 +1,14 @@
+{
+  "caveat": "Inference-only projection from nine stratified targets (61-150 residues); excludes model startup and targets up to 223 residues. Benchmark batching before full launch.",
+  "full_candidates": 180212,
+  "mean_seconds_per_candidate": 8.707471111111111,
+  "measured_inference_compute_usd": 2.1496569305555555,
+  "measured_inference_gpu_hours": 0.5442169444444445,
+  "median_seconds_per_candidate": 8.219,
+  "naive_full_projection_compute_usd": 1721.750998974568,
+  "naive_full_projection_gpu_hours": 435.886328854321,
+  "naive_full_projection_wall_hours_at_8_h100": 54.485791106790124,
+  "pilot_candidates": 225,
+  "target_bootstrap_projection_gpu_hours_high": 449.1815080890123,
+  "target_bootstrap_projection_gpu_hours_low": 423.80535021802467
+}

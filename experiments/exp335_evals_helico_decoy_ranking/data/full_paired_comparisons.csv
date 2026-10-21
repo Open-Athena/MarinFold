@@ -1,0 +1,15 @@
+endpoint,left_method,right_method,metric,n_targets,mean_left_minus_right,difference_ci_low,difference_ci_high,discordant_left_only,discordant_right_only,mcnemar_exact_pvalue
+decoy_ranking,Helico pTM,Rosetta energy,spearman_tmscore,133,0.08176518727626986,0.059838445823255385,0.104335900707247,,,
+decoy_ranking,Helico pTM,Rosetta energy,top1_tmscore,133,-0.02151052631578948,-0.03838808270676693,-0.005667443609022563,,,
+decoy_ranking,Helico pTM,AF2Rank composite,spearman_tmscore,133,-0.0845153260963264,-0.10195402074488051,-0.06911019256159971,,,
+decoy_ranking,Helico pTM,AF2Rank composite,top1_tmscore,133,-0.053379699248120305,-0.0704889097744361,-0.03784947368421054,,,
+decoy_ranking,Helico composite,AF2Rank composite,spearman_tmscore,133,-0.051822620340702986,-0.06523015595830205,-0.03942620794728993,,,
+decoy_ranking,Helico composite,AF2Rank composite,top1_tmscore,133,0.0028233082706766903,-0.0035007706766917255,0.009332763157894724,,,
+native_selection,Helico pTM,AF2Rank composite,native_top1,133,-0.3609022556390977,-0.45112781954887216,-0.2781954887218045,2,50,6.123990203832363e-13
+native_selection,Helico pTM,AF2Rank composite,native_top5,133,-0.49624060150375937,-0.5864661654135338,-0.40601503759398494,3,69,2.6371947296289014e-17
+native_selection,Helico pTM,AF2Rank composite,native_rank,133,99.23684210526316,66.47584586466166,137.61240601503755,,,
+native_selection,Helico pTM,AF2Rank composite,native_vs_decoy_auroc,133,-0.06835154209693278,-0.09121128095450595,-0.0486498847338839,,,
+native_selection,Helico composite,AF2Rank composite,native_top1,133,-0.007518796992481203,-0.11278195488721804,0.09022556390977443,25,26,1.0
+native_selection,Helico composite,AF2Rank composite,native_top5,133,0.06766917293233082,-0.03778195488721787,0.17293233082706766,32,23,0.2806097176983542
+native_selection,Helico composite,AF2Rank composite,native_rank,133,-4.639097744360902,-26.54924812030075,20.218984962406,,,
+native_selection,Helico composite,AF2Rank composite,native_vs_decoy_auroc,133,0.0032412715699632034,-0.010731587759158657,0.015608667298077264,,,

@@ -1,0 +1,5 @@
+{
+  "script": "plot_full.py",
+  "args": [],
+  "caption": "Mean target-wise Spearman correlation across all 133 AF2Rank targets; error bars are 95% target-bootstrap intervals."
+}

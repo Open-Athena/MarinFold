@@ -1,0 +1,5 @@
+{
+  "script": "plot_full.py",
+  "args": [],
+  "caption": "Native top-1 recovery and mean native rank over the complete benchmark; error bars are 95% target-bootstrap intervals."
+}

@@ -1,0 +1,5 @@
+{
+  "script": "plot_full.py",
+  "args": [],
+  "caption": "Fraction of targets whose native is ranked in the top five; error bars are 95% target-bootstrap intervals. The Helico-versus-AF2Rank p-value uses the exact paired McNemar test."
+}
