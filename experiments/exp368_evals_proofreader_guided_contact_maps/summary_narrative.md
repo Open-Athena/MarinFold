@@ -180,3 +180,14 @@ The new fixed-length GPU smoke passed exact L and 2L contact counts, nested-pref
 checks, model hashes and FP32 cache errors below 9e-7. Four validation-scoring
 jobs, four fixed-length shards and twelve original guided shards are submitted
 through the healthy controller. No shared cluster restart was performed.
+
+## Stronger comparisons at larger compute budgets
+
+Two additional ordinary-generation jobs request 512 and 2,048 independent
+rollouts per pilot structure. These sizes were frozen before complete guided
+results were available. Observed lookahead costs already greatly exceeded the
+128-rollout baseline, motivating a wider ordinary-sampling cost curve.
+
+Frequency ranking needs no proofreader pass. These are measured compute
+envelopes, not exact budget matching. The same 32 validation structures are used,
+and the reserved test remains untouched for new policy metrics.
