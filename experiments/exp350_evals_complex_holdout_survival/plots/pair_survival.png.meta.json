@@ -1,0 +1,5 @@
+{
+  "script": "plot_pair_survival.py",
+  "args": [],
+  "caption": "The strict component-held-out rule rejects a dimer when either chain has a training homolog. The pair-held-out rule rejects it only when one complex training document contains one-to-one homologs for both candidate chains. The final column additionally applies a conservative same-PDB pair screen against Helico's documented fine-tuning pool."
+}

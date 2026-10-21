@@ -1,0 +1,36 @@
+target_id,pdb_id,complex_type,release_date,resolution,title,marinfold_pair_status,helico_finetune_pair_status,freeze_status,freeze_reason
+7txy-assembly1,7txy,heterodimer,2023-02-15,1.75,"Crystal structure of the 2-Aminophenol 1,6-dioxygenase from the ARO bacterial microcompartment of Micromonospora rosaria",pair_clean,hit,excluded_helico_finetune_pair_homolog,both partners have >=30% identity over >=50% shorter-side coverage to distinct chains in one Helico fine-tuning PDB
+7ytu-assembly1,7ytu,heterodimer,2023-02-08,1.504,"Crystal structure of vaccinia virus G3/L5 sub-complex (SeMet-labeled, P31 space group)",pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+8adb-assembly1,8adb,heterodimer,2023-02-15,1.73,Viral tegument-like DUBs,pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+8axi-assembly1,8axi,homodimer,2023-03-01,1.25,Sialidases and Fucosidases of Akkermansia muciniphila are key for rapid growth on colonic mucin and nutrient sharing amongst mucin-associated human gut microbiota,pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+8b3w-assembly1,8b3w,homodimer,2023-01-25,1.681,Structure of metacyclic VSG (mVSG) 1954 from Trypanosoma brucei,pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+8btj-assembly1,8btj,homodimer,2023-10-11,1.94,Murine cytomegalovirus protein M35,pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+8cqm-assembly1,8cqm,homodimer,2023-10-18,2.0,Broad-range phospholipase C from Listeria monocytogenes,pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+8ebb-assembly1,8ebb,heterodimer,2023-06-21,1.88,Crystal structure of SIX6 from Fusarium oxysporum f. sp. lycopersici,pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+8g4k-assembly1,8g4k,heterodimer,2024-08-14,1.24,Complex of TbRII mini protein binder bound to the TbRII ECD,pair_clean,no_hit,excluded_designed_binder,de_novo_binder; citation: Computational Design of High Affinity Binders to Convex Protein Target Sites
+8h1m-assembly1,8h1m,homodimer,2023-07-12,1.6,Crystal structure of glucose-2-epimerase mutant_D254A from Runella slithyformis Runsl_4512,pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+8hhj-assembly1,8hhj,heterodimer,2023-11-15,1.5,Crystal structure of the MafB2-CTMGI-2B16B6/MafI2MGI-2B16B6 complex,pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+8htd-assembly1,8htd,heterodimer,2023-11-22,1.848,Crystal structure of an effector from Chromobacterium violaceum in complex with ubiquitin,pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+8ipj-assembly1,8ipj,heterodimer,2024-03-20,2.003,Crystal structure of the Legionella effector protein MavL with ADPR-Ub,pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+8j48-assembly1,8j48,heterodimer,2024-02-28,1.94,Crystal structure of OY phytoplasma SAP05 in complex with AtGATA18,pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+8jca-assembly1,8jca,heterodimer,2024-03-27,1.65,Cyrstal structure of SKIP RUN domain in complex with GTP-bound Arl8b(Q75L),pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+8jyv-assembly1,8jyv,homodimer,2024-05-01,1.86,Crystal structure of the gasdermin from Trichoplax adhaerens,pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+8ok4-assembly1,8ok4,homodimer,2023-09-13,1.23,Variant Surface Glycoprotein VSG11wt-Oil,pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+8onf-assembly1,8onf,homodimer,2023-10-25,1.53,Crystal structure of Bdellovibrio bacteriovorus Bd2439 fibre C-terminal domains with ethylene glycol,pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+8ows-assembly1,8ows,heterodimer,2024-07-03,1.39,The crystal structure of the polymorphic toxin PT1(Em) H44A mutant and its cognate immunity PIM1(Em) complex,pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+8pu1-assembly1,8pu1,heterodimer,2024-07-24,1.702,Structure of the toxin/antitoxin complex FaRel/ATfaRel2 with APCPP,pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+8q00-assembly1,8q00,heterodimer,2023-12-13,1.62,TssM-Ub-PA complex - A USP-like DUB from B. pseudomallei (193-430) reacted with Ub-PA,pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+8q6q-assembly1,8q6q,heterodimer,2024-08-28,1.8,Structure of human immunity related GTPase Q in complex with GABARAPL2.,pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+8r7a-assembly1,8r7a,heterodimer,2024-01-31,1.8,Complex of rice blast (Magnaporthe oryzae) effector protein PWL2 with the HMA domain of OsHIPP43 from rice (Oryza sativa),pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+8s0u-assembly1,8s0u,homodimer,2024-02-28,1.5,Structure of the LytM domain of PrgK from E. faecalis,pair_clean,hit,excluded_helico_finetune_pair_homolog,both partners have >=30% identity over >=50% shorter-side coverage to distinct chains in one Helico fine-tuning PDB
+8smq-assembly1,8smq,homodimer,2023-05-10,2.0,Crystal Structure of the N-terminal Domain of the Cryptic Surface Protein (CD630_25440) from Clostridium difficile.,pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+8t48-assembly1,8t48,heterodimer,2024-03-13,2.0,The N4BP1 CUE-like domain in complex with linear di-Ubiquitin,pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+8tn8-assembly1,8tn8,homodimer,2023-11-15,1.75,Crystal structure of the murine astrovirus capsid spike at 1.75 A,pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+8wk1-assembly1,8wk1,heterodimer,2024-10-02,2.0,Bovine trypsin in complex with Durio zibethinus trypsin inhibitor DzTI-4,pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+8wt4-assembly1,8wt4,heterodimer,2024-07-03,1.62,Crystal structure of DL-endopeptidase CwlO complexed with IseA,pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+8z2m-assembly1,8z2m,homodimer,2024-10-02,2.0,Crystal structure of 5-phosphomethyl-2'-deoxyuridine (5-PmdU) glycinyltransferase gp46/PUGT from Pseudomonads phage PaMx11,pair_clean,hit,excluded_helico_finetune_pair_homolog,both partners have >=30% identity over >=50% shorter-side coverage to distinct chains in one Helico fine-tuning PDB
+8z4f-assembly1,8z4f,homodimer,2024-10-30,1.88,Pseudomurein Endoisopeptidases PeiP,pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+9bk6-assembly1,9bk6,heterodimer,2024-10-09,2.0,Structure of B10_CYTX binder-complex,pair_clean,no_hit,excluded_designed_binder,de_novo_binder; citation: De novo designed proteins neutralize lethal snake venom toxins
+9c68-assembly1,9c68,homodimer,2024-10-30,1.82,The CRISPR associated CARF-adenosine deaminase Cad1-CARF in the cA6 bound form,pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+9cys-assembly1,9cys,heterodimer,2024-08-14,1.75,Toxin/immunity complex for a T6SS lipase effector from E. cloacae,pair_clean,no_hit,included,natural pair-held-out FoldBench dimer
+9gsq-assembly1,9gsq,homodimer,2024-09-25,1.7,DNA binding domain of J-DNA Binding Protein 3 (JBP3),pair_clean,no_hit,included,natural pair-held-out FoldBench dimer

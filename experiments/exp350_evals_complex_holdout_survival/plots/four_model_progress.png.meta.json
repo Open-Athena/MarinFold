@@ -1,0 +1,5 @@
+{
+  "script": "plot_four_model_progress.py",
+  "args": [],
+  "caption": "Interim comparison of the two completed MarinFold arms on the same 17 complex test targets; intra-chain scores use both original partners. 95% homology-group bootstrap intervals. Inter-chain axis is enlarged 5x."
+}

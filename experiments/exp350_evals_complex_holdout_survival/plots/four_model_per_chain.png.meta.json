@@ -1,0 +1,5 @@
+{
+  "script": "plot_four_model_eval.py",
+  "args": [],
+  "caption": "Per-partner R-precision using each chain\u2019s own number of true contacts; chain labels follow the frozen input order."
+}

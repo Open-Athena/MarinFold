@@ -1,0 +1,64 @@
+{
+  "public_prefix": "hf://buckets/open-athena/MarinFold/data/evals/exp350_foldbench_pair_holdout/contact_eval_v1/sampling_controls_v1",
+  "n_targets": 23,
+  "draws": 1000,
+  "long_draws": 250,
+  "seed": 3501,
+  "threads": 24,
+  "budgets": [
+    1,
+    10,
+    100,
+    1000
+  ],
+  "amino_acid_null": "exact counts in ordered chain-A/chain-B residue-type strata; no replacement within each map",
+  "validation": "raw input hashes, all model scores, final graph simplicity and both degree sequences, no-move graphs have no valid switch",
+  "degree_chain": {
+    "burn_per_edge": 100,
+    "thin_per_edge": 20
+  },
+  "degree_chain_long": {
+    "burn_per_edge": 500,
+    "thin_per_edge": 100
+  },
+  "source_raw_manifest_sha256": "41832364095c1dfea53458206574cb7f1ae2194e7e3ad4d7cf8dc0a66453b676",
+  "targets_sha256": "544cf757921f4e798aef5a8d1866b7324a296dfdf8aef07ba01bf655e18901e0",
+  "code_sha256": {
+    "score_sampling_controls.py": "df03190cfaff366e53640f1ab2e00c58464f3687debc49939c948bb75417a0d3",
+    "degree_switch.cpp": "e32fac9d159a658914fec9e53fc2b18017d6ffea2e154b172b93fe8cd16e9a49"
+  },
+  "derived_sha256": {
+    "summary.csv": "3b234bcb6c0076a6f73f7e419062b4adc2dfa3820a904cb8d9f248d16028992e",
+    "mixing_comparison.csv": "ff25e76ac6d9ba85b1c42b1eadd7d12372cd9680d39d3e83c5be15a953c6bcbe",
+    "per_target.csv": "4ea9dfa428fab1f22d287108c99f00627dcf92d752f85f76be4f5e4e77f68400",
+    "mixing_summary.csv": "786aed188bcd12b10690ec0cee2d3b359ff0336866324c87e9db54e4b4cab24b"
+  },
+  "raw_sha256": {
+    "9cys-assembly1.npz": "256a31a1c2166023bf2906ea08266a611b53198e349e0c9736e586b62640ed86",
+    "8ebb-assembly1.npz": "3baed8f3654a3d5e30375d176023276749a33a612c228131f2e0d0003e6e01c1",
+    "8q6q-assembly1.npz": "f60c66ff280e4c795f77c9abcf2786b6231ce57bf51ec480309f3c7e7818e341",
+    "8ipj-assembly1.npz": "543da87c2837880d8a21894eabffb01f2d5dacb1fc9fdeb111307fb055ad59af",
+    "mixing_per_rollout.csv": "1eeddf9add5d4fcbb7e9240d884157e36dfe6237e259e074acfcd23dae1400f5",
+    "8htd-assembly1.npz": "78311987921760c757ef411ba8f0030ea7868dc1b60e0a732e2c2d76c4ac28a3",
+    "8j48-assembly1.npz": "e298a2a55a88e1f343dab1eb242e32371a1eca7422cdb6c1cfbc134697b77393",
+    "8ows-assembly1.npz": "19ef5e9c2665f4c3a894f233ce0abc939cfdc7431e66100221cf9ba438c08693",
+    "9c68-assembly1.npz": "34821ee54744c2d91c0584336027e4d524159aaf62593d9a0957a725b49be87a",
+    "8wk1-assembly1.npz": "40115a070bce1cf7aa1f6f8e5a6a373a17049c21c0f30ff4cc3bd697cb77e462",
+    "8q00-assembly1.npz": "6d53c6a919bc96e1ea49b4cebe60954933192448f1e598eea122beb074b70824",
+    "8smq-assembly1.npz": "158f0052cc76ac0fa853dfb529b045d8fc41eab7e2a85abbc604145ae1a2922d",
+    "8h1m-assembly1.npz": "b01aa2570c5c68eea294e165dfbdbcdeffd7dcc0d34a5d4b1f38e32f3ef04273",
+    "8pu1-assembly1.npz": "9ca99c553c8853833db806ed0a409ecc222d779ca78c15bc901314452942365d",
+    "8t48-assembly1.npz": "58de99bbd6e0b22b1fadb330195c37f4f43dfdcabcf98d6fc9545556132b062d",
+    "8jyv-assembly1.npz": "5ac52e4a00a3e64c58276db0912bbf5b2abac0c8c9602e0cf9e1f2554f369493",
+    "7ytu-assembly1.npz": "e5de7c7df6efeddee61c5393158f1a89aceada85efc813bba68b593af4203e9c",
+    "8hhj-assembly1.npz": "bddcf79f8336a91d50b1641b9c886f8be7b3157f15b3a642125487872622c7ae",
+    "8onf-assembly1.npz": "035777c7c2044dcc81051b13f1ec08ed1b9176178bc382d1036dee15636aff9c",
+    "8cqm-assembly1.npz": "c68987a32b10306c2193279fcaff1e79ea5e60b36bbe938f3c1c529a9163d3f3",
+    "8jca-assembly1.npz": "363293998fffe3357260fe0218bd99afd6b6237dffdc0b24f7dc700e68c4a444",
+    "8r7a-assembly1.npz": "6d666cc2fda4b539f95c9d2bf2bd5e20c128912a46f45af36304873b7191831c",
+    "8adb-assembly1.npz": "6c5722d3cceda3a5a8abd4476f3eb8b5c6548c8be07ed4ff5b82fee44c94fabb",
+    "8wt4-assembly1.npz": "19ab2840940e3ff7079825532f39b6178a9dcf17da048a7f7d9e5fd69d950917"
+  },
+  "degree_method_reference": "https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.APPROX-RANDOM.2018.36",
+  "limitations": "degree sampling is finite-chain approximate, not an exact independent sampler"
+}

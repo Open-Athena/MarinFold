@@ -1,0 +1,19 @@
+{
+  "selection": "eligibility=candidate and no one-to-one 30%/50% chain-pair hit in one complex-training document",
+  "complexes": 220,
+  "complexes_by_source": {
+    "foldbench": 35,
+    "pinder": 185
+  },
+  "queries": 706,
+  "selection_columns": [
+    "source",
+    "target",
+    "eligibility",
+    "complex_pair_status"
+  ],
+  "selection_columns_sha256": "c4f92566fe143e60c7da01a87f6e141da6f925e1c4ffa990d188fd50b9d20d32",
+  "query_membership_sha256": "36b417817a46682d46a812bf8080bdcdc88811b40a7f8abef35e37efeea4a969",
+  "queries_fasta_sha256": "83b026fa68aac90b22801d94bc93a869f81d9713b620da974a1c27832450ae7a",
+  "output_sha256": "8995c1a6d8cadc31bacca0ea6005564aa12d2270012d593d5c652c2e32ab5d1f"
+}

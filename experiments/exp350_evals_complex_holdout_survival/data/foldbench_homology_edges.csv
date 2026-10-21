@@ -1,0 +1,11 @@
+target_1,target_2,chain_1,chain_2,nident,alnlen,identity,qlen,tlen,qspan,tspan
+8adb-assembly1,8htd-assembly1,8adb-assembly1|1|B,8htd-assembly1|1|B,72,75,0.96,76,75,75,75
+8adb-assembly1,8ipj-assembly1,8adb-assembly1|1|B,8ipj-assembly1|1|B,72,72,1.0,74,75,72,72
+8adb-assembly1,8q00-assembly1,8adb-assembly1|1|B,8q00-assembly1|1|B,75,75,1.0,76,75,75,75
+8adb-assembly1,8t48-assembly1,8adb-assembly1|1|B,8t48-assembly1|0|A,75,75,1.0,75,172,75,75
+8htd-assembly1,8ipj-assembly1,8htd-assembly1|1|B,8ipj-assembly1|1|B,69,72,0.9583333333333334,76,74,72,72
+8htd-assembly1,8q00-assembly1,8htd-assembly1|1|B,8q00-assembly1|1|B,72,75,0.96,76,76,75,75
+8htd-assembly1,8t48-assembly1,8htd-assembly1|1|B,8t48-assembly1|0|A,73,76,0.9605263157894737,76,172,76,76
+8ipj-assembly1,8q00-assembly1,8ipj-assembly1|1|B,8q00-assembly1|1|B,72,72,1.0,76,74,72,72
+8ipj-assembly1,8t48-assembly1,8ipj-assembly1|1|B,8t48-assembly1|0|A,73,74,0.9864864864864865,74,172,74,74
+8q00-assembly1,8t48-assembly1,8q00-assembly1|1|B,8t48-assembly1|0|A,75,75,1.0,76,172,75,75

@@ -1,0 +1,11 @@
+{
+  "manifest": "/data/tim/helico-data/processed/manifest.json",
+  "sequence_source": "/data/tim/helico-data/raw/pdb_seqres.txt.gz",
+  "eligible_entries": 123867,
+  "protein_entries_written": 122418,
+  "protein_chains": 454536,
+  "cutoff": "2021-09-30 (exclusive; missing date included)",
+  "scope": "all protein chains of date-eligible preprocessed entries; conservative fine-tuning pool, not actual sampled crops or complete Protenix pretraining",
+  "source_sha256": "afa55c60bf9b0f13608840fb35561eb17caa247e8dbf538f9b4e4faef052f6c6",
+  "fasta_sha256": "cfb05e98aa60f4f636e078396bcd33792ad63484015b0c47e12a193b1c041602"
+}

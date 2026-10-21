@@ -1,0 +1,5 @@
+{
+  "script": "plot_survival.py",
+  "args": [],
+  "caption": "Natural protein-only dimers after scope/quality filters and cumulative sequence exclusion against four locally available exp343 training arms. Every constituent chain must avoid a >=30% identity alignment covering >=50% of the shorter sequence. The remaining PINDER target is an upper bound because the ProteinMPNN redesign corpora were not searched."
+}

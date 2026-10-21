@@ -1,0 +1,300 @@
+{
+  "native": {
+    "alignment_rows": 13763,
+    "max_output_alignments_per_query": 1830,
+    "searches": [
+      {
+        "coverage": "query",
+        "coverage_mode": 2,
+        "command": [
+          "/home/bizon/.cache/marinfold/mmseqs/mmseqs/bin/mmseqs",
+          "search",
+          "/data/exp350/native_queryDB_v3_70f579c63b1d",
+          "/data/exp350/nativeDB",
+          "/data/exp350/native_query_alnDB_v3_70f579c63b1d",
+          "/data/exp350/native_query_tmp_v3_70f579c63b1d",
+          "-s",
+          "7.5",
+          "-e",
+          "1000",
+          "--max-seqs",
+          "100000",
+          "--min-seq-id",
+          "0.30",
+          "--alignment-mode",
+          "3",
+          "--seq-id-mode",
+          "0",
+          "-a",
+          "1",
+          "-c",
+          "0.50",
+          "--cov-mode",
+          "2",
+          "--threads",
+          "48",
+          "--split-memory-limit",
+          "80G"
+        ],
+        "log": "/data/exp350/native_query_search.log",
+        "overflow_counts": [
+          13,
+          13,
+          13,
+          13,
+          13
+        ],
+        "median_result_list_lengths": [
+          20565,
+          20565,
+          20565,
+          20565,
+          20565
+        ],
+        "max_seqs": 100000,
+        "prefilter_median_at_cap": false,
+        "output": "/data/exp350/native_query_alignments.tsv"
+      },
+      {
+        "coverage": "target",
+        "coverage_mode": 1,
+        "command": [
+          "/home/bizon/.cache/marinfold/mmseqs/mmseqs/bin/mmseqs",
+          "search",
+          "/data/exp350/native_queryDB_v3_70f579c63b1d",
+          "/data/exp350/nativeDB",
+          "/data/exp350/native_target_alnDB_v3_70f579c63b1d",
+          "/data/exp350/native_target_tmp_v3_70f579c63b1d",
+          "-s",
+          "7.5",
+          "-e",
+          "1000",
+          "--max-seqs",
+          "100000",
+          "--min-seq-id",
+          "0.30",
+          "--alignment-mode",
+          "3",
+          "--seq-id-mode",
+          "0",
+          "-a",
+          "1",
+          "-c",
+          "0.50",
+          "--cov-mode",
+          "1",
+          "--threads",
+          "48",
+          "--split-memory-limit",
+          "80G"
+        ],
+        "log": "/data/exp350/native_target_search.log",
+        "overflow_counts": [
+          13,
+          13,
+          13,
+          13,
+          13
+        ],
+        "median_result_list_lengths": [
+          20565,
+          20565,
+          20565,
+          20565,
+          20565
+        ],
+        "max_seqs": 100000,
+        "prefilter_median_at_cap": false,
+        "output": "/data/exp350/native_target_alignments.tsv"
+      }
+    ]
+  },
+  "complex": {
+    "alignment_rows": 3776816,
+    "max_output_alignments_per_query": 23719,
+    "searches": [
+      {
+        "coverage": "query",
+        "coverage_mode": 2,
+        "command": [
+          "/home/bizon/.cache/marinfold/mmseqs/mmseqs/bin/mmseqs",
+          "search",
+          "/data/exp350/complex_queryDB_v3_83b026fa68aa",
+          "/data/exp350/complexDB",
+          "/data/exp350/complex_query_alnDB_v3_83b026fa68aa",
+          "/data/exp350/complex_query_tmp_v3_83b026fa68aa",
+          "-s",
+          "7.5",
+          "-e",
+          "1000",
+          "--max-seqs",
+          "100000",
+          "--min-seq-id",
+          "0.30",
+          "--alignment-mode",
+          "3",
+          "--seq-id-mode",
+          "0",
+          "-a",
+          "1",
+          "-c",
+          "0.50",
+          "--cov-mode",
+          "2",
+          "--threads",
+          "48",
+          "--split-memory-limit",
+          "80G"
+        ],
+        "log": "/data/exp350/complex_query_search.log",
+        "overflow_counts": [
+          2681
+        ],
+        "median_result_list_lengths": [
+          100000
+        ],
+        "max_seqs": 100000,
+        "prefilter_median_at_cap": true,
+        "output": "/data/exp350/complex_query_alignments.tsv"
+      },
+      {
+        "coverage": "target",
+        "coverage_mode": 1,
+        "command": [
+          "/home/bizon/.cache/marinfold/mmseqs/mmseqs/bin/mmseqs",
+          "search",
+          "/data/exp350/complex_queryDB_v3_83b026fa68aa",
+          "/data/exp350/complexDB",
+          "/data/exp350/complex_target_alnDB_v3_83b026fa68aa",
+          "/data/exp350/complex_target_tmp_v3_83b026fa68aa",
+          "-s",
+          "7.5",
+          "-e",
+          "1000",
+          "--max-seqs",
+          "100000",
+          "--min-seq-id",
+          "0.30",
+          "--alignment-mode",
+          "3",
+          "--seq-id-mode",
+          "0",
+          "-a",
+          "1",
+          "-c",
+          "0.50",
+          "--cov-mode",
+          "1",
+          "--threads",
+          "48",
+          "--split-memory-limit",
+          "80G"
+        ],
+        "log": "/data/exp350/complex_target_search.log",
+        "overflow_counts": [
+          2681
+        ],
+        "median_result_list_lengths": [
+          100000
+        ],
+        "max_seqs": 100000,
+        "prefilter_median_at_cap": true,
+        "output": "/data/exp350/complex_target_alignments.tsv"
+      }
+    ]
+  },
+  "helico": {
+    "alignment_rows": 560994,
+    "max_output_alignments_per_query": 3948,
+    "searches": [
+      {
+        "coverage": "query",
+        "coverage_mode": 2,
+        "command": [
+          "/home/bizon/.cache/marinfold/mmseqs/mmseqs/bin/mmseqs",
+          "search",
+          "/data/exp350/helico_queryDB_v3_83b026fa68aa",
+          "/data/exp350/helicoDB",
+          "/data/exp350/helico_query_alnDB_v3_83b026fa68aa",
+          "/data/exp350/helico_query_tmp_v3_83b026fa68aa",
+          "-s",
+          "7.5",
+          "-e",
+          "1000",
+          "--max-seqs",
+          "500000",
+          "--min-seq-id",
+          "0.30",
+          "--alignment-mode",
+          "3",
+          "--seq-id-mode",
+          "0",
+          "-a",
+          "1",
+          "-c",
+          "0.50",
+          "--cov-mode",
+          "2",
+          "--threads",
+          "48",
+          "--split-memory-limit",
+          "80G"
+        ],
+        "log": "/data/exp350/helico_query_search.log",
+        "overflow_counts": [
+          350
+        ],
+        "median_result_list_lengths": [
+          11268
+        ],
+        "max_seqs": 500000,
+        "prefilter_median_at_cap": false,
+        "output": "/data/exp350/helico_query_alignments.tsv"
+      },
+      {
+        "coverage": "target",
+        "coverage_mode": 1,
+        "command": [
+          "/home/bizon/.cache/marinfold/mmseqs/mmseqs/bin/mmseqs",
+          "search",
+          "/data/exp350/helico_queryDB_v3_83b026fa68aa",
+          "/data/exp350/helicoDB",
+          "/data/exp350/helico_target_alnDB_v3_83b026fa68aa",
+          "/data/exp350/helico_target_tmp_v3_83b026fa68aa",
+          "-s",
+          "7.5",
+          "-e",
+          "1000",
+          "--max-seqs",
+          "500000",
+          "--min-seq-id",
+          "0.30",
+          "--alignment-mode",
+          "3",
+          "--seq-id-mode",
+          "0",
+          "-a",
+          "1",
+          "-c",
+          "0.50",
+          "--cov-mode",
+          "1",
+          "--threads",
+          "48",
+          "--split-memory-limit",
+          "80G"
+        ],
+        "log": "/data/exp350/helico_target_search.log",
+        "overflow_counts": [
+          350
+        ],
+        "median_result_list_lengths": [
+          11268
+        ],
+        "max_seqs": 500000,
+        "prefilter_median_at_cap": false,
+        "output": "/data/exp350/helico_target_alignments.tsv"
+      }
+    ]
+  }
+}
