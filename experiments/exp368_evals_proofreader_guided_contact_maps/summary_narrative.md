@@ -49,7 +49,7 @@ and lost local progress. It was canceled on detection; the incident is recorded.
 Twelve colocated H100 workers now resume the original source snapshots directly
 from durable S3 trajectories. A complete guided comparison is still pending.
 Ordinary baselines are queued for 1,375 structures from 255 validation groups
-outside the pilot. The reserved test set has not been read for this campaign.
+outside the pilot. No new reserved-test scores have been computed or inspected.
 
 ## Numerical validation
 
