@@ -42,6 +42,13 @@ def frozen_sources() -> dict[str, Path]:
         if hashlib.sha256(destination.read_bytes()).hexdigest() != sha:
             raise ValueError('Frozen source hash mismatch: ' + uri)
         result['source_bundles/' + destination.name] = destination
+    native = HERE / 'data/native_bootstrap.json'
+    if native.exists():
+        bootstrap = json.loads(native.read_text())
+        path = HERE / '_cache' / (bootstrap['config_map'] + '.tar.gz')
+        if hashlib.sha256(path.read_bytes()).hexdigest() != bootstrap['bundle_sha256']:
+            raise ValueError('Native bootstrap source hash mismatch')
+        result['source_bundles/' + bootstrap['bundle_sha256'] + '.tar.gz'] = path
     return result
 
 

@@ -100,7 +100,9 @@ def main() -> None:
         raise ValueError('Native RNO workers must write to the verified regional bucket')
     bootstrap = json.loads(BOOTSTRAP.read_text())
     script = '''set -euo pipefail
-python -m pip install --quiet --no-deps uv==0.10.7
+python -m pip install --quiet --no-deps --target /tmp/exp368-bootstrap-tools uv==0.10.7
+export PATH=/tmp/exp368-bootstrap-tools/bin:$PATH
+export PYTHONPATH=/tmp/exp368-bootstrap-tools${PYTHONPATH:+:$PYTHONPATH}
 python - <<'PY'
 import hashlib,tarfile
 from pathlib import Path
@@ -115,6 +117,7 @@ exec bash BOOTSTRAP_SCRIPT --recover --regional --region RNO2A "$@"
         'BOOTSTRAP_SCRIPT', 'pool_bootstrap.sh' if args.pool else 'bootstrap.sh')
     env = [dict(name='FSSPEC_S3', valueFrom=dict(secretKeyRef=dict(name=bootstrap['secret'], key='FSSPEC_S3'))),
            dict(name='EXP368_JOB_ID', value='kueue://cw-rno2a/iris/' + args.name),
+           dict(name='UV_CACHE_DIR', value='/cache/uv'),
            dict(name='UV_LINK_MODE', value='copy')]
     resources = {'cpu': '8', 'memory': '64Gi', 'ephemeral-storage': '256Gi', 'nvidia.com/gpu': '1'}
     task = dict(name='task', image='vllm/vllm-openai:v0.9.2' if args.pool else IMAGE,
@@ -122,14 +125,16 @@ exec bash BOOTSTRAP_SCRIPT --recover --regional --region RNO2A "$@"
         args=['--control', args.control, '--task', args.task, '--result-root', args.result_root],
         env=env, resources=dict(requests=resources, limits=resources),
         volumeMounts=[dict(name='source', mountPath='/bundle', readOnly=True),
-                      dict(name='work', mountPath='/app'), dict(name='shm', mountPath='/dev/shm')])
+                      dict(name='work', mountPath='/app'), dict(name='shm', mountPath='/dev/shm'),
+                      dict(name='uv-cache', mountPath='/cache/uv')])
     pod = dict(restartPolicy='Never', automountServiceAccountToken=False,
         priorityClassName='iris-batch',
         nodeSelector={'iris-cw-rno2a-managed': 'true', 'iris.kueue': 'true'},
         tolerations=[dict(key='nvidia.com/gpu', operator='Exists', effect='NoSchedule'),
                      dict(key='qos.coreweave.cloud/interruptable', operator='Exists', effect='NoExecute')],
         containers=[task], volumes=[dict(name='source', configMap=dict(name=bootstrap['config_map'])),
-            dict(name='work', emptyDir={}), dict(name='shm', emptyDir=dict(medium='Memory', sizeLimit='8Gi'))])
+            dict(name='work', emptyDir={}), dict(name='shm', emptyDir=dict(medium='Memory', sizeLimit='8Gi')),
+            dict(name='uv-cache', hostPath=dict(path='/mnt/local/iris-cache/uv-cache', type='DirectoryOrCreate'))])
     manifest = dict(apiVersion='batch/v1', kind='Job', metadata=dict(name=args.name,
         labels={**LABELS, 'kueue.x-k8s.io/queue-name': 'cw-rno2a-lq',
                 'kueue.x-k8s.io/priority-class': 'iris-accelerator-batch'}),

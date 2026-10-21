@@ -43,6 +43,21 @@ def main() -> None:
         pending = [job for job in state['jobs'] if job['state'] == 'JOB_STATE_PENDING']
         if pending:
             print('Pending:', len(pending), sorted({job.get('pending_reason', '') for job in pending}))
+        if (HERE / 'data/native_bootstrap.json').exists():
+            command = ['kubectl', '--kubeconfig', '/home/bizon/.kube/coreweave-iris-rno2a',
+                '--context', 'marin-rn02a_RNO2A', '-n', 'iris', 'get', 'jobs,pods',
+                '-l', 'marinfold-experiment=exp368', '-o', 'json']
+            result = subprocess.run(command, capture_output=True, text=True, check=True)
+            native = json.loads(result.stdout)
+            (HERE / '_cache/native_jobs_status.json').write_text(json.dumps(
+                dict(observed_at=datetime.now(UTC).isoformat(), **native), indent=2))
+            print('Native Kueue jobs and pods:')
+            for item in native['items']:
+                status = item.get('status', {})
+                print(item['kind'], item['metadata']['name'], status.get('phase', ''),
+                    {key: status[key] for key in ['active', 'succeeded', 'failed'] if key in status},
+                    [(condition['type'], condition.get('reason', '')) for condition in status.get('conditions', [])
+                     if condition.get('status') == 'True' and condition['type'] in ['Failed', 'Complete']])
         return
     api = load_release(('storage',))
     fs, root = api.storage.filesystem(args.control)

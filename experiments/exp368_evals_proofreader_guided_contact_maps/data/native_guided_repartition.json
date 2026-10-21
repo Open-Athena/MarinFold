@@ -1,0 +1,74 @@
+{
+  "created_at": "2026-10-21T19:16:52.401797+00:00",
+  "original_shards": 12,
+  "recovery_shards": 48,
+  "source": "7656861b895276cb3539291d7064de467e0cd146da12f28708e6de48fb6357e1",
+  "plan_sha256": "ab5f22ca55058cc6e2f6fb4f82e9624a66620b59d1d236a3a59bafb1f022a8b7",
+  "completion_markers_verified": 1790,
+  "migration_manifest": "data/native_guided_migration.json",
+  "archived_pins": [
+    {
+      "original": "marinfold-exp368-rno2a/MarinFold/exp368/native-results-v1/pilot-guided/shard-000.pin.json",
+      "archived": "marinfold-exp368-rno2a/MarinFold/exp368/native-results-v1/pilot-guided/provenance/repartition-48/shard-000.pin.json",
+      "sha256": "6f8210226863baa2b8d693f80d02e255152a31e2dcbcf1e4f6ceb256bc065ea0"
+    },
+    {
+      "original": "marinfold-exp368-rno2a/MarinFold/exp368/native-results-v1/pilot-guided/shard-001.pin.json",
+      "archived": "marinfold-exp368-rno2a/MarinFold/exp368/native-results-v1/pilot-guided/provenance/repartition-48/shard-001.pin.json",
+      "sha256": "6f8210226863baa2b8d693f80d02e255152a31e2dcbcf1e4f6ceb256bc065ea0"
+    },
+    {
+      "original": "marinfold-exp368-rno2a/MarinFold/exp368/native-results-v1/pilot-guided/shard-002.pin.json",
+      "archived": "marinfold-exp368-rno2a/MarinFold/exp368/native-results-v1/pilot-guided/provenance/repartition-48/shard-002.pin.json",
+      "sha256": "6f8210226863baa2b8d693f80d02e255152a31e2dcbcf1e4f6ceb256bc065ea0"
+    },
+    {
+      "original": "marinfold-exp368-rno2a/MarinFold/exp368/native-results-v1/pilot-guided/shard-003.pin.json",
+      "archived": "marinfold-exp368-rno2a/MarinFold/exp368/native-results-v1/pilot-guided/provenance/repartition-48/shard-003.pin.json",
+      "sha256": "6f8210226863baa2b8d693f80d02e255152a31e2dcbcf1e4f6ceb256bc065ea0"
+    },
+    {
+      "original": "marinfold-exp368-rno2a/MarinFold/exp368/native-results-v1/pilot-guided/shard-004.pin.json",
+      "archived": "marinfold-exp368-rno2a/MarinFold/exp368/native-results-v1/pilot-guided/provenance/repartition-48/shard-004.pin.json",
+      "sha256": "6f8210226863baa2b8d693f80d02e255152a31e2dcbcf1e4f6ceb256bc065ea0"
+    },
+    {
+      "original": "marinfold-exp368-rno2a/MarinFold/exp368/native-results-v1/pilot-guided/shard-005.pin.json",
+      "archived": "marinfold-exp368-rno2a/MarinFold/exp368/native-results-v1/pilot-guided/provenance/repartition-48/shard-005.pin.json",
+      "sha256": "6f8210226863baa2b8d693f80d02e255152a31e2dcbcf1e4f6ceb256bc065ea0"
+    },
+    {
+      "original": "marinfold-exp368-rno2a/MarinFold/exp368/native-results-v1/pilot-guided/shard-006.pin.json",
+      "archived": "marinfold-exp368-rno2a/MarinFold/exp368/native-results-v1/pilot-guided/provenance/repartition-48/shard-006.pin.json",
+      "sha256": "6f8210226863baa2b8d693f80d02e255152a31e2dcbcf1e4f6ceb256bc065ea0"
+    },
+    {
+      "original": "marinfold-exp368-rno2a/MarinFold/exp368/native-results-v1/pilot-guided/shard-007.pin.json",
+      "archived": "marinfold-exp368-rno2a/MarinFold/exp368/native-results-v1/pilot-guided/provenance/repartition-48/shard-007.pin.json",
+      "sha256": "6f8210226863baa2b8d693f80d02e255152a31e2dcbcf1e4f6ceb256bc065ea0"
+    },
+    {
+      "original": "marinfold-exp368-rno2a/MarinFold/exp368/native-results-v1/pilot-guided/shard-008.pin.json",
+      "archived": "marinfold-exp368-rno2a/MarinFold/exp368/native-results-v1/pilot-guided/provenance/repartition-48/shard-008.pin.json",
+      "sha256": "6f8210226863baa2b8d693f80d02e255152a31e2dcbcf1e4f6ceb256bc065ea0"
+    },
+    {
+      "original": "marinfold-exp368-rno2a/MarinFold/exp368/native-results-v1/pilot-guided/shard-009.pin.json",
+      "archived": "marinfold-exp368-rno2a/MarinFold/exp368/native-results-v1/pilot-guided/provenance/repartition-48/shard-009.pin.json",
+      "sha256": "6f8210226863baa2b8d693f80d02e255152a31e2dcbcf1e4f6ceb256bc065ea0"
+    },
+    {
+      "original": "marinfold-exp368-rno2a/MarinFold/exp368/native-results-v1/pilot-guided/shard-010.pin.json",
+      "archived": "marinfold-exp368-rno2a/MarinFold/exp368/native-results-v1/pilot-guided/provenance/repartition-48/shard-010.pin.json",
+      "sha256": "6f8210226863baa2b8d693f80d02e255152a31e2dcbcf1e4f6ceb256bc065ea0"
+    },
+    {
+      "original": "marinfold-exp368-rno2a/MarinFold/exp368/native-results-v1/pilot-guided/shard-011.pin.json",
+      "archived": "marinfold-exp368-rno2a/MarinFold/exp368/native-results-v1/pilot-guided/provenance/repartition-48/shard-011.pin.json",
+      "sha256": "6f8210226863baa2b8d693f80d02e255152a31e2dcbcf1e4f6ceb256bc065ea0"
+    }
+  ],
+  "control": "s3://marinfold-exp368-rno2a/MarinFold/exp368/native-control-v1",
+  "result_root": "s3://marinfold-exp368-rno2a/MarinFold/exp368/native-results-v1",
+  "scientific_change": "None: source, cohort, policies, seeds and saved trajectories are unchanged."
+}
