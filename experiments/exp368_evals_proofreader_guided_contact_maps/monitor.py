@@ -17,7 +17,7 @@ def main() -> None:
     args = parser.parse_args()
     if not args.server:
         client = HERE.parent.parent / 'scratch/exp368-iris-client'
-        query = json.dumps({'query': {'job_id_prefix': '/bizon/exp368', 'limit': 100}})
+        query = json.dumps({'query': {'job_id_prefix': '/bizon/exp368', 'limit': 250}})
         command = ['uv', 'run', '--project', str(client), '--package', 'marin-iris',
                    'iris', '--cluster', 'marin', 'rpc', 'controller', 'list-jobs', '--json', query]
         result = subprocess.run(command, text=True, capture_output=True, check=True)
@@ -29,9 +29,15 @@ def main() -> None:
         snapshot = dict(observed_at=datetime.now(UTC).isoformat(), **state)
         path.write_text(json.dumps(snapshot, indent=2))
         print(dict(Counter(job['state'] for job in state['jobs'])))
+        counts = Counter()
         for job in state['jobs']:
             if job['state'] == 'JOB_STATE_RUNNING':
-                print(job['job_id'], job['state'], 'preemptions=' + str(job.get('preemption_count', 0)))
+                counts.update(job.get('task_state_counts', {}))
+        print('Actual task states in active jobs:', dict(counts))
+        for job in state['jobs']:
+            if job['state'] == 'JOB_STATE_RUNNING':
+                print(job['job_id'], job.get('task_state_counts', {}),
+                      'preemptions=' + str(job.get('preemption_count', 0)))
             elif job['state'] == 'JOB_STATE_FAILED':
                 print(job['job_id'], job['state'], job.get('error', '')[-240:])
         pending = [job for job in state['jobs'] if job['state'] == 'JOB_STATE_PENDING']

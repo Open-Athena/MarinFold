@@ -32,6 +32,28 @@ contacts, but ranking only recovers about 60% at the native contact-count budget
 The remaining ranking gap motivates guidance and better aggregation; it does not
 establish that either can close the gap. Guided-rollout calibration is pending.
 
+## Practical single-batch baseline
+
+Requesting each pool in one batch gives 0.6036 all-contact and 0.5894 long-range
+R-precision with frequency ranking at 128 rollouts. Mean warm generation cost is
+7.165 H100 seconds per map; no proofreader pass is needed for this aggregator.
+
+Against eight rollouts with sum-q ranking, the paired all-contact gain is 0.0244
+(95% group interval 0.0101–0.0373) and the long-range gain is 0.0357
+(0.0154–0.0519). The 128-rollout pool contains 95.39% of native contacts.
+The single-batch recipe is the practical cost baseline for guided search.
+
+## Exploratory length control
+
+On the five short proteins completed by every original policy, top-10% filtering
+raises per-rollout precision but emits fewer contacts and lowers recall. This
+incomplete cohort motivates a stopping-rule ablation, not policy selection.
+
+An added exploratory pilot compares ordinary and top-10%-of-16 sampling at
+exactly L and 2L contacts, with EOS disabled for both. Four independent 2L
+continuations yield nested L and 2L maps. The original 15-policy pilot remains
+frozen. No new reserved-test scores have been inspected.
+
 ## First result: aggregation baseline
 
 On existing validation rollouts, sum q remains strongest among five simple

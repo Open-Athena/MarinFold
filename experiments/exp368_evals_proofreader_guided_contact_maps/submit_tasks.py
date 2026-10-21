@@ -6,6 +6,7 @@ import io
 import json
 import subprocess
 import tarfile
+import tempfile
 
 from runtime import HERE, ROOT, load_release
 
@@ -14,7 +15,7 @@ def main() -> None:
     """Publish one source snapshot and explicit task descriptors, never shell code."""
     parser = argparse.ArgumentParser()
     parser.add_argument('--control', default=ROOT + '/server-v1')
-    parser.add_argument('--kind', choices=['guided', 'pool', 'score'], required=True)
+    parser.add_argument('--kind', choices=['guided', 'pool', 'score', 'length'], required=True)
     parser.add_argument('--plan', required=True)
     parser.add_argument('--output', required=True)
     parser.add_argument('--input')
@@ -41,7 +42,11 @@ def main() -> None:
     sha = hashlib.sha256(content).hexdigest()
     fs, root = api.storage.filesystem(args.control)
     bundle = args.control + '/bundles/' + sha + '.tar.gz'
-    fs.pipe_file(root + '/bundles/' + sha + '.tar.gz', content, timeout=60)
+    print(f'Uploading immutable source bundle: {len(content)} bytes', flush=True)
+    with tempfile.NamedTemporaryFile(suffix='.tar.gz') as temporary:
+        temporary.write(content)
+        temporary.flush()
+        fs.put_file(temporary.name, root + '/bundles/' + sha + '.tar.gz', timeout=60)
     records = []
     for shard in range(args.shards):
         task_id = f'{args.tag}-{shard:03d}'

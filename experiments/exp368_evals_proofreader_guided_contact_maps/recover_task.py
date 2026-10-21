@@ -40,10 +40,10 @@ def main() -> None:
     with tarfile.open(fileobj=io.BytesIO(content), mode='r:gz') as archive:
         archive.extractall(source, filter='data')
     kind = task['kind']
-    if kind not in {'guided', 'score', 'pool'}:
+    if kind not in {'guided', 'score', 'pool', 'length'}:
         raise ValueError('Unsupported recovery task kind')
     command = (['bash', 'pool_bootstrap.sh'] if kind == 'pool' else
-               [sys.executable, 'worker.py' if kind == 'guided' else 'score_pool.py'])
+               [sys.executable, {'guided': 'worker.py', 'score': 'score_pool.py', 'length': 'length_probe.py'}[kind]])
     results = args.result_root or args.control + '/results'
     command += ['--plan', task['plan'], '--out', results + '/' + task['output'],
                 '--shard', str(task['shard']), '--shards', str(task['shards'])]
