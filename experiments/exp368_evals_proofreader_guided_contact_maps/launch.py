@@ -41,7 +41,7 @@ def main() -> None:
         raise ValueError('All new jobs must be colocated with storage; preemption can repeat model staging')
     entrypoint = (['uv', 'run', '--no-project', '--with', 's3fs==2026.2.0', '--with',
                    'huggingface-hub==1.7.1', 'python', 'prepare_regional_mirror.py'] if mirror else
-                  ['bash', 'pool_bootstrap.sh' if args.kind == 'pool' else 'bootstrap.sh',
+                  ['bash', 'pool_bootstrap.sh' if args.kind in {'pool', 'regional-pool'} else 'bootstrap.sh',
                    *(['--score'] if args.kind == 'score' else ['--serve'] if server else
                      ['--recover', '--regional'] if regional else ['--recover'] if args.kind == 'recover' else [])])
     command = ['uv', 'run', '--project', str(client), '--package', 'marin-iris',

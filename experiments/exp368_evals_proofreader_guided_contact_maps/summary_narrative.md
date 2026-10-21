@@ -20,6 +20,18 @@ remaining error is ranking error despite the much larger candidate pool.
 Confidence tie-breaking and predicted-F1 vote weighting were added as exploratory
 validation tests. Their tiny gains over frequency have intervals including zero.
 
+## Baseline calibration and coverage
+
+On 128 ordinary rollouts per pilot structure, per-rollout predicted precision
+has mean absolute error 0.0606 and predicted recall 0.0547. Errors average within
+structures and then over the same 32 structures. Contact calibration curves
+weight individual contacts; the two summaries answer different questions.
+
+Mean trajectory overlap is 0.3473. Enlarging the pool exposes about 95% of native
+contacts, but ranking only recovers about 60% at the native contact-count budget.
+The remaining ranking gap motivates guidance and better aggregation; it does not
+establish that either can close the gap. Guided-rollout calibration is pending.
+
 ## First result: aggregation baseline
 
 On existing validation rollouts, sum q remains strongest among five simple
