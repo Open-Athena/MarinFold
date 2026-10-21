@@ -15,5 +15,9 @@ if [ "${1:-}" = "--runtime-smoke" ]; then
   shift
   exec uv run --no-sync python runtime_smoke_gb200.py "$@"
 fi
-echo 'Expected --recover or --runtime-smoke'
+if [ "${1:-}" = "--backend-check" ]; then
+  shift
+  exec uv run --no-sync python backend_check.py "$@"
+fi
+echo 'Expected --recover, --runtime-smoke, or --backend-check'
 exit 2

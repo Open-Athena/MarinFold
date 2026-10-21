@@ -19,7 +19,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('--name', required=True)
     parser.add_argument('--kind', choices=['guided', 'pool', 'score', 'serve', 'recover', 'mirror',
-                                         'regional-recover', 'regional-pool', 'runtime-smoke'], default='guided')
+                                         'regional-recover', 'regional-pool', 'runtime-smoke', 'backend-check'], default='guided')
     parser.add_argument('--cluster', default='cw-us-east-02a')
     parser.add_argument('--dry-run', action='store_true')
     args, remaining = parser.parse_known_args()
@@ -35,18 +35,20 @@ def main() -> None:
     server = args.kind == 'serve'
     mirror = args.kind == 'mirror'
     runtime_smoke = args.kind == 'runtime-smoke'
+    backend_check = args.kind == 'backend-check'
     gb200 = args.cluster == 'cw-us-east-08a'
     regional = args.kind in {'regional-recover', 'regional-pool'}
     if regional and args.cluster not in {'cw-rno2a', 'cw-us-east-08a'}:
         raise ValueError('Regional recovery requires a configured colocated mirror')
-    if runtime_smoke and args.cluster != 'cw-us-east-08a':
+    if (runtime_smoke or backend_check) and args.cluster != 'cw-us-east-08a':
         raise ValueError('The ARM/GB200 runtime smoke must use cw-us-east-08a')
     if args.cluster != 'cw-us-east-02a' and not (((mirror or regional) and args.cluster in {'cw-rno2a', 'cw-us-east-08a'})
-                                               or (runtime_smoke and args.cluster == 'cw-us-east-08a')):
+                                               or ((runtime_smoke or backend_check) and args.cluster == 'cw-us-east-08a')):
         raise ValueError('All new jobs must be colocated with storage; preemption can repeat model staging')
     region = 'US-EAST-08A' if gb200 else 'RNO2A'
     pool = args.kind in {'pool', 'regional-pool'}
     entrypoint = (['bash', 'bootstrap_gb200.sh', '--runtime-smoke'] if runtime_smoke else
+                 ['bash', 'bootstrap_gb200.sh', '--backend-check'] if backend_check else
                  ['uv', 'run', '--no-project', '--with', 's3fs==2026.2.0', '--with',
                    'huggingface-hub==1.7.1', 'python', 'prepare_regional_mirror.py', '--region', region] if mirror else
                   ['bash', 'pool_bootstrap.sh' if pool else 'bootstrap_gb200.sh' if gb200 else 'bootstrap.sh',
@@ -66,8 +68,8 @@ def main() -> None:
         '--priority', 'batch', '--user', 'bizon', '--job-name', args.name, '--no-wait',
         '--enable-extra-resources', '--cpu', '32' if server else '2' if mirror else '8',
         '--memory', '512GB' if server else '8GB' if mirror else '64GB', '--disk', '16GB' if mirror else '256GB',
-        '--no-sync', '--timeout', '1800' if runtime_smoke else '259200',
-        '--max-retries', '0' if server or runtime_smoke else '2', '--task-image', task_image,
+        '--no-sync', '--timeout', '1800' if runtime_smoke or backend_check else '259200',
+        '--max-retries', '0' if server or runtime_smoke or backend_check else '2', '--task-image', task_image,
         '--exclude', r'(^|/)(_cache|\.venv|wandb|data|plots|__pycache__)/',
         '--include', 'release_api/*.py',
         '--include', 'code_manifest.json',
