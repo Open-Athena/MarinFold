@@ -22,7 +22,14 @@ def build_bundle() -> Path:
     for name in ("pyproject.toml", "uv.lock"):
         shutil.copyfile(HERE / name, bundle / name)
     sources = [
-        HERE / name for name in ("eval_run.py", "eval_export.py", "eval_local.py")
+        HERE / name
+        for name in (
+            "eval_run.py",
+            "eval_export.py",
+            "eval_local.py",
+            "eval_worker.py",
+            "eval_generation.py",
+        )
     ]
     sources += [
         HERE / "data/contact_eval" / name
@@ -55,8 +62,23 @@ def build_bundle() -> Path:
     return bundle
 
 
-def local_entrypoint(trial: str, eval_set: str = "all") -> list[str]:
+def local_entrypoint(
+    trial: str, eval_set: str = "all", *, export_only: bool = False
+) -> list[str]:
     """Bootstrap the validated vLLM image and isolated CPU export environment."""
+    if export_only:
+        return [
+            "bash",
+            "-lc",
+            "\n".join(
+                [
+                    "set -euo pipefail",
+                    "python3 -m pip install --quiet uv==0.9.18",
+                    "exec uv run --frozen python -m experiments.exp364_models_mpnn_only_lr_sweep.eval_export --plan experiments/exp364_models_mpnn_only_lr_sweep/data/contact_eval/plan.json --trial "
+                    + shlex.quote(trial),
+                ]
+            ),
+        ]
     package = "marinfold @ git+https://github.com/Open-Athena/MarinFold.git@d1bea417a64cc042ad931422200c3edeb873f2e0#subdirectory=marinfold"
     shell = "\n".join(
         [

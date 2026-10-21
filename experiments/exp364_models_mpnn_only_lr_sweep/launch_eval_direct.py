@@ -26,6 +26,7 @@ def main() -> None:
     """Publish only source code and small inputs; keep all model bytes regional."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--submit", action="store_true")
+    parser.add_argument("--export-only", action="store_true")
     parser.add_argument("--attempt", type=int, default=3)
     parser.add_argument(
         "--eval-set", choices=("all", "eval-val", "eval-denovo"), default="all"
@@ -46,7 +47,7 @@ def main() -> None:
     )
     if not args.submit:
         print(
-            f"Dry run: {args.trials or 'all trials'}, set={args.eval_set}, one batch H100 per trial, no Iris workspace upload"
+            f"Dry run: {args.trials or 'all trials'}, set={args.eval_set}, batch CPU export per trial{'' if args.export_only else '; evaluation uses one H100'}, no Iris workspace upload"
         )
         return
     subprocess.run(["hf", "buckets", "cp", str(archive), destination], check=True)
@@ -89,23 +90,30 @@ def main() -> None:
                     "set -euo pipefail",
                     "python3 -c " + shlex.quote(download),
                     "cd " + shlex.quote(workdir),
-                    local_entrypoint(checkpoint["trial"], args.eval_set)[-1],
+                    local_entrypoint(
+                        checkpoint["trial"], args.eval_set, export_only=args.export_only
+                    )[-1],
                 ]
+            )
+            image = (
+                "python:3.12-bookworm"
+                if args.export_only
+                else "vllm/vllm-openai:v0.9.2"
+            )
+            resources = (
+                ResourceConfig(cpu=8, ram="64Gi", disk="128Gi", image=image)
+                if args.export_only
+                else ResourceConfig.with_gpu(
+                    "H100", count=1, cpu=8, ram="64Gi", disk="128Gi", image=image
+                )
             )
             job = client.submit(
                 JobRequest(
-                    name=f"exp364-contact-eval-{checkpoint['trial']}{'-' + args.eval_set if args.eval_set != 'all' else ''}-a{args.attempt:02d}",
+                    name=f"exp364-contact-{'export' if args.export_only else 'eval'}-{checkpoint['trial']}{'-' + args.eval_set if args.eval_set != 'all' else ''}-a{args.attempt:02d}",
                     entrypoint=Entrypoint.from_binary("bash", ["-lc", shell]),
-                    resources=ResourceConfig.with_gpu(
-                        "H100",
-                        count=1,
-                        cpu=8,
-                        ram="64Gi",
-                        disk="128Gi",
-                        image="vllm/vllm-openai:v0.9.2",
-                    ),
+                    resources=resources,
                     environment=create_environment(
-                        docker_image="vllm/vllm-openai:v0.9.2",
+                        docker_image=image,
                         env_vars=env,
                         setup_scripts=[],
                     ),
@@ -120,6 +128,7 @@ def main() -> None:
                     "trial": checkpoint["trial"],
                     "step": checkpoint["step"],
                     "eval_set": args.eval_set,
+                    "export_only": args.export_only,
                     "bundle_sha256": digest,
                     "bundle_uri": destination,
                     "git_commit": env["GIT_COMMIT"],

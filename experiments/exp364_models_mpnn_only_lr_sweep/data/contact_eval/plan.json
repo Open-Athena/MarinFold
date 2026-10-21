@@ -1,6 +1,7 @@
 {
-  "prepared_at_utc": "2026-10-21T17:09:18.410664+00:00",
-  "root": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-01",
+  "prepared_at_utc": "2026-10-21T20:56:01.102792+00:00",
+  "root": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-02",
+  "artifact_root": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-10-21/latest-02",
   "cluster": "cw-us-east-02a",
   "priority": "batch",
   "gpu_limit": 12,
@@ -8,136 +9,176 @@
     {
       "trial": "lr5e-4",
       "run_id": "contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
-      "step": 184238,
-      "label": "contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B-step-184238",
-      "source": "s3://marin-us-east-02a/tmp/ttl=14d/checkpoints-temp/marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/checkpoints/step-184238",
-      "frozen": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-01/sources/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/step-184238",
-      "hf_export": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-01/models/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/hf/step-184238",
+      "step": 184314,
+      "label": "contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B-step-184314",
+      "source": "s3://marin-us-east-02a/tmp/ttl=14d/checkpoints-temp/marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/checkpoints/step-184314",
+      "frozen": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-02/sources/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/step-184314",
+      "hf_export": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-02/models/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/hf/step-184314",
       "objects": [
         {
-          "path": "d/1ba4cd02a373a04129b76a23ad5b3075",
-          "size": 2177343488,
-          "etag": "\"396f0cd4bde7afc3255addb33741bf66\""
+          "path": "d/0345aafc95670cf1342f8b6ff4af0632",
+          "size": 1443061760,
+          "etag": "\"6021747a4501677224447d1eaad6a7fc\""
         },
         {
-          "path": "d/2b60aa1cbcfa8b1ee0320069155cae60",
-          "size": 805519360,
-          "etag": "\"2eb230ba6d08cc68bbc718f4af2d1c0f\""
+          "path": "d/05d8457882167605d4f68f7225017e53",
+          "size": 754982912,
+          "etag": "\"b49c36f41f035b3de1b7d7fdb3285996\""
         },
         {
-          "path": "d/2e2221ebf08f9d2433da68256e0de1e1",
-          "size": 251662336,
-          "etag": "\"79772671cae10801223fb92692f360eb\""
+          "path": "d/079fbcec4280eb71ff2e3443386a04fd",
+          "size": 16720,
+          "etag": "\"f2a7678696cac762f99ada723480ec28\""
         },
         {
-          "path": "d/3a95cc3a18ca9141b63961008fa05305",
-          "size": 905977856,
-          "etag": "\"a25b23c412e30284428219dd6d9dede5\""
+          "path": "d/0ccd2c43f9b6ca00c83b92e9e220ad38",
+          "size": 812052480,
+          "etag": "\"615abbcfeec1964abe58a18ae7687efb\""
         },
         {
-          "path": "d/4f269aa37921af9bdc640c21afbe1f10",
-          "size": 2168963072,
-          "etag": "\"9d18d9e4dc9bf61f395a387427105dad\""
+          "path": "d/0d3c342293bddc12137606577b2b09b2",
+          "size": 7944,
+          "etag": "\"31ca70a686a695df93b452803803ce70\""
         },
         {
-          "path": "d/51a60d534aa3344668b52e424feb4443",
-          "size": 2181443584,
-          "etag": "\"a838ccda604aab641096dd06188b9947\""
+          "path": "d/4131d8295d632e370622461e253b46bd",
+          "size": 1677946880,
+          "etag": "\"aeb45b1ae301a98412a01bc26cf5bd95\""
         },
         {
-          "path": "d/560e1529a8a03e495e19c561940f3dc4",
+          "path": "d/422386bdbe0042cc64b977a51dfb1246",
+          "size": 639,
+          "etag": "\"5d2b9e2b296eff7afe4e5f6b75330204\""
+        },
+        {
+          "path": "d/4e9ea205e9e79d33d5808f90bf71abf7",
+          "size": 1862479872,
+          "etag": "\"99a4444955c81f6d10969b0e268badb4\""
+        },
+        {
+          "path": "d/5452117510c131ed1430f99d69ed3160",
+          "size": 150999040,
+          "etag": "\"a452e2f59035c89e0544fc75c70e2d8e\""
+        },
+        {
+          "path": "d/568ce59980490559e3ae3a282f4e509f",
+          "size": 3264,
+          "etag": "\"708103fcc4bc20049043f0f012883feb\""
+        },
+        {
+          "path": "d/5ab4ef100b9e003e4e2bc9fb34a9da62",
+          "size": 23310336,
+          "etag": "\"0c5177820124e189d150d84bf9eff022\""
+        },
+        {
+          "path": "d/722bf7657f01093a5e39387e1fb20dcd",
           "size": 100667392,
-          "etag": "\"b60a7f343a89d3a4c33a80383dcfe985\""
+          "etag": "\"196861ca9058994551abf7632cba4ae1\""
         },
         {
-          "path": "d/582cebda94a4ebf0205c9be863cdebcd",
-          "size": 1593856000,
-          "etag": "\"37f769cb192b91bdcbd4746f5f71335e\""
+          "path": "d/77b0666ade019a69e36710b06a506c09",
+          "size": 274968576,
+          "etag": "\"a3d5d269aae59a6cf69b38cce99ebe8d\""
         },
         {
-          "path": "d/6ad8b099c32b13defad67f0eba5fb408",
-          "size": 1006837760,
-          "etag": "\"fdf0ce40e0bf041cb3da27763d7ebb70\""
-        },
-        {
-          "path": "d/87726ff9dc3327032fda32d4b577c840",
-          "size": 50335744,
-          "etag": "\"6c3b3c445a285cbd79289d3102ad26b5\""
-        },
-        {
-          "path": "d/8956adecf607634d8e190b8c9cc6d817",
-          "size": 3470,
-          "etag": "\"6cf327a809faaf4aa594652bff237ede\""
-        },
-        {
-          "path": "d/8caf5f1050f1882f5f0025cb6323915f",
-          "size": 2576,
-          "etag": "\"49b57030a67f26198d24795ae924a85c\""
-        },
-        {
-          "path": "d/8fd8471ec840a1c06ec46816fa8f6438",
+          "path": "d/78603aa63f37a33b4e71824d72ad0a16",
           "size": 16720,
-          "etag": "\"c0db52cb83eaf7ac526843ae37a988e2\""
+          "etag": "\"f34e59e29d77d0e32ec5d1a3dfc92e32\""
         },
         {
-          "path": "d/9eee9522607a78ad522c462d1cbabc6d",
-          "size": 205144064,
-          "etag": "\"621bf6b1149cadc41116b69791b747f7\""
+          "path": "d/7ba10eb06794aa60da883a8863b501e4",
+          "size": 2147889152,
+          "etag": "\"44a1f3bfe7b6a3fb8a68c4c184043728\""
         },
         {
-          "path": "d/ad214436aa834d0b0fc34c5500ec7a54",
-          "size": 1400905728,
-          "etag": "\"0e1b79c6f358a76a2124dad6551101e2\""
-        },
-        {
-          "path": "d/b369e578951280d4fff07fb7cf389a71",
-          "size": 2187591680,
-          "etag": "\"d49e51bc9cd031d4779a90cea329cabd\""
-        },
-        {
-          "path": "d/b71369c734635de1f3628c4a4a0aadbc",
-          "size": 1862283264,
-          "etag": "\"c2385811f0eec4bbe0adc1cb1aaa8edc\""
-        },
-        {
-          "path": "d/bac9fbedf131cc842e4b7d0688dbe800",
-          "size": 16720,
-          "etag": "\"b0b0ec91aab87b12beb30afdae446945\""
-        },
-        {
-          "path": "d/cc3949183e908e1528169edbda3bd225",
-          "size": 704847872,
-          "etag": "\"cc069ffc4031dd9bbe164cb69125d6a3\""
-        },
-        {
-          "path": "d/dd9f851156e0a7b584b3e12cb4098d1a",
-          "size": 50335744,
-          "etag": "\"cdc87fab7a6ef71be696f048202c306b\""
-        },
-        {
-          "path": "d/e00abfb88523a9cbde47be5aaf8c07f6",
-          "size": 2913964,
-          "etag": "\"a32a95c9d0baec0a4441fe77e64600fd\""
-        },
-        {
-          "path": "d/ead2a6c8c91eb7491dd11b05f8864c15",
-          "size": 3929,
-          "etag": "\"c80c3ad504363f7fb0a86f78e9849a51\""
-        },
-        {
-          "path": "d/ec758b1ffe00498e5c6300e280ba80e1",
-          "size": 17256,
-          "etag": "\"28b166d2e2110b1e134220e005558cee\""
-        },
-        {
-          "path": "d/eea7187e2cabc23e9c42259fdef3a9f6",
+          "path": "d/849be2630afaf70d9cf1128ffca32427",
           "size": 340,
-          "etag": "\"5489697d7026cdf21eba3800dc5c2fe8\""
+          "etag": "\"6ac84759643c2d658d1048d6f8b878ce\""
         },
         {
-          "path": "d/fe5ee9c43d54baa08b8760ec65344420",
+          "path": "d/8a5f317d8f423d30522942c0eedd4926",
+          "size": 956317696,
+          "etag": "\"81b6bd85beecdacd9b84c83f24d08087\""
+        },
+        {
+          "path": "d/8d38686b6b06d3330aa0c4f04172ea17",
+          "size": 251662336,
+          "etag": "\"d9e0d9f2d940c926f04e4f8c31ee1c77\""
+        },
+        {
+          "path": "d/8fc0208b13074bf549529f3cbfbb0460",
+          "size": 301993984,
+          "etag": "\"6f4cacb615b6ed841b6185a147d9bc37\""
+        },
+        {
+          "path": "d/945980468b7ad006ab67b7fe8bd4baa0",
+          "size": 352325632,
+          "etag": "\"e4a3d9cc81446b6adc436318bf3c6311\""
+        },
+        {
+          "path": "d/abb20ac698b643fe9d468fbd18b6bbe5",
+          "size": 6837,
+          "etag": "\"1653bf79e69adbb0cf9fcb5814981510\""
+        },
+        {
+          "path": "d/b2ffb7a730cd50bc0c2fb5d613303453",
+          "size": 452988928,
+          "etag": "\"f5f6d47186b98bedfc33074b2dd3c1cf\""
+        },
+        {
+          "path": "d/be9f5f24ed366427c1518365c487aee7",
+          "size": 1526738944,
+          "etag": "\"410b36d2b147ad5fe6d120c1bf71f5f3\""
+        },
+        {
+          "path": "d/c4847035db368b539a75ce52f738d130",
+          "size": 2187579392,
+          "etag": "\"264697e5eb1b7ace7495f4cf276fca18\""
+        },
+        {
+          "path": "d/cd21819f254b6d77dbfbe205ce416fa5",
+          "size": 2452,
+          "etag": "\"eb130a721ac83d728434bcd9e5064d6e\""
+        },
+        {
+          "path": "d/cf1f837946e36691716064b2ea973d99",
+          "size": 17256,
+          "etag": "\"d0d0a6c82ba0b72adb8b57cf7319c216\""
+        },
+        {
+          "path": "d/d2872fdf84bc467d5f7ea65112f971bb",
+          "size": 50335744,
+          "etag": "\"3b257e906036abc91c7dcb6abb374d4c\""
+        },
+        {
+          "path": "d/d52f928d88d9a5da23e694dabdbc1e65",
+          "size": 2143,
+          "etag": "\"1210d5f92222ad2f6ef7e4062e8c9a3b\""
+        },
+        {
+          "path": "d/d8603d9539b085873d954e531c86fbb4",
+          "size": 2177331200,
+          "etag": "\"b579881f10b495cc182e1449f33000d5\""
+        },
+        {
+          "path": "d/d9bc04aa3a81a22b32323d8f8cc85e91",
+          "size": 150999040,
+          "etag": "\"8ef237b79ea801b52562872d2aaa53d2\""
+        },
+        {
+          "path": "d/e63ae6d4cb0c9efeb461da7bd27f7d7f",
+          "size": 1754,
+          "etag": "\"7507a1255af54a8b6b37b73ebcdf23a1\""
+        },
+        {
+          "path": "d/f699e7cbad50a9838143fa36380ee529",
+          "size": 3994,
+          "etag": "\"8ae051ae79b069cb61322e71a8464e98\""
+        },
+        {
+          "path": "d/ffff032586f32df6c06b914b00f10b7d",
           "size": 16466,
-          "etag": "\"a0d962c35be0c00dfdcc59fcbab9a52c\""
+          "etag": "\"fe23f7c43db55b7344b96f668855b9c7\""
         },
         {
           "path": "manifest.json",
@@ -146,16 +187,16 @@
         },
         {
           "path": "manifest.ocdbt",
-          "size": 559,
-          "etag": "\"fe4e1ce7b8fe530015bbd53a451b75b3\""
+          "size": 718,
+          "etag": "\"308841b6219cbda118417bc8c2ea58ef\""
         },
         {
           "path": "metadata.json",
           "size": 81,
-          "etag": "\"b91519685308784acf3a8a787d7310cd\""
+          "etag": "\"157ccfd3e7ce7acf319454dab4e96f2c\""
         }
       ],
-      "source_bytes": 17656718224,
+      "source_bytes": 17656739823,
       "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
       "model_config": {
         "rope": {
@@ -191,207 +232,197 @@
         "gradient_checkpointing": true,
         "flash_attention_block_size": null
       },
-      "latest_logged_step": 184269,
+      "latest_logged_step": 184416,
       "latest_eval_loss": 3.093374013900757
     },
     {
       "trial": "lr1e-3",
       "run_id": "contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B",
-      "step": 207782,
-      "label": "contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B-step-207782",
-      "source": "s3://marin-us-east-02a/tmp/ttl=14d/checkpoints-temp/marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B/checkpoints/step-207782",
-      "frozen": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-01/sources/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B/step-207782",
-      "hf_export": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-01/models/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B/hf/step-207782",
+      "step": 207865,
+      "label": "contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B-step-207865",
+      "source": "s3://marin-us-east-02a/tmp/ttl=14d/checkpoints-temp/marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B/checkpoints/step-207865",
+      "frozen": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-02/sources/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B/step-207865",
+      "hf_export": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-02/models/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B/hf/step-207865",
       "objects": [
         {
-          "path": "d/00aa5ea07ddd6c765118784fe37c4963",
-          "size": 1024,
-          "etag": "\"d7bba9bdac2f1d41e0a64905ea7e7193\""
+          "path": "d/0f9f95abd5b39c8e72829c0d5f787781",
+          "size": 23310336,
+          "etag": "\"632ff6e0fcf6608419f5b07ba1c15779\""
         },
         {
-          "path": "d/0784d7f33558d0b8d32cd0de27b8d4a8",
-          "size": 773,
-          "etag": "\"83dbd39b577f19e69bbab9dbbe28887f\""
+          "path": "d/2042d5c6993e4bfd3e4cfd1d0f370e95",
+          "size": 3986,
+          "etag": "\"807797c494d57401541b7dfd19e4d9ba\""
         },
         {
-          "path": "d/08a06c1c293a777d43fcbc7bc4572f63",
-          "size": 50335744,
-          "etag": "\"2dfa01b0caef4a810ccf5aa2bd8efdc0\""
-        },
-        {
-          "path": "d/08f342b49394b8cde750191f7cc122f7",
-          "size": 50335744,
-          "etag": "\"4f6fa4cd816a2097b347ad35448329c6\""
-        },
-        {
-          "path": "d/1dfdd57cfe8536a01b9cf0bc7af0030c",
-          "size": 2164469760,
-          "etag": "\"3174b28686c2cf8846af291576fc9b4d\""
-        },
-        {
-          "path": "d/24e710d7b784fc5a611d02ecc697ce95",
-          "size": 3395,
-          "etag": "\"9fc68d726a206b788430db6662605f82\""
-        },
-        {
-          "path": "d/283a1269a756edca67f38339d8f93f9e",
-          "size": 6886,
-          "etag": "\"782a06e0f0d4f1af525971d560d7511f\""
-        },
-        {
-          "path": "d/2dd7bbd09776e15481a633ed13af3e0d",
-          "size": 956317696,
-          "etag": "\"894fc6997d7d25b71a3c3128a8c58bc0\""
-        },
-        {
-          "path": "d/3c8f9b3b0630260a8b0716ff19bb1267",
-          "size": 1828732928,
-          "etag": "\"d2622543364a7e3ad3c06fef10a61e9a\""
-        },
-        {
-          "path": "d/4155dcd2cb58c87709c694973174ae6c",
-          "size": 16781312,
-          "etag": "\"a63ec526c1d3b7a5a112dd15c8621a0c\""
-        },
-        {
-          "path": "d/41a63a9a05dfb5bf0e8815d92068624c",
-          "size": 2153332736,
-          "etag": "\"799e79b8ce4f08c2057260c88a881c2d\""
-        },
-        {
-          "path": "d/431e88378ff80e039419877c30bbcd1d",
-          "size": 2112,
-          "etag": "\"3e50f43600656eb65ea70a6ae4947a78\""
-        },
-        {
-          "path": "d/4c5e558abfb93551beab6906af8f680c",
-          "size": 100667392,
-          "etag": "\"6d85cf3a08404ea715302b610da61ef2\""
-        },
-        {
-          "path": "d/4f4fe12a681283ae4795df1352169493",
-          "size": 100667392,
-          "etag": "\"e876e35d590f942fe52c88b014f4c843\""
-        },
-        {
-          "path": "d/510755ed3e19fb449f507f61781758f3",
-          "size": 352325632,
-          "etag": "\"ec320d09d01470a21c38e5454b5213cf\""
-        },
-        {
-          "path": "d/52e9126ff2c50b912d5ae3eae0217383",
-          "size": 17256,
-          "etag": "\"f741456b5dabcfb2c50894f3aa7bd3a4\""
-        },
-        {
-          "path": "d/5d92e6f6b30977964db0539b417c9e7c",
-          "size": 2141,
-          "etag": "\"85bdcfb86cfdaf253e4343d206e7eac4\""
-        },
-        {
-          "path": "d/71d1ae9f16265165e0e4d0a8d1b358c9",
+          "path": "d/292e6993400b30f4a796d80d590b2f05",
           "size": 16720,
-          "etag": "\"e172912c3178fbfb9226e1ad0859ba29\""
+          "etag": "\"7130de67f6d5502385623a384077eace\""
         },
         {
-          "path": "d/7b04889eb795f0edeaf1e1aebb4a06c9",
-          "size": 3369,
-          "etag": "\"6825ef688413cf5b0f2f886158199fbc\""
+          "path": "d/3796982357e481d8a94ff691539f4356",
+          "size": 3172,
+          "etag": "\"f414ee879214aa5817d5d9a9917a08fa\""
         },
         {
-          "path": "d/7bde07096d5555f68f272e2e3d0ecb32",
-          "size": 3108,
-          "etag": "\"099a7d8c8466d1a4c86ae20ba5f38531\""
+          "path": "d/41bb42e73d45041fcf42114b6345b59c",
+          "size": 994058240,
+          "etag": "\"b6b331f541002e2dd9a8e97a29de7d0d\""
         },
         {
-          "path": "d/7e67495826159b6f97de11ee62841456",
-          "size": 1946169344,
-          "etag": "\"ce39c93ff0b31bff30ae1444f7325fec\""
+          "path": "d/4f5856435060fbf3bef5f7e8e3207933",
+          "size": 818094080,
+          "etag": "\"3ed610bc1275e11e92471a07d8d2f825\""
         },
         {
-          "path": "d/96f9dca6310b020f0c19a0a360e50fac",
-          "size": 969375744,
-          "etag": "\"ae0537328c80d7a045d50b72e77bc32a\""
+          "path": "d/5901c78375329dc756938ca7351b9059",
+          "size": 100667392,
+          "etag": "\"ffef4a950e4b43eaed989c43d9ca6ec1\""
         },
         {
-          "path": "d/99f07e657ef6c68826ac8c52a5dc861a",
-          "size": 1567731712,
-          "etag": "\"3a87cd38063b27c264c6f0658cd36e8a\""
+          "path": "d/61227d62ad46705f01aab5b8d73c1a0d",
+          "size": 207859712,
+          "etag": "\"ba45b6e6b85d8c4bc0432afa946409b7\""
         },
         {
-          "path": "d/a2ec60819a8500712deab35c88673334",
+          "path": "d/6d651056bf227f3c06fa5c9580f94685",
           "size": 50335744,
-          "etag": "\"3a774c18f7d1bfcc0d13bc7d52ecb0df\""
+          "etag": "\"4cc030fda76c6e2cc422fa3ea81489d6\""
         },
         {
-          "path": "d/aa36d46e73c2f6f4a9775b8967471d7e",
-          "size": 167780352,
-          "etag": "\"28fb14dfd5d15ccacbf0046de92a2b35\""
-        },
-        {
-          "path": "d/ad72894fe3c29357a431c3b2fd20558a",
-          "size": 50335744,
-          "etag": "\"9b1d588e337a9adf965e2fc776ba244c\""
-        },
-        {
-          "path": "d/b7d9366cd5701936e8bf233b694288e3",
-          "size": 805314560,
-          "etag": "\"a155352d226d2a8f02e5216e529741d6\""
-        },
-        {
-          "path": "d/b83e9bee1be927826e4de19960feb4f8",
-          "size": 340,
-          "etag": "\"1a4f9715ec55775eda0de864d80e4082\""
-        },
-        {
-          "path": "d/c303a875fe6a7ee01a5794cbacb33bd2",
-          "size": 151003136,
-          "etag": "\"3f554971c477e4d571548d53e344fc7e\""
-        },
-        {
-          "path": "d/ca188f82ecb4507e656d9eb636833529",
-          "size": 50335744,
-          "etag": "\"0e76b54cb45645f1b46f380024adcd1c\""
-        },
-        {
-          "path": "d/d6afa63d944e2c1a3959518ca2cec23d",
-          "size": 375631872,
-          "etag": "\"4317f5f408dc1d7a078440ac4fa3fe47\""
-        },
-        {
-          "path": "d/dbcde944ea20abfa082fa3c8b4229731",
-          "size": 16466,
-          "etag": "\"f194b183ac5c4f70050aa896a4417f47\""
-        },
-        {
-          "path": "d/e0cab3062c5b6387f8e15eaa607a8be4",
-          "size": 50335744,
-          "etag": "\"41d0a83fee391e4a6045f07a26d6e9cc\""
-        },
-        {
-          "path": "d/f1bdfa0af4a6439951706e31149eddc2",
+          "path": "d/7b8bf178e7ab473776373ad2ffd978b4",
           "size": 17256,
-          "etag": "\"5a193b4948d1e5ad79e7d30b5a50f50b\""
+          "etag": "\"02d13a23e50ee8dea6cd34f020ab5300\""
         },
         {
-          "path": "d/f62ad30db4cc9b02cbda1fd133f3b25c",
-          "size": 520302592,
-          "etag": "\"80aad4ef690a030e4680e3f6f02df0f2\""
+          "path": "d/7d0bb550126b33f1faa5d08f2aa8f505",
+          "size": 1375752192,
+          "etag": "\"e6a24a96e6d79135f8a26bd743218a0c\""
         },
         {
-          "path": "d/f7f2e6fdfdfbb70a6fe1cf726133d2b9",
-          "size": 879157248,
-          "etag": "\"a26764e1e2437594801e09be4e62fc43\""
+          "path": "d/8113e54fca1d4817b7dca3debb9033b1",
+          "size": 50335744,
+          "etag": "\"9a19186d609539b6c5b458079c95dd0a\""
         },
         {
-          "path": "d/fa8f37e75981b00d65bf59c67e81d25b",
-          "size": 2147897344,
-          "etag": "\"07322377c767df73246d73654db8deed\""
+          "path": "d/820f93a79637d4875ac48cb3b33cb839",
+          "size": 16781312,
+          "etag": "\"8195ce0705b719775a8a9ec6cddda479\""
         },
         {
-          "path": "d/fd1d9b66f79612956e55b8241d8e5364",
-          "size": 150999040,
-          "etag": "\"313553365d19f3bb6fed03457e2a966b\""
+          "path": "d/822c79d469ac83b0a0945102cb0cc283",
+          "size": 17256,
+          "etag": "\"52c8bb380ae0564c54dd9142c1a408c1\""
+        },
+        {
+          "path": "d/834b777faa8560e6fe51a58885a89136",
+          "size": 2148093952,
+          "etag": "\"079a381a44c5739f1defe4b4b5b86a1f\""
+        },
+        {
+          "path": "d/83663b2aaf32a737b697c98372a94974",
+          "size": 352325632,
+          "etag": "\"ca80d8c5298fa1971c4b284eab337110\""
+        },
+        {
+          "path": "d/8917f4886d9480a884cb0b4f66bd8791",
+          "size": 2154033152,
+          "etag": "\"b4f24191a32fa372b7835c927a8ecb02\""
+        },
+        {
+          "path": "d/96fad0730f3e37a6f3847d35a20ccd69",
+          "size": 50335744,
+          "etag": "\"4c383331cbe3330d7e10555a7a9ebddd\""
+        },
+        {
+          "path": "d/a223c17af5e99471466782ea7caed68e",
+          "size": 117641216,
+          "etag": "\"1a12a773519886c61eb4785e144e1f48\""
+        },
+        {
+          "path": "d/aaf4566ecb44b982fcc2eb5f94448ff5",
+          "size": 654331904,
+          "etag": "\"2f8adfb97b40fce50838e027f054a4ae\""
+        },
+        {
+          "path": "d/b0dcdceb77a0a9a792b61a147329ac08",
+          "size": 704651264,
+          "etag": "\"8d90d2bd643972694bd85222fd3283f9\""
+        },
+        {
+          "path": "d/b14a10f4cb6c393ae844525786e55003",
+          "size": 50335744,
+          "etag": "\"39f030e0cc5747d66a7c512b2e62149f\""
+        },
+        {
+          "path": "d/b377b5082df442877178fe9ed3c8a871",
+          "size": 1902374912,
+          "etag": "\"7b0b551feeb7f8db0f0cf004f70fcfe6\""
+        },
+        {
+          "path": "d/bc51f1e53eb6e6d00c8a681bc5049462",
+          "size": 2160762880,
+          "etag": "\"227034119119df6a0604eded55bc66c3\""
+        },
+        {
+          "path": "d/c7c9a43d8e5129f3b82e0742314cd3a3",
+          "size": 402661376,
+          "etag": "\"625b6778d7134ea05719c9914768a72d\""
+        },
+        {
+          "path": "d/c9b89d0d53ac2041c2c785ac29875f31",
+          "size": 2338,
+          "etag": "\"24e2877a8329febe0eedbbd1228154b2\""
+        },
+        {
+          "path": "d/d1ac21f0815511d10f843ef097d1242a",
+          "size": 340,
+          "etag": "\"2802b79513ff087eaa15fe659fa9eed8\""
+        },
+        {
+          "path": "d/d36b4f80d18dde9985f5deff8ba4ecf9",
+          "size": 2164281344,
+          "etag": "\"6895e160ddefb643f727b82168caf66b\""
+        },
+        {
+          "path": "d/d6b41fbf5d40ded123c0ad5d7f6ae61c",
+          "size": 503320576,
+          "etag": "\"23e0ae61b21d07257287afa1995ca7c2\""
+        },
+        {
+          "path": "d/d9b84705074c50bbd72d766add63e8c7",
+          "size": 301993984,
+          "etag": "\"729b8c128af7d39587470e2aa662793c\""
+        },
+        {
+          "path": "d/dd8e6dde6ff40f6bc5c08fe500f8ba17",
+          "size": 339742720,
+          "etag": "\"24885617e7dd9151ec6978be777b1128\""
+        },
+        {
+          "path": "d/e46177210ee5f1b30fc1af72c85581c3",
+          "size": 12587008,
+          "etag": "\"b55300e4fa00058c245a2e2ddf2cbf5b\""
+        },
+        {
+          "path": "d/eae0740932a5a17385c57252663f2b78",
+          "size": 2509,
+          "etag": "\"e7662708a7fc4f4a160fd58924842411\""
+        },
+        {
+          "path": "d/f603f3afee3efccb9243dfbbe8f0eebf",
+          "size": 632,
+          "etag": "\"2639f41fca5480d59688c380c12c4f85\""
+        },
+        {
+          "path": "d/fbc2ba652f8d1c920d4eaf782a947491",
+          "size": 16466,
+          "etag": "\"3977d13882432cef6690b9e1d1ab930f\""
+        },
+        {
+          "path": "d/fd5047c2d6c89ba7c6ce4fbca0bcfdef",
+          "size": 1930,
+          "etag": "\"e69b3c0d7dbedacaf23a15eadd56da5a\""
         },
         {
           "path": "manifest.json",
@@ -400,16 +431,16 @@
         },
         {
           "path": "manifest.ocdbt",
-          "size": 323,
-          "etag": "\"1685b0517465edb8c1c9972b4c8b89a3\""
+          "size": 762,
+          "etag": "\"f4505790e766497c759f77d639098706\""
         },
         {
           "path": "metadata.json",
           "size": 81,
-          "etag": "\"efecdae5aa81b5681e0eabb22fcd6e15\""
+          "etag": "\"d9f04f096423c24d588f302026caf013\""
         }
       ],
-      "source_bytes": 17656774705,
+      "source_bytes": 17656762807,
       "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B",
       "model_config": {
         "rope": {
@@ -451,96 +482,106 @@
     {
       "trial": "lr2e-3",
       "run_id": "contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B",
-      "step": 105010,
-      "label": "contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B-step-105010",
-      "source": "s3://marin-us-east-02a/tmp/ttl=14d/checkpoints-temp/marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B/checkpoints/step-105010",
-      "frozen": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-01/sources/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B/step-105010",
-      "hf_export": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-01/models/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B/hf/step-105010",
+      "step": 105722,
+      "label": "contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B-step-105722",
+      "source": "s3://marin-us-east-02a/tmp/ttl=14d/checkpoints-temp/marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B/checkpoints/step-105722",
+      "frozen": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-02/sources/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B/step-105722",
+      "hf_export": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-02/models/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B/hf/step-105722",
       "objects": [
         {
-          "path": "d/27298f4caa781bdedaa933f019fa5f58",
-          "size": 100667392,
-          "etag": "\"3f5b7671361ba0895ecff6e63dc83243\""
+          "path": "d/093d52d5d2476fad65c0ee2685959e8e",
+          "size": 2214612992,
+          "etag": "\"d38bff7cb3136c0a081ddd73525f1cbd\""
         },
         {
-          "path": "d/2a88b4d367aeca5a7923f5178f26d77c",
-          "size": 23310336,
-          "etag": "\"e88cf6a1af0e2fb369c8d34a38ee95da\""
+          "path": "d/0b00971cca08b7a000ff93ea0d587e73",
+          "size": 451129344,
+          "etag": "\"259b2409ce9296fc1dcd3fc6defd4b5b\""
         },
         {
-          "path": "d/60938f653be5d412bdd1c161da8214f2",
-          "size": 17286,
-          "etag": "\"135b51cef66eedd02139452b58ec4262\""
+          "path": "d/1401e668d521e009e832cfc618191282",
+          "size": 2164281344,
+          "etag": "\"101a162f96b9564b3d11b9ec68f27ec0\""
         },
         {
-          "path": "d/7770391725eda4ef1e035fba4175369c",
-          "size": 301998080,
-          "etag": "\"868461d835320f377009e65d85766a6c\""
+          "path": "d/16b91784ba06aa81f2c4c539a901ba64",
+          "size": 16496,
+          "etag": "\"64f65c14f5e001b1d207d76f16d571c5\""
         },
         {
-          "path": "d/7f33c3f48c3ad3d3f25cd309e611aee6",
-          "size": 2214617088,
-          "etag": "\"d2e74a6be4b5ff553b4f043cbeeeeca2\""
-        },
-        {
-          "path": "d/86406696ed2552c2458546bdf063fe74",
+          "path": "d/2e6a294e576dc69df48770af2a5f1237",
           "size": 1308631040,
-          "etag": "\"73ff6a2d36bf2c08d9182cbbe17c3b15\""
+          "etag": "\"ded8d04a3cdc7120895b8505c4dae9d2\""
         },
         {
-          "path": "d/8c7f11be6858b04fcd338428775077c1",
-          "size": 2237,
-          "etag": "\"54114eafc18d8a6a51cfae941cc96c50\""
-        },
-        {
-          "path": "d/95e44fddd49f1bc33f7b7aa393284cd4",
-          "size": 1811959808,
-          "etag": "\"40be43dd94cb9343588e06eb6cbb29ec\""
-        },
-        {
-          "path": "d/97dc238e5e30b88f2a6719e9034cbabb",
-          "size": 100667392,
-          "etag": "\"c2fc2a672815496f74779de7509ab3f1\""
-        },
-        {
-          "path": "d/99a9b9a2e4f2056552881e62e13f29b7",
-          "size": 929497088,
-          "etag": "\"6a6f5e998114ae9128dc02d71f6e3880\""
-        },
-        {
-          "path": "d/a7cbe58e678ecc45d08d9bf2d549c4c9",
-          "size": 2214801408,
-          "etag": "\"fb26c189788ad4411811dc0f613f0a77\""
-        },
-        {
-          "path": "d/b77027aa8c925718bd8d94c406dd1295",
-          "size": 2214617088,
-          "etag": "\"c0934dc40ff4d233d3ff7afb4bc05577\""
-        },
-        {
-          "path": "d/b87e0dc6458b3b6096b8bf7056271d1c",
-          "size": 1610829824,
-          "etag": "\"5ea42a889b50ec21e7c981ab9857e0bf\""
-        },
-        {
-          "path": "d/be8e0d90d075f55a6ff1deb0f537f82e",
-          "size": 2160955392,
-          "etag": "\"8bc989296aa2cfa7f34e19e63fa5df46\""
-        },
-        {
-          "path": "d/dfea368b28f4ca193808c4cdff30f3a1",
-          "size": 1556787200,
-          "etag": "\"33a8d89280982c3750ae4052e7b75aea\""
-        },
-        {
-          "path": "d/e2236b38512c5eb1772bb9f032389ee7",
-          "size": 1107308544,
-          "etag": "\"8e632e136c613b7df669be8885f02916\""
-        },
-        {
-          "path": "d/ee5fd65c84134068cd667e46b64da8ad",
+          "path": "d/3c5bc8732833873ec1e8af82f21f2c01",
           "size": 17286,
-          "etag": "\"76714eb275a25aec1c5274ad1bbdc3b7\""
+          "etag": "\"8669c80295e5185c65fc2a023c3da99e\""
+        },
+        {
+          "path": "d/3d0a17f279aee1cd67678f0f63be5f91",
+          "size": 12587008,
+          "etag": "\"d2db0d91ef30862c8015feff4728c3a3\""
+        },
+        {
+          "path": "d/5035e8e26bd8b8662bbf50f4209291f9",
+          "size": 340,
+          "etag": "\"a11d001782623431b96b717b3aa61136\""
+        },
+        {
+          "path": "d/56760d535a518e9f88435067123f71f2",
+          "size": 2211295232,
+          "etag": "\"85d2e3d694b240a36ba2366c91a8b2c8\""
+        },
+        {
+          "path": "d/6b881899b7e726153e630828a80de919",
+          "size": 100667392,
+          "etag": "\"e9f0258ca8cbd1a7ef6d7c4f36f014ed\""
+        },
+        {
+          "path": "d/97fc1567634301a0fc712ccf1bae623b",
+          "size": 201334784,
+          "etag": "\"cbcac10dea174d9c2e3fce70ba4df4e1\""
+        },
+        {
+          "path": "d/ae7be5bcd514a48b0bc461784a8604ca",
+          "size": 2164477952,
+          "etag": "\"fd30a4c9a146588f546bdcb67ce7de52\""
+        },
+        {
+          "path": "d/c19d66cab691c0464d61b8b1e7673c8f",
+          "size": 2160766976,
+          "etag": "\"c40f24a23056008679ac38e67ff7146d\""
+        },
+        {
+          "path": "d/c5df521e3eee2e204858f6f7b67d78f2",
+          "size": 2164285440,
+          "etag": "\"e54b4aac98418dbf785285ba6826d439\""
+        },
+        {
+          "path": "d/cafd8eec35fdbc0b67cc4e6a6156473a",
+          "size": 3014,
+          "etag": "\"2cf7c953c0ada4f58d68bbd00e2e5b04\""
+        },
+        {
+          "path": "d/e8860e6e46ab28ac71b37bbcc256137d",
+          "size": 1812156416,
+          "etag": "\"ce968ca3caab295c5cea8e34e788a49e\""
+        },
+        {
+          "path": "d/f0d0e3fd9001efec5bd400d43258f9a5",
+          "size": 23310336,
+          "etag": "\"4630ca97e081b37a159dc192504a5e7f\""
+        },
+        {
+          "path": "d/f442a784b6b0af4d6e88781ba8cf6684",
+          "size": 503320576,
+          "etag": "\"f08d05db78705a45a18faa5991230bc1\""
+        },
+        {
+          "path": "d/f6aadac03b25ef01798e9fefc228c372",
+          "size": 163778560,
+          "etag": "\"37cee08a1327fc91cf0debf26b4133ba\""
         },
         {
           "path": "manifest.json",
@@ -549,16 +590,16 @@
         },
         {
           "path": "manifest.ocdbt",
-          "size": 491,
-          "etag": "\"8f2dea7e0cfbca6918a0da9f45e4bd47\""
+          "size": 527,
+          "etag": "\"78172f6e1ca4c08f9030bbff23775f26\""
         },
         {
           "path": "metadata.json",
           "size": 81,
-          "etag": "\"4d4b7e401f36976ea76accb7fcd3d6f8\""
+          "etag": "\"005c6b53c4514eb3ed8a0b733e3e0db7\""
         }
       ],
-      "source_bytes": 17656696275,
+      "source_bytes": 17656684350,
       "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B",
       "model_config": {
         "rope": {
@@ -594,107 +635,137 @@
         "gradient_checkpointing": true,
         "flash_attention_block_size": null
       },
-      "latest_logged_step": 105176,
-      "latest_eval_loss": 3.153707504272461
+      "latest_logged_step": 105889,
+      "latest_eval_loss": 3.153369188308716
     },
     {
       "trial": "lr5e-4-cooldown",
       "run_id": "contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B",
-      "step": 146158,
-      "label": "contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-step-146158",
-      "source": "s3://marin-us-east-02a/tmp/ttl=14d/checkpoints-temp/marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B/checkpoints/step-146158",
-      "frozen": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-01/sources/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B/step-146158",
-      "hf_export": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-01/models/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B/hf/step-146158",
+      "step": 146264,
+      "label": "contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-step-146264",
+      "source": "s3://marin-us-east-02a/tmp/ttl=14d/checkpoints-temp/marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B/checkpoints/step-146264",
+      "frozen": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-02/sources/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B/step-146264",
+      "hf_export": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-02/models/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B/hf/step-146264",
       "objects": [
         {
-          "path": "d/03a1fddee2355f9ce243708383b650d8",
-          "size": 671,
-          "etag": "\"2c5055dd0ba9a01485c61ef8a86bea92\""
-        },
-        {
-          "path": "d/041edcbe816aac0481da703bff9ce81f",
-          "size": 2366,
-          "etag": "\"663f5e4379b66eb9a26945d4adc71c96\""
-        },
-        {
-          "path": "d/3a441fca2a7717a7d6dc27e53fc5f544",
-          "size": 2913911,
-          "etag": "\"02d465bf42a79910bf990ce389d5a675\""
-        },
-        {
-          "path": "d/3bc035fa17814ba17fc28ffde52bca84",
-          "size": 2214617088,
-          "etag": "\"58e11b69123b0a8a23fe0a047e777566\""
-        },
-        {
-          "path": "d/40c0af1b1bc148391f78efc10cd0e949",
-          "size": 23310336,
-          "etag": "\"18789e7052a398434195534c1b4982aa\""
-        },
-        {
-          "path": "d/48cf0aafd56680905d7e20735056e5e5",
-          "size": 17286,
-          "etag": "\"d88969064faaf69d4b5128cbc118e6aa\""
-        },
-        {
-          "path": "d/53d91a70f8eb3a3b68b3738d3ede1ff7",
-          "size": 704,
-          "etag": "\"7578c0a2aa0efe8c8d47dc610400d67f\""
-        },
-        {
-          "path": "d/5544da2432a8d7ceb060b15a132b0938",
-          "size": 795,
-          "etag": "\"95fbc3801c7b13e87299d1a52b18c18f\""
-        },
-        {
-          "path": "d/56d7506e5999b44f1eba42bde209b129",
-          "size": 2308251648,
-          "etag": "\"356099213c5f8ad34e1e0ab1dc0e2f7f\""
-        },
-        {
-          "path": "d/5db000fb45e2386b0832de0f285a526d",
-          "size": 2214617088,
-          "etag": "\"309618f7f8b07651d75998713690eab4\""
-        },
-        {
-          "path": "d/68cff5cf93b98c827d10433663719a88",
-          "size": 2151919616,
-          "etag": "\"a6996a6a65fd596a811eb9fbc4a1275c\""
-        },
-        {
-          "path": "d/6ee9640020248c902c9c51978aac4671",
-          "size": 2214813696,
-          "etag": "\"42e92feefdff89db40fbd5e143423156\""
-        },
-        {
-          "path": "d/829cd8658e74b91a4cc14d3aa58e14c5",
-          "size": 20393984,
-          "etag": "\"b84692274d28d12425c06158d9812162\""
-        },
-        {
-          "path": "d/9b705ee18792d79969ebc674e9ff7850",
-          "size": 1811963904,
-          "etag": "\"b03fc6f44f932e3f2d5f99ea69f1a75a\""
-        },
-        {
-          "path": "d/bf1b4ca95d6f117b84ee0d036ddcc7f4",
+          "path": "d/1a5589cf43011b1717e23c50e64fc5cf",
           "size": 201330688,
-          "etag": "\"439a8866591192526ba2964bc0b541ad\""
+          "etag": "\"528507d7f45acf85023396692542057a\""
         },
         {
-          "path": "d/c2fb85c8a6ee6b9e0b4cd50274ed9711",
-          "size": 2277736448,
-          "etag": "\"eeb382dbcdf57e274601f63bf5f6ae57\""
+          "path": "d/1ca00cb2fa8c53c84cb460210a0be8c2",
+          "size": 2164490240,
+          "etag": "\"744695eb4260ca15dfb4861fb1f0c099\""
         },
         {
-          "path": "d/e49b8be0d0238168385585fdc5778dd7",
+          "path": "d/281b9c92c0eb07e9a3d24013e612ac8e",
+          "size": 1610633216,
+          "etag": "\"d760c35dbc3d853e7aa98fe384ca9089\""
+        },
+        {
+          "path": "d/2829c075b29688dba1603b9b3b63213f",
+          "size": 201330688,
+          "etag": "\"d96691120a932c211ea10dc71bea5faa\""
+        },
+        {
+          "path": "d/35f8cc1df480d66d348f337b70f71d0c",
+          "size": 201330688,
+          "etag": "\"887726a27bcabc861c03ea4623f17b5e\""
+        },
+        {
+          "path": "d/3c13608d97f784e5db706f7257d4326f",
+          "size": 2214625280,
+          "etag": "\"7fbd2366ffa20d3924850988831b4add\""
+        },
+        {
+          "path": "d/4922af3d1ffa8c80b4d7e200cee7ce18",
+          "size": 2264952832,
+          "etag": "\"b120dda9c255eb475878a8445cf44fd9\""
+        },
+        {
+          "path": "d/4b7cc5a698e4b1d2a3310d9f022c9d76",
+          "size": 2157244416,
+          "etag": "\"2725789bb38e14a230b6054bed832f66\""
+        },
+        {
+          "path": "d/6799448c8d46bb4d7ba8a42858017731",
+          "size": 17286,
+          "etag": "\"d624cff26996d268285873f40ee269ae\""
+        },
+        {
+          "path": "d/701b17e1978067e2deabb80b695f04b1",
+          "size": 201330688,
+          "etag": "\"6c15b36c446b114f5226c459cb3b5803\""
+        },
+        {
+          "path": "d/7fc34eb7ff56fa58e0bfa49392e91768",
+          "size": 2914005,
+          "etag": "\"2d6276eb742485f39c75aeb262525d45\""
+        },
+        {
+          "path": "d/85d17eb4a015d9facad5d9a90aa15be2",
+          "size": 23310336,
+          "etag": "\"cea943140beea91d5da76801162333cd\""
+        },
+        {
+          "path": "d/8926da7370040151ce52dbd9b5e5dcfd",
+          "size": 913,
+          "etag": "\"cb2f0654506014710577a27b66ab0140\""
+        },
+        {
+          "path": "d/99c999bf7918b515ffe4b51391d92b60",
+          "size": 58215,
+          "etag": "\"8c276c254e2dc8a2706b2b695a4b8a26\""
+        },
+        {
+          "path": "d/a92909a331726476067c6b171e81eb7b",
+          "size": 8740864,
+          "etag": "\"3f1d6da395c1d9b9489b7378347b5741\""
+        },
+        {
+          "path": "d/b249f7e618a658798ff725b240a5b6bd",
+          "size": 2595,
+          "etag": "\"7040c76433352e0049db42a50325796c\""
+        },
+        {
+          "path": "d/bf1c021ba8b1743fd115b5713f59e27a",
+          "size": 503324672,
+          "etag": "\"9b4e9e8d5608f73f8c899f46dfb8c748\""
+        },
+        {
+          "path": "d/c4cfac5dd382619943a46713ac0dbb42",
+          "size": 1107513344,
+          "etag": "\"6e152cef6ef52fa7ccf82b44a69970a8\""
+        },
+        {
+          "path": "d/ca74a4b9597c4dbc55d5bbb3a68c6a09",
+          "size": 2914030,
+          "etag": "\"d13c56711196f570b08e9e59eddfa1f9\""
+        },
+        {
+          "path": "d/cb77ae911abc198ad851cb029b6a8c4e",
+          "size": 2164490240,
+          "etag": "\"33cdc7d815f4e077a38ddd64c258052d\""
+        },
+        {
+          "path": "d/dcc5ee4fa64ae1b7f4897e99443f2f77",
           "size": 2214617088,
-          "etag": "\"468c45313454fb144529d6d98abe700e\""
+          "etag": "\"ae58b2295dac5463c30690923cd56078\""
         },
         {
-          "path": "d/f62b19c0491144c678594702cad8e948",
-          "size": 197334,
-          "etag": "\"551f91bddfba32f4094efd091df9844f\""
+          "path": "d/e2573a6ff2577d91eef35294eb4133ad",
+          "size": 201330688,
+          "etag": "\"d002b738d570e0c2953b92f3ecaebca9\""
+        },
+        {
+          "path": "d/e6533cad1f5200a615bb4d6f4b1f5c1d",
+          "size": 8888320,
+          "etag": "\"b83683b10ca92c0e858e303b7a418297\""
+        },
+        {
+          "path": "d/e7acbc3fadc79c308956f9a40bf385d1",
+          "size": 201330688,
+          "etag": "\"cfdbed49312889a9c1bcf0266033d9c8\""
         },
         {
           "path": "manifest.json",
@@ -703,16 +774,16 @@
         },
         {
           "path": "manifest.ocdbt",
-          "size": 628,
-          "etag": "\"ebdab1cfcbec6eb4f13738ad60793191\""
+          "size": 321,
+          "etag": "\"ef9e01fd290c1611e6d76d51c2468011\""
         },
         {
           "path": "metadata.json",
           "size": 81,
-          "etag": "\"d2cf37da63b340f7c119c9ec2f77f1f5\""
+          "etag": "\"b8a21e27a8ec77f502cb36cd7fd1f7ba\""
         }
       ],
-      "source_bytes": 17656716574,
+      "source_bytes": 17656733636,
       "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B",
       "model_config": {
         "rope": {
@@ -748,7 +819,7 @@
         "gradient_checkpointing": true,
         "flash_attention_block_size": null
       },
-      "latest_logged_step": 146193,
+      "latest_logged_step": 146349,
       "latest_eval_loss": 3.103182077407837
     }
   ],
@@ -772,20 +843,12 @@
     "top_p": 0.95,
     "top_k": -1,
     "token_budget": "6L+128",
-    "seed": 0
+    "seed": 0,
+    "capped_sample_policy": "continue exact prompt and generated prefix to the remaining 8192-token context; independent SHA256-derived continuation seed"
   },
+  "execution_choice": "CoreWeave local checkpoints; user approved",
+  "extension_approval": "User approved extending the limit for capped samples on 2026-10-21",
   "local_option": "Freeze and export each checkpoint in the same CoreWeave bucket; score there on at most 12 H100s. No model egress.",
   "mirror_option": "Export four float32 HF models and mirror about 23.54 GB to the public HF bucket for reuse elsewhere; additional egress and >10 GB approval required.",
-  "execution_choice": {
-    "choice": "coreweave_local",
-    "chosen_by": "user",
-    "recorded_at_utc": "2026-10-21T17:09:56.735986+00:00",
-    "max_h100s": 12,
-    "model_egress": false,
-    "runtime": "four independent one-H100 jobs; worker-local native and HF exports",
-    "persistent_model_copies": false,
-    "storage_write_error": "Account is write suspended for this availability zone. Please check capacity quota and contact support.",
-    "cancelled_initial_job": "/bizon/exp364-contact-eval-a01"
-  },
-  "artifact_root": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-10-21/latest-01"
+  "storage": "Verified frozen native sources and reusable HF exports in CoreWeave S3; no model egress"
 }

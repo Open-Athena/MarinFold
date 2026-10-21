@@ -1,5 +1,6 @@
 """Prepare a read-only snapshot and the exact requested contact-evaluation sets."""
 
+import argparse
 import configparser
 import hashlib
 import json
@@ -15,7 +16,6 @@ from experiments.exp364_models_mpnn_only_lr_sweep.cooldown_train import RUN_ID
 
 HERE = Path(__file__).resolve().parent
 DATA = HERE / "data" / "contact_eval"
-EVAL_ROOT = f"{PREFIX}/evals/rollout-v2/2026-10-21/latest-01"
 SOURCE_HASHES = {
     "eval_sets.csv": "b13d060a091240921bc8466acecc9fa6ccbb45a56de4efda02cd903f6abf9861",
     "eval_targets_foldbench_monomers.parquet": "2eb4f1fee148fe2d6601bd171ef6e9431b96f38c82eaed1ad119a069a13f1fb8",
@@ -66,6 +66,10 @@ def select_targets(
 
 def main() -> None:
     """Pin source inventories without copying or submitting anything."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--snapshot", required=True, help="Unique dated output suffix")
+    args = parser.parse_args()
+    eval_root = f"{PREFIX}/evals/rollout-v2/{args.snapshot}"
     DATA.mkdir(parents=True, exist_ok=True)
     source = HERE.parent / "exp245_evals_foldbench_held_out_monomers" / "data"
     for name, expected in SOURCE_HASHES.items():
@@ -129,8 +133,8 @@ def main() -> None:
                 "step": step,
                 "label": f"{run_id}-step-{step}",
                 "source": source_uri,
-                "frozen": f"{EVAL_ROOT}/sources/{run_id}/step-{step}",
-                "hf_export": f"{EVAL_ROOT}/models/{run_id}/hf/step-{step}",
+                "frozen": f"{eval_root}/sources/{run_id}/step-{step}",
+                "hf_export": f"{eval_root}/models/{run_id}/hf/step-{step}",
                 "objects": objects,
                 "source_bytes": sum(obj["size"] for obj in objects),
                 "wandb_url": run.url,
@@ -142,7 +146,8 @@ def main() -> None:
         print(trial, step, len(objects), checkpoints[-1]["source_bytes"])
     plan = {
         "prepared_at_utc": datetime.now(UTC).isoformat(),
-        "root": EVAL_ROOT,
+        "root": eval_root,
+        "artifact_root": f"hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/contact-eval/{args.snapshot}",
         "cluster": "cw-us-east-02a",
         "priority": "batch",
         "gpu_limit": 12,
@@ -161,7 +166,10 @@ def main() -> None:
             "top_k": -1,
             "token_budget": "6L+128",
             "seed": 0,
+            "capped_sample_policy": "continue exact prompt and generated prefix to the remaining 8192-token context; independent SHA256-derived continuation seed",
         },
+        "execution_choice": "CoreWeave local checkpoints; user approved",
+        "extension_approval": "User approved extending the limit for capped samples on 2026-10-21",
         "local_option": "Freeze and export each checkpoint in the same CoreWeave bucket; score there on at most 12 H100s. No model egress.",
         "mirror_option": "Export four float32 HF models and mirror about 23.54 GB to the public HF bucket for reuse elsewhere; additional egress and >10 GB approval required.",
     }

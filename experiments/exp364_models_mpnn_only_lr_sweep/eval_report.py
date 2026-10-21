@@ -123,6 +123,11 @@ def summarize(plan: dict, eval_set: str = "all") -> None:
         if manifest["sampling"] != plan["sampling"]:
             raise ValueError("Sampling recipe differs from the approved plan")
         validate_result(checkpoint, precision, timings, targets)
+        if "capped_sample_policy" in plan["sampling"]:
+            if not timings.extended_rollouts.between(0, 100).all():
+                raise ValueError("Invalid number of extended samples")
+            if int(timings.extended_rollouts.sum()) != manifest["extended_rollouts"]:
+                raise ValueError("Extension counts disagree with the result manifest")
         for (result_set, contact_range), group in precision[
             (precision.cut == "R") & precision.range.isin(["all", "long"])
         ].groupby(["eval_set", "range"], sort=True):
@@ -143,6 +148,15 @@ def summarize(plan: dict, eval_set: str = "all") -> None:
                     "r_precision": values.mean(),
                     "ci_low": low,
                     "ci_high": high,
+                    "extended_rollouts": int(
+                        timings.merge(
+                            group[["dataset", "stem"]],
+                            on=["dataset", "stem"],
+                            validate="one_to_one",
+                        ).extended_rollouts.sum()
+                    )
+                    if "capped_sample_policy" in plan["sampling"]
+                    else 0,
                 }
             )
         annotated = precision.merge(

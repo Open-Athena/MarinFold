@@ -1,9 +1,9 @@
 """Score one checkpoint on one H100, using worker disk and public result storage.
 
-CoreWeave suspended writes to this account on October 21. The checkpoint and
-HF export therefore live only on regional worker disk; model bytes never leave
-CoreWeave. Only completed score parts, timings and provenance go to the public
-HF data bucket. The validated rollout worker is unchanged.
+Frozen checkpoints and reusable HF exports stay in CoreWeave. Only completed
+score parts, timings and provenance go to the public HF data bucket. Initial
+sampling and metric construction follow exp277; capped samples continue under
+the user's approved extension policy.
 """
 
 import argparse
@@ -13,7 +13,6 @@ import json
 import os
 import socket
 import subprocess
-import sys
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -57,6 +56,8 @@ def completed_files(directory: Path) -> list[Path]:
         paths.extend(
             [marker_path, Path(marker["score_uri"]), Path(marker["timing_uri"])]
         )
+        if marker.get("extension_uri"):
+            paths.append(Path(marker["extension_uri"]))
     for path in paths:
         if not path.resolve().is_relative_to(directory.resolve()):
             raise ValueError(
@@ -130,6 +131,9 @@ def main() -> None:
             raise ValueError(f"Bundled source changed: {name}")
     if hashlib.sha256(WORKER.read_bytes()).hexdigest() != WORKER_SHA256:
         raise ValueError("The validated worker changed")
+    worker = HERE / "eval_worker.py"
+    if "capped_sample_policy" not in plan["sampling"]:
+        raise ValueError("Extended worker requires the approved continuation policy")
     scratch = Path("/tmp/exp364-contact-eval") / checkpoint["trial"]
     if args.eval_set != "all":
         scratch = scratch / "sets" / args.eval_set
@@ -147,23 +151,13 @@ def main() -> None:
     (outputs / "plan.json").write_text(json.dumps(plan, indent=2))
     (outputs / "bundle_manifest.json").write_text(json.dumps(bundle, indent=2))
     sync_results(outputs, remote)
-    export_start = time.monotonic()
-    subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "experiments.exp364_models_mpnn_only_lr_sweep.eval_export",
-            "--plan",
-            str(DATA / "plan.json"),
-            "--trial",
-            args.trial,
-            "--scratch",
-            str(scratch / "models"),
-        ],
-        check=True,
-    )
-    export_seconds = time.monotonic() - export_start
-    export = json.loads((scratch / "models/export.json").read_text())
+    remote_fs = fsspec.filesystem("s3", use_listings_cache=False)
+    with remote_fs.open(
+        f"{plan['root']}/manifests/{checkpoint['label']}.json"
+    ) as handle:
+        export = json.load(handle)
+    if export["checkpoint"]["label"] != checkpoint["label"]:
+        raise ValueError("Shared export identifies another checkpoint")
     (outputs / "export_manifest.json").write_text(json.dumps(export, indent=2))
     local_plan = {**plan, "root": str(outputs)}
     fs = fsspec.filesystem("file")
@@ -185,7 +179,7 @@ def main() -> None:
     for phase in ("smoke", "rollout"):
         command = [
             args.vllm_python,
-            str(WORKER),
+            str(worker),
             "--model",
             export["checkpoint"]["hf_export"],
             "--model-manifest-b64",
@@ -243,7 +237,11 @@ def main() -> None:
         "completed_at_utc": datetime.now(UTC).isoformat(),
         "checkpoint": checkpoint,
         "git_commit": os.environ["GIT_COMMIT"],
-        "worker_sha256": WORKER_SHA256,
+        "worker_sha256": hashlib.sha256(worker.read_bytes()).hexdigest(),
+        "base_worker_sha256": WORKER_SHA256,
+        "extension_sha256": hashlib.sha256(
+            (HERE / "eval_generation.py").read_bytes()
+        ).hexdigest(),
         "metric_sha256": hashlib.sha256(
             (
                 HERE.parent
@@ -255,11 +253,11 @@ def main() -> None:
         "units": expected_units,
         "rollouts": expected_units * 100,
         "unfinished_rollouts": 0,
+        "extended_rollouts": int(timings.extended_rollouts.sum()),
         "sampling": plan["sampling"],
         "model_egress": False,
-        "checkpoint_staging_and_export_seconds": export_seconds,
         "artifact_root": remote,
-        "runtime": "one regional H100; models on ephemeral disk",
+        "runtime": "one regional H100; frozen native checkpoint and reusable HF export in CoreWeave S3",
     }
     (outputs / "manifest.json").write_text(json.dumps(result, indent=2))
     sync_results(outputs, remote)
