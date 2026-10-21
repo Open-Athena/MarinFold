@@ -75,10 +75,24 @@ def main() -> None:
     hf_path = f"{output}/hf/step-{end - 1}"
     files = fs.find(hf_path, detail=True)
     names = {Path(path).name for path in files}
-    if not {"config.json", "tokenizer.json", "tokenizer_config.json"} <= names:
+    required = {
+        "config.json",
+        "tokenizer.json",
+        "tokenizer_config.json",
+        "model.safetensors.index.json",
+    }
+    if not required <= names:
         raise ValueError(f"Missing model/tokenizer configuration: {names}")
+    with fs.open(f"{hf_path}/model.safetensors.index.json") as handle:
+        index = json.load(handle)
+    if not set(index["weight_map"].values()) <= names:
+        raise ValueError("HF export is missing an indexed weight shard")
     weights = [info for path, info in files.items() if path.endswith(".safetensors")]
-    if not weights or any(info["size"] <= 0 for info in weights):
+    if (
+        not weights
+        or any(info["size"] <= 0 for info in weights)
+        or sum(info["size"] for info in weights) < index["metadata"]["total_size"]
+    ):
         raise ValueError(f"Missing HF weights: {names}")
 
     data = Path(__file__).with_name("data")
