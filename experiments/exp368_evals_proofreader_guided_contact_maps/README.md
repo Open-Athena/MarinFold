@@ -174,6 +174,30 @@ Data, per-input timings, and all seven aggregation rules are in
 
 ![Validation aggregation accuracy and candidate coverage](plots/validation_pool.png)
 
+The contact-level audit over the full panel explains this pattern. Sum q
+replaces 18.29% of top-R slots at eight rollouts, and 8.70% at 128. True
+contacts entering minus true contacts leaving exactly reproduce each
+protein's R-precision difference. At 128 the gained and lost fractions nearly
+cancel. See `data/validation_pool/reranking_per_protein.csv.gz`.
+
+![Contacts gained and lost on the full validation panel](plots/validation_reranking.png)
+
+For 128-rollout ordinary pools, the per-structure mean absolute error in
+predicted rollout precision is 0.05238 and in recall is 0.05768. Mean
+predicted recall is 0.38840 versus observed recall 0.40864; the contact-level
+calibration curve nevertheless closely follows the diagonal. This illustrates
+why aggregate calibration does not guarantee optimal ranking of candidate
+contacts or accurate rollout recall. Mean sampled trajectory-pair Jaccard
+overlap is 0.26679. All trajectories in this panel ended with sampled EOS.
+With 128-rollout F1 weighting, selecting L contacts gives mean precision
+0.50908 and recall 0.59423; selecting L/2 gives precision 0.67623 and recall
+0.40055. These fixed prediction budgets depend only on sequence length.
+The diagnostic compares the eight-rollout sum-q and 128-rollout F1-weighted
+configurations, so their difference combines pool size and aggregation.
+Data are in `data/validation_diagnostics/`.
+
+![Full-panel precision, recall, calibration and diversity](plots/validation_diagnostics.png)
+
 ### Frozen pilot protocol
 
 `pilot.json` fixes 32 validation proteins from 32 distinct homology groups,
@@ -191,6 +215,27 @@ contacts, eight-particle search in blocks of eight, and one-pass suffix repair.
 Percentile gates retain ceil(fraction*K) proposals: the nominal 10% gate keeps
 2/16 or 7/64. Generator probability is already represented by proposal sampling;
 it is not multiplied into resampling weights again.
+
+At a prefix $S$, the generator samples proposal contacts $c_1,\ldots,c_K$.
+The bidirectional reader scores each hypothetical prefix $S+c_j$, giving
+$q_j=\widehat P(\text{contact }c_j\text{ is correct}\mid S+c_j,\text{sequence})$.
+Hard filtering samples uniformly among the highest-scoring $\lceil fK\rceil$
+proposal slots. Soft filtering instead samples with weights
+$w_j=\max(q_j,10^{-8})^\beta$. The exploration variant mixes the gated
+distribution with 10% uniform probability over all proposal slots. Repeated
+proposals remain separate slots, preserving the generator's sampled multiplicity;
+previously committed contacts are excluded. This does not enumerate or rank
+the complete residue-pair universe, or guarantee that retained contacts have
+90% correctness probability.
+
+Lookahead replaces $q_j$ by its mean after two separately sampled futures of
+eight or 32 contacts, truncated only at the context/contact limit. Later
+contacts may revise the judgment of $c_j$, but only $c_j$ is committed.
+The total-score variant ranks candidates by the sum of the reader's revised
+probabilities for **all** contacts in $S+c_j$, allowing a proposal to change
+confidence in earlier contacts. These are validation experiments with the
+existing reader; its probabilities are not assumed to remain calibrated under
+the shifted distribution caused by guidance.
 
 The constrained sampler permits valid contacts with sequence separation at least
 six and no duplicate pairs. It samples the first endpoint, then the second,
@@ -448,11 +493,23 @@ Eight versus 128 rollouts gives R-precision 0.50086 versus 0.54779, a paired
 gain of 0.04693 (95% interval 0.04052–0.05353). Long-range R-precision rises
 from 0.47099 to 0.52194, a gain of 0.05096 (0.04338–0.05915). Mean warm cost
 is 1.196 versus 3.054 GB200 seconds. These reproduce the H100 frequency result
-under a separate runtime; the timings are not pooled across hardware. Fresh
-full-forward proofreader scoring of these pools is still running. Data are in
+under a separate runtime; the timings are not pooled across hardware. Data are in
 `data/validation_frequency_gb200/`.
 
 ![GB200 larger validation frequency comparison](plots/validation_frequency_gb200.png)
+
+Full-forward proofreading is also complete for every GB200 validation pool.
+At 128 rollouts, F1-weighted votes give all-contact R-precision 0.55239 and
+long-range R-precision 0.52647. Relative to frequency, paired gains are
+0.00459 (95% interval 0.00207–0.00790) and 0.00453 (0.00164–0.00813).
+Mean warm generation-plus-proofreading time is 4.622 GB200 seconds, versus
+3.054 for frequency alone. Sum q gives 0.54750 and 0.52249; its differences
+from frequency again have intervals spanning zero. The same structures and
+groups are used as in the H100 phase, so this is a stochastic/runtime
+replication, not an independent biological validation cohort. Results and
+all 5,500 stage timings are in `data/validation_pool_gb200/`.
+
+![GB200 replication of paired aggregation effects](plots/validation_aggregation_effects_gb200.png)
 
 ## Current scientific conclusion
 

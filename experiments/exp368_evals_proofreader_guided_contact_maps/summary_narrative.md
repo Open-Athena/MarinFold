@@ -234,8 +234,8 @@ gain is 0.04693 (95% interval 0.04052 to 0.05353). Long-range R-precision rises
 from 0.47099 to 0.52194, a gain of 0.05096 (0.04338 to 0.05915).
 
 Mean warm cost is 1.196 versus 3.054 GB200 seconds. This separate runtime
-replicates the H100 frequency result. Full-forward proofreader scoring is still
-running. No new reserved-test scores have been computed or inspected.
+replicates the H100 frequency result. Full-forward proofreader scoring is also
+complete. No new reserved-test scores have been computed or inspected.
 
 ## Complete H100 validation: confidence helps small pools
 
@@ -259,3 +259,25 @@ The weight uses predicted precision and recall only. This aggregation rule was
 added after the pilot; intervals are not adjusted for method selection. It is a
 promising validation result, not a reserved-test confirmation. Guided-policy
 selection still waits for the complete pilot.
+
+## Calibration and contact swaps explain the aggregation pattern
+
+On the full H100 panel, sum q replaces 18.29% of top-R slots at eight rollouts
+and 8.70% at 128. Correct contacts gained minus correct contacts lost exactly
+reproduce each protein's R-precision change. At 128 the two nearly cancel.
+
+The 128-rollout precision and recall prediction MAEs are 0.05238 and 0.05768,
+averaged within each structure then across structures. Mean predicted recall is
+0.38840 versus observed 0.40864. Good pooled contact calibration does not by
+itself guarantee accurate rollout recall or improved map ranking.
+
+## GB200 replicates the rollout-F1 weighting gain
+
+All 2,750 GB200 validation pools are scored. At 128 rollouts, F1-weighted votes
+give R-precision 0.55239 and long-range R-precision 0.52647. Paired gains over
+frequency are 0.00459 (95% interval 0.00207 to 0.00790) and 0.00453
+(0.00164 to 0.00813). Sum q again has no established advantage at this pool size.
+
+Mean warm generation-plus-proofreading time is 4.622 GB200 seconds, versus
+3.054 for frequency alone. These are the same validation proteins as the H100
+phase, so this is a runtime/stochastic replication, not a new biological cohort.

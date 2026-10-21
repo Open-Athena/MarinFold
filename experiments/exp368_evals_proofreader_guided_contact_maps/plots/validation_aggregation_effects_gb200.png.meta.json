@@ -1,0 +1,12 @@
+{
+  "script": "plot_aggregation_effects.py",
+  "args": [
+    "--data",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/data/validation_pool_gb200",
+    "--out",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/plots/validation_aggregation_effects_gb200.png",
+    "--title",
+    "GB200: paired aggregation effects on 1,375 validation structures"
+  ],
+  "caption": "Paired differences on identical generated pools. Error bars are 95% homology-group bootstrap intervals, without multiplicity adjustment. All planned structures are included; long-range metrics exclude structures with no native contact at sequence separation \u226524. F1 weighting and confidence tie-breaking were added after the pilot and remain exploratory. No new reserved-test scores are shown."
+}
