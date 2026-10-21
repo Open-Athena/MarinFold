@@ -10,5 +10,5 @@
   "out": "s3://marin-us-east-02a/MarinFold/exp369/spiking-v1/full",
   "eval_set": "eval-val",
   "n_targets": 97,
-  "submit": false
+  "submit": true
 }

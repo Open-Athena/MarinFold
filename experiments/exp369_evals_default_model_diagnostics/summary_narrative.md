@@ -20,14 +20,15 @@ Long-range R-precision: 0.538 (95% CI 0.494–0.580).
 Length association: Spearman rho −0.068, p=0.507 (all-range).
 No detectable monotonic trend in this sample; longest bin has only eight proteins.
 
-## Contact injection: approved, awaiting execution
+## Contact injection: restart validation
 
 6,664 conditions, 666,400 rollouts on the 97 eval-val proteins.
 Random versus SSE-balanced true contacts; two independent context draws.
 Count, fraction, and one/two/four contacts per element views.
 Supplied pairs never score. Unconditioned comparator uses the same remaining pairs.
 Report 95% protein-bootstrap intervals and first tested dose with a 0.05 gain or R-precision 0.80.
-One H100 validation precedes the approved twelve-H100 batch sweep.
+All 1,000 initial validation completions passed. Rare out-of-range model predictions exposed an incorrect shard-stop gate in the larger run.
+Corrected bookkeeping retains all samples and reports generation errors plus a zero-invalid-rollout sensitivity score. A one-H100 case run precedes the restart.
 
 ## Verified AFDB/PDB disagreements
 

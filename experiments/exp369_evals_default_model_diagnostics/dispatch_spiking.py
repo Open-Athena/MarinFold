@@ -12,7 +12,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 IMAGE = "vllm/vllm-openai:v0.9.2"
-ROOT = "s3://marin-us-east-02a/MarinFold/exp369/spiking-v1"
+ROOT = "s3://marin-us-east-02a/MarinFold/exp369/spiking-v2"
 
 
 def bundle(plan: Path) -> bytes:
@@ -56,6 +56,7 @@ with tarfile.open(fileobj=io.BytesIO(payload), mode='r:gz') as archive:
     archive.extractall('/tmp/exp369')
 PY
 export PYTHONPATH=/tmp/exp369/library:/tmp/exp369
+export VLLM_LOGGING_LEVEL=ERROR
 "$VLLM_PY" /tmp/exp369/stage_model.py --manifest /tmp/exp369/checkpoint_manifest.json --out /tmp/exp369-model
 export VLLM_PORT=$("$VLLM_PY" -c 'import socket; s=socket.socket(); s.bind(("",0)); print(s.getsockname()[1]); s.close()')
 exec "$VLLM_PY" /tmp/exp369/spiking_worker.py --model /tmp/exp369-model \\
@@ -68,6 +69,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--plan", type=Path, default=Path("/data/exp369/spiking_plan.json"))
     parser.add_argument("--shards", type=int, default=12)
+    parser.add_argument("--only-shards", help="Comma-separated shard indices to submit from the full interleaved partition")
     parser.add_argument("--iris-config", type=Path, help="Cluster connection config matching the installed Iris revision")
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument("--cases", action="store_true", help="Run the six verified AFDB/PDB cases")
@@ -83,11 +85,14 @@ def main() -> None:
     digest = hashlib.sha256(payload).hexdigest()
     uri = f"{ROOT}/inputs/{digest}.tar.gz"
     shards = 1 if args.smoke or args.cases else args.shards
+    indices = list(range(shards)) if args.only_shards is None else list(map(int, args.only_shards.split(",")))
+    if len(set(indices)) != len(indices) or not indices or any(not 0 <= i < shards for i in indices):
+        raise ValueError("Invalid subset of shard indices")
     phase = "cases" if args.cases else "smoke" if args.smoke else "full"
     out = f"{ROOT}/{phase}"
-    commands = [bootstrap(index, shards, uri, digest, out, args.smoke) for index in range(shards)]
+    commands = {index: bootstrap(index, shards, uri, digest, out, args.smoke) for index in indices}
     plan = json.loads(args.plan.read_text())
-    summary = {"phase": phase, "n_gpus": shards, "priority": 3, "image": IMAGE,
+    summary = {"phase": phase, "n_gpus": len(indices), "n_shards": shards, "shard_indices": indices, "priority": 3, "image": IMAGE,
                "bundle_sha256": digest, "bundle_bytes": len(payload), "checkpoint_bytes_per_gpu": 5885618986,
                "checkpoint_transfer": "CoreWeave S3 to CoreWeave H100 only", "out": out,
                "eval_set": plan["eval_set"], "n_targets": len(plan["targets"]), "submit": args.submit}
@@ -109,7 +114,7 @@ def main() -> None:
     with open_iris_client(config_file=args.iris_config,
                           cluster_name=None if args.iris_config else "cw-rno2a", workspace=None) as iris:
         client = FrayIrisClient.from_iris_client(iris)
-        for index, command in enumerate(commands):
+        for index, command in commands.items():
             request = JobRequest(name=f"exp369-{phase}-{digest[:8]}-s{index}of{shards}",
                                  entrypoint=Entrypoint.from_binary("bash", ["-lc", command]),
                                  resources=ResourceConfig.with_gpu("H100", count=1, image=IMAGE, cpu=8, ram="64g", disk="128g"),

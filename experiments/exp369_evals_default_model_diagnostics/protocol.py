@@ -103,11 +103,15 @@ def remaining_metrics(scores: np.ndarray, truth: list[list[int]], resolved: list
     resolved_mask[resolved] = True
     ii, jj = np.triu_indices(length, k=min_separation)
     keep = resolved_mask[ii] & resolved_mask[jj]
-    excluded = {tuple(pair) for pair in supplied}
-    keep &= np.array([(int(i), int(j)) not in excluded for i, j in zip(ii, jj)])
+    excluded = np.zeros((length, length), dtype=bool)
+    supplied_indices = np.asarray(supplied, dtype=int).reshape(-1, 2)
+    excluded[supplied_indices[:, 0], supplied_indices[:, 1]] = True
+    keep &= ~excluded[ii, jj]
     ii, jj = ii[keep], jj[keep]
-    positives = {tuple(pair) for pair in truth}
-    labels = np.array([(int(i), int(j)) in positives for i, j in zip(ii, jj)], dtype=bool)
+    positives = np.zeros((length, length), dtype=bool)
+    truth_indices = np.asarray(truth, dtype=int).reshape(-1, 2)
+    positives[truth_indices[:, 0], truth_indices[:, 1]] = True
+    labels = positives[ii, jj]
     n_true = int(labels.sum())
     if not n_true:
         return {"r_precision": None, "n_remaining_true": 0, "n_candidates": len(ii)}

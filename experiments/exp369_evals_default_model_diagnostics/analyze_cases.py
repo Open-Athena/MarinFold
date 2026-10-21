@@ -7,9 +7,14 @@ import json
 from pathlib import Path
 
 import fsspec
+import matplotlib
 import numpy as np
 import pandas as pd
 
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+from build_summary import save_plot_with_meta
 from protocol import remaining_metrics
 
 HERE = Path(__file__).resolve().parent
@@ -42,24 +47,28 @@ def main() -> None:
     rows, timings = [], []
     for target in plan["targets"]:
         matrices = []
+        gated_matrices = []
         for repeat in range(plan["repeats"]):
             base = f"{root}/units/{target['stem']}/random-r{repeat}-k0000"
             with fs.open(base + ".complete.json") as stream:
                 marker = json.load(stream)
             if marker["plan_sha256"] != digest or marker["n_rollouts"] != 100:
                 raise ValueError(f"Invalid case provenance: {base}")
-            if any(marker[key] for key in ("n_unfinished", "n_malformed", "n_out_of_range")):
-                raise ValueError(f"Invalid case completion: {base}")
+            if marker["completion_policy"] != "retain_all_samples_count_generation_errors":
+                raise ValueError(f"Unexpected sample selection policy: {base}")
             with fs.open(base + ".npz", "rb") as stream:
                 payload = stream.read()
             if hashlib.sha256(payload).hexdigest() != marker["files_sha256"][".npz"]:
                 raise ValueError("Case vote checksum mismatch")
             with np.load(io.BytesIO(payload)) as archive:
                 matrices.append(archive["score"].astype(float) / 100)
+                gated_matrices.append(archive["score_valid_rollouts"].astype(float) / 100)
             timings.append({k: v for k, v in marker.items() if k != "files_sha256"})
         for repeat, scores in enumerate(matrices):
             af = remaining_metrics(scores, target["afdb_pairs"], target["resolved"], [])
             pdb = remaining_metrics(scores, target["pdb_pairs"], target["resolved"], [])
+            gated_af = remaining_metrics(gated_matrices[repeat], target["afdb_pairs"], target["resolved"], [])
+            gated_pdb = remaining_metrics(gated_matrices[repeat], target["pdb_pairs"], target["resolved"], [])
             mean_af = float(np.mean([scores[i, j] for i, j in target["afdb_only"]]))
             mean_pdb = float(np.mean([scores[i, j] for i, j in target["pdb_only"]]))
             rows.append({"uniprot": target["uniprot"], "pdb": target["pdb"], "chain": target["chain"], "repeat": repeat,
@@ -67,11 +76,39 @@ def main() -> None:
                          "afdb_only_mean_vote": mean_af, "pdb_only_mean_vote": mean_pdb,
                          "exclusive_vote_delta_pdb_minus_afdb": mean_pdb - mean_af,
                          "pdb_only_ranking_preference": exclusive_preference(scores, target["afdb_only"], target["pdb_only"]),
+                         "validity_gated_afdb_r_precision": gated_af["r_precision"],
+                         "validity_gated_pdb_r_precision": gated_pdb["r_precision"],
+                         "validity_gated_pdb_only_ranking_preference": exclusive_preference(gated_matrices[repeat], target["afdb_only"], target["pdb_only"]),
                          "interpretation": target["interpretation"]})
     pd.DataFrame(rows).to_csv(HERE / "data/afdb_marinfold_per_repeat.csv", index=False)
     pd.DataFrame(timings).to_csv(HERE / "data/afdb_timings.csv", index=False)
     summary = pd.DataFrame(rows).groupby(["uniprot", "pdb", "chain", "interpretation"], as_index=False).mean(numeric_only=True).drop(columns="repeat")
     summary.to_csv(HERE / "data/afdb_marinfold_preference.csv", index=False)
+    ordered = summary.set_index("uniprot").loc[[target["uniprot"] for target in plan["targets"]]]
+    positions = np.arange(len(ordered))
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5.2), layout="constrained")
+    for offset, label, color, suffix in ((-.18, "AFDB v4", "#CC6B25", "afdb"),
+                                         (.18, "Later PDB", "#167CA0", "pdb")):
+        axes[0].bar(positions + offset, ordered[f"{suffix}_only_mean_vote"], width=.34, color=color, label=label)
+        axes[1].bar(positions + offset, ordered[f"{suffix}_r_precision"], width=.34, color=color, label=label)
+        for index, accession in enumerate(ordered.index):
+            repeats = [row for row in rows if row["uniprot"] == accession]
+            for ax, field in zip(axes, (f"{suffix}_only_mean_vote", f"{suffix}_r_precision")):
+                ax.scatter(np.full(len(repeats), index + offset), [row[field] for row in repeats],
+                           s=13, facecolors="white", edgecolors="black", linewidths=.6, zorder=3)
+    for ax in axes:
+        ax.set_xticks(positions, [f"{target['uniprot']}\n{target['pdb'].upper()} {target['chain']}" for target in plan["targets"]], fontsize=8)
+        ax.set_ylim(0, 1)
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.grid(axis="y", alpha=.18)
+        ax.axvline(2.5, color="gray", linestyle=":", linewidth=1)
+    axes[0].set_ylabel("Mean rollout vote on exclusive contacts")
+    axes[1].set_ylabel("R-precision against each structure")
+    axes[0].legend(frameon=False)
+    fig.suptitle("Does MarinFold favor AFDB training contacts or later experimental contacts?\nSequence only • exp277 step 266344 • two sets of 100 rollouts", fontsize=13)
+    save_plot_with_meta(fig, str(HERE / "plots/afdb_marinfold_preference.png"),
+                        caption="Bars average two 100-rollout repeats; dots show each repeat. Left: mean support over contacts unique to each structure, on common resolved residues. Right: R-precision against each contact set, whose sizes differ. The first three cases have large assembly-bound discrepancies; the others are contact/state controls. Predictions have no structure contacts in their prompts.")
+    plt.close(fig)
     print(summary.to_string(index=False))
 
 

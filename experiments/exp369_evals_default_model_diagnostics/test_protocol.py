@@ -75,6 +75,14 @@ def test_retracted_contact_does_not_vote() -> None:
     assert not any(diagnostics.values())
 
 
+def test_nonexistent_residue_is_counted_without_discarding_valid_pairs() -> None:
+    text = "<contact> <p431> <p468> <contact> <p451> <p469> <end>"
+    inverse = {position: position - 431 for position in range(431, 469)}
+    pairs, diagnostics = parsed_contacts(text, inverse)
+    assert pairs == [[0, 37]]
+    assert diagnostics == {"malformed": 0, "out_of_range": 1, "too_close": 0}
+
+
 def test_exclusive_preference_is_size_balanced_and_tie_aware() -> None:
     votes = np.zeros((12, 12))
     votes[0, 8] = 10

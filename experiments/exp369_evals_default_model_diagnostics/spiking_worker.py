@@ -123,6 +123,7 @@ def main() -> None:
     load_seconds = time.perf_counter() - started
     device = torch.cuda.get_device_properties(0)
     metadata = {"model_nickname": plan["model"], "step": plan["step"], "runner_tag": "iris" if args.out.startswith("s3:") else "local",
+                "completion_policy": "retain_all_samples_count_generation_errors",
                 "gpu_name": device.name, "gpu_total_memory_gb": device.total_memory / 2**30,
                 "gpu_compute_capability": f"{device.major}.{device.minor}", "hostname": socket.gethostname(),
                 "platform": platform.platform(), "torch_version": torch.__version__, "vllm_version": vllm.__version__,
@@ -166,12 +167,19 @@ def main() -> None:
             raise ValueError("Missing completions")
         rows = []
         votes = np.zeros((target["L"], target["L"]), dtype=np.uint16)
+        valid_votes = np.zeros_like(votes)
         for index, (output, inverse, prompt, params) in enumerate(zip(outputs, maps, prompts, sampling, strict=True)):
             completion = output.outputs[0]
+            if completion.finish_reason not in ("stop", "length"):
+                raise ValueError(f"Unexpected inference termination: {completion.finish_reason}")
             pairs, diagnostics = parsed_contacts(prompt + " " + completion.text, inverse)
+            valid = completion.finish_reason == "stop" and not diagnostics["malformed"] and not diagnostics["out_of_range"]
             for i, j in pairs:
                 votes[i, j] += 1
                 votes[j, i] += 1
+                if valid:
+                    valid_votes[i, j] += 1
+                    valid_votes[j, i] += 1
             rows.append({"rollout": index, "contacts": pairs, "text": completion.text,
                          "finished": completion.finish_reason == "stop", "finish_reason": completion.finish_reason,
                          "n_tokens": len(completion.token_ids), "max_new_tokens": params.max_tokens,
@@ -179,7 +187,7 @@ def main() -> None:
                          **diagnostics})
         blob = gzip.compress((json.dumps({"stem": target["stem"], "mode": mode, "supplied": supplied, "rows": rows}) + "\n").encode())
         buffer = io.BytesIO()
-        np.savez_compressed(buffer, score=votes)
+        np.savez_compressed(buffer, score=votes, score_valid_rollouts=valid_votes)
         payloads = {".json.gz": blob, ".npz": buffer.getvalue()}
         timing = {**metadata, "stem": target["stem"], "n_residues": target["L"], "n_pairs": len(target["truth"]),
                   "mode": mode, "policy": policy, "repeat": repeat, "n_supplied": count,
@@ -188,12 +196,15 @@ def main() -> None:
                   "n_unfinished": sum(not row["finished"] for row in rows),
                   "n_malformed": sum(row["malformed"] for row in rows),
                   "n_out_of_range": sum(row["out_of_range"] for row in rows)}
+        timing["n_invalid_rollouts"] = sum(not row["finished"] or row["malformed"] > 0 or row["out_of_range"] > 0 for row in rows)
         for extension, payload in payloads.items():
             write_bytes(base + extension, payload)
         timing["total_seconds"] = time.perf_counter() - total_started
         write_bytes(base + ".timing.json", (json.dumps(timing) + "\n").encode())
-        if timing["n_unfinished"] or timing["n_malformed"] or timing["n_out_of_range"]:
-            raise ValueError(f"Completion validation failed; raw artifacts preserved: {base}")
+        # Generation mistakes are observations, not missing inference results.
+        # Keep all 100 draws without retries or selection. Canonical votes retain
+        # valid live pairs; the second matrix zeroes every invalid rollout as a
+        # sensitivity analysis, still with the original 100-sample denominator.
         write_bytes(marker, (json.dumps(timing | {"files_sha256": {key: hashlib.sha256(value).hexdigest() for key, value in payloads.items()}}) + "\n").encode())
         print(json.dumps({"stem": target["stem"], "mode": mode, "elapsed_seconds": elapsed, "complete": True}), flush=True)
 
