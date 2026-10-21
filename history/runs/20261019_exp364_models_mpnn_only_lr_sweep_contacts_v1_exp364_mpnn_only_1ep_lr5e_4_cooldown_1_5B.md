@@ -16,8 +16,9 @@ marinfold_run:
   iris_job_ids:
   - /bizon/exp364-lr5e-4-cooldown-a01
   - /bizon/exp364-lr5e-4-cooldown-a01/exp364-train-4f1ab581
+  - /bizon/exp364-lr5e-4-cooldown-a01/exp364-train-6ae81a1a
+  - /bizon/exp364-lr5e-4-cooldown-a01/exp364-train-38093fa8
 ---
-
 # 2026-10-19 · exp364_models_mpnn_only_lr_sweep · contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B
 
 **Launched:** 2026-10-19T13:32:42Z by bizon  

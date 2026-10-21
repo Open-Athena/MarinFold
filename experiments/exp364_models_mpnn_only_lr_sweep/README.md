@@ -50,17 +50,18 @@ Production launched with 32 H100s per trial on `cw-us-east-02a` at batch priorit
 
 All three trials were registered as running in W&B on 2026-10-13 at 15:10 UTC. Their live saved configurations were checked against the actual default run: model fields and all optimizer values match except the requested learning rate; the exact two-source training subset, global batch 128, 373,769-step target, and augmentation duration were verified. Final results are pending.
 
-### Validation comparison, 2026-10-19
+### Validation comparison, 2026-10-21
 
 The current curves remain above the completed native-plus-ProteinMPNN exp277 run at matched optimizer steps. All six saved W&B configurations, including the one-epoch cooldown fork, agree on the model, tokenizer, validation component and cache, context length, precision, blocked document attention, and full (uncapped) validation. Global training batch is 128 throughout. Equal steps therefore match packed token slots, although padding and corpus composition mean they do not match the number of real tokens or proteins.
 
 | exp364 peak LR | Latest validation step | Redesign-only loss | exp277 loss at the same step | Gap (nats/token) |
 | --- | ---: | ---: | ---: | ---: |
-| 0.0005 | 139,524 | 3.10369 | 3.06630 | +0.03738 |
-| 0.001 | 167,006 | 3.12081 | 3.06370 | +0.05711 |
-| 0.002 | 78,218 | 3.16297 | 3.08355 | +0.07943 |
+| 0.0005 | 181,804 | 3.09300 | 3.06074 | +0.03226 |
+| 0.001 | 205,058 | 3.12220 | 3.05860 | +0.06360 |
+| 0.002 | 101,472 | 3.15598 | 3.07419 | +0.08179 |
+| 0.0005, one-epoch fork | 143,752 | 3.10221 | 3.06680 | +0.03541 |
 
-At the common step 78,218, redesign-only losses are 3.13308, 3.14290, and 3.16297 in ascending LR order, against exp277's 3.08355. The smallest LR continues to lead this sweep; none has reached its cooldown. The new one-epoch 5e-4 fork is running at step 139,284 in this 14:32 UTC snapshot, before its first scheduled validation at 139,524. Its curve will appear once new validation measurements exist; the inherited parent history is not presented as new fork measurements.
+At the common step 101,472, redesign-only losses are 3.11629, 3.13460, and 3.15598 in ascending LR order, against exp277's 3.07419. The smallest LR continues to lead this sweep; none has reached its cooldown. The one-epoch 5e-4 fork has advanced to step 145,821 in this 13:49 UTC snapshot, still before its cooldown boundary at 149,508. Its latest loss is 3.10221 versus its parent's 3.10134 at the same step 143,752. These measurements do not yet test the effect of cooldown. Only new fork validation measurements are plotted; the inherited parent history is not presented as new fork measurements.
 
 The completed [exp277 first epoch](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B) ended at loss **2.98441**, step 266,344 (best 2.98274 at 264,250). Its [additional full-corpus epoch](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp277-m2-p06-full-epoch2-from213072-1.5B) ended at **2.98099**, absolute step 479,417. The latter restores the first run's pre-cooldown checkpoint at 213,072 and adds a fresh full-corpus pass; these are two completed trajectories, not independent seeds. The first run was already at about 3.059 before cooldown, so cooldown alone does not explain the current matched-step gap.
 
@@ -70,7 +71,7 @@ Schedule timing remains a confound: the two-epoch redesign-only schedule warms u
 
 `compare_validation.py` reproduces the figure from `data/validation_comparison.csv`; `--refresh` retrieves current W&B histories, checks every expected validation step, and verifies the saved validation configurations against the full-data run. Completed curves come from exp277's audited committed CSVs, including the continuation's deduplicated resume history. `data/validation_comparison.json` records source hashes, W&B links, observed progress, schedules, and the comparison contract.
 
-The [public comparison artifacts](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp364-models-mpnn-only-lr-sweep/validation/2026-10-19) include the source CSV, provenance, PNG, PDF, generating scripts, and summary slides. From the repository root, reproduce with `uv run --project experiments/exp364_models_mpnn_only_lr_sweep --frozen --with matplotlib python experiments/exp364_models_mpnn_only_lr_sweep/compare_validation.py`; append `--publish` to upload the saved snapshot with the HF CLI.
+The [public comparison artifacts](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp364-models-mpnn-only-lr-sweep/validation/2026-10-21) include the source CSV, provenance, PNG, PDF, generating scripts, and summary slides. From the repository root, reproduce with `uv run --project experiments/exp364_models_mpnn_only_lr_sweep --frozen --with matplotlib python experiments/exp364_models_mpnn_only_lr_sweep/compare_validation.py`; append `--publish` to upload the saved snapshot with the HF CLI.
 
 ### One-epoch cooldown fork, 2026-10-19
 
@@ -94,4 +95,4 @@ Each trial writes to `s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_l
 
 ## Conclusion
 
-Training is in progress. As of 2026-10-19, all three redesign-only trials have higher LM validation loss than the full-data run at matched optimizer steps; 5e-4 leads this sweep. The one-epoch cooldown fork is training and awaiting its first validation measurement. Final checkpoints and contact evaluations are still needed, and differing schedule durations limit attribution to the training subset alone.
+Training is in progress. As of 2026-10-21, all three redesign-only trials have higher LM validation loss than the full-data run at matched optimizer steps; 5e-4 leads this sweep. The one-epoch fork now has validation measurements but has not reached its cooldown boundary. Repeated batch-priority preemptions have slowed wall-clock progress; checkpoint recovery is working. Final checkpoints and contact evaluations are still needed, and differing schedule durations limit attribution to the training subset alone.

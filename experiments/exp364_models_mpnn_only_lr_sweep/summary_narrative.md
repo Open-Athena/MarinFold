@@ -24,13 +24,13 @@ All three production trials were launched on 32 H100s each, 96 total, using regi
 
 All trials are training; the two-epoch runs are not yet complete.
 
-## Validation comparison — 2026-10-19
+## Validation comparison — 2026-10-21
 
 Redesign-only training is behind the completed native-plus-redesign baseline at matched steps on the same full LM validation set.
 
-At step 78,218: full data 3.08355; redesign-only LR 5e-4 / 1e-3 / 2e-3: 3.13308 / 3.14290 / 3.16297.
+At step 101,472: full data 3.07419; redesign-only LR 5e-4 / 1e-3 / 2e-3: 3.11629 / 3.13460 / 3.15598.
 
-Latest LR 5e-4 validation: loss 3.10369 at step 139,524 versus full data 3.06630 (+0.03738 nats/token). LR 1e-3 is at 3.12081 at step 167,006. The lowest LR continues to lead this sweep.
+Latest LR 5e-4 validation: loss 3.09300 at step 181,804 versus full data 3.06074 (+0.03226 nats/token). LR 1e-3 is at 3.12220 at step 205,058. The lowest LR continues to lead this sweep.
 
 ## Completed references and interpretation
 
@@ -48,4 +48,6 @@ Keep the first-epoch shuffle, data offset, optimizer state, and original augment
 
 Stop after 186,885 total updates (final checkpoint 186,884): exactly 23,921,189 packed examples, with 37 real examples in the final batch. The fork adds 47,831 updates to the inherited prefix.
 
-The source is frozen in same-region S3; restored optimizer counters verified. The fork is training on 8 H100s, with its first validation still pending at this snapshot. Its parent continues independently on 32 H100s. All ten CPU tests pass.
+At Oct 21, the fork has reached step 145,821: latest validation 3.10221 at 143,752 versus its parent's 3.10134 at the same step. Cooldown has not started yet. The parent remains independent. All ten CPU tests pass.
+
+Repeated batch-priority preemptions have delayed progress, especially for the fork. Automatic checkpoint resumes are working, but calendar finish estimates remain sensitive to GPU availability.
