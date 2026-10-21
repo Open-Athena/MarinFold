@@ -14,14 +14,14 @@ METHODS = ['frequency', 'sumq', 'meanq', 'sqrt_frequency_meanq', 'diversity_sumq
            'frequency_then_meanq', 'f1_weighted_frequency']
 
 
-def evaluate(rows: list[dict], target: dict, method: str, seconds: float, policy: str) -> dict:
+def evaluate(rows: list[dict], target: dict, method: str, seconds: float, policy: str, hardware: str) -> dict:
     """Score one complete map and the candidate pool from which it was ranked."""
     scores = aggregate(rows, method)
     truth = set(map(tuple, target['contacts']))
     result = map_metrics(scores, truth, target['L'])
     long = map_metrics(scores, truth, target['L'], 24)
     return dict(entry_id=target['entry_id'], group_id=target['group_id'], L=target['L'],
-        policy=policy, rollouts=len(rows), method=method, elapsed_seconds=seconds,
+        policy=policy, rollouts=len(rows), method=method, elapsed_seconds=seconds, hardware=hardware,
         mean_contacts=np.mean([len(row['pairs']) for row in rows]),
         finished_fraction=np.mean([row['finished'] for row in rows]),
         **result, **{'long_' + key: value for key, value in long.items()})
@@ -63,8 +63,9 @@ def main() -> None:
                 ledger.extend(timings)
                 for n in [n for n in [1, 2, 4, 8, 16] if n <= len(rows)]:
                     cost = sum(row['elapsed_seconds'] for row in timings[:n])
+                    hardware = ';'.join(sorted({row['gpu_name'] for row in timings[:n]}))
                     for method in METHODS:
-                        results.append(evaluate(rows[:n], target, method, cost, policy['name']))
+                        results.append(evaluate(rows[:n], target, method, cost, policy['name'], hardware))
                 for row in rows:
                     seen = set()
                     probabilities, labels = [], []
@@ -89,6 +90,7 @@ def main() -> None:
                             positives=float(actual[mask].sum())))
         if args.pool:
             rows, generation_seconds, score_seconds = [], 0., 0.
+            generation_hardware, score_hardware = set(), set()
             if args.pool_generation is None:
                 raise ValueError('Pool comparisons require measured generation costs')
             for size in plan.get('pool_sizes', [8, 32, 128]):
@@ -100,20 +102,24 @@ def main() -> None:
                 wave = pq.read_table(key.with_suffix('.parquet')).to_pylist()
                 if plan.get('pool_mode') == 'independent':
                     rows, generation_seconds, score_seconds = [], 0., 0.
+                    generation_hardware, score_hardware = set(), set()
                 rows.extend(wave)
                 if len(rows) != size or {r['sample'] for r in rows} != set(range(size)):
                     raise ValueError('Ordinary pool contains missing or duplicate samples')
                 gt = pd.read_csv(args.pool_generation / entry / f'pool-{size}.timings.csv').iloc[0].to_dict()
                 ledger.append(gt)
                 generation_seconds += gt['elapsed_seconds']
+                generation_hardware.add(gt['gpu_name'])
                 if not args.frequency_only:
                     st = pd.read_csv(key.with_suffix('.timings.csv')).iloc[0].to_dict()
                     ledger.append(st)
                     score_seconds += st['elapsed_seconds']
+                    score_hardware.add(st['gpu_name'])
                 for method in ['frequency'] if args.frequency_only else METHODS:
                     seconds = generation_seconds + (score_seconds if method != 'frequency' else 0.)
                     name = 'ordinary-direct' if plan.get('pool_mode') == 'independent' else 'ordinary'
-                    results.append(evaluate(rows, target, method, seconds, name))
+                    hardware = ';'.join(sorted(generation_hardware | (score_hardware if method != 'frequency' else set())))
+                    results.append(evaluate(rows, target, method, seconds, name, hardware))
     args.out.mkdir(parents=True, exist_ok=True)
     frame = pd.DataFrame(results)
     pd.DataFrame(completeness).to_csv(args.out / 'completeness.csv', index=False)
@@ -127,6 +133,7 @@ def main() -> None:
     summary = []
     for (policy, n, method), rows in frame.groupby(['policy', 'rollouts', 'method']):
         record = dict(policy=policy, rollouts=n, method=method, structures=len(rows),
+            hardware=';'.join(sorted(set(rows.hardware))),
             groups=rows.group_id.nunique(), gpu_seconds=rows.elapsed_seconds.sum(),
             mean_seconds=rows.elapsed_seconds.mean(), long_structures=int(rows.long_r_precision.notna().sum()))
         for metric in ['r_precision', 'average_precision', 'oracle_coverage', 'long_r_precision',

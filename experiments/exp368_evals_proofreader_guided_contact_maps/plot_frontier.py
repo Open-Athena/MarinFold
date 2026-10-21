@@ -1,4 +1,4 @@
-"""Compare complete-cohort contact accuracy against measured H100 compute."""
+"""Compare complete-cohort contact accuracy on one measured GPU model."""
 
 import argparse
 import json
@@ -28,6 +28,9 @@ def main() -> None:
     ordinary = frame.policy.isin(['ordinary', 'ordinary-direct'])
     frame = frame[(~ordinary & (frame.method == 'sumq')) |
                   (ordinary & frame.method.isin(['sumq', 'frequency']))]
+    if frame.hardware.isna().any() or frame.hardware.nunique() != 1 or frame.hardware.str.contains(';').any():
+        raise ValueError('A compute frontier must use one GPU model throughout; plot hardware cohorts separately')
+    hardware = frame.hardware.iloc[0]
     expected = {policy['name'] for policy in plan['policies']}
     if not expected.issubset(set(frame.policy)):
         raise ValueError('A planned guided policy has no results')
@@ -45,14 +48,14 @@ def main() -> None:
                                        ['All-contact R-precision', 'Long-range R-precision'], strict=True):
             axis.plot(rows.elapsed_seconds, rows[metric], marker=marker, color=color, label=label,
                       linewidth=1.5, markersize=4)
-            axis.set(xscale='log', xlabel='Mean warm H100 GPU seconds per contact map', ylabel=title)
+            axis.set(xscale='log', xlabel=f'Mean warm GPU seconds per contact map\n({hardware})', ylabel=title)
             axis.grid(alpha=.2)
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc='lower center', ncol=4, fontsize=7.5, frameon=False)
     fig.suptitle(args.title)
     fig.tight_layout(rect=(0, .23, 1, .96))
     save_plot_with_meta(fig, args.out, dpi=180,
-        caption='Each point averages the same planned structures. Guided curves use sum-q aggregation over increasing '
+        caption=f'GPU model: {hardware}. Each point averages the same planned structures. Guided curves use sum-q aggregation over increasing '
         'independent trajectories; ordinary curves show both frequency and sum q. Search cost includes discarded '
         'proposals, lookahead, population branches, repair and final scoring. Ordinary frequency omits proofreader cost. '
         'GPU resource seconds sum the work for all trajectories; they are not parallel serving latency. Model staging '

@@ -23,6 +23,8 @@ def main() -> None:
     """Check frozen replay thresholds before using the alternative GPU backend."""
     parser = argparse.ArgumentParser()
     parser.add_argument('--out', required=True)
+    parser.add_argument('--attention-backend', choices=['auto', 'math', 'efficient'], default='auto')
+    parser.add_argument('--full-precision-reductions', action='store_true')
     args = parser.parse_args()
     plan = json.loads((HERE / 'backend_check_plan.json').read_text())
     source = verify_source()
@@ -31,6 +33,14 @@ def main() -> None:
     api = load_release()
     torch.set_num_threads(4)
     torch.set_float32_matmul_precision('highest')
+    if args.attention_backend != 'auto':
+        torch.backends.cuda.enable_flash_sdp(False)
+        torch.backends.cuda.enable_cudnn_sdp(False)
+        torch.backends.cuda.enable_math_sdp(args.attention_backend == 'math')
+        torch.backends.cuda.enable_mem_efficient_sdp(args.attention_backend == 'efficient')
+    if args.full_precision_reductions:
+        torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = False
+        torch.backends.cuda.allow_fp16_bf16_reduction_math_sdp(False)
     setup_start = time.perf_counter()
     os.environ.update(stage_regional(api, 'US-EAST-08A'))
     engine = load_engine(api)
@@ -41,7 +51,8 @@ def main() -> None:
     worker = dict(model_nickname='exp356-step-18000', runner_tag='iris', gpu_name=gpu.name,
         gpu_total_memory_gb=gpu.total_memory / 1e9, gpu_compute_capability=f'{gpu.major}.{gpu.minor}',
         hostname=socket.gethostname(), platform=platform.platform(), torch_version=torch.__version__,
-        cuda_version=torch.version.cuda)
+        cuda_version=torch.version.cuda, attention_backend=args.attention_backend,
+        full_precision_reductions=args.full_precision_reductions)
     results, timings = [], []
     assessment = engine.tokenizer.convert_tokens_to_ids('<assess>')
     for reference in plan['references']:

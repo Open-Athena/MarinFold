@@ -21,6 +21,11 @@ def main() -> None:
     parser.add_argument('--out', type=Path, required=True)
     args = parser.parse_args()
     frame = pd.read_csv(args.input)
+    if 'hardware' not in frame or frame.hardware.isna().any() or frame.hardware.nunique() != 1:
+        raise ValueError('A latency comparison requires one recorded GPU model')
+    hardware = frame.hardware.iloc[0]
+    if ';' in hardware:
+        raise ValueError('Mixed hardware cannot define a latency comparison')
     entries = set(json.loads(args.plan.read_text())['entries'])
     maps = {}
     for size in [8, 128]:
@@ -60,7 +65,7 @@ def main() -> None:
         axes[0].scatter(rows.L, rows.elapsed_seconds, s=10, alpha=.25, color=color,
                         label=f'MarinFold, {size} rollouts')
     axes[0].set(xscale='log', yscale='log', xlabel='Sequence length (residues)',
-                ylabel='Warm H100 generation seconds', title='Measured per-protein latency')
+                ylabel=f'Warm generation seconds\n({hardware})', title='Measured per-protein latency')
     axes[0].legend(fontsize=8)
     axes[0].grid(which='both', alpha=.2)
     axes[1].hist(delta, bins=40, color='#2563eb', alpha=.8)
