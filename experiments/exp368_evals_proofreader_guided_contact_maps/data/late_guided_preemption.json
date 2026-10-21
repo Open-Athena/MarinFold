@@ -1,0 +1,24 @@
+{
+  "observed_at": "2026-10-21T21:41:00.799126+00:00",
+  "job": "kueue://cw-rno2a/iris/exp368-native-guided-v1-003",
+  "job_uid": "aa3739b3-e0ac-463a-8784-9c15bb6085b1",
+  "old_pod": "exp368-native-guided-v1-003-5s8tv",
+  "task": "70-native-guided-003",
+  "reason": "Kueue preempted the job to accommodate a higher-priority workload; Job suspended, not terminally failed.",
+  "recovery": "Leave the existing resumable Job in the same batch queue. No duplicate replacement submitted.",
+  "remaining": [
+    {
+      "entry_id": "1q2l_A",
+      "policy": "look32-k16",
+      "sample": 0
+    },
+    {
+      "entry_id": "1q2l_A",
+      "policy": "repair-k16",
+      "sample": 0
+    }
+  ],
+  "checkpoint_granularity": "Completed trajectories only. The unfinished trajectory must restart; its lost work is excluded from successful-trajectory warm timing.",
+  "scientific_changes": false,
+  "other_fleet_check": "At 21:39 UTC, the East H100 fleet reported zero available H100s. No cross-region model transfer or alternate job was launched."
+}

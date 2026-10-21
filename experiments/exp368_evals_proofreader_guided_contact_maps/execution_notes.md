@@ -159,3 +159,15 @@ excluded from reports and source archives. Bootstrap failures before inference
 fixed with an isolated installer and explicit `python3`; they produced no
 scientific results.
 
+
+### Late preemption of the largest guided trajectory
+
+At about 21:37 UTC, Kueue preempted native shard 003 to admit higher-priority
+work. The existing Job remained resumable in the same batch queue; no duplicate
+replacement was submitted. Its unfinished 937-residue lookahead trajectory must
+restart because checkpoints commit complete trajectories, not intermediate
+contact prefixes. The other two active lookahead workers continued, and shard
+000 completed. A read-only fleet check found no spare East H100 capacity.
+No sampling rule, priority, model, or seed changed. This lost work is excluded
+from the successful-inference timing tables. `data/late_guided_preemption.json`
+records the job UID, task and affected trajectory identities.
