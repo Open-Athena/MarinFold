@@ -59,16 +59,18 @@ The approved 267.73 GB transfer finished at 15:59 UTC. All 21,936 objects passed
 
 Production was submitted at 16:33 UTC from commit 33cc077f and registered in W&B at 16:51:58 UTC. At 17:50 UTC it reached step 139702, with full validation loss 3.10391 and throughput about 244k token slots/s. Roughly 56 compute hours remain at that rate, before validation or interruptions. The source remains the original frozen checkpoint, not the smoke endpoint. Evidence: data/tpu_transfer_plan.json, tpu_input_verification.json, tpu_smoke.csv and tpu_smoke_verification.json.
 
-## Contact evaluation: recipe and comparison
+## Contact evaluation: approved continuation
 
-Score the latest saved checkpoints of all three learning rates plus the GPU cooldown fork on eval-val (97 natural proteins) and eval-denovo (19 designs). Eval-test is excluded. The four snapshots were pinned before the TPU copy began advancing.
+Score 97 natural eval-val proteins and 19 eval-denovo designs. Eval-test is excluded. Latest complete checkpoints: 184314 (5e-4), 207865 (1e-3), 105722 (2e-3), 146264 (one-epoch fork). Exposure is unequal; cooldown has not started.
 
-Use the validated exp277 worker and exp89 metrics: 100 resampled rollouts, temperature 1, top-p 0.95, top-k disabled, 6L+128 budget. Gate each model on a real-protein smoke; require complete coverage and no capped rollouts. Twenty-nine local checks pass. There are no new R-precision results yet.
+Keep the original 100-rollout, temperature-1, top-p-0.95 recipe. Start at 6L+128; the user approved continuing capped samples. Preserve each capped sample's exact prompt and generated tokens, then sample only its suffix within the remaining 8192-token context. Record continuation seeds, budgets and lengths. Require every sample to terminate; never discard capped samples from the score.
 
-## Contact evaluation: execution status
+Thirty-five CPU checks pass. Natural/design results and viral/low-MSA cuts stay separate. No complete new R-precision scores are available yet.
 
-The user selected CoreWeave. Storage writes are suspended, so each checkpoint is staged and exported on regional worker disk. Only small results and source/input files go to public HF. All four checkpoints exported successfully. The three two-epoch models passed their smoke; a local output-directory bug was fixed and regression-tested. Replacement a04 jobs started full evaluation, then were preempted and requeued. No full-set scores are complete. Model bytes remain on CoreWeave; existing training jobs are retained.
+## Contact evaluation: durable sources restored
 
-Full-data first-epoch reference R-precision: eval-val 0.55510 / 0.53706 and eval-denovo 0.69640 / 0.67497 (all / long). The latest redesign-only checkpoints have unequal training exposure; comparisons are preliminary.
+CoreWeave writes recovered after the account suspension. All four refreshed native sources are frozen and independently verified: 124 files, 70.63 GB. CPU export jobs are preparing reusable HF weights and tokenizers on CoreWeave. GPU retries will load those exports; model bytes stay regional.
 
-The one-epoch fork hit the prescribed token cap on 2/100 smoke rollouts for 5sbj_A. Its design evaluation is paused pending the user's token-budget choice. A separate eval-val job was submitted at 18:02 UTC, preserving all 97 natural targets and the original budget. The earlier full-data continuation also had capped samples on this design, so that comparison needs an explicit qualification.
+The earlier attempt lost temporary source objects during repeated preemptions. Its diagnostics and snapshot are preserved; no full evaluation groups completed. The fork smoke capped 2/100 samples on 5sbj_A, motivating the approved continuation.
+
+Full-data first-epoch reference: eval-val 0.55510 / 0.53706; eval-denovo 0.69640 / 0.67497 (all / long). The continuation reference also had capped design samples, so the token-budget difference must be stated. No matched redesign-corpus KNN null is available.
