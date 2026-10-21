@@ -298,12 +298,33 @@ the runtime, not the production model. The exact result and timing are in
 `data/runtime_smoke_gb200.json` and `data/runtime_smoke_gb200_timings.csv`.
 
 The CUDA wheel is hash-pinned from the [official PyTorch CUDA 13 index](https://download.pytorch.org/whl/cu130/torch/).
-A production-model check will use one 6,014,167,823-byte mirror to the existing
+A production-model check used one 6,014,167,823-byte mirror to the existing
 `marin-us-east-08a` bucket, with the same durable 7 GB reservation cap and full
 input hash checks as the RNO mirror. GB200 results require separate hardware
 provenance and timing comparisons. The existing vLLM 0.9.2 image is amd64-only;
 the pinned official 0.14.1-cu130 ARM image would constitute a separately verified
 ordinary-generation backend, not a bitwise reproduction of the H100 baseline.
+
+The production default-backend check **failed**: replaying the same eight-rollout
+batches gave maximum BF16 contact-score differences of 0.0161, 0.0295 and 0.0800
+on the three length-selected references, exceeding the predeclared 0.01 guard.
+The separate fixed-length smoke also failed the unchanged 1e-5 FP32 cached/full
+check, with error 1.2279e-5. These failures are preserved in
+`data/backend_check_gb200_default*`; they do not authorize switching the production
+campaign to this runtime. Explicit math and memory-efficient attention backends
+with full-precision reductions are being tested without changing acceptance
+thresholds. PyTorch documents that [different attention implementations can
+produce different numerical results](https://docs.pytorch.org/docs/main/generated/torch.nn.functional.scaled_dot_product_attention.html);
+that is a possible explanation, not a diagnosis established by these checks.
+The separate vLLM 0.14.1 ARM generation smoke completed all six ordinary pool
+waves. Cost plots now require recorded, consistent GPU hardware.
+
+At 18:58 UTC, before inspecting new GB200 pilot accuracy, the ordinary baseline
+phase was expanded to the same complete 32-protein cohort on GB200: independent
+pools of 8, 32, 128, 512 and 2,048 rollouts. These reuse the frozen cohort, plans
+and seeds. Their outputs and timings are separate from the H100 phase. The larger
+pools test whether additional ordinary sampling is competitive with expensive
+guided search; no guided backend is approved by this baseline-only expansion.
 
 ## Conclusion
 
