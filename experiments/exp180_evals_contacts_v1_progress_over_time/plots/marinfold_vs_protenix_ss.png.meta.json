@@ -1,5 +1,5 @@
 {
-  "caption": "Per-protein R-precision, MarinFold #199 cool vs Protenix-v2 SS (n=554). Means 0.631 vs 0.603; the difference varies with length.",
+  "caption": "August 15 historical snapshot: #199 versus single-sequence Protenix on legacy 554. This set overlaps baseline training data; the September slide uses natural eval-val.",
   "script": "plot_vs_protenix.py",
   "args": [
     "--baseline single_seq"

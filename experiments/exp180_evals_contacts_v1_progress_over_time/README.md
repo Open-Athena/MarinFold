@@ -3,12 +3,84 @@ marinfold_experiment:
   issue: 180
   title: 'exp: track contacts-v1 R-precision and validation loss over time'
   kind: evals
-  branch: claude/rprecision-validation-loss-plots-750306
+  branch: codex/exp180-update-progress-slide
 ---
 
 # exp: track contacts-v1 R-precision and validation loss over time
 
-**Issue:** [#180](https://github.com/Open-Athena/MarinFold/issues/180) · **Kind:** `evals` · **Branch:** `claude/rprecision-validation-loss-plots-750306`
+**Issue:** [#180](https://github.com/Open-Athena/MarinFold/issues/180) · **Kind:** `evals` · **Branch:** `codex/exp180-update-progress-slide`
+
+## Project-update slide — September 30, 2026
+
+![Updated contact accuracy timeline and natural-protein comparison](plots/contacts_v1_progress_2026-09-30.png)
+
+Slide exports: [PNG](plots/contacts_v1_progress_2026-09-30.png),
+[editable-text SVG](plots/contacts_v1_progress_2026-09-30.svg), and
+[PDF](plots/contacts_v1_progress_2026-09-30.pdf). A
+[full-width timeline](plots/rprecision_timeline_2026-09-30.png) is also available
+as SVG and PDF. Both are 16:9.
+
+The exports and plotted source tables also have a
+[public bucket copy](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp180-progress-over-time/2026-09-30).
+`publish_update_slide.py` (no arguments, run in this experiment's environment)
+rebuilds and uploads just those small artifacts with the authenticated `hf` CLI.
+
+The latest paired evaluation puts the current default, #277 epoch 1, at
+**0.5551 on natural eval-val (97 proteins)**; epoch 2 is **0.5575**, a tie
+(paired delta +0.00240, 95% protein-bootstrap interval −0.00644 to +0.01102).
+The default remains the first epoch. On legacy 554, the same checkpoints score
+0.62051 and 0.62203. The older #199 cooldown still holds the numerical record
+at 0.63068, but used training data from before decontamination.
+
+The updated timeline adds #232's decontaminated sweep and continuation, and both
+#277 epochs. It preserves a running maximum over rollout scores and draws a
+second maximum for the lineage using decontaminated native data. Pairwise
+measurements remain separate and no oracle enters either line. The August
+0.600 target is retained. Only milestone points receive labels.
+
+Unlike the August figure, structure-predictor baselines appear only on the
+matched natural eval-val panel. The legacy set is about 75% designs and includes
+baseline training exposure; it is suitable for tracking our checkpoints, not
+for a generalization claim or a clean baseline comparison. #277's native
+backbones came from the decontaminated corpus, but the redesigned sequences
+have not been independently audited for homology.
+
+Reproduce from the repository root, with no network access or new inference:
+
+```bash
+uv run --project experiments/exp180_evals_contacts_v1_progress_over_time --frozen \
+  python experiments/exp180_evals_contacts_v1_progress_over_time/plot_update_slide.py
+uv run --project experiments/exp180_evals_contacts_v1_progress_over_time --frozen \
+  python experiments/exp180_evals_contacts_v1_progress_over_time/build_summary.py
+```
+
+`data/progress_slide_checkpoints.csv` and `data/progress_slide_natural.csv` contain
+the plotted values and sources. Historical measurements come from the existing
+`rprecision_checkpoints.csv`; new ones come from #232's August 24 comparison and
+#277's `eval_rollout_v2_epochs/epoch_comparison.csv` (the paired rerun, so the
+first-epoch legacy score rounds to 0.621 rather than its original 0.620).
+Natural baseline values come from #277's saved `figure_summary.csv`.
+
+Dates are training dates in UTC, not evaluation or PR dates. The #232 m1-p02
+and m2-p06 sweep runs finished August 17 and August 18 respectively; W&B
+history locates the continuation's step 363000 at **August 22, 23:54:09 UTC**,
+before the run was stopped. Those timestamp observations and W&B URLs are
+saved in the CSV. #277's run histories document completion on September 13
+(step 266344) and September 19 (step 479417). #277's paired evaluation excluded
+capped rollouts: 1/67,000 in epoch 1 and 44/67,000 in epoch 2, while retaining
+all evaluation units. The natural eval-val proteins were unaffected by caps.
+No eval-test predictions were run or newly inspected for this update.
+
+The full source evaluation reports the frozen low-MSA-depth cuts: 11/16 natural
+proteins, epoch 1/2 0.29962/0.29450; 0/5 FoldBench-only natural proteins (all in
+eval-test); and 26/26 low-depth designs, 0.60258/0.60686. Those partial natural
+means are not comparable with the older 16-protein mean. Its published viral
+cut is 6 proteins, 0.48542/0.47959; the nonviral cut includes designs and must
+not be described as a natural-only comparison.
+
+The older figures and the report below remain an **August 15 historical
+snapshot**, including their then-current baseline interpretations. Use the
+September slide for current project updates.
 
 ## Question
 
