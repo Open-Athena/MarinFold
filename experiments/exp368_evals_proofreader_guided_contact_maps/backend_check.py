@@ -25,6 +25,7 @@ def main() -> None:
     parser.add_argument('--out', required=True)
     parser.add_argument('--attention-backend', choices=['auto', 'math', 'efficient'], default='auto')
     parser.add_argument('--full-precision-reductions', action='store_true')
+    parser.add_argument('--blas-library', choices=['cublas', 'cublaslt'])
     args = parser.parse_args()
     plan = json.loads((HERE / 'backend_check_plan.json').read_text())
     source = verify_source()
@@ -33,6 +34,8 @@ def main() -> None:
     api = load_release()
     torch.set_num_threads(4)
     torch.set_float32_matmul_precision('highest')
+    if args.blas_library:
+        torch.backends.cuda.preferred_blas_library(args.blas_library)
     if args.attention_backend != 'auto':
         torch.backends.cuda.enable_flash_sdp(False)
         torch.backends.cuda.enable_cudnn_sdp(False)
@@ -52,7 +55,7 @@ def main() -> None:
         gpu_total_memory_gb=gpu.total_memory / 1e9, gpu_compute_capability=f'{gpu.major}.{gpu.minor}',
         hostname=socket.gethostname(), platform=platform.platform(), torch_version=torch.__version__,
         cuda_version=torch.version.cuda, attention_backend=args.attention_backend,
-        full_precision_reductions=args.full_precision_reductions)
+        full_precision_reductions=args.full_precision_reductions, blas_library=args.blas_library)
     results, timings = [], []
     assessment = engine.tokenizer.convert_tokens_to_ids('<assess>')
     for reference in plan['references']:
@@ -97,10 +100,27 @@ def main() -> None:
             model_load_seconds=load_seconds, total_seconds=load_seconds + elapsed,
             timestamp_utc=datetime.now(UTC).isoformat(), **worker))
         print('[exp368-backend-check] ' + json.dumps(result), flush=True)
+    cache_checks = []
+    for entry in plan.get('additional_cache_entries', []):
+        target = targets[entry]
+        if target['split'] != 'validation':
+            raise ValueError('Additional cache checks must use validation')
+        prompt, offset = api.records.make_prompt(target['sequence'], f'exp368:{entry}:r0')
+        started = time.perf_counter()
+        cache = verify_cache(engine, engine.tokenizer.encode(prompt, add_special_tokens=False), target['L'], offset)
+        torch.cuda.synchronize()
+        elapsed = time.perf_counter() - started
+        cache_checks.append(dict(entry_id=entry, L=target['L'], **cache))
+        timings.append(dict(stem=entry, n_residues=target['L'], n_pairs=16,
+            mode='additional-cache-verification', elapsed_seconds=elapsed,
+            model_load_seconds=load_seconds, total_seconds=load_seconds + elapsed,
+            timestamp_utc=datetime.now(UTC).isoformat(), **worker))
+        print('[exp368-additional-cache] ' + json.dumps(cache_checks[-1]), flush=True)
     passed = all(row['max_bf16_probability_error'] <= plan['max_bf16_probability_error']
                  and row['max_bf16_recall_error'] <= plan['max_bf16_recall_error'] for row in results)
     result = dict(status='passed' if passed else 'failed', plan=plan, source_sha256=source['sha256'],
-                  results=results, worker=worker, limitation='Numerical agreement, not bitwise sampler equivalence.')
+                  results=results, cache_checks=cache_checks, worker=worker,
+                  limitation='Numerical agreement, not bitwise sampler equivalence.')
     api.storage.write_json(result, args.out + '/result.json')
     api.storage.write_csv(results, args.out + '/errors.csv')
     api.storage.write_csv(timings, args.out + '/timings.csv')

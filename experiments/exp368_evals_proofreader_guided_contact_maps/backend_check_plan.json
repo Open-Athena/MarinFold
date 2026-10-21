@@ -27,5 +27,6 @@
   "max_bf16_probability_error": 0.01,
   "max_bf16_recall_error": 0.01,
   "fp32_cache_tolerance": 1e-05,
+  "additional_cache_entries": ["6z0m_A"],
   "note": "Cross-GPU BF16 replay guard fixed before measurement. Does not establish bitwise equivalence; FP32 cached/full equivalence retains the original stricter gate."
 }
