@@ -132,12 +132,26 @@ disabled failure retries, while preemption retries defaulted to 1000. Local
 state was lost, the staging counter reset, and repeated input transfers exceeded
 the intended 9.5 GB campaign ceiling. The server was canceled when this was
 detected at 15:20 UTC. `data/preemption_incident.json` records the evidence.
-All new launches are now restricted to storage-colocated `cw-us-east-02a`.
+Initial recovery launches were restricted to storage-colocated `cw-us-east-02a`.
 `recover_task.py` downloads and verifies each original task's frozen source
 bundle and resumes directly from its durable S3 trajectories. Twelve independent
 H100 recovery jobs retain the original sampling plan and sharding. The ordinary
 baseline is also queued on all 1,375 structures from the 255 remaining validation
 groups, excluding every pilot group. No guided winner or test policy is selected.
+
+After a prolonged East capacity wait, a task-owned object-store bucket was
+created in `RNO2A`. `prepare_regional_mirror.py` made one 6,014,167,823-byte copy
+of the inputs to
+`s3://marinfold-exp368-rno2a/MarinFold/exp368/inputs-v1/`. It persists multipart
+progress and reserves each 32 MiB source read before transfer, with a cumulative
+7 GB cap that survives preemption. A server-side copy attempt was rejected at
+its first part; its empty upload was explicitly aborted before the streaming
+copy. The streaming mirror completed successfully in about 70 seconds.
+`regional_inputs.py` checks the full reader, head, reconstructed-generator and
+target hashes against the original pilot. Regional recovery jobs use identical
+H100 hardware and original frozen task bundles, with large weight reads now
+colocated. New larger phases also write to the regional bucket. The small
+existing guided results retain their original durable prefix for resumption.
 
 ## Conclusion
 

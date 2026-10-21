@@ -46,8 +46,10 @@ An eight-H100 RNO worker was preempted repeatedly. Iris failure-retry limits do
 not limit preemption retries, so the worker repeated its shared model transfer
 and lost local progress. It was canceled on detection; the incident is recorded.
 
-Twelve colocated H100 workers now resume the original source snapshots directly
-from durable S3 trajectories. A complete guided comparison is still pending.
+Recovery uses original source snapshots and durable S3 trajectories. After East
+capacity remained full, a durable 6.014 GB RNO2A input mirror was completed with
+per-chunk reservations and a restart-safe 7 GB cap. Regional H100 smoke tests
+verify identical model and target hashes. The complete guided comparison is pending.
 Ordinary baselines are queued for 1,375 structures from 255 validation groups
 outside the pilot. No new reserved-test scores have been computed or inspected.
 
