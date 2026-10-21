@@ -55,6 +55,26 @@ def build_bundle() -> Path:
     return bundle
 
 
+def local_entrypoint(trial: str) -> list[str]:
+    """Bootstrap the validated vLLM image and isolated CPU export environment."""
+    package = "marinfold @ git+https://github.com/Open-Athena/MarinFold.git@d1bea417a64cc042ad931422200c3edeb873f2e0#subdirectory=marinfold"
+    shell = "\n".join(
+        [
+            "set -euo pipefail",
+            "VLLM_PY=''",
+            'for candidate in /app/.venv/bin/python /usr/local/bin/python /usr/bin/python3 /opt/venv/bin/python python3 python; do if "$candidate" -c "import vllm" >/dev/null 2>&1; then VLLM_PY="$candidate"; break; fi; done',
+            'test -n "$VLLM_PY"',
+            'export VLLM_PORT=$("$VLLM_PY" -c \'import socket; s=socket.socket(); s.bind(("",0)); print(s.getsockname()[1]); s.close()\')',
+            '"$VLLM_PY" -m pip install --quiet "uv==0.9.18" "fsspec==2026.1.0" "s3fs==2026.1.0" "aiobotocore==2.26.0" "pyarrow>=23,<24"',
+            '"$VLLM_PY" -m pip install --quiet --no-deps ' + shlex.quote(package),
+            "exec uv run --frozen --with scikit-learn==1.7.2 python -m experiments.exp364_models_mpnn_only_lr_sweep.eval_local --trial "
+            + shlex.quote(trial)
+            + ' --vllm-python "$VLLM_PY"',
+        ]
+    )
+    return ["bash", "-lc", shell]
+
+
 def main() -> None:
     """Dry-run by default; --submit is reserved for the chosen execution plan."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -83,22 +103,7 @@ def main() -> None:
     if args.local_scratch:
         if not args.trial:
             parser.error("--local-scratch requires --trial")
-        package = "marinfold @ git+https://github.com/Open-Athena/MarinFold.git@d1bea417a64cc042ad931422200c3edeb873f2e0#subdirectory=marinfold"
-        shell = "\n".join(
-            [
-                "set -euo pipefail",
-                "VLLM_PY=''",
-                'for candidate in /app/.venv/bin/python /usr/local/bin/python /usr/bin/python3 /opt/venv/bin/python python3 python; do if "$candidate" -c "import vllm" >/dev/null 2>&1; then VLLM_PY="$candidate"; break; fi; done',
-                'test -n "$VLLM_PY"',
-                'export VLLM_PORT=$("$VLLM_PY" -c \'import socket; s=socket.socket(); s.bind(("",0)); print(s.getsockname()[1]); s.close()\')',
-                '"$VLLM_PY" -m pip install --quiet "uv==0.9.18" "fsspec==2026.1.0" "s3fs==2026.1.0" "aiobotocore==2.26.0" "pyarrow>=23,<24"',
-                '"$VLLM_PY" -m pip install --quiet --no-deps ' + shlex.quote(package),
-                "exec uv run --frozen --with scikit-learn==1.7.2 python -m experiments.exp364_models_mpnn_only_lr_sweep.eval_local --trial "
-                + shlex.quote(args.trial)
-                + ' --vllm-python "$VLLM_PY"',
-            ]
-        )
-        entry = ["bash", "-lc", shell]
+        entry = local_entrypoint(args.trial)
     command = [
         args.iris_bin,
         "--cluster",
