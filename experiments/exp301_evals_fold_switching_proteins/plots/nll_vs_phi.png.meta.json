@@ -1,0 +1,5 @@
+{
+  "script": "plot.py",
+  "args": [],
+  "caption": "Teacher-forced likelihood against sampled preference: the two readouts agree per protein."
+}

@@ -1,0 +1,5 @@
+{
+  "script": "plot.py",
+  "args": [],
+  "caption": "The gate: this worker against exp277's published per-protein R-precision on eval-val."
+}
