@@ -1,0 +1,13 @@
+model,dataset,mode,n_rollouts,stopped_rollouts,unfinished_rollouts,elapsed_seconds
+exp277_full_epoch2_from213072_step479417,afdb_train,oracle_half,3200,3200,0,124.70722800295334
+exp277_full_epoch2_from213072_step479417,afdb_train,unconditioned,54400,54399,1,2787.421097644139
+exp277_full_epoch2_from213072_step479417,afdb_val,oracle_half,3200,3200,0,91.09612371015828
+exp277_full_epoch2_from213072_step479417,afdb_val,unconditioned,54400,54400,0,2440.1258940171683
+exp277_full_epoch2_from213072_step479417,eval_val,oracle_half,3200,3200,0,152.62157351407222
+exp277_full_epoch2_from213072_step479417,eval_val,unconditioned,38500,38499,1,2193.113444385119
+exp277_full_epoch_m2_p06_step266344,afdb_train,oracle_half,3200,3200,0,122.51224743586499
+exp277_full_epoch_m2_p06_step266344,afdb_train,unconditioned,54400,54400,0,2752.0293865698623
+exp277_full_epoch_m2_p06_step266344,afdb_val,oracle_half,3200,3200,0,90.9082071807934
+exp277_full_epoch_m2_p06_step266344,afdb_val,unconditioned,54400,54400,0,2418.0515040820464
+exp277_full_epoch_m2_p06_step266344,eval_val,oracle_half,3200,3200,0,152.98970668879338
+exp277_full_epoch_m2_p06_step266344,eval_val,unconditioned,38500,38499,1,2185.469290305744

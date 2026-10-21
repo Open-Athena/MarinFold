@@ -1,0 +1,41 @@
+[
+  {
+    "rollout": 859,
+    "finish_reason": "length",
+    "generated_tokens": 2390,
+    "max_tokens": 2390,
+    "prompt_tokens": 761,
+    "sampling_seed": 2106260084,
+    "model": "exp277_full_epoch_m2_p06_step266344",
+    "dataset": "eval_val",
+    "stem": "8dqd_A",
+    "L": 377,
+    "n_predicted": 598
+  },
+  {
+    "rollout": 85,
+    "finish_reason": "length",
+    "generated_tokens": 1424,
+    "max_tokens": 1424,
+    "prompt_tokens": 439,
+    "sampling_seed": 1996645875,
+    "model": "exp277_full_epoch2_from213072_step479417",
+    "dataset": "afdb_train",
+    "stem": "AF-A0A1X7SGC0-F1",
+    "L": 216,
+    "n_predicted": 266
+  },
+  {
+    "rollout": 974,
+    "finish_reason": "length",
+    "generated_tokens": 1418,
+    "max_tokens": 1418,
+    "prompt_tokens": 437,
+    "sampling_seed": 1203613515,
+    "model": "exp277_full_epoch2_from213072_step479417",
+    "dataset": "eval_val",
+    "stem": "8adc_A",
+    "L": 215,
+    "n_predicted": 91
+  }
+]

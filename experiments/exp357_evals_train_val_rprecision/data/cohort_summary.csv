@@ -1,0 +1,6 @@
+,seq_len,seq_len,seq_len,seq_len,seq_len,global_plddt,global_plddt,global_plddt,global_plddt,global_plddt
+,count,mean,median,min,max,count,mean,median,min,max
+dataset,,,,,,,,,,
+afdb_train,256,249.67578125,200.5,50,916,256,85.37742769674381,85.87223538431616,70.31985161392777,98.10028541201638
+afdb_val,256,249.8046875,199.5,50,902,256,85.38445328021236,85.80634621108638,70.29424218842478,97.9622470984298
+eval_val,97,271.4020618556701,245.0,38,761,0,,,,

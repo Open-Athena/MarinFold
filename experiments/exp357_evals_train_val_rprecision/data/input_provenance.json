@@ -1,0 +1,1130 @@
+{
+  "seed": 357,
+  "train_shards": [
+    0,
+    11,
+    13,
+    149,
+    165,
+    167,
+    176,
+    221,
+    243,
+    256,
+    279,
+    321,
+    363,
+    364,
+    378,
+    414,
+    453,
+    477,
+    519,
+    530,
+    559,
+    583,
+    601,
+    646,
+    651,
+    652,
+    681,
+    720,
+    722,
+    753,
+    871,
+    906,
+    908,
+    918,
+    972,
+    988,
+    1106,
+    1136,
+    1193,
+    1205,
+    1239,
+    1310,
+    1312,
+    1316,
+    1420,
+    1433,
+    1498,
+    1528,
+    1550,
+    1551,
+    1641,
+    1661,
+    1670,
+    1684,
+    1687,
+    1706,
+    1712,
+    1713,
+    1725,
+    1802,
+    1857,
+    1915,
+    1924,
+    1981
+  ],
+  "n_per_afdb_cohort": 256,
+  "diagnostic_n_per_cohort": 32,
+  "sources": [
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00000-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00000-of-02067.parquet",
+      "bytes": 6514400,
+      "sha256": "a0ea6ffb4df5f6d80fa12e08399bb3410a1af16f3eb749988bbd09bdd39f1404",
+      "rows": 1910,
+      "eligible": 1865,
+      "exclusions": {
+        "outside_30_1000": 36,
+        "fewer_than_5_contacts": 9
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00011-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00011-of-02067.parquet",
+      "bytes": 5741719,
+      "sha256": "4357a78a8ddf4164cfae8794c25fccad972230270c37ad6c4c746e913777a8f9",
+      "rows": 1949,
+      "eligible": 1903,
+      "exclusions": {
+        "fewer_than_5_contacts": 20,
+        "outside_30_1000": 26
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00013-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00013-of-02067.parquet",
+      "bytes": 6014139,
+      "sha256": "ec3c94153c85b736642f9e53f6df7a15ba30bf319575c4647a9ddb1538f3568d",
+      "rows": 1941,
+      "eligible": 1909,
+      "exclusions": {
+        "fewer_than_5_contacts": 13,
+        "outside_30_1000": 19
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00149-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00149-of-02067.parquet",
+      "bytes": 6145007,
+      "sha256": "368712982f043264424a392a6b542de91a40c709af8b272eaa15916b9c500029",
+      "rows": 1930,
+      "eligible": 1885,
+      "exclusions": {
+        "fewer_than_5_contacts": 21,
+        "outside_30_1000": 24
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00165-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00165-of-02067.parquet",
+      "bytes": 5740285,
+      "sha256": "0496c327477c2b08af00cf3d44c5d783067a391eaa2fe612a0c3c40a4110dcdf",
+      "rows": 1931,
+      "eligible": 1899,
+      "exclusions": {
+        "fewer_than_5_contacts": 13,
+        "outside_30_1000": 19
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00167-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00167-of-02067.parquet",
+      "bytes": 6431582,
+      "sha256": "0b53ea1c3e0ee2eb255f0007014496b99579af1704978555cf4175643d8187c1",
+      "rows": 1922,
+      "eligible": 1887,
+      "exclusions": {
+        "outside_30_1000": 23,
+        "fewer_than_5_contacts": 12
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00176-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00176-of-02067.parquet",
+      "bytes": 4506592,
+      "sha256": "b9aa4b5bffc4b2ea301483caea8970ec1d14349947fcad56452f3838f89af763",
+      "rows": 1927,
+      "eligible": 1901,
+      "exclusions": {
+        "fewer_than_5_contacts": 14,
+        "outside_30_1000": 12
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00221-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00221-of-02067.parquet",
+      "bytes": 8043774,
+      "sha256": "64de80e60a018776503dc48287eefa55e3696acd8873aebc2d9b36606dc9bf01",
+      "rows": 1874,
+      "eligible": 1827,
+      "exclusions": {
+        "outside_30_1000": 39,
+        "fewer_than_5_contacts": 8
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00243-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00243-of-02067.parquet",
+      "bytes": 9856997,
+      "sha256": "cf3d611a51dff93070a41942e9e29252e19fb83b0f7f5e11ab909522b94a6266",
+      "rows": 1845,
+      "eligible": 1754,
+      "exclusions": {
+        "outside_30_1000": 88,
+        "fewer_than_5_contacts": 3
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00256-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00256-of-02067.parquet",
+      "bytes": 6338891,
+      "sha256": "e03b61932214e0a2740bdac689452627c13cc812a67cf64ac158b26195eb2063",
+      "rows": 1937,
+      "eligible": 1912,
+      "exclusions": {
+        "fewer_than_5_contacts": 10,
+        "outside_30_1000": 15
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00279-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00279-of-02067.parquet",
+      "bytes": 5787571,
+      "sha256": "70f368bcc8f264657ea15415e2a425fef3cb90a88bb268748650c055e05683c8",
+      "rows": 1918,
+      "eligible": 1881,
+      "exclusions": {
+        "fewer_than_5_contacts": 17,
+        "outside_30_1000": 19,
+        "truncated": 1
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00321-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00321-of-02067.parquet",
+      "bytes": 5372098,
+      "sha256": "20a3654e556a5d3fb4c3459fbc6285c424693df62a3eb9bc635c2bf2f787f967",
+      "rows": 1904,
+      "eligible": 1864,
+      "exclusions": {
+        "outside_30_1000": 19,
+        "fewer_than_5_contacts": 21
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00363-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00363-of-02067.parquet",
+      "bytes": 6434485,
+      "sha256": "cab2e856187254f291ce0833f6870ad41f34528fb4e46e0689dc93b79372e4d2",
+      "rows": 1910,
+      "eligible": 1880,
+      "exclusions": {
+        "outside_30_1000": 20,
+        "fewer_than_5_contacts": 10
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00364-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00364-of-02067.parquet",
+      "bytes": 5774742,
+      "sha256": "0aeaa532aed8b13be23c0ca146054cfcf36def099e6b0e67ca184de119e0d4d0",
+      "rows": 1880,
+      "eligible": 1833,
+      "exclusions": {
+        "fewer_than_5_contacts": 21,
+        "outside_30_1000": 26
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00378-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00378-of-02067.parquet",
+      "bytes": 6404011,
+      "sha256": "a7d7af8735dfc91df1d257b80947a3b0772d156c0db19f2d75e3186440e8edb0",
+      "rows": 1906,
+      "eligible": 1875,
+      "exclusions": {
+        "fewer_than_5_contacts": 10,
+        "outside_30_1000": 21
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00414-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00414-of-02067.parquet",
+      "bytes": 5945369,
+      "sha256": "3fa523e468069187f536f329de06f4d290415badd74aab0bd467d6f4a84bf3e1",
+      "rows": 1906,
+      "eligible": 1864,
+      "exclusions": {
+        "outside_30_1000": 25,
+        "fewer_than_5_contacts": 17
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00453-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00453-of-02067.parquet",
+      "bytes": 5763117,
+      "sha256": "eb069f0e2507c730edc677259cf8631b82d399956f1257f876c995f161445d48",
+      "rows": 1710,
+      "eligible": 1652,
+      "exclusions": {
+        "outside_30_1000": 25,
+        "fewer_than_5_contacts": 32,
+        "truncated": 1
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00477-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00477-of-02067.parquet",
+      "bytes": 6041555,
+      "sha256": "c46d22a9ce479b0da0964dc07bfa1c08af54be2b25e7f410cd2d239c0e2f2e39",
+      "rows": 1935,
+      "eligible": 1892,
+      "exclusions": {
+        "outside_30_1000": 25,
+        "fewer_than_5_contacts": 18
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00519-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00519-of-02067.parquet",
+      "bytes": 5609822,
+      "sha256": "1631ddc2fc6f87fa7d53ec4cf90631766a71f225585f0811fea8bfb151ecc8da",
+      "rows": 1895,
+      "eligible": 1853,
+      "exclusions": {
+        "fewer_than_5_contacts": 22,
+        "outside_30_1000": 20
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00530-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00530-of-02067.parquet",
+      "bytes": 5842755,
+      "sha256": "d94d769b96121b430116fa782b70ba67804207c2a607aaab65f6a259f5ad59cb",
+      "rows": 1924,
+      "eligible": 1893,
+      "exclusions": {
+        "outside_30_1000": 20,
+        "fewer_than_5_contacts": 11
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00559-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00559-of-02067.parquet",
+      "bytes": 7169244,
+      "sha256": "9cd0da30cbe6723ef64e8c30a0ed9b14c67fe07c82a005d4126fdced88a94ac0",
+      "rows": 1831,
+      "eligible": 1790,
+      "exclusions": {
+        "fewer_than_5_contacts": 7,
+        "outside_30_1000": 34
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00583-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00583-of-02067.parquet",
+      "bytes": 5341223,
+      "sha256": "45e592e614c268374b664acad6d1874c6844b32a210a1b94a706c477873999a6",
+      "rows": 1937,
+      "eligible": 1896,
+      "exclusions": {
+        "fewer_than_5_contacts": 27,
+        "outside_30_1000": 14
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00601-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00601-of-02067.parquet",
+      "bytes": 6589298,
+      "sha256": "fcfe3febd6e35ce47e2e55ecd7f05f124f6b479c52058779a5aa8fd7791f77b2",
+      "rows": 1908,
+      "eligible": 1871,
+      "exclusions": {
+        "outside_30_1000": 23,
+        "fewer_than_5_contacts": 14
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00646-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00646-of-02067.parquet",
+      "bytes": 5455872,
+      "sha256": "9e328c90ed2965984d6a08f1c9510cd2d6d7e2c91ec4c3533b38bd0e8c94c653",
+      "rows": 1854,
+      "eligible": 1813,
+      "exclusions": {
+        "outside_30_1000": 19,
+        "fewer_than_5_contacts": 22
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00651-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00651-of-02067.parquet",
+      "bytes": 6080612,
+      "sha256": "14a9d7d7f60e418c555a4ad93c23b1da3481467086be4d05fc37c50e50b7b6d5",
+      "rows": 1934,
+      "eligible": 1904,
+      "exclusions": {
+        "outside_30_1000": 18,
+        "fewer_than_5_contacts": 12
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00652-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00652-of-02067.parquet",
+      "bytes": 4670161,
+      "sha256": "82fc141fd2d6b92487e306c8ca10c18729058f876f095106955e0159ba0518cf",
+      "rows": 1920,
+      "eligible": 1902,
+      "exclusions": {
+        "outside_30_1000": 7,
+        "fewer_than_5_contacts": 11
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00681-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00681-of-02067.parquet",
+      "bytes": 6415301,
+      "sha256": "519371a020826cd39f6c1e40493ecca7102f8eed95cffd3526e9c38960472209",
+      "rows": 1892,
+      "eligible": 1837,
+      "exclusions": {
+        "fewer_than_5_contacts": 27,
+        "outside_30_1000": 28
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00720-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00720-of-02067.parquet",
+      "bytes": 5873594,
+      "sha256": "8c9c240e3c17aee784ec04eb5190ce5a7d23ace8c4a7b5c8cf98e2e2458ca737",
+      "rows": 1948,
+      "eligible": 1895,
+      "exclusions": {
+        "outside_30_1000": 21,
+        "fewer_than_5_contacts": 32
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00722-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00722-of-02067.parquet",
+      "bytes": 5803845,
+      "sha256": "e163ef1d70daa13f8e382811c7fb8d674334b1aba014500a764a6e3085a6d423",
+      "rows": 1936,
+      "eligible": 1891,
+      "exclusions": {
+        "outside_30_1000": 20,
+        "fewer_than_5_contacts": 25
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00753-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00753-of-02067.parquet",
+      "bytes": 6689764,
+      "sha256": "b05a743d3b276660038f7c24b4eae5e08070b5500b5b35f4268554a1acb42de7",
+      "rows": 1932,
+      "eligible": 1883,
+      "exclusions": {
+        "outside_30_1000": 33,
+        "fewer_than_5_contacts": 16
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00871-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00871-of-02067.parquet",
+      "bytes": 6495837,
+      "sha256": "00cb2bacdf0614956b654f94f238a8f988bda1d73cb06e444e42e61f550c3128",
+      "rows": 1934,
+      "eligible": 1880,
+      "exclusions": {
+        "fewer_than_5_contacts": 30,
+        "outside_30_1000": 24
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00906-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00906-of-02067.parquet",
+      "bytes": 6885119,
+      "sha256": "cb1b816d67207e2759022fbeba9333df48210223b2a8834d22054e463589e3f1",
+      "rows": 1948,
+      "eligible": 1907,
+      "exclusions": {
+        "fewer_than_5_contacts": 8,
+        "outside_30_1000": 33
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00908-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00908-of-02067.parquet",
+      "bytes": 5726364,
+      "sha256": "74e396968ea2fb84fce8d50cd1aa2013a1e045f7376ad16b7d366dbc637e4ea8",
+      "rows": 1935,
+      "eligible": 1885,
+      "exclusions": {
+        "fewer_than_5_contacts": 36,
+        "outside_30_1000": 14
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00918-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00918-of-02067.parquet",
+      "bytes": 5321953,
+      "sha256": "f1193d8600af8ab920ca0b2767bbe2eee0fdd35e3f8ff9fac4e21edc00c9f411",
+      "rows": 1940,
+      "eligible": 1905,
+      "exclusions": {
+        "fewer_than_5_contacts": 23,
+        "outside_30_1000": 12
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00972-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00972-of-02067.parquet",
+      "bytes": 6248976,
+      "sha256": "7634f6cf423bdea5f506eaa36d99b2764529cee6b43d715569a72dca9563a895",
+      "rows": 1899,
+      "eligible": 1852,
+      "exclusions": {
+        "fewer_than_5_contacts": 19,
+        "outside_30_1000": 28
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-00988-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-00988-of-02067.parquet",
+      "bytes": 5331448,
+      "sha256": "10434a74c6dbafac9fa6fcb26b97c6958b9725e32bf7383fe3ce1c4467436e37",
+      "rows": 1925,
+      "eligible": 1881,
+      "exclusions": {
+        "outside_30_1000": 20,
+        "fewer_than_5_contacts": 24
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01106-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01106-of-02067.parquet",
+      "bytes": 6685113,
+      "sha256": "36e2b7d1a66d1acd4c2e3f39f13ebb7969124ab3c9c7fd68be1aed9826b7747e",
+      "rows": 1908,
+      "eligible": 1815,
+      "exclusions": {
+        "fewer_than_5_contacts": 35,
+        "outside_30_1000": 48,
+        "truncated": 10
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01136-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01136-of-02067.parquet",
+      "bytes": 5095923,
+      "sha256": "88ebb9b526c4c9aa245e52a250d9774e9f2541a389d79db5ddce956aae823dd6",
+      "rows": 1872,
+      "eligible": 1836,
+      "exclusions": {
+        "outside_30_1000": 12,
+        "fewer_than_5_contacts": 24
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01193-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01193-of-02067.parquet",
+      "bytes": 5902279,
+      "sha256": "00a1bc1eb044ef66314e3e54423388b26b71be09161d80e49beba4c4bc900ee2",
+      "rows": 1941,
+      "eligible": 1897,
+      "exclusions": {
+        "outside_30_1000": 21,
+        "fewer_than_5_contacts": 23
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01205-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01205-of-02067.parquet",
+      "bytes": 7174815,
+      "sha256": "e2c065f819ed248ebfd5ed310a9511ced134121632b0eedfa8c776e1e9db0a98",
+      "rows": 1864,
+      "eligible": 1820,
+      "exclusions": {
+        "fewer_than_5_contacts": 12,
+        "outside_30_1000": 32
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01239-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01239-of-02067.parquet",
+      "bytes": 5208533,
+      "sha256": "d811ed4bc81fee3c6729717377010995b5ba16768ac4ed1e2d84ad000c1d9ce5",
+      "rows": 1955,
+      "eligible": 1917,
+      "exclusions": {
+        "fewer_than_5_contacts": 21,
+        "outside_30_1000": 17
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01310-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01310-of-02067.parquet",
+      "bytes": 6401386,
+      "sha256": "ff772779c8199ebccd623f22122a2b5ca7afd5772566025f6769368fee433982",
+      "rows": 1916,
+      "eligible": 1880,
+      "exclusions": {
+        "outside_30_1000": 20,
+        "fewer_than_5_contacts": 16
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01312-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01312-of-02067.parquet",
+      "bytes": 6019824,
+      "sha256": "e533383c0e2641030c7becf2eefea8ace6011045681c16dffffb8a1a7b4f69af",
+      "rows": 1936,
+      "eligible": 1895,
+      "exclusions": {
+        "fewer_than_5_contacts": 17,
+        "outside_30_1000": 24
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01316-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01316-of-02067.parquet",
+      "bytes": 5883083,
+      "sha256": "b7a1f6e2f67e518051646bdcaf7d63b2cce675b4912ddc7672771bd968cefe40",
+      "rows": 1935,
+      "eligible": 1899,
+      "exclusions": {
+        "fewer_than_5_contacts": 13,
+        "outside_30_1000": 23
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01420-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01420-of-02067.parquet",
+      "bytes": 5481830,
+      "sha256": "18db8e19f224bec7600a854579b497d2c6bddccdff7ccd6bd0098b78d3ffd41a",
+      "rows": 1952,
+      "eligible": 1908,
+      "exclusions": {
+        "outside_30_1000": 16,
+        "fewer_than_5_contacts": 28
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01433-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01433-of-02067.parquet",
+      "bytes": 6149767,
+      "sha256": "091beca9dfad60e441027562b00716061b3f45f711f5b6399186b508d1d27a35",
+      "rows": 1930,
+      "eligible": 1888,
+      "exclusions": {
+        "outside_30_1000": 24,
+        "fewer_than_5_contacts": 18
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01498-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01498-of-02067.parquet",
+      "bytes": 5149855,
+      "sha256": "21f3062e664e4adecb42a5d7e4416a0c7afeeaf1503223b3fe1707b37cc802ab",
+      "rows": 1936,
+      "eligible": 1900,
+      "exclusions": {
+        "outside_30_1000": 17,
+        "fewer_than_5_contacts": 19
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01528-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01528-of-02067.parquet",
+      "bytes": 5032823,
+      "sha256": "a630bc5aa1273b8a5be88a8c2ee87350c4811ea254d0c64368dcfc47a151dabf",
+      "rows": 1942,
+      "eligible": 1905,
+      "exclusions": {
+        "outside_30_1000": 10,
+        "fewer_than_5_contacts": 27
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01550-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01550-of-02067.parquet",
+      "bytes": 6572462,
+      "sha256": "22eee38c0692aaee8612e715e036181ae0d0e7b27d45fe2933db54ca844e0dd4",
+      "rows": 1927,
+      "eligible": 1882,
+      "exclusions": {
+        "fewer_than_5_contacts": 24,
+        "truncated": 1,
+        "outside_30_1000": 20
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01551-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01551-of-02067.parquet",
+      "bytes": 5851864,
+      "sha256": "a2472c61d4048f837a55ed5ca6d5cd5aff2b78c69954ff4099882778471cb90c",
+      "rows": 1938,
+      "eligible": 1890,
+      "exclusions": {
+        "outside_30_1000": 28,
+        "fewer_than_5_contacts": 20
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01641-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01641-of-02067.parquet",
+      "bytes": 5991806,
+      "sha256": "974bd5f7507712ae5af430ba12cfae96488ad6443926adf42fca29e6ce34cd28",
+      "rows": 1923,
+      "eligible": 1873,
+      "exclusions": {
+        "outside_30_1000": 28,
+        "fewer_than_5_contacts": 22
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01661-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01661-of-02067.parquet",
+      "bytes": 5847874,
+      "sha256": "808045ff775a328b64669502ea03917c30b61e9f8d1c6db1ac96a783620d6dde",
+      "rows": 1949,
+      "eligible": 1911,
+      "exclusions": {
+        "fewer_than_5_contacts": 18,
+        "outside_30_1000": 20
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01670-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01670-of-02067.parquet",
+      "bytes": 5520029,
+      "sha256": "1f351ffdc8a0a22d2b5ef26285931bce3d8fad470d15f17fa3d715e3b1f17590",
+      "rows": 1961,
+      "eligible": 1903,
+      "exclusions": {
+        "fewer_than_5_contacts": 31,
+        "outside_30_1000": 27
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01684-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01684-of-02067.parquet",
+      "bytes": 5479296,
+      "sha256": "28e3dbceceb1098903b77dffc17d7bca4a70a918f9b17ca97866ba6c08dadb75",
+      "rows": 1959,
+      "eligible": 1914,
+      "exclusions": {
+        "outside_30_1000": 17,
+        "fewer_than_5_contacts": 28
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01687-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01687-of-02067.parquet",
+      "bytes": 6422946,
+      "sha256": "462e7eaae2773e326f4b67483664695c078d393e0d597781f942ef4448f50273",
+      "rows": 1898,
+      "eligible": 1853,
+      "exclusions": {
+        "outside_30_1000": 27,
+        "fewer_than_5_contacts": 18
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01706-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01706-of-02067.parquet",
+      "bytes": 5957298,
+      "sha256": "0fcc8890fed97a5828ca46ff826319ca76c28e1a620bead26ad4cda8f31702df",
+      "rows": 1920,
+      "eligible": 1890,
+      "exclusions": {
+        "fewer_than_5_contacts": 15,
+        "outside_30_1000": 15
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01712-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01712-of-02067.parquet",
+      "bytes": 5622136,
+      "sha256": "01861f80a6b07c427a1180ac00a7e910115c693b22440a7b44964543183644e0",
+      "rows": 1942,
+      "eligible": 1896,
+      "exclusions": {
+        "outside_30_1000": 18,
+        "fewer_than_5_contacts": 28
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01713-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01713-of-02067.parquet",
+      "bytes": 5562708,
+      "sha256": "9c702dd3a601ce64eae9cac71d64e221e16db28c51bf7aa8297b4003dd1592b8",
+      "rows": 1860,
+      "eligible": 1823,
+      "exclusions": {
+        "outside_30_1000": 14,
+        "fewer_than_5_contacts": 23
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01725-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01725-of-02067.parquet",
+      "bytes": 6364165,
+      "sha256": "88cd52723438f09653f94bddbb7daf7261ef9dde0e52cbcdca93ca23b0477a91",
+      "rows": 1935,
+      "eligible": 1899,
+      "exclusions": {
+        "fewer_than_5_contacts": 21,
+        "outside_30_1000": 15
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01802-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01802-of-02067.parquet",
+      "bytes": 5673015,
+      "sha256": "881aa4ee7d0f0245bf941b7e08122afe51b8cef55bfaf6e57aa64b4784bba5a4",
+      "rows": 1947,
+      "eligible": 1897,
+      "exclusions": {
+        "fewer_than_5_contacts": 25,
+        "outside_30_1000": 25
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01857-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01857-of-02067.parquet",
+      "bytes": 6009491,
+      "sha256": "75611af350720dd152dedbfb6f10f4ba3b3cc738bc1baeb261aeb3c0bd2f31ba",
+      "rows": 1942,
+      "eligible": 1915,
+      "exclusions": {
+        "fewer_than_5_contacts": 11,
+        "outside_30_1000": 16
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01915-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01915-of-02067.parquet",
+      "bytes": 6374949,
+      "sha256": "bdf542eaf42b6dbbca1382f1dcc57098a4cbc460a1965326168cb0fc1c3e9258",
+      "rows": 1863,
+      "eligible": 1837,
+      "exclusions": {
+        "outside_30_1000": 17,
+        "fewer_than_5_contacts": 9
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01924-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01924-of-02067.parquet",
+      "bytes": 5664815,
+      "sha256": "cf279756a5083e8d85c89ca2c3cda03f0ea0f5f51490cd02be1e2cc2b469bc27",
+      "rows": 1925,
+      "eligible": 1892,
+      "exclusions": {
+        "fewer_than_5_contacts": 20,
+        "outside_30_1000": 13
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1_decontam/train/contacts_v1-01981-of-02067.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1_decontam/train/contacts_v1-01981-of-02067.parquet",
+      "bytes": 5188940,
+      "sha256": "ba6cf2f3b8fc2328e302e235736c3de1edb42506c1ed4f66128503b6f22d4e2f",
+      "rows": 1879,
+      "eligible": 1852,
+      "exclusions": {
+        "outside_30_1000": 16,
+        "fewer_than_5_contacts": 11
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1/val/contacts_v1-00000-of-00022.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1/val/contacts_v1-00000-of-00022.parquet",
+      "bytes": 6674282,
+      "sha256": "17db9d46205cbe1900dd4baded94d347855b5b2f7f923f91d999aa11731f3c15",
+      "rows": 2000,
+      "eligible": 1962,
+      "exclusions": {
+        "outside_30_1000": 24,
+        "fewer_than_5_contacts": 14
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1/val/contacts_v1-00001-of-00022.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1/val/contacts_v1-00001-of-00022.parquet",
+      "bytes": 6703447,
+      "sha256": "4f00a5093872925f913698b704972ef2d39fcf0c999bc10748670c92a6723d87",
+      "rows": 2000,
+      "eligible": 1955,
+      "exclusions": {
+        "outside_30_1000": 29,
+        "fewer_than_5_contacts": 16
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1/val/contacts_v1-00002-of-00022.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1/val/contacts_v1-00002-of-00022.parquet",
+      "bytes": 6316256,
+      "sha256": "d3a30c9a4f57ef0bfc67d2b00dea6f62a42dc31ba1a56cea739c3bc6f6871a03",
+      "rows": 1964,
+      "eligible": 1930,
+      "exclusions": {
+        "outside_30_1000": 24,
+        "fewer_than_5_contacts": 10
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1/val/contacts_v1-00003-of-00022.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1/val/contacts_v1-00003-of-00022.parquet",
+      "bytes": 6459343,
+      "sha256": "2bff009b411ea9d17d456adb43a05953808776488f5db50e42a90c211b401d4e",
+      "rows": 2000,
+      "eligible": 1954,
+      "exclusions": {
+        "outside_30_1000": 28,
+        "fewer_than_5_contacts": 18
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1/val/contacts_v1-00004-of-00022.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1/val/contacts_v1-00004-of-00022.parquet",
+      "bytes": 6332297,
+      "sha256": "6158af8efa5017930a37e72512b43f438c78340df7b495a86f0f77713c705a7c",
+      "rows": 2000,
+      "eligible": 1962,
+      "exclusions": {
+        "fewer_than_5_contacts": 13,
+        "outside_30_1000": 25
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1/val/contacts_v1-00005-of-00022.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1/val/contacts_v1-00005-of-00022.parquet",
+      "bytes": 6473274,
+      "sha256": "95ad92afb63d8cf19e8b902972a791cae2c64a20aa784e94e429adfb3a514e7c",
+      "rows": 2000,
+      "eligible": 1952,
+      "exclusions": {
+        "fewer_than_5_contacts": 21,
+        "outside_30_1000": 27
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1/val/contacts_v1-00006-of-00022.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1/val/contacts_v1-00006-of-00022.parquet",
+      "bytes": 4219209,
+      "sha256": "1fb8669ececa88eccb99c94f29161eb5ab9eede002f48530949179fd1331d047",
+      "rows": 1316,
+      "eligible": 1290,
+      "exclusions": {
+        "outside_30_1000": 19,
+        "fewer_than_5_contacts": 7
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1/val/contacts_v1-00007-of-00022.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1/val/contacts_v1-00007-of-00022.parquet",
+      "bytes": 6059338,
+      "sha256": "c23c8fbec8921cc367bf9e895d9f6394ac9a9567eca21f024d9c401dd419f8c5",
+      "rows": 2000,
+      "eligible": 1956,
+      "exclusions": {
+        "outside_30_1000": 26,
+        "fewer_than_5_contacts": 18
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1/val/contacts_v1-00008-of-00022.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1/val/contacts_v1-00008-of-00022.parquet",
+      "bytes": 5978013,
+      "sha256": "275c55e679bb0eacdfde9bd309b68287fa1eb32a9ae225302048b34699b799e2",
+      "rows": 2000,
+      "eligible": 1959,
+      "exclusions": {
+        "outside_30_1000": 19,
+        "fewer_than_5_contacts": 22
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1/val/contacts_v1-00009-of-00022.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1/val/contacts_v1-00009-of-00022.parquet",
+      "bytes": 6460308,
+      "sha256": "ad9024e20faf6604a01089aeaedae59b3e56314525223dd3369840c9d4249051",
+      "rows": 2000,
+      "eligible": 1948,
+      "exclusions": {
+        "fewer_than_5_contacts": 20,
+        "outside_30_1000": 32
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1/val/contacts_v1-00010-of-00022.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1/val/contacts_v1-00010-of-00022.parquet",
+      "bytes": 6112285,
+      "sha256": "a8ff91ea3d8e889c29bbf83d55ef32addbbb50b5deab1002e8451ffec1e9f63a",
+      "rows": 2000,
+      "eligible": 1967,
+      "exclusions": {
+        "outside_30_1000": 14,
+        "fewer_than_5_contacts": 19
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1/val/contacts_v1-00011-of-00022.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1/val/contacts_v1-00011-of-00022.parquet",
+      "bytes": 4717277,
+      "sha256": "d449a82bcd2761c09df86a5ff8453c6eb38cecb209b4d84c04a1060e9ba6291a",
+      "rows": 1558,
+      "eligible": 1522,
+      "exclusions": {
+        "outside_30_1000": 21,
+        "fewer_than_5_contacts": 15
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1/val/contacts_v1-00012-of-00022.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1/val/contacts_v1-00012-of-00022.parquet",
+      "bytes": 6099774,
+      "sha256": "48adc775228688360ca6df9ff27f9b4fb70278962f90f030303b1a10fa304d59",
+      "rows": 2000,
+      "eligible": 1951,
+      "exclusions": {
+        "fewer_than_5_contacts": 21,
+        "outside_30_1000": 28
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1/val/contacts_v1-00013-of-00022.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1/val/contacts_v1-00013-of-00022.parquet",
+      "bytes": 5969142,
+      "sha256": "e53dd7ed6ca38b1c157f0151c053e396dc6ff53be40dc7bff4af0976c727864a",
+      "rows": 2000,
+      "eligible": 1962,
+      "exclusions": {
+        "outside_30_1000": 17,
+        "fewer_than_5_contacts": 21
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1/val/contacts_v1-00014-of-00022.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1/val/contacts_v1-00014-of-00022.parquet",
+      "bytes": 6451463,
+      "sha256": "7632563b0f48fc38e63342e260e36a16f119eadcde4c31f9d210e346ad509440",
+      "rows": 2000,
+      "eligible": 1952,
+      "exclusions": {
+        "fewer_than_5_contacts": 19,
+        "outside_30_1000": 29
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1/val/contacts_v1-00015-of-00022.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1/val/contacts_v1-00015-of-00022.parquet",
+      "bytes": 6154975,
+      "sha256": "b6cb3e964fb97f55e8c69c12b795728b979732177d70f7d4e0d901b28a648f02",
+      "rows": 2000,
+      "eligible": 1961,
+      "exclusions": {
+        "outside_30_1000": 19,
+        "fewer_than_5_contacts": 20
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1/val/contacts_v1-00016-of-00022.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1/val/contacts_v1-00016-of-00022.parquet",
+      "bytes": 4770349,
+      "sha256": "1c5988c22e105c08edc506a33f4af74d0711f0594dc18fd1e7f77ea8a1062133",
+      "rows": 1558,
+      "eligible": 1525,
+      "exclusions": {
+        "outside_30_1000": 18,
+        "fewer_than_5_contacts": 15
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1/val/contacts_v1-00017-of-00022.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1/val/contacts_v1-00017-of-00022.parquet",
+      "bytes": 6121242,
+      "sha256": "3ea719d23e85d3608ac981eb672719c6786eb22fbe53579fad552ff7fc14d1be",
+      "rows": 2000,
+      "eligible": 1951,
+      "exclusions": {
+        "outside_30_1000": 30,
+        "fewer_than_5_contacts": 19
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1/val/contacts_v1-00018-of-00022.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1/val/contacts_v1-00018-of-00022.parquet",
+      "bytes": 6000161,
+      "sha256": "4c5237838658a471f4103a34db9eeffacc2a6371f4c8e93dc76c836614efc59a",
+      "rows": 2000,
+      "eligible": 1961,
+      "exclusions": {
+        "outside_30_1000": 16,
+        "fewer_than_5_contacts": 23
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1/val/contacts_v1-00019-of-00022.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1/val/contacts_v1-00019-of-00022.parquet",
+      "bytes": 6530460,
+      "sha256": "72389bf927dcae74f5b036743a972dac74811fd78165799cbc3e403176e81838",
+      "rows": 2000,
+      "eligible": 1946,
+      "exclusions": {
+        "fewer_than_5_contacts": 21,
+        "outside_30_1000": 33
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1/val/contacts_v1-00020-of-00022.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1/val/contacts_v1-00020-of-00022.parquet",
+      "bytes": 6180000,
+      "sha256": "57b4a75d179a5d274d3a18a1d6314d3fd5f4dd85dc055fe3dd2f653181b029d3",
+      "rows": 2000,
+      "eligible": 1962,
+      "exclusions": {
+        "outside_30_1000": 19,
+        "fewer_than_5_contacts": 19
+      }
+    },
+    {
+      "path": "data/document_structures/contacts_v1/val/contacts_v1-00021-of-00022.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/document_structures/contacts_v1/val/contacts_v1-00021-of-00022.parquet",
+      "bytes": 4812589,
+      "sha256": "b9ccd2e455ed7003cbd977115074036927317a5ab5701ec557957967af121120",
+      "rows": 1558,
+      "eligible": 1526,
+      "exclusions": {
+        "outside_30_1000": 19,
+        "fewer_than_5_contacts": 13
+      }
+    },
+    {
+      "path": "data/contacts-v1-foldbench-monomers-exp245/eval_targets_foldbench_monomers.parquet",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-foldbench-monomers-exp245/eval_targets_foldbench_monomers.parquet",
+      "bytes": 97519,
+      "sha256": "2eb4f1fee148fe2d6601bd171ef6e9431b96f38c82eaed1ad119a069a13f1fb8"
+    },
+    {
+      "path": "data/contacts-v1-foldbench-monomers-exp245/gt_universe_scored.jsonl",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-foldbench-monomers-exp245/gt_universe_scored.jsonl",
+      "bytes": 6938887,
+      "sha256": "f30c23e3d2fbab245755fc01548388b41730ddfa45da87325539698cadb153e5"
+    },
+    {
+      "path": "data/contacts-v1-foldbench-monomers-exp245/eval_sets.csv",
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-foldbench-monomers-exp245/eval_sets.csv",
+      "bytes": 199548,
+      "sha256": "b13d060a091240921bc8466acecc9fa6ccbb45a56de4efda02cd903f6abf9861"
+    }
+  ],
+  "original_afdb_validation_is_not_a_certified_esm_holdout": true,
+  "ground_truth_afdb": "all nontruncated serialized training contacts, degree >= 0.001 and separation >= 6",
+  "checkpoint_training_contract": "exp277 config.py uses all exp232 native AFDB training cache and original exp154 AFDB validation cache"
+}

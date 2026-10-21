@@ -1,0 +1,5 @@
+{
+  "script": "analyze.py",
+  "args": [],
+  "caption": "Macro contact R-precision; 95% protein bootstrap intervals. AFDB cohorts matched on length, confidence and pLDDT round. Epoch 2 is the existing continuation from the first epoch's pre-cooldown checkpoint."
+}
