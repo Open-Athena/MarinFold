@@ -36,7 +36,7 @@ At least one guided policy should improve final contact-map quality over ordinar
 
 ## Results
 
-Implementation and validation are in progress on 2026-10-21. Five CPU tests
+Implementation and validation are in progress on 2026-10-21. Seven CPU tests
 cover cache isolation, full-forward equivalence, proposal resampling, lookahead
 commit boundaries, repair-prefix reconstruction, and full-universe AP. The first
 H100 smoke test verified that every frozen backbone weight matches the original

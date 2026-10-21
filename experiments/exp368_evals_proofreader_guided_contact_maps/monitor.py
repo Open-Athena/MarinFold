@@ -33,7 +33,7 @@ def main() -> None:
         for job in state['jobs']:
             if job['state'] == 'JOB_STATE_RUNNING':
                 counts.update(job.get('task_state_counts', {}))
-        print('Actual task states in active jobs:', dict(counts))
+        print('Controller-reported task states (may lag Kubernetes admission):', dict(counts))
         for job in state['jobs']:
             if job['state'] == 'JOB_STATE_RUNNING':
                 print(job['job_id'], job.get('task_state_counts', {}),

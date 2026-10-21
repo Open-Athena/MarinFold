@@ -27,6 +27,7 @@ and text are assembled. Build time scales linearly with slide count.
 
 import json
 import re
+import shlex
 import sys
 import textwrap
 from dataclasses import dataclass, field
@@ -146,9 +147,7 @@ class PlotEntry:
 
     @property
     def invocation(self) -> str:
-        if not self.args:
-            return self.script
-        return self.script + " " + " ".join(self.args)
+        return shlex.join([self.script, *self.args])
 
 
 def load_plots(plots_dir: Path) -> list[PlotEntry]:
@@ -203,22 +202,39 @@ def render_text_slide(plt, slide: Slide):
 def render_plot_slide(plt, mpimg, entry: PlotEntry):
     fig = _new_slide(plt)
     fig.text(0.05, 0.94, entry.path.name, fontsize=18, fontweight="bold", va="top")
+    caption_lines = textwrap.wrap(entry.caption, width=130)
     if entry.caption:
         fig.text(
             0.05, 0.88,
-            textwrap.fill(entry.caption, width=130),
+            "\n".join(caption_lines),
             fontsize=11, va="top",
         )
 
-    ax = fig.add_axes([0.06, 0.10, 0.88, 0.74])
+    # Long repository paths previously ran beyond the page edge. Wrap only
+    # between shell arguments so quoted titles and every argument stay intact.
+    command_lines = []
+    line = "$ " + shlex.quote(entry.script)
+    for argument in entry.args:
+        token = shlex.quote(argument)
+        if len(line) + len(token) + 1 > 180:
+            command_lines.append(line + " \\")
+            line = "  " + token
+        else:
+            line += " " + token
+    command_lines.append(line)
+    footer_font = min(7., .90 * SLIDE_W * 72 / (.62 * max(map(len, command_lines))))
+    footer_height = len(command_lines) * footer_font * 1.3 / (SLIDE_H * 72)
+    bottom = max(.10, .04 + footer_height + .025)
+    top = min(.84, .88 - len(caption_lines) * 11 * 1.3 / (SLIDE_H * 72) - .02)
+    ax = fig.add_axes([0.06, bottom, 0.88, top - bottom])
     ax.set_axis_off()
     img = mpimg.imread(entry.path)
     ax.imshow(img)
 
     fig.text(
         0.05, 0.04,
-        f"$ {entry.invocation}",
-        fontsize=8, family="monospace", color="#555",
+        "\n".join(command_lines),
+        fontsize=footer_font, family="monospace", color="#555", va="bottom",
     )
     return fig
 
