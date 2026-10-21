@@ -22,6 +22,15 @@ Proofreader guidance will improve precision and recall at matched compute, with 
 
 Builds on #356 and PR #358. Freeze generator exp277 step 266344 and proofreader exp356-exp277-frozen-contact-pdb50k-v2 step 18000. The user authorized autonomous implementation, CoreWeave execution, and job monitoring. Existing checkpoints and targets are co-located in CoreWeave us-east-02a.
 
+Reference labels inherit exp356's audited experimental targets from exp222:
+native-only pyconfind contacts, a 3 Å side-chain threshold, minimum contact
+degree 0.001, and sequence separation at least six. Targets exclude internal
+sequence gaps and truncated contact lists; short terminal omissions are accepted
+only when the resolved sequence maps to one contiguous canonical span under
+the frozen preparation rules. Recall uses the complete reference contact set
+for that retained sequence. Long-range results further require separation at
+least 24. The contact definition and target preparation remain fixed throughout.
+
 ## Approach
 
 1. Implement and verify cached, batched contact proposals and proofreader readout against the released inference implementation. Preserve actual prompts and original contact semantics.
@@ -197,6 +206,16 @@ configurations, so their difference combines pool size and aggregation.
 Data are in `data/validation_diagnostics/`.
 
 ![Full-panel precision, recall, calibration and diversity](plots/validation_diagnostics.png)
+
+The following contact maps show the three proteins already chosen for numerical
+checks: first, middle and last length ranks of the pilot (33, 193 and 937
+residues). Both columns rank the same 128 H100 rollouts and select L contacts.
+They were chosen without accuracy selection and illustrate individual maps;
+the full-panel paired comparisons above establish the average effects.
+The coordinate CSV in `data/contact_examples.csv.gz` reproduces the figure
+without access to model weights or private rollout storage.
+
+![Reference and predicted contact maps on three prespecified examples](plots/contact_examples.png)
 
 ### Frozen pilot protocol
 

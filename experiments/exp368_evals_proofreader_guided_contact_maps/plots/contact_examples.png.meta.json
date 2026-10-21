@@ -1,0 +1,10 @@
+{
+  "script": "plot_contact_examples.py",
+  "args": [
+    "--data",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/data/contact_examples.csv.gz",
+    "--out",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/plots/contact_examples.png"
+  ],
+  "caption": "Three validation proteins chosen as the first, middle and last length ranks for earlier numerical checks, without accuracy selection. Both methods rank the same 128 H100 rollouts and predict L unique pairs. Matrices are mirrored only for visualization; each pair counts once. Gray native contacts remain visible where not selected. Point markers are enlarged for legibility on long sequences. These examples are descriptive and do not estimate an average effect. References use the inherited exp222 native-only pyconfind definition, with sequence separation at least six. The published coordinate CSV reproduces this figure."
+}
