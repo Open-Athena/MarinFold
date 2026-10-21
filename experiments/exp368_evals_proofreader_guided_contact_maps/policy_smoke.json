@@ -1,0 +1,37 @@
+{
+  "split": "validation",
+  "entries": [
+    "6d0i_B",
+    "6f0k_A"
+  ],
+  "rollouts": 1,
+  "policies": [
+    {
+      "name": "look8-k16",
+      "candidates": 16,
+      "fraction": 0.1,
+      "lookahead": 8,
+      "repeats": 2
+    },
+    {
+      "name": "look32-k16",
+      "candidates": 16,
+      "fraction": 0.1,
+      "lookahead": 32,
+      "repeats": 2
+    },
+    {
+      "name": "particles8-b8",
+      "particles": 8,
+      "block": 8
+    },
+    {
+      "name": "repair-k16",
+      "candidates": 16,
+      "fraction": 0.1,
+      "repair": true
+    }
+  ],
+  "selection": "one SHA256-selected representative per homology group, then 32 uniformly spaced length ranks; no quality labels used",
+  "contact_limit": 48
+}

@@ -1,0 +1,14 @@
+[project]
+name = "exp368-proofreader-guided-contact-maps"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "torch==2.10.0", "transformers==5.3.0", "huggingface-hub==1.7.1",
+  "pyarrow==23.0.1", "fsspec==2026.2.0", "s3fs==2026.2.0",
+  "numpy==2.2.6", "pandas==2.3.3", "matplotlib==3.10.8",
+  "scikit-learn==1.8.0", "pytest==9.0.2",
+]
+[tool.uv]
+package = false
+prerelease = "allow"
+environments = ["sys_platform == 'linux'"]
