@@ -10,7 +10,7 @@ This is a research codebase for an ongoing project. It is an experiment in open 
 
 We welcome collaborators! If you would like to discuss or contribute, join the [Marin Discord](https://discord.gg/J9CTk7pqcM) and look for the `#marinfold` channel.
 
-See [Latest results](LATEST_RESULTS.md) for major result updates and the current default model. The figures below use the exp232 checkpoint.
+See [Latest results](LATEST_RESULTS.md) for major result updates and the current default model. The figures below use the exp232 checkpoint, apart from the rollout animation, which uses the current default.
 
 ## Background
 
@@ -28,7 +28,13 @@ To make it possible to use an LLM without any modifications, we assemble a “do
 
 As shown above, a MarinFold training document consists of a protein sequence specified as (position, amino acid) pairs followed by a series of residue/residue contacts. The sequence and the contacts are given in a random order. Each element in angle brackets is a token in the model’s 2,845-token vocabulary.
 
-At inference-time, we autoregressively generate 100 rollouts and rank contacts by how often they appear across rollouts. We then use another model called [Helico](https://github.com/Open-Athena/helico) to generate all-atom 3D structures conditioned on the contacts predicted by MarinFold. Helico closely follows the AlphaFold3 architecture and is fine-tuned from an AlphaFold3 clone called [Protenix](https://doi.org/10.64898/2026.02.05.703733).
+At inference-time, we autoregressively generate 100 rollouts and rank contacts by how often they appear across rollouts. Here is that running on [Top7](https://www.rcsb.org/structure/1QYS), the de novo design we come back to below — one rollout writing its contacts statement by statement, then the other 99 voting:
+
+<img src="experiments/exp250_evals_exploration_notebook/figures/output/top7_rollout_consensus.gif" alt="An animation of MarinFold predicting Top7's contacts: one rollout emits contact statements one at a time onto a contact map, coloured by whether each pair is in the experimental structure, and then 99 more rollouts accumulate into a vote map while the running R-precision climbs from 0.51 to 0.67" width="100%">
+
+A single rollout gets about half of its contacts right. The vote across all 100 is what takes R-precision from 0.51 to 0.67 on this protein.
+
+We then use another model called [Helico](https://github.com/Open-Athena/helico) to generate all-atom 3D structures conditioned on the contacts predicted by MarinFold. Helico closely follows the AlphaFold3 architecture and is fine-tuned from an AlphaFold3 clone called [Protenix](https://doi.org/10.64898/2026.02.05.703733).
 
 ## Does this work?
 
