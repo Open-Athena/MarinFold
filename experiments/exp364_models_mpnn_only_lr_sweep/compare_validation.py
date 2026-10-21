@@ -297,6 +297,8 @@ def publish() -> None:
         "data/validation_comparison.csv",
         "data/validation_comparison.json",
         "data/cooldown_source.json",
+        "data/tpu_transfer_plan.json",
+        "data/tpu_input_verification.json",
         "plots/validation_comparison.png",
         "plots/validation_comparison.pdf",
         "plots/validation_comparison.png.meta.json",
