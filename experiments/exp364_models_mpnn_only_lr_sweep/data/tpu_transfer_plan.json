@@ -38,10 +38,11 @@
     "documents": 41954,
     "tokens": 47821958
   },
-  "approval_status": "pending",
-  "transfer_executed": false,
+  "approval_status": "approved",
   "planned_tpu": "v5p-64",
   "actual_chips": 32,
   "priority": "batch",
-  "planned_run_id": "contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5"
+  "planned_run_id": "contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5",
+  "approved_at_utc": "2026-10-21T15:43:27.449365+00:00",
+  "approval_source": "Human reply: Approve transfer and TPU launch"
 }
