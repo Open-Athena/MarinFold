@@ -1,0 +1,13 @@
+{
+  "observed_at": "2026-10-21T17:24:50.266281+00:00",
+  "last_federated_contact": "2026-10-21T17:14:22.662Z",
+  "cluster": "cw-rno2a",
+  "symptoms": [
+    "Central controller reports peer unreachable",
+    "Direct standard Kubernetes tunnel succeeds but list_jobs request times out after 30 seconds",
+    "Existing validation task pods continue producing regional results"
+  ],
+  "pending_owned_jobs": 13,
+  "shared_cluster_changes": "none",
+  "response": "Keep jobs queued; monitor existing workers through regional output markers and task pod logs"
+}

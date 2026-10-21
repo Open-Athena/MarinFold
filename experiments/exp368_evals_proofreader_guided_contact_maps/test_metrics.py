@@ -24,3 +24,9 @@ def test_confidence_tiebreak_cannot_reverse_an_extra_vote() -> None:
             dict(L=20, pairs=[[1, 9]], probabilities=[.001])]
     scores = aggregate(rows, 'frequency_then_meanq')
     assert scores[(1, 9)] > scores[(0, 8)] > scores[(2, 10)]
+
+
+def test_raw_frequency_counts_distinct_eligible_votes_without_reader() -> None:
+    rows = [dict(L=20, pairs=[[0, 8], [0, 8], [1, 9], [0, 2], [-1, 8], [9, 1], [0, 20]]),
+            dict(L=20, pairs=[[0, 8], [2, 10]])]
+    assert aggregate(rows, 'frequency') == {(0, 8): 2., (1, 9): 1., (2, 10): 1.}

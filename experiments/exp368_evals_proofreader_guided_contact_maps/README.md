@@ -214,7 +214,18 @@ each task's original immutable source bundle. `watch_scoring.py` is a finite loc
 dependency watcher: it submits the five declared scoring tasks only after their
 matching generation jobs succeed, records every launch, and exits after submission.
 The active experiment monitor continues to check the scoring jobs themselves.
+When the regional controller stopped reporting after 17:14 UTC, the watcher
+was restarted with an artifact-based dependency check: all four source/plan-pinned
+completion markers and all 2,750 planned generation groups must exist before
+it queues scoring against stale scheduler status. The shared cluster was not
+modified. Frequency-only analysis can run directly on raw generated contacts;
+its results exactly reproduce all fields for 96 previously scored pilot maps.
 
 ## Conclusion
 
-_(Fill in after results are in.)_
+The completed 32-protein pilot supports larger ordinary rollout pools: 128
+frequency-ranked rollouts improve both all-contact and long-range R-precision
+relative to eight proofreader-weighted rollouts. This is a pilot result; the
+larger validation analysis is pending. The guided-policy and fixed-length
+comparisons remain incomplete, so there is no conclusion yet about whether
+proofreader-guided sampling improves the final accuracy/cost tradeoff.

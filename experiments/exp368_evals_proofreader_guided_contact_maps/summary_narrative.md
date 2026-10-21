@@ -7,7 +7,31 @@ larger independent rollout pools?
 Frozen generator: exp277 step 266344. Frozen proofreader: exp356 step 18000.
 Implementation and GPU validation are in progress; no guided-policy result yet.
 
-## Complete ordinary-pool pilot
+## Frozen models and experimental references
+
+The generator is the exp277 step-266344 Qwen3 model. The proofreader freezes
+its causal backbone and adds a four-layer, 512-wide bidirectional contact reader
+with 22.18 million trainable parameters. It predicts each supplied contact's
+correctness and the current rollout's recall. No model is retrained here.
+
+The proofreader was trained on 50,000 experimental PDB chain structures.
+References use the complete exp222 native-only pyconfind contact set: a 3 Å
+side-chain threshold, minimum contact degree 0.001 and sequence separation ≥6.
+The validation split has 1,552 structures in 287 related groups.
+
+## What top ten percent means here
+
+At each contact boundary, sample K candidate contacts from the constrained
+generator. Score them with the proofreader after appending each candidate.
+Keep the highest ceil(0.1 K) candidates and sample uniformly among survivors.
+This keeps 2 of 16 or 7 of 64 sampled proposals, including possible repeats;
+it does not enumerate the entire residue-pair universe.
+
+Soft guidance weights the same proposals by q raised to a chosen power.
+Lookahead adds future contacts before scoring, then commits only the first.
+The generator's probability already enters through proposal sampling.
+
+## Complete nested-pool pilot
 
 On 32 validation structures, sum-q R-precision increases from 0.5792 with eight
 rollouts to 0.5993 with 128. The paired gain is 0.0200, with 95% group-bootstrap
@@ -54,7 +78,7 @@ exactly L and 2L contacts, with EOS disabled for both. Four independent 2L
 continuations yield nested L and 2L maps. The original 15-policy pilot remains
 frozen. No new reserved-test scores have been inspected.
 
-## First result: aggregation baseline
+## Existing 1552-structure validation baseline
 
 On existing validation rollouts, sum q remains strongest among five simple
 aggregators: all-contact R-precision 0.5315; long-range R-precision 0.5046.
@@ -84,8 +108,8 @@ Recovery uses original source snapshots and durable S3 trajectories. After East
 capacity remained full, a durable 6.014 GB RNO2A input mirror was completed with
 per-chunk reservations and a restart-safe 7 GB cap. Regional H100 smoke tests
 verify identical model and target hashes. The complete guided comparison is pending.
-Ordinary baselines are queued for 1,375 structures from 255 validation groups
-outside the pilot. No new reserved-test scores have been computed or inspected.
+Ordinary generation is nearly complete for 1,375 structures from 255 validation
+groups outside the pilot. New job starts are delayed by a regional controller outage. No new reserved-test scores have been computed or inspected.
 
 ## Numerical validation
 
@@ -94,3 +118,28 @@ with full forward passes. The first H100 smoke caught BF16 incremental/full-pass
 drift of up to 0.02394 in one contact probability. FP32 cached search passes on
 three real proteins, with maximum error 0.00000358. Final maps use the released
 BF16 full-pass reader for comparison.
+
+## Regional recovery status at 1730 UTC
+
+East-region output writes failed after 16:55. All affected workers stopped, and
+4,446 saved objects were copied to the GPU region. Source checksums and complete
+destination readbacks verified every file. Original code, sharding and seeds
+are preserved, with new results resuming from the verified regional snapshot.
+
+The regional controller stopped responding after 17:14. Thirteen replacement
+and smoke jobs remain queued. Existing validation-generation workers continue
+writing outputs. These are infrastructure delays; guided-policy conclusions
+remain pending. No shared cluster state has been changed.
+
+## How to interpret the eventual comparison
+
+R-precision evaluates the top R predictions, where R is the number of native
+contacts used only for evaluation. Precision at L, L/2 and L/5 provides usable
+sequence-length budgets. AP includes every eligible unproposed pair at score
+zero. Contact labels enter only after sampling decisions are finished.
+
+Pilot and larger-validation results select the final methods. The reserved test
+was previously used for the proofreader release; new inference-policy test scores
+have not been inspected. Generator pretraining decontamination is not established.
+Search timings describe this implementation, including discarded work, and are
+not hardware-independent lower bounds on the cost of these policy families.

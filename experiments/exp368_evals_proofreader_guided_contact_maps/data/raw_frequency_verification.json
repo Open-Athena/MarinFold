@@ -1,0 +1,5 @@
+{
+  "maps": 96,
+  "comparison": "All per-protein fields exactly equal to previously scored pilot_direct frequency results",
+  "metric_tests_passed": 3
+}

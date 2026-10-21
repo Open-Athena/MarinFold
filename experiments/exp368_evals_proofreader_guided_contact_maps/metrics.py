@@ -1,13 +1,18 @@
 """Evaluate ranked contact maps against the entire eligible pair universe."""
 
 import hashlib
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 import numpy as np
 
 
 def aggregate(rollouts: list[dict], method: str) -> dict[tuple[int, int], float]:
     """Combine unique per-rollout observations, with optional trajectory discount."""
+    if method == 'frequency':
+        counts = Counter()
+        for row in rollouts:
+            counts.update({(a, b) for a, b in row['pairs'] if 0 <= a < b < row['L'] and b - a >= 6})
+        return {pair: float(count) for pair, count in counts.items()}
     observations = []
     for row in rollouts:
         pairs = {}
@@ -35,7 +40,7 @@ def aggregate(rollouts: list[dict], method: str) -> dict[tuple[int, int], float]
         for pair, probability in pairs.items():
             count[pair] += weight
             total[pair] += weight * probability
-    if method in {'frequency', 'f1_weighted_frequency'}:
+    if method == 'f1_weighted_frequency':
         return dict(count)
     if method == 'frequency_then_meanq':
         # Integer vote counts remain strictly ordered. Confidence can resolve a

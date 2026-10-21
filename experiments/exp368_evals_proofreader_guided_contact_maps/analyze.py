@@ -35,8 +35,12 @@ def main() -> None:
     parser.add_argument('--guided', type=Path)
     parser.add_argument('--pool', type=Path)
     parser.add_argument('--pool-generation', type=Path)
+    parser.add_argument('--frequency-only', action='store_true',
+                        help='Evaluate raw ordinary pools without waiting for GPU proofreading')
     parser.add_argument('--out', type=Path, required=True)
     args = parser.parse_args()
+    if args.frequency_only and (args.guided or not args.pool):
+        raise ValueError('Frequency-only analysis requires an ordinary pool and no guided inputs')
     plan = json.loads(args.plan.read_text())
     targets = {row['entry_id']: row for row in pq.read_table(args.targets,
         filters=[('entry_id', 'in', plan['entries'])]).to_pylist()}
@@ -100,11 +104,13 @@ def main() -> None:
                 if len(rows) != size or {r['sample'] for r in rows} != set(range(size)):
                     raise ValueError('Ordinary pool contains missing or duplicate samples')
                 gt = pd.read_csv(args.pool_generation / entry / f'pool-{size}.timings.csv').iloc[0].to_dict()
-                st = pd.read_csv(key.with_suffix('.timings.csv')).iloc[0].to_dict()
-                ledger.extend([gt, st])
+                ledger.append(gt)
                 generation_seconds += gt['elapsed_seconds']
-                score_seconds += st['elapsed_seconds']
-                for method in METHODS:
+                if not args.frequency_only:
+                    st = pd.read_csv(key.with_suffix('.timings.csv')).iloc[0].to_dict()
+                    ledger.append(st)
+                    score_seconds += st['elapsed_seconds']
+                for method in ['frequency'] if args.frequency_only else METHODS:
                     seconds = generation_seconds + (score_seconds if method != 'frequency' else 0.)
                     name = 'ordinary-direct' if plan.get('pool_mode') == 'independent' else 'ordinary'
                     results.append(evaluate(rows, target, method, seconds, name))
@@ -132,7 +138,7 @@ def main() -> None:
         summary.append(record)
     summary = pd.DataFrame(summary)
     summary.to_csv(args.out / 'summary.csv', index=False)
-    print(summary[summary.method == 'sumq'][['policy', 'rollouts', 'structures', 'r_precision',
+    print(summary[summary.method == ('frequency' if args.frequency_only else 'sumq')][['policy', 'rollouts', 'structures', 'r_precision',
         'long_r_precision', 'oracle_coverage', 'mean_seconds']].to_string(index=False))
 
 
