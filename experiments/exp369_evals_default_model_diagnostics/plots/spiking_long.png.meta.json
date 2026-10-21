@@ -1,0 +1,8 @@
+{
+  "script": "analyze_spiking.py",
+  "args": [
+    "--run",
+    "/data/exp369/full-v2"
+  ],
+  "caption": "Supplied pairs never score. Dashed curves: unconditioned scores on the identical remaining pair universe. Count doses omit proteins with no truth remaining; see CSV denominators. Fraction budgets floor to integer contacts, with a minimum of one for nonzero doses. SSE quotas saturate elements with too few available contacts; random uses the same contact count. Zero-dose predictions are shared across axes and policies."
+}

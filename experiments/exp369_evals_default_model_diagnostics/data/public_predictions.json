@@ -505,6 +505,278 @@
       "n_files": 312,
       "conditions": 78,
       "markers_sha256": "7d52f91e39ee30859dc3bfaebf66bc21b8118505226760225ad5780f2eb6db13"
+    },
+    "8q8i_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/8q8i_A-967d539f3a633b1840f6771e4c0566d9580aa26aef34d4dd8b230193718c0faf.tar.gz",
+      "sha256": "967d539f3a633b1840f6771e4c0566d9580aa26aef34d4dd8b230193718c0faf",
+      "size_bytes": 15588317,
+      "n_files": 312,
+      "conditions": 78,
+      "markers_sha256": "47dd51ac3feafb63515face641f8fbeca3039e08c50dfaf98f5efd0cf77882f2"
+    },
+    "7zs2_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/7zs2_A-d3e24ccb5614a052605bb935c02709a00685a79ab5300a7d7b45cbf15008436f.tar.gz",
+      "sha256": "d3e24ccb5614a052605bb935c02709a00685a79ab5300a7d7b45cbf15008436f",
+      "size_bytes": 9068531,
+      "n_files": 280,
+      "conditions": 70,
+      "markers_sha256": "a2ef13e69813870a2dc1a9c06cbbce5825080f80943cd755cd37183c844c4a84"
+    },
+    "8au6_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/8au6_A-6c44a15d16f137c22eeea91043ef107a218375b2e17e29d8e01fdd27ce4a5c69.tar.gz",
+      "sha256": "6c44a15d16f137c22eeea91043ef107a218375b2e17e29d8e01fdd27ce4a5c69",
+      "size_bytes": 7230013,
+      "n_files": 264,
+      "conditions": 66,
+      "markers_sha256": "51904cdb7f972786f8410eff4df79242a39392e913b04eb7fc265caf17e28026"
+    },
+    "7v3o_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/7v3o_A-e1d339992bec0e4a9611012a7958ea64ba8cf93962c5afd568af643fd1917991.tar.gz",
+      "sha256": "e1d339992bec0e4a9611012a7958ea64ba8cf93962c5afd568af643fd1917991",
+      "size_bytes": 13933988,
+      "n_files": 296,
+      "conditions": 74,
+      "markers_sha256": "968c18a89967b9377c54ac668bbbfaef450926384022011dfec5862b04f27a93"
+    },
+    "7ylr_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/7ylr_A-9c88b59c8b519dbf4462b45cb3d4c5dfa581867c9cd9dba5cc45f43f32cc07b8.tar.gz",
+      "sha256": "9c88b59c8b519dbf4462b45cb3d4c5dfa581867c9cd9dba5cc45f43f32cc07b8",
+      "size_bytes": 14487512,
+      "n_files": 304,
+      "conditions": 76,
+      "markers_sha256": "d474cda165aee7230f32b3ad2bb8230be40f5604187302bd37e66c3f97cec46a"
+    },
+    "8c4d_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/8c4d_A-18f9f9709171dfdc06fe37f362e4e97008e8143e46911b174aaad2be63933ea5.tar.gz",
+      "sha256": "18f9f9709171dfdc06fe37f362e4e97008e8143e46911b174aaad2be63933ea5",
+      "size_bytes": 12925701,
+      "n_files": 280,
+      "conditions": 70,
+      "markers_sha256": "ca9e62d485ca4795244b15ee2b6bc580085c617046d441deb832d38d532cd5d5"
+    },
+    "8bux_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/8bux_A-2e84297a332cb7ff82f4f34e22575ed00ce4d54eed7c482c2bdf69e92e803da0.tar.gz",
+      "sha256": "2e84297a332cb7ff82f4f34e22575ed00ce4d54eed7c482c2bdf69e92e803da0",
+      "size_bytes": 12973111,
+      "n_files": 280,
+      "conditions": 70,
+      "markers_sha256": "642abcbb8cd5721d83f59316e80fe5b5c37223780788c29ad7f3551e1ee37526"
+    },
+    "7xjr_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/7xjr_A-53b67f97023aa1ce7f41837929501fea03fb96c2bd225df8e3d478da42beb141.tar.gz",
+      "sha256": "53b67f97023aa1ce7f41837929501fea03fb96c2bd225df8e3d478da42beb141",
+      "size_bytes": 15377813,
+      "n_files": 312,
+      "conditions": 78,
+      "markers_sha256": "c1e6b95b09e69b4fd9db5eedf343cf911340cab9467584be68c04703ccd2d803"
+    },
+    "7y4h_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/7y4h_A-c57c6fc9986f8cdbbc3efdc2fd182029debb1b571f00505c57982e60b05ab99f.tar.gz",
+      "sha256": "c57c6fc9986f8cdbbc3efdc2fd182029debb1b571f00505c57982e60b05ab99f",
+      "size_bytes": 13194479,
+      "n_files": 248,
+      "conditions": 62,
+      "markers_sha256": "d6d6c9c0006beb9fd687ccf39be197e8fbe783f7f14dda2a67aa27c8a0355f27"
+    },
+    "7yyg_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/7yyg_A-c6f0ac04d2b239989e5866082cdd855adc7b3b0fe6172758aa6dba66e36afa62.tar.gz",
+      "sha256": "c6f0ac04d2b239989e5866082cdd855adc7b3b0fe6172758aa6dba66e36afa62",
+      "size_bytes": 12165898,
+      "n_files": 280,
+      "conditions": 70,
+      "markers_sha256": "0cb7e1de1d205fd100126ff5fb6901c34f1387ff9e52ba09ada0de309f98276b"
+    },
+    "7xz3_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/7xz3_A-62a17c7ac74210454683f2ebc9af610e00a985afbe78e277e30c695c6419af3d.tar.gz",
+      "sha256": "62a17c7ac74210454683f2ebc9af610e00a985afbe78e277e30c695c6419af3d",
+      "size_bytes": 18125801,
+      "n_files": 312,
+      "conditions": 78,
+      "markers_sha256": "817d13a5fbf63eca6e228f863b695d91be0acc35dac303361c6814e4923e9856"
+    },
+    "8d2z_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/8d2z_A-8d3d7e2d67dbcd05fdffe8c496eea6d29a1c43feb5b25348eab2c2c7c47d52a0.tar.gz",
+      "sha256": "8d3d7e2d67dbcd05fdffe8c496eea6d29a1c43feb5b25348eab2c2c7c47d52a0",
+      "size_bytes": 14125648,
+      "n_files": 312,
+      "conditions": 78,
+      "markers_sha256": "cfee930dd692cbf8bf5bac080b6cfbbd77f7e706640162aa1d14359408b7fe14"
+    },
+    "8e5h_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/8e5h_A-05bf92be3df0a63417ecfb2c5b8956abc631831cabd923534fd9447ad72431e2.tar.gz",
+      "sha256": "05bf92be3df0a63417ecfb2c5b8956abc631831cabd923534fd9447ad72431e2",
+      "size_bytes": 16720556,
+      "n_files": 312,
+      "conditions": 78,
+      "markers_sha256": "87f0a62570a9b808f40d44edbcca9d5ca0ab450bd7850300c44a9d091d725e59"
+    },
+    "7xrx_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/7xrx_A-d8a534cc5657acdfa1a11847b9594f4948509d542a6057dd8641764d112ee909.tar.gz",
+      "sha256": "d8a534cc5657acdfa1a11847b9594f4948509d542a6057dd8641764d112ee909",
+      "size_bytes": 19759786,
+      "n_files": 312,
+      "conditions": 78,
+      "markers_sha256": "b4d28ef9d2d74e4c715a4d67699f107d463cc07cc9dc5da3b55c68f1a5a9a323"
+    },
+    "8amo_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/8amo_A-68930a9e7910e0be75474733f95955ea7260d3db4a530648225b41183d2b5324.tar.gz",
+      "sha256": "68930a9e7910e0be75474733f95955ea7260d3db4a530648225b41183d2b5324",
+      "size_bytes": 16568683,
+      "n_files": 312,
+      "conditions": 78,
+      "markers_sha256": "84b6686dfaa82f6b98a8415792c764392a97063a93280b876c7be6339e5343cf"
+    },
+    "7y3h_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/7y3h_A-04fe9dd9c6d9ed52594a79fc31bb3aadec90363374e796c71f3a50f99cf0b99e.tar.gz",
+      "sha256": "04fe9dd9c6d9ed52594a79fc31bb3aadec90363374e796c71f3a50f99cf0b99e",
+      "size_bytes": 14098415,
+      "n_files": 312,
+      "conditions": 78,
+      "markers_sha256": "cee832291e9515e23979ad450d5df2dc869c94a63d0f10ad9e4f44e75067a984"
+    },
+    "7qsj_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/7qsj_A-9077b234c0977f3b58ad435d2e4e3b814a5e83b403a433d8fabb637f22131975.tar.gz",
+      "sha256": "9077b234c0977f3b58ad435d2e4e3b814a5e83b403a433d8fabb637f22131975",
+      "size_bytes": 15578921,
+      "n_files": 312,
+      "conditions": 78,
+      "markers_sha256": "c232178bddacbeab70c203cba5d39ad3ea0b8935dcdbafc6eff4f62eb9aef32d"
+    },
+    "8akh_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/8akh_A-0a101adad103f38eb3c3badb2732fd02c336a604264292d85f7024d4ba6a3337.tar.gz",
+      "sha256": "0a101adad103f38eb3c3badb2732fd02c336a604264292d85f7024d4ba6a3337",
+      "size_bytes": 12489572,
+      "n_files": 248,
+      "conditions": 62,
+      "markers_sha256": "f8667ec1d04ab9f41837a947a6448338393d9f5b6f69fce4c6457f26b4745fa6"
+    },
+    "7uk8_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/7uk8_A-fcb3c7c9ca22b6b285e59f928345837ea6fbc56df4af8629c8b200d62488421a.tar.gz",
+      "sha256": "fcb3c7c9ca22b6b285e59f928345837ea6fbc56df4af8629c8b200d62488421a",
+      "size_bytes": 23484757,
+      "n_files": 312,
+      "conditions": 78,
+      "markers_sha256": "8cd94fffaea0529be6259efa309d95567056f94d8d1526725be1ed695c51f084"
+    },
+    "8bfy_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/8bfy_A-ac89c6fb452ae66059089d3c499482a8a0d7c0b484d681565dbd4d130c2aa27f.tar.gz",
+      "sha256": "ac89c6fb452ae66059089d3c499482a8a0d7c0b484d681565dbd4d130c2aa27f",
+      "size_bytes": 16826887,
+      "n_files": 312,
+      "conditions": 78,
+      "markers_sha256": "8b5b90c0b7c8be6282865f2572873105b3ff249a0b24ec815487d586ac1eaf38"
+    },
+    "8b5w_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/8b5w_A-557dfaba5d954066cefb8a19f74e72f5c92deddff587fcbd5ce221fc38906e69.tar.gz",
+      "sha256": "557dfaba5d954066cefb8a19f74e72f5c92deddff587fcbd5ce221fc38906e69",
+      "size_bytes": 23641001,
+      "n_files": 312,
+      "conditions": 78,
+      "markers_sha256": "c41efecda1b05ea333af14741e069c3a306b6449a2fbd7b129cab278444406d7"
+    },
+    "8e0r_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/8e0r_A-1c86bbb5b224c79ce9564b51b70cb287c900797329a42e849c7c63fb98826cc9.tar.gz",
+      "sha256": "1c86bbb5b224c79ce9564b51b70cb287c900797329a42e849c7c63fb98826cc9",
+      "size_bytes": 28075400,
+      "n_files": 288,
+      "conditions": 72,
+      "markers_sha256": "019d3f23acb9ff56e33df2857b815bb84b663cf53b57c3e09bbc4a1a98e0ba3d"
+    },
+    "8cpk_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/8cpk_A-300f138efa24645dc52f63fcb6b538c5ba6f825414722ebfc0c7ee141986b999.tar.gz",
+      "sha256": "300f138efa24645dc52f63fcb6b538c5ba6f825414722ebfc0c7ee141986b999",
+      "size_bytes": 14823366,
+      "n_files": 296,
+      "conditions": 74,
+      "markers_sha256": "a296bb8cf017612ca646a00a3baff6318ce6ee89846c4ddbf17a552f8540c33e"
+    },
+    "8dqd_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/8dqd_A-053a87ff424f20af0b161d221c1350d2b1bea06944ec77bbf7e20f1a6fcaa787.tar.gz",
+      "sha256": "053a87ff424f20af0b161d221c1350d2b1bea06944ec77bbf7e20f1a6fcaa787",
+      "size_bytes": 16149819,
+      "n_files": 312,
+      "conditions": 78,
+      "markers_sha256": "56394d4cb38ab6e04982812a9122add6575c15203ee6fd77b1cc3eb0ebb51a63"
+    },
+    "8dmu_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/8dmu_A-3660d04641fa24ce80e712f8d537d75cd3a831545ac6df7c952604faaa3566c4.tar.gz",
+      "sha256": "3660d04641fa24ce80e712f8d537d75cd3a831545ac6df7c952604faaa3566c4",
+      "size_bytes": 34572128,
+      "n_files": 304,
+      "conditions": 76,
+      "markers_sha256": "7beb6d9261cec0e3936e792ca26a3b0c7e4428c296167e87074e2b24a2fec0de"
+    },
+    "7wzm_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/7wzm_A-b8c1cdac493b123089222f0e6ee31987b59ed2e5d9a265f299ca89e36d47e935.tar.gz",
+      "sha256": "b8c1cdac493b123089222f0e6ee31987b59ed2e5d9a265f299ca89e36d47e935",
+      "size_bytes": 17909028,
+      "n_files": 288,
+      "conditions": 72,
+      "markers_sha256": "60b4d783b8f48924f94c1f5b7221fff7aefabebc5f9f3cdf842be3f5f9311859"
+    },
+    "7x8l_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/7x8l_A-7ad20a2d1b70a17414f626068429b94de28d856298b3ca1732f12e2c2f6e7b34.tar.gz",
+      "sha256": "7ad20a2d1b70a17414f626068429b94de28d856298b3ca1732f12e2c2f6e7b34",
+      "size_bytes": 27335048,
+      "n_files": 304,
+      "conditions": 76,
+      "markers_sha256": "7f3bc4bc751a667b8af6286b905e48f7424dae12820164da1147f726afd54cc4"
+    },
+    "7xq4_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/7xq4_A-1e6ffc7f6594e75cc7a04e2998995f1a22c51d39f14d96ea0d5415c470211d18.tar.gz",
+      "sha256": "1e6ffc7f6594e75cc7a04e2998995f1a22c51d39f14d96ea0d5415c470211d18",
+      "size_bytes": 22978038,
+      "n_files": 288,
+      "conditions": 72,
+      "markers_sha256": "b9c60bce577c2e3ce7b5d9a6082ec3e011848b57c585b7e26bbde03fdcdecd8f"
+    },
+    "8azb_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/8azb_A-ea374c18343134d472e014b9e349f7f16c7a31e766b76e1a414fa5530360e055.tar.gz",
+      "sha256": "ea374c18343134d472e014b9e349f7f16c7a31e766b76e1a414fa5530360e055",
+      "size_bytes": 27071726,
+      "n_files": 312,
+      "conditions": 78,
+      "markers_sha256": "84679ebc4758c0663e4895af3ad58b15157d603a176efc093334c33d1cf84f93"
+    },
+    "7xyr_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/7xyr_A-2197f1e86771a0a76e637fc2365b8bced3b6073f0c60a4e8227b8fab3ed55bae.tar.gz",
+      "sha256": "2197f1e86771a0a76e637fc2365b8bced3b6073f0c60a4e8227b8fab3ed55bae",
+      "size_bytes": 33167019,
+      "n_files": 312,
+      "conditions": 78,
+      "markers_sha256": "846342aef50504b83c4b60501ed3bb9a2aad4e2baa4524bf50b567c2fb8b2f5f"
+    },
+    "7uww_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/7uww_A-2fa5295252f614a9a78289c0d25c661a679a947d799c103101ebb74987761ede.tar.gz",
+      "sha256": "2fa5295252f614a9a78289c0d25c661a679a947d799c103101ebb74987761ede",
+      "size_bytes": 39568414,
+      "n_files": 312,
+      "conditions": 78,
+      "markers_sha256": "4cad914b3b4f4db597ea131435047e1072331b811d8b02b5fa3b44081325ae6f"
+    },
+    "8bke_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/8bke_A-a7474a8f0ed7e6016b200d0b6c9caf5558f9cab86e0635012d7eba595bd339e9.tar.gz",
+      "sha256": "a7474a8f0ed7e6016b200d0b6c9caf5558f9cab86e0635012d7eba595bd339e9",
+      "size_bytes": 30152734,
+      "n_files": 288,
+      "conditions": 72,
+      "markers_sha256": "abfe9348467e5c6b7a0c0bed76068dc54d328ea6f95479fd0ce60ef842715d08"
+    },
+    "8dge_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/8dge_A-0c90d0c14f6a2d8849d1e0eb9d93c961ea5686af68c2ca58e5f93198ad91a3bd.tar.gz",
+      "sha256": "0c90d0c14f6a2d8849d1e0eb9d93c961ea5686af68c2ca58e5f93198ad91a3bd",
+      "size_bytes": 53539447,
+      "n_files": 312,
+      "conditions": 78,
+      "markers_sha256": "882d3cb2489cd1efc8df6bea5a703aedbb3281cfb8e53334b37c0e7ac7fc9862"
+    },
+    "7znz_A": {
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/predictions-v2/7znz_A-2450403a9b5b3d1519f69c6f64a10563e01a97311d55e69679f8b02915d1b428.tar.gz",
+      "sha256": "2450403a9b5b3d1519f69c6f64a10563e01a97311d55e69679f8b02915d1b428",
+      "size_bytes": 59130246,
+      "n_files": 312,
+      "conditions": 78,
+      "markers_sha256": "532a54171891d0b007410684a8c64268a542929c3476733d638e07f265989f1c"
     }
   }
 }

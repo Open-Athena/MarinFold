@@ -42,7 +42,9 @@ def partition_remaining(plan: dict, root: str, completed: set[str], max_jobs: in
         eligible = [row for row in remaining if row["parts"] < len(row["counts"])]
         if not eligible:
             break
-        selected = max(eligible, key=lambda row: row["L"] * sum(row["counts"].values()) / row["parts"])
+        # Observed per-condition times grow approximately quadratically with
+        # length here (about 9 s at L=380 versus 38 s at L=760).
+        selected = max(eligible, key=lambda row: row["L"] ** 2 * sum(row["counts"].values()) / row["parts"])
         selected["parts"] += 1
     jobs = []
     for row in remaining:

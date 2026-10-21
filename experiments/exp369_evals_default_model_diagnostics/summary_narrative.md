@@ -20,20 +20,38 @@ Long-range R-precision: 0.538 (95% CI 0.494–0.580).
 Length association: Spearman rho −0.068, p=0.507 (all-range).
 No detectable monotonic trend in this sample; longest bin has only eight proteins.
 
-## Contact injection: running
+## Contact injection: a useful nudge, no sharp transition
 
-6,664 conditions, 666,400 rollouts on the 97 eval-val proteins.
-Random versus SSE-balanced true contacts; two independent context draws.
-Count, fraction, and one/two/four contacts per element views.
-Supplied pairs never score. Unconditioned comparator uses the same remaining pairs.
-Report 95% protein-bootstrap intervals and first tested dose with a 0.05 gain or R-precision 0.80.
-All 1,000 initial validation completions passed. Rare out-of-range model predictions exposed an incorrect shard-stop gate in the larger run.
-Corrected bookkeeping retains all samples and reports generation errors plus a zero-invalid-rollout sensitivity score. The one-H100 case run completed all 1,200 samples; twelve workers restarted the full sweep.
+All 6,664 conditions / 666,400 rollouts complete on the 97 eval-val proteins.
+Eight random contacts: remaining R-precision 0.610; gain 0.061 (95% CI 0.046–0.079).
+5% target budget: remaining R-precision 0.615; gain 0.064 (95% CI 0.050–0.081).
+Both policies first cross the predeclared five-point mean-gain criterion at eight contacts / 5%.
+Random peaks at 0.711 (95% CI 0.698–0.724), at the 40% budget.
+No tested dose reaches mean R-precision 0.80. Long-range results are similar.
+Supplied pairs never score. As dose rises, the remaining truth and R shrink; the declining absolute curve at large budgets does not establish that more context harms predictions.
+
+## Secondary-structure coverage does not improve the early response
+
+One contact per coverable element uses a mean 16.9 contacts / 7.04% of truth.
+Remaining R-precision: 0.628 balanced versus 0.626 random at the same counts.
+Paired difference 0.0023 (95% CI −0.0051–0.0098): no clear advantage.
+Two contacts per element also show no clear advantage.
+At 40% truth supplied, random exceeds balanced by 0.0187 (95% CI 0.0119–0.0253).
+The policy comparison also changes contact composition: one balanced pass contains fewer long-range contacts than random sampling at the same count.
+
+## Completeness and robustness
+
+Zero token-cap hits across all 666,400 rollouts; 2,218 invalid rollouts (0.333%).
+All samples retained, with malformed / nonexistent-residue pairs unable to vote.
+Zeroing entire invalid rollouts changes all-range curve means by less than 0.00022.
+Fresh unconditioned mean 0.55449 reproduces archived 0.55375; paired difference CI includes zero.
+Eight protocol tests and twenty exact canonical-scorer comparisons passed.
+Raw rollouts, vote matrices, timings, frozen inputs, and source code are published with checksums.
 
 ## Verified AFDB/PDB disagreements
 
 Screened 700 retained training entries; 357 usable mappings.
-Confirmed 20 against the original AFDB v4 source; training contacts reproduce exactly.
+Confirmed 20 against the original AFDB v4 source; training contacts reproduce exactly on the common resolved residues used in each comparison.
 Six cases selected: three large assembly-bound discrepancies (TM-score 0.25–0.33), NDUFA4 contact disagreement, and two alternate-state controls.
 Later PDB release dates follow the original November 2022 AFDB objects.
 Assembly context and biological state prevent labeling all disagreements as unequivocal folding errors.

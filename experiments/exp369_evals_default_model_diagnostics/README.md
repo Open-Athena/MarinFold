@@ -44,7 +44,31 @@ The existing canonical exp277 rollout evaluation contains all **97 eval-val prot
 
 `plot_length.py` regenerates the plot and `data/length_*.csv` from exp277's archived scores and the exp245 split manifest. `data/length_statistics.json` records source hashes. All-range means resolved residue pairs separated by at least six positions; long-range uses at least 24.
 
-### Contact injection — running
+### Contact injection — complete
+
+**A useful nudge takes about eight contacts or a 5% contact budget; there is no sharp transition to high accuracy.** Eight random contacts increase mean remaining-contact R-precision to **0.6103**, a **0.0611** gain over the matched unconditioned comparator (95% paired protein-bootstrap CI **0.0457–0.0786**). A 5% target budget gives **0.6148**, a **0.0644** gain (**0.0498–0.0813**). These are the first tested count/fraction doses satisfying the predeclared five-point mean-gain criterion; a single contact already gives a smaller positive mean gain of **0.0096** (**0.0046–0.0161**). Both policies cross the five-point criterion at eight contacts / 5%.
+
+| Target fraction of true contacts supplied | Random remaining R-precision | SSE-balanced remaining R-precision |
+|---:|---:|---:|
+| 0% | 0.5545 | 0.5545 |
+| 5% | 0.6148 | 0.6148 |
+| 10% | 0.6518 | 0.6552 |
+| 20% | 0.6873 | 0.6868 |
+| 40% | 0.7113 | 0.6926 |
+| 60% | 0.6976 | 0.6550 |
+| 80% | 0.6589 | 0.5585 |
+
+Random sampling peaks at the 40% tested budget: **0.7113** (95% CI **0.6981–0.7238**). No tested dose reaches mean R-precision **0.80**. Only 11/97 proteins reach 0.80 at any tested fraction dose for each policy, including proteins already above that threshold without intervention. The evaluated remainder and R change with dose: supplied positives are removed while negative pairs remain, and SSE sampling also changes which positive contacts remain. A falling absolute curve therefore does not establish that additional correct context harms prediction. Gain over the matched unconditioned comparator continues to rise.
+
+Covering each secondary-structure element once uses a mean **16.9 contacts / 7.04%** of truth. It gives **0.6283** versus **0.6260** for random sampling at the same counts: paired difference **0.0023**, 95% CI **−0.0051–0.0098**. Two contacts per element also show no clear advantage; four show slightly lower gain over the matched comparator. At larger fraction budgets, random sampling is better: at 40%, its R-precision advantage is **0.0187** (95% CI **0.0119–0.0253**), and its matched-comparator gain advantage is **0.0201** (**0.0129–0.0274**). Random retains an advantage when comparing gains against the respective matched unconditioned comparators.
+
+![Remaining-contact dose response](plots/spiking_all.png)
+
+![Long-range remaining-contact dose response](plots/spiking_long.png)
+
+Long-range results are similar: random sampling rises from **0.5383** without context to **0.5986** at 5% and **0.7004** at 40%. All 97 proteins have defined scores on the fraction and element-coverage grids. Count-grid denominators fall to 96, 89, and 74 at 32, 64, and 128 supplied contacts, respectively; those count means compare changing cohorts.
+
+`data/spiking_summary.csv`, `data/spiking_per_repeat.csv`, and `data/spiking_per_protein.csv` contain the full results. `data/spiking_thresholds.json` records the predeclared threshold crossings; per-protein crossings are also saved. `data/paired_policy_comparisons.csv` reports paired policy differences in both absolute accuracy and matched-baseline gain, including the generation-error sensitivity analysis.
 
 The frozen plan has **6,664 conditions / 666,400 rollouts**, covering 97 proteins and two independent context draws. Each condition has 100 newly resampled sequence documents. Count doses are 0, 1, 2, 4, 8, 16, 32, 64, 128 where truth remains; fraction doses are 1%, 2%, 5%, 10%, 20%, 40%, 60%, 80% of all true contacts. Fractions use floor with a minimum of one contact. Random and SSE-balanced conditions use nested subsets.
 
@@ -58,11 +82,13 @@ Every supplied pair is removed from both the prediction candidate set and the tr
 
 The smoke run passed all 1,000 completions, with no unfinished, malformed, or out-of-range outputs. On 7qp5_A, the two unconditioned scores were 0.5477 and 0.5560, versus the archived 0.5560. The initial 12-worker run was submitted on 2026-10-21; its job IDs are in `data/jobs_full_v1.json`. It exposed an incorrect orchestration gate: isolated out-of-range model predictions stopped a whole shard, although the canonical evaluator simply ignores nonexistent pairs. The correction retains every draw without retries or selection and reports those errors plus a zero-invalid-rollout sensitivity analysis. Original attempts remain under `spiking-v1`; corrected runs use `spiking-v2`. The corrected case run completed all 1,200 samples. The full corrected sweep restarted on twelve H100s at 14:45 UTC; current job IDs are in `data/jobs_full.json`. A revision-matched isolated Iris client was built from Marin `af9c6789e8` because older workstation clients were rejected by the current controller. A task-local copy of that revision's cluster connection config points to the existing RNO2A kubeconfig; no cluster configuration was changed.
 
+The corrected sweep finished all **666,400 rollouts**. After the original workers were confirmed terminal, 325 unfinished conditions were redistributed into twelve disjoint batches using the exact frozen inference bundle; all final jobs succeeded (`data/jobs_tail.json`). The last retained inference completed at **16:20:30 UTC on 2026-10-21**. There were **zero token-cap hits** and **2,218 invalid rollouts (0.333%)**. Zeroing invalid rollouts changes no all-range curve mean by more than **0.00022**, or long-range mean by more than **0.00052**. The fresh unconditioned mean, **0.55449**, reproduces the archived **0.55375** (paired difference **0.00074**, 95% CI **−0.00205–0.00350**). `summarize_results.py` saves the completeness, timing, baseline, and sensitivity audit in `data/final_audit.json`. Retained pure inference totals **11.69 worker-hours**; this excludes canceled incomplete work and the abandoned v1 attempts.
+
 ### AFDB versus later PDB structures — complete
 
 The candidate screen starts from retained AFDB entries in the actual decontaminated training corpus, joins SIFTS, and screens 700 recent-PDB candidates. Of these, 357 have usable sequence/construct mappings and enough common contacts; 206 fail mapping, 108 fail the length/truncation filter, and 29 have too few common contacts. There were no fetch/parse failures. This is a targeted search, not an unbiased prevalence estimate or exhaustive search for the first experimental structure.
 
-Twenty candidates were checked against their **original AFDB v4 coordinates**. Regenerated contacts exactly reproduce each saved training document. Source objects were created in November 2022, before the selected experimental releases in 2023–2025. The six inference cases use identical sequences and only mutually resolved residues when comparing labels. Three show large global discrepancies in their assembly-bound structures:
+Twenty candidates were checked against their **original AFDB v4 coordinates**. Regenerated contacts exactly reproduce the saved training contacts on the common resolved residues used in each comparison. Source objects were created in November 2022, before the selected experimental releases in 2023–2025. The six inference cases use identical sequences and only mutually resolved residues when comparing labels. Three show large global discrepancies in their assembly-bound structures:
 
 | Training accession | Later PDB chain | Protein | Common-residue TM-score | Contact F1 |
 |---|---|---|---:|---:|
@@ -85,6 +111,17 @@ The six exact training documents and their source-index rows are saved in `data/
 
 Full sweep predictions are published incrementally by `publish_predictions.py --upload`, only after every planned condition for a protein is present and checksummed. The content-addressed public bundles contain raw completions, both vote matrices, timings, and completion records. `data/public_predictions.json` lists their URLs and hashes. `publish_predictions.py --restore --run <directory>` restores them anonymously for `analyze_spiking.py`; this avoids requiring CoreWeave credentials to reproduce the plots.
 
+To reproduce the contact-injection analysis from the public result archive, extract it into a directory and run:
+
+```bash
+uv run python publish_predictions.py --restore --run restored-predictions
+uv run python analyze_spiking.py --plan inputs/spiking_plan.json --run restored-predictions
+uv run python summarize_results.py
+uv run python build_summary.py
+```
+
+The archive URI and SHA-256 are recorded in `data/public_artifacts.json` in this repository. The restored inference bundles total approximately 1.2 GB before archive compression. Eight protocol tests and twenty exact comparisons with the established evaluator passed; inference completeness and per-file checksums are checked separately.
+
 ### MarinFold preference on the six cases
 
 All 1,200 sequence-only rollouts completed without hitting the token cap. Six rollouts (0.5%) contained malformed statements or out-of-range final pairs. All samples were retained; zeroing these six rollouts gives the same qualitative conclusions. Pure generation took 65.55 seconds on one H100; model initialization took 63.55 seconds separately.
@@ -104,4 +141,4 @@ Mean votes are fractions of rollouts containing a contact, averaged over the res
 
 ## Conclusion
 
-The existing default-model evaluation shows no detectable length trend across these 97 proteins. On the three largest verified AFDB/PDB structural disagreements, MarinFold does not reliably recover the later experimental state: it favors AFDB for dynein, weakly favors PDB for Tex36, and recovers neither contact set for the centrosomal protein. Assembly and biological-state differences remain essential qualifications. The contact-injection dose response is still running.
+Eight true contacts or a 5% contact budget give a useful average improvement, but no tested intervention yields mean remaining-contact R-precision of 0.80. Covering secondary-structure elements first offers no clear early advantage and becomes worse than random sampling at larger budgets. The existing default-model evaluation shows no detectable length trend across these 97 proteins. On the three largest verified AFDB/PDB structural disagreements, MarinFold does not reliably recover the later experimental state: it favors AFDB for dynein, weakly favors PDB for Tex36, and recovers neither contact set for the centrosomal protein. Assembly and biological-state differences remain essential qualifications.
