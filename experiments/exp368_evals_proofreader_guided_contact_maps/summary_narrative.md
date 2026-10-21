@@ -236,3 +236,26 @@ from 0.47099 to 0.52194, a gain of 0.05096 (0.04338 to 0.05915).
 Mean warm cost is 1.196 versus 3.054 GB200 seconds. This separate runtime
 replicates the H100 frequency result. Full-forward proofreader scoring is still
 running. No new reserved-test scores have been computed or inspected.
+
+## Complete H100 validation: confidence helps small pools
+
+The released reader has scored all 2,750 pools from 1,375 validation structures.
+At eight rollouts, sum q improves R-precision from 0.50137 to 0.51737:
+paired gain 0.01601 (95% interval 0.01239 to 0.02033). Long-range gain is
+0.01710 (0.01240 to 0.02223), at 1.061 times the measured warm inference cost.
+
+At 128 rollouts, sum q and frequency are effectively tied in this comparison:
+all-contact difference −0.00008 (−0.00386 to 0.00424), long-range +0.00089
+(−0.00371 to 0.00599). Mean confidence alone loses the useful vote-count signal.
+
+## Rollout quality weighting gives a small validation gain
+
+With 128 rollouts, weighting each trajectory's votes by its predicted F1 gives
+R-precision 0.55195 and long-range R-precision 0.52565. Compared with frequency,
+the paired gains are 0.00426 (95% interval 0.00173 to 0.00763) and 0.00412
+(0.00129 to 0.00781). Mean warm H100 time is 8.921 versus 6.599 seconds.
+
+The weight uses predicted precision and recall only. This aggregation rule was
+added after the pilot; intervals are not adjusted for method selection. It is a
+promising validation result, not a reserved-test confirmation. Guided-policy
+selection still waits for the complete pilot.

@@ -97,7 +97,7 @@ At 128 rollouts, it changes 7.62% of slots and the mean effect is −0.0031
 and lost by these swaps exactly reproduce the per-protein metric differences.
 Thus the pilot supports proofreading small pools, but does not establish an
 additional ranking benefit at 128 rollouts. This is a retrospective diagnostic
-of existing complete pools; the larger validation comparison remains pending.
+of existing complete pools; the larger validation comparison is reported below.
 
 ![True contacts gained and lost by proofreader reranking](plots/pilot_reranking.png)
 
@@ -115,8 +115,8 @@ Oracle candidate coverage increases from 0.7392 to 0.9523, while full-universe A
 increases from 0.4565 to 0.5632. At 128 rollouts, precision at L, L/2 and L/5 is
 0.5058, 0.6709 and 0.7932 respectively. This comparison uses frequency for both
 pool sizes. Fresh proofreader-weighted scoring on the same generated pools is
-still running; the older 1,552-structure reanalysis uses a different cohort and
-cannot substitute for that comparison. Data and all 2,750 contemporaneous
+now complete and reported below; the older 1,552-structure reanalysis uses a
+different cohort. Data and all 2,750 contemporaneous
 per-input generation timings are in `data/validation_frequency/`.
 
 ![Larger validation comparison of frequency-ranked pools](plots/validation_frequency.png)
@@ -131,6 +131,48 @@ and output writes. Fixed length strata and underlying values are saved beside
 the full-panel metrics.
 
 ![Latency and protein-level effects of larger rollout pools](plots/validation_pool_scaling.png)
+
+### Complete proofreader aggregation validation
+
+All 2,750 pools have also been scored by the released full-forward reader.
+The table uses all 1,375 structures; long-range metrics use the 1,371 with
+at least one eligible native contact. Costs include generation and, where
+needed, proofreading, excluding model load and artifact writes.
+CPU map aggregation and metric computation are outside these GPU-stage timings;
+they are not end-to-end serving latencies.
+
+| Rollouts | Map ranking | R-precision | Long-range R-precision | Mean warm H100 seconds |
+| ---: | --- | ---: | ---: | ---: |
+| 8 | Frequency | 0.50137 | 0.47089 | 2.431 |
+| 8 | Sum contact confidence | 0.51737 | 0.48799 | 2.580 |
+| 128 | Frequency | 0.54769 | 0.52153 | 6.599 |
+| 128 | Sum contact confidence | 0.54762 | 0.52242 | 8.921 |
+| 128 | Confidence breaks vote ties | 0.54820 | 0.52216 | 8.921 |
+| 128 | Votes weighted by predicted rollout F1 | 0.55195 | 0.52565 | 8.921 |
+
+At eight rollouts, sum q improves R-precision over frequency by 0.01601
+(95% paired group-bootstrap interval 0.01239–0.02033) and long-range
+R-precision by 0.01710 (0.01240–0.02223). At 128, the corresponding changes
+are −0.00008 (−0.00386–0.00424) and +0.00089 (−0.00371–0.00599), which do
+not establish an additional benefit. Averaging confidence alone performs
+poorly: R-precision is 0.47455 at eight and 0.45504 at 128 rollouts.
+
+The exploratory rollout-F1 weighting is more promising at 128: relative to
+frequency, its gains are 0.00426 (0.00173–0.00763) overall and 0.00412
+(0.00129–0.00781) for long-range contacts, at 1.352 times the measured cost.
+Every unique contact in a rollout receives that rollout's predicted F1 as
+its vote weight. Predicted precision is the mean contact confidence and
+predicted recall is the reader's rollout-level output; native labels are
+not used to set weights. This variant was added after the pilot, and these
+intervals are not adjusted for selecting among aggregation rules. This is
+validation evidence, not a reserved-test confirmation.
+
+Data, per-input timings, and all seven aggregation rules are in
+`data/validation_pool/`. Paired comparisons use identical generated pools.
+
+![Paired validation effects of proofreader aggregation](plots/validation_aggregation_effects.png)
+
+![Validation aggregation accuracy and candidate coverage](plots/validation_pool.png)
 
 ### Frozen pilot protocol
 
@@ -418,7 +460,11 @@ The completed 32-protein pilot supports larger ordinary rollout pools: 128
 frequency-ranked rollouts improve both all-contact and long-range R-precision
 relative to eight proofreader-weighted rollouts. A separate 1,375-structure
 validation comparison confirms that increasing frequency-ranked pools from eight
-to 128 improves R-precision by 0.0463 (95% interval 0.0403–0.0526). Fresh
-proofreader-weighted validation scoring is still pending. The guided-policy and fixed-length
+to 128 improves R-precision by 0.0463 (95% interval 0.0403–0.0526). Full
+proofreader validation confirms that sum q helps small pools; at 128 rollouts,
+weighting votes by predicted rollout F1 adds a smaller exploratory gain of
+0.00426 (0.00173–0.00763). On GB200, increasing ordinary pools to 2,048
+does not establish an accuracy gain over 128 despite 23.68 times the cost.
+The guided-policy and fixed-length
 comparisons remain incomplete, so there is no conclusion yet about whether
 proofreader-guided sampling improves the final accuracy/cost tradeoff.
