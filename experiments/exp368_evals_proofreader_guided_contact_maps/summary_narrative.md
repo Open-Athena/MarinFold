@@ -67,6 +67,18 @@ Against eight rollouts with sum-q ranking, the paired all-contact gain is 0.0244
 (0.0154–0.0519). The 128-rollout pool contains 95.39% of native contacts.
 The single-batch recipe is the practical cost baseline for guided search.
 
+## Larger validation confirms the pool-size benefit
+
+On all 1,375 structures in 255 validation groups outside the pilot, frequency
+ranking improves from 0.5014 at eight rollouts to 0.5477 at 128. The paired gain
+is 0.0463 (95% group-bootstrap interval 0.0403–0.0526). Long-range R-precision
+rises from 0.4709 to 0.5215; its gain is 0.0506 (0.0430–0.0586).
+
+The pool exposes 95.23% of native contacts. Mean warm generation time increases
+from 2.431 to 6.599 H100 seconds. Both sides use frequency ranking; fresh
+proofreader-weighted validation scoring remains pending. The long-range mean
+covers 1,371 structures with nonempty long-range references.
+
 ## Exploratory length control
 
 On the five short proteins completed by every original policy, top-10% filtering
@@ -143,3 +155,16 @@ was previously used for the proofreader release; new inference-policy test score
 have not been inspected. Generator pretraining decontamination is not established.
 Search timings describe this implementation, including discarded work, and are
 not hardware-independent lower bounds on the cost of these policy families.
+
+## Execution resumed through the healthy East controller
+
+East H100 capacity and object writes recovered while RNO's controller remained
+unresponsive. Verified copies of the 14.2 MB guided snapshot and 404.6 MB complete
+validation outputs now live in East. Pending RNO replacements were canceled
+before new East jobs were submitted. Existing East weights keep large reads
+colocated, with no new cross-region model staging.
+
+The new fixed-length GPU smoke passed exact L and 2L contact counts, nested-prefix
+checks, model hashes and FP32 cache errors below 9e-7. Four validation-scoring
+jobs, four fixed-length shards and twelve original guided shards are submitted
+through the healthy controller. No shared cluster restart was performed.

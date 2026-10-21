@@ -15,13 +15,24 @@ def main() -> None:
     parser.add_argument('--data', type=Path, required=True)
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--title', default='32 validation proteins: ordinary rollout pools')
+    parser.add_argument('--methods', nargs='+', choices=['frequency', 'sumq', 'meanq'],
+                        default=['frequency', 'sumq', 'meanq'])
+    parser.add_argument('--coverage-method', choices=['frequency', 'sumq', 'meanq'], default='sumq')
     args = parser.parse_args()
     summary = pd.read_csv(args.data / 'summary.csv')
     if summary.structures.nunique() != 1:
         raise ValueError('Pool plot requires a complete common cohort')
+    completeness = pd.read_csv(args.data / 'completeness.csv')
+    ordinary = completeness[completeness.policy.str.startswith('ordinary-')]
+    if ordinary.empty or not ordinary.complete.all():
+        raise ValueError('Ordinary generation/scoring has not completed its planned cohort')
+    if not set(args.methods + [args.coverage_method]) <= set(summary.method):
+        raise ValueError('Requested plot methods are absent from the summary')
     fig, axes = plt.subplots(1, 3, figsize=(14, 4.2))
     colors = {'frequency': '#2563eb', 'sumq': '#d97706', 'meanq': '#64748b'}
     for method, label in [('frequency', 'Frequency'), ('sumq', 'Sum proofreader q'), ('meanq', 'Mean q')]:
+        if method not in args.methods:
+            continue
         rows = summary[summary.method == method].sort_values('rollouts')
         for ax, metric, title in zip(axes[:2], ['r_precision', 'long_r_precision'],
                                      ['All-contact R-precision', 'Long-range R-precision'], strict=True):
@@ -31,9 +42,9 @@ def main() -> None:
             ax.set(xscale='log', xlabel='Number of independent rollouts', ylabel=title)
             ax.set_xticks(rows.rollouts, rows.rollouts.astype(str))
             ax.grid(alpha=.2)
-    rows = summary[summary.method == 'sumq'].sort_values('rollouts')
+    rows = summary[summary.method == args.coverage_method].sort_values('rollouts')
     axes[2].plot(rows.rollouts, rows.oracle_coverage, 'o-', color='#15803d', label='Native contacts in pool')
-    axes[2].plot(rows.rollouts, rows.r_precision, 'o-', color=colors['sumq'], label='Recovered at R predictions')
+    axes[2].plot(rows.rollouts, rows.r_precision, 'o-', color=colors[args.coverage_method], label='Recovered at R predictions')
     axes[2].set(xscale='log', xlabel='Number of independent rollouts', ylabel='Fraction of native contacts', ylim=(0, 1))
     axes[2].set_xticks(rows.rollouts, rows.rollouts.astype(str))
     axes[2].grid(alpha=.2)

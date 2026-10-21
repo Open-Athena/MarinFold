@@ -1,0 +1,80 @@
+{
+  "at": "2026-10-21T17:50:07.622700+00:00",
+  "reason": "Move pending work from unresponsive RNO controller to healthy East H100 capacity",
+  "jobs": [
+    {
+      "job_id": "/bizon/exp368-guided-regional-v2-000",
+      "returncode": 0,
+      "output": "se `--active` to target the active environment instead\nI20261021 13:49:51 140464059905856 iris.cli.main Resolved cluster 'marin' to config: /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nI20261021 13:49:51 140464059905856 iris.cluster.config Loading config from /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nNot all requested scopes were granted by the authorization server, missing scopes email.\n"
+    },
+    {
+      "job_id": "/bizon/exp368-guided-regional-v2-001",
+      "returncode": 0,
+      "output": "se `--active` to target the active environment instead\nI20261021 13:49:50 140154501850944 iris.cli.main Resolved cluster 'marin' to config: /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nI20261021 13:49:50 140154501850944 iris.cluster.config Loading config from /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nNot all requested scopes were granted by the authorization server, missing scopes email.\n"
+    },
+    {
+      "job_id": "/bizon/exp368-guided-regional-v2-002",
+      "returncode": 0,
+      "output": "se `--active` to target the active environment instead\nI20261021 13:49:51 140020894562112 iris.cli.main Resolved cluster 'marin' to config: /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nI20261021 13:49:51 140020894562112 iris.cluster.config Loading config from /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nNot all requested scopes were granted by the authorization server, missing scopes email.\n"
+    },
+    {
+      "job_id": "/bizon/exp368-guided-regional-v2-003",
+      "returncode": 0,
+      "output": "se `--active` to target the active environment instead\nI20261021 13:49:52 139874021599040 iris.cli.main Resolved cluster 'marin' to config: /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nI20261021 13:49:52 139874021599040 iris.cluster.config Loading config from /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nNot all requested scopes were granted by the authorization server, missing scopes email.\n"
+    },
+    {
+      "job_id": "/bizon/exp368-guided-regional-v2-004",
+      "returncode": 0,
+      "output": "se `--active` to target the active environment instead\nI20261021 13:49:56 139786493736768 iris.cli.main Resolved cluster 'marin' to config: /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nI20261021 13:49:56 139786493736768 iris.cluster.config Loading config from /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nNot all requested scopes were granted by the authorization server, missing scopes email.\n"
+    },
+    {
+      "job_id": "/bizon/exp368-guided-regional-v2-005",
+      "returncode": 0,
+      "output": "se `--active` to target the active environment instead\nI20261021 13:49:57 139794502276928 iris.cli.main Resolved cluster 'marin' to config: /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nI20261021 13:49:57 139794502276928 iris.cluster.config Loading config from /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nNot all requested scopes were granted by the authorization server, missing scopes email.\n"
+    },
+    {
+      "job_id": "/bizon/exp368-guided-regional-v2-006",
+      "returncode": 0,
+      "output": "se `--active` to target the active environment instead\nI20261021 13:49:58 140543688542016 iris.cli.main Resolved cluster 'marin' to config: /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nI20261021 13:49:58 140543688542016 iris.cluster.config Loading config from /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nNot all requested scopes were granted by the authorization server, missing scopes email.\n"
+    },
+    {
+      "job_id": "/bizon/exp368-guided-regional-v2-007",
+      "returncode": 0,
+      "output": "se `--active` to target the active environment instead\nI20261021 13:49:58 140287243016000 iris.cli.main Resolved cluster 'marin' to config: /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nI20261021 13:49:58 140287243016000 iris.cluster.config Loading config from /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nNot all requested scopes were granted by the authorization server, missing scopes email.\n"
+    },
+    {
+      "job_id": "/bizon/exp368-guided-regional-v2-008",
+      "returncode": 0,
+      "output": "se `--active` to target the active environment instead\nI20261021 13:49:59 139968543672128 iris.cli.main Resolved cluster 'marin' to config: /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nI20261021 13:49:59 139968543672128 iris.cluster.config Loading config from /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nNot all requested scopes were granted by the authorization server, missing scopes email.\n"
+    },
+    {
+      "job_id": "/bizon/exp368-guided-regional-v2-009",
+      "returncode": 0,
+      "output": "se `--active` to target the active environment instead\nI20261021 13:49:59 140172429121344 iris.cli.main Resolved cluster 'marin' to config: /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nI20261021 13:49:59 140172429121344 iris.cluster.config Loading config from /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nNot all requested scopes were granted by the authorization server, missing scopes email.\n"
+    },
+    {
+      "job_id": "/bizon/exp368-guided-regional-v2-010",
+      "returncode": 0,
+      "output": "se `--active` to target the active environment instead\nI20261021 13:50:00 139988161574720 iris.cli.main Resolved cluster 'marin' to config: /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nI20261021 13:50:00 139988161574720 iris.cluster.config Loading config from /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nNot all requested scopes were granted by the authorization server, missing scopes email.\n"
+    },
+    {
+      "job_id": "/bizon/exp368-guided-regional-v2-011",
+      "returncode": 0,
+      "output": "se `--active` to target the active environment instead\nI20261021 13:50:01 139774737889088 iris.cli.main Resolved cluster 'marin' to config: /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nI20261021 13:50:01 139774737889088 iris.cluster.config Loading config from /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nNot all requested scopes were granted by the authorization server, missing scopes email.\n"
+    }
+  ],
+  "confirmed_states": {
+    "/bizon/exp368-guided-regional-v2-000": "JOB_STATE_KILLED",
+    "/bizon/exp368-guided-regional-v2-001": "JOB_STATE_KILLED",
+    "/bizon/exp368-guided-regional-v2-002": "JOB_STATE_KILLED",
+    "/bizon/exp368-guided-regional-v2-003": "JOB_STATE_KILLED",
+    "/bizon/exp368-guided-regional-v2-004": "JOB_STATE_KILLED",
+    "/bizon/exp368-guided-regional-v2-005": "JOB_STATE_KILLED",
+    "/bizon/exp368-guided-regional-v2-006": "JOB_STATE_KILLED",
+    "/bizon/exp368-guided-regional-v2-007": "JOB_STATE_KILLED",
+    "/bizon/exp368-guided-regional-v2-008": "JOB_STATE_KILLED",
+    "/bizon/exp368-guided-regional-v2-009": "JOB_STATE_KILLED",
+    "/bizon/exp368-guided-regional-v2-010": "JOB_STATE_KILLED",
+    "/bizon/exp368-guided-regional-v2-011": "JOB_STATE_KILLED"
+  }
+}

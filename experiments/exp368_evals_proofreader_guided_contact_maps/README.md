@@ -87,6 +87,26 @@ batch sizes or deployments as identical. Data are in `data/pilot_direct/`.
 
 ![Contact-map accuracy from pools requested in a single batch](plots/pilot_direct_pool.png)
 
+### Larger validation frequency baseline
+
+Ordinary generation is complete for all 1,375 structures in the 255 validation
+groups outside the pilot. With frequency ranking, increasing from eight to 128
+rollouts improves all-contact R-precision from 0.5014 to 0.5477. The paired gain
+is 0.0463 (95% group-bootstrap interval 0.0403–0.0526). Long-range R-precision
+increases from 0.4709 to 0.5215, a gain of 0.0506 (0.0430–0.0586), over the
+1,371 structures with at least one long-range native contact. Mean warm generation
+cost increases from 2.431 to 6.599 H100 seconds per map (2.714 times the cost).
+
+Oracle candidate coverage increases from 0.7392 to 0.9523, while full-universe AP
+increases from 0.4565 to 0.5632. At 128 rollouts, precision at L, L/2 and L/5 is
+0.5058, 0.6709 and 0.7932 respectively. This comparison uses frequency for both
+pool sizes. Fresh proofreader-weighted scoring on the same generated pools is
+still running; the older 1,552-structure reanalysis uses a different cohort and
+cannot substitute for that comparison. Data and all 2,750 contemporaneous
+per-input generation timings are in `data/validation_frequency/`.
+
+![Larger validation comparison of frequency-ranked pools](plots/validation_frequency.png)
+
 ### Frozen pilot protocol
 
 `pilot.json` fixes 32 validation proteins from 32 distinct homology groups,
@@ -221,11 +241,26 @@ it queues scoring against stale scheduler status. The shared cluster was not
 modified. Frequency-only analysis can run directly on raw generated contacts;
 its results exactly reproduce all fields for 96 previously scored pilot maps.
 
+The East controller and eight schedulable H100s became available during the RNO
+controller outage. A fresh East storage write/read check passed. The saved
+guided snapshot (14.2 MB) and complete validation-generation outputs (404.6 MB)
+were copied to `s3://marin-us-east-02a/MarinFold/exp368/recovery-east-v2/results/`,
+with source ETags and every destination SHA256 readback verified. The queued
+RNO replacement jobs were canceled and their terminal states checked before
+East replacements were submitted. A new H100 fixed-length smoke passed all
+model hashes, exact L and 2L counts, nested-prefix invariants and FP32 cache checks
+(maximum probability error below 9e-7). The full fixed-length pilot is now queued
+alongside the resumed original pilot and larger validation scoring. Large model
+reads in East use the existing East checkpoints; no new cross-region model copy
+was needed. Recovery manifests and cancellation audits are retained in `data/`.
+
 ## Conclusion
 
 The completed 32-protein pilot supports larger ordinary rollout pools: 128
 frequency-ranked rollouts improve both all-contact and long-range R-precision
-relative to eight proofreader-weighted rollouts. This is a pilot result; the
-larger validation analysis is pending. The guided-policy and fixed-length
+relative to eight proofreader-weighted rollouts. A separate 1,375-structure
+validation comparison confirms that increasing frequency-ranked pools from eight
+to 128 improves R-precision by 0.0463 (95% interval 0.0403–0.0526). Fresh
+proofreader-weighted validation scoring is still pending. The guided-policy and fixed-length
 comparisons remain incomplete, so there is no conclusion yet about whether
 proofreader-guided sampling improves the final accuracy/cost tradeoff.

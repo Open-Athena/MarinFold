@@ -12,8 +12,37 @@ from pathlib import Path
 
 from huggingface_hub import HfFileSystem
 
+from runtime import load_release
+
 HERE = Path(__file__).resolve().parent
 DESTINATION = 'hf://buckets/open-athena/MarinFold/data/exp368/reports'
+
+
+def frozen_sources() -> dict[str, Path]:
+    """Cache and verify the small immutable bundles used by executed phases."""
+    records = [json.loads(line) for line in (HERE / 'data/server_tasks.jsonl').read_text().splitlines()]
+    bundles = {record['task']['bundle_sha256']: record['task']['bundle'] for record in records}
+    api = load_release(('storage',))
+    result = {}
+    total = 0
+    for sha, uri in sorted(bundles.items()):
+        if '/MarinFold/exp368/' not in uri or not uri.endswith('/bundles/' + sha + '.tar.gz'):
+            raise ValueError('Unexpected immutable source bundle: ' + uri)
+        destination = HERE / '_cache/source_bundles' / (sha + '.tar.gz')
+        fs, key = api.storage.filesystem(uri)
+        size = fs.info(key)['size']
+        total += size
+        if size > 10_000_000 or total > 100_000_000:
+            raise ValueError('Frozen-source download exceeds its small-artifact ceiling')
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if not destination.exists():
+            partial = destination.with_suffix('.partial')
+            fs.get_file(key, str(partial))
+            partial.replace(destination)
+        if hashlib.sha256(destination.read_bytes()).hexdigest() != sha:
+            raise ValueError('Frozen source hash mismatch: ' + uri)
+        result['source_bundles/' + destination.name] = destination
+    return result
 
 
 def main() -> None:
@@ -26,14 +55,16 @@ def main() -> None:
              {'.py', '.md', '.json', '.sh', '.toml', '.lock'} and path.name != 'code_manifest.json']
     files += [path for directory in ['data', 'plots', 'release_api']
               for path in (HERE / directory).rglob('*') if path.is_file() and '__pycache__' not in path.parts]
-    total = sum(path.stat().st_size for path in files)
+    artifacts = {str(path.relative_to(HERE)): path for path in files}
+    artifacts.update(frozen_sources())
+    total = sum(path.stat().st_size for path in artifacts.values())
     if total > 1_000_000_000:
         raise ValueError('Small-artifact publication exceeds its 1 GB ceiling')
     manifest = {}
-    for path in sorted(files):
+    for name, path in sorted(artifacts.items()):
         with path.open('rb') as stream:
             digest = hashlib.file_digest(stream, 'sha256').hexdigest()
-        manifest[str(path.relative_to(HERE))] = dict(size=path.stat().st_size, sha256=digest)
+        manifest[name] = dict(size=path.stat().st_size, sha256=digest)
     result = dict(destination=DESTINATION, total_bytes=total, files=manifest,
                   git_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=HERE, text=True).strip(),
                   working_tree_dirty=bool(subprocess.check_output(
@@ -44,8 +75,8 @@ def main() -> None:
         return
     with tempfile.TemporaryDirectory(prefix='exp368-publication-') as temporary:
         root = Path(temporary)
-        for path in files:
-            target = root / path.relative_to(HERE)
+        for name, path in artifacts.items():
+            target = root / name
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(path, target)
         (root / 'publication.json').write_text(json.dumps(result, indent=2))
