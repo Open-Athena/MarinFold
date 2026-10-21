@@ -1,6 +1,5 @@
 """Check bucket-preserving accumulation against a single global batch."""
 
-import contextlib
 from pathlib import Path
 
 import torch
@@ -8,6 +7,8 @@ import torch.distributed as dist
 import torch.multiprocessing as mp
 from torch.distributed.optim import ZeroRedundancyOptimizer
 from torch.nn.parallel import DistributedDataParallel
+
+from accumulation import accumulation_context
 
 
 def accumulation_worker(rank: int, rendezvous: str) -> None:
@@ -24,6 +25,20 @@ def accumulation_worker(rank: int, rendezvous: str) -> None:
     )
     torch.manual_seed(92)
     for step in range(3):
+        if step == 1:
+            # Reconstruct DDP as an actual job restart does, retaining Adam
+            # moments but none of the old reducer's gradient views.
+            weights = ddp.module.state_dict()
+            state = optimizer.optim.state_dict()
+            del optimizer, ddp
+            ddp = DistributedDataParallel(
+                torch.nn.Linear(3, 2), gradient_as_bucket_view=True
+            )
+            ddp.module.load_state_dict(weights)
+            optimizer = ZeroRedundancyOptimizer(
+                ddp.parameters(), optimizer_class=torch.optim.AdamW, lr=2e-5
+            )
+            optimizer.optim.load_state_dict(state)
         xs = [torch.randn(2 + i + step, 3) for i in range(8)]
         ys = [torch.randn(len(x), 2) for x in xs]
         count = sum(y.numel() for y in ys)
@@ -35,10 +50,16 @@ def accumulation_worker(rank: int, rendezvous: str) -> None:
         )
         expected.backward()
         for i, j in enumerate(range(rank, 8, 2)):
-            sync = ddp.no_sync() if i < 3 else contextlib.nullcontext()
-            with sync:
+            with accumulation_context(ddp, i, 4, first_update=step < 2):
                 loss = (ddp(xs[j]) - ys[j]).square().sum() * 2 / count
-            loss.backward()
+                loss.backward()
+            if i == 0 and step < 2:
+                # Both gradients already share a communication buffer before
+                # the remaining microbatches allocate activations.
+                storages = {
+                    p.grad.untyped_storage().data_ptr() for p in ddp.parameters()
+                }
+                assert len(storages) == 1
         for actual, target in zip(
             ddp.parameters(), reference.parameters(), strict=True
         ):

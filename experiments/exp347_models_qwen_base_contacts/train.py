@@ -7,7 +7,6 @@ and next-document cursor; HF exports always include the pretrained tokenizer.
 """
 
 import argparse
-import contextlib
 import csv
 import faulthandler
 import hashlib
@@ -36,6 +35,7 @@ from transformers import AutoTokenizer, PreTrainedTokenizerBase, Qwen3_5ForCausa
 from transformers.models.qwen3_5.modeling_qwen3_5 import is_fast_path_available
 
 import wandb
+from accumulation import accumulation_context
 from checkpoint_io import CheckpointIO
 from common import FORMATS, MAX_LENGTH, MODELS, ROOT, SEED, TOKEN_BUDGET, run_name
 from corpus_stream import COUNTERS, CorpusStream
@@ -506,6 +506,7 @@ def main() -> None:
                         "common.py",
                         "corpus_stream.py",
                         "checkpoint_io.py",
+                        "accumulation.py",
                         "train.py",
                     ]
                 },
@@ -598,11 +599,11 @@ def main() -> None:
         total_loss = torch.zeros((), device="cuda")
         for i, row in enumerate(batch):
             ids = torch.tensor([row[args.format]], device="cuda")
-            sync = ddp.no_sync() if i + 1 < len(batch) else contextlib.nullcontext()
-            with sync, torch.autocast("cuda", dtype=torch.bfloat16):
-                loss = ddp(ids)
-                scaled_loss = loss * world / counts[0]
-            scaled_loss.backward()
+            with accumulation_context(ddp, i, len(batch), step == resumed_step):
+                with torch.autocast("cuda", dtype=torch.bfloat16):
+                    loss = ddp(ids)
+                    scaled_loss = loss * world / counts[0]
+                scaled_loss.backward()
             total_loss += loss.detach()
         grad_norm = torch.nn.utils.clip_grad_norm_(
             ddp.parameters(), 1.0, error_if_nonfinite=True
