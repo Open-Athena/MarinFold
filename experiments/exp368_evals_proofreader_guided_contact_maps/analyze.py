@@ -198,7 +198,8 @@ def main() -> None:
         summary.append(record)
     summary = pd.DataFrame(summary)
     summary.to_csv(args.out / 'summary.csv', index=False)
-    print(summary[summary.method == ('frequency' if args.frequency_only else 'sumq')][['policy', 'rollouts', 'structures', 'r_precision',
+    display_methods = ['frequency'] if args.frequency_only else plan.get('analysis_methods', ['sumq'])
+    print(summary[summary.method.isin(display_methods)][['policy', 'rollouts', 'method', 'structures', 'r_precision',
         'long_r_precision', 'oracle_coverage', 'mean_seconds']].to_string(index=False))
 
 

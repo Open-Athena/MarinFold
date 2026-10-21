@@ -329,3 +329,15 @@ mean predicted correctness rises from 0.49471 to 0.54250, with actual precision
 fixed at 0.49286. Early-contact Brier score worsens by 0.02068 (95% paired
 interval 0.01511 to 0.02654), and AUROC falls by 0.04665 (−0.06241 to −0.03346).
 Later evidence is not reliably helpful under this forced guided distribution.
+
+## Stronger rollout-quality weighting: small and mixed pilot effects
+
+A bounded follow-up fixed F1 exponents 1, 2, 4 and 8 before analyzing their
+results. It reuses the complete 32-protein, 128-rollout pools with no new GPU
+inference. Original frequency and power-1 values reproduce exactly per input.
+
+All paired all-contact and long-range intervals versus exponent 1 include zero.
+For exponent 2, all-contact changes by +0.00024 (95% interval −0.00204 to
+0.00259) on H100 and +0.00137 (−0.00181 to 0.00584) on GB200. This does not
+establish a stronger weighting rule. Final selection still waits for the
+original guided pilot; these adaptive results use no new test scores.

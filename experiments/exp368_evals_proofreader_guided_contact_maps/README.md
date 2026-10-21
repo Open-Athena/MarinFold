@@ -63,7 +63,7 @@ At least one guided policy should improve final contact-map quality over ordinar
 
 ## Results
 
-Implementation and validation are in progress on 2026-10-21. Ten CPU tests
+Implementation and validation are in progress on 2026-10-21. Eleven CPU tests
 cover cache isolation, full-forward equivalence, proposal resampling, lookahead
 commit boundaries, repair-prefix reconstruction, full-universe AP, exact
 diversity-discount equivalence to a set-based reference, and restriction of
@@ -462,6 +462,37 @@ replication, not an independent biological validation cohort. Results and
 all 5,500 stage timings are in `data/validation_pool_gb200/`.
 
 ![GB200 replication of paired aggregation effects](plots/validation_aggregation_effects_gb200.png)
+
+### Bounded refinement of rollout-quality weights
+
+After the full-panel F1-weighting result, a small exploratory follow-up fixed
+exponents 1, 2, 4 and 8 before computing their pilot outcomes
+(`data/weight_power_refinement.json`, `pilot_weight_power.json`). It reuses
+identical 128-rollout pools and released reader outputs on all 32 pilot proteins,
+with no new GPU inference. The three new rules give each rollout's eligible
+unique contacts weight equal to its predicted F1 raised to the stated power.
+The original seven-method analysis remains unchanged unless a plan explicitly
+requests these additional methods.
+
+| F1 exponent | H100 R-precision | H100 long-range | GB200 R-precision | GB200 long-range |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | 0.60218 | 0.59013 | 0.60378 | 0.58808 |
+| 2 | 0.60241 | 0.58890 | 0.60515 | 0.58973 |
+| 4 | 0.60059 | 0.59098 | 0.60149 | 0.59175 |
+| 8 | 0.60357 | 0.58942 | 0.60353 | 0.59021 |
+
+Every paired R-precision interval for the new exponents versus exponent 1
+includes zero, both overall and for long-range contacts. For exponent 2,
+the all-contact differences are +0.00024 (95% interval −0.00204–0.00259)
+on H100 and +0.00137 (−0.00181–0.00584) on GB200. This pilot does not establish
+a stronger weighting rule. All variants reuse the same measured generation and
+reader costs: 9.581 H100 or 5.204 GB200 seconds per map, excluding CPU aggregation.
+The original frequency and exponent-1 values reproduce exactly for every input.
+These are adaptive validation comparisons; no final policy is chosen before
+the original guided pilot completes. Data are in `data/pilot_weight_power/`
+and `data/pilot_weight_power_gb200/`.
+
+![Stronger rollout-quality weights on the complete pilot](plots/pilot_weight_power.png)
 
 ### Larger ordinary pools on H100
 
