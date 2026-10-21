@@ -22,6 +22,24 @@ Proofreader guidance will improve precision and recall at matched compute, with 
 
 Builds on #356 and PR #358. Freeze generator exp277 step 266344 and proofreader exp356-exp277-frozen-contact-pdb50k-v2 step 18000. The user authorized autonomous implementation, CoreWeave execution, and job monitoring. Existing checkpoints and targets are co-located in CoreWeave us-east-02a.
 
+The [released proofreader](https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18000)
+uses the frozen causal Qwen3 contact generator as its feature extractor. A
+four-layer bidirectional transformer, width 512 with eight attention heads,
+reads the three token states for every emitted contact, emission-order features,
+and a global rollout token. The readout has 22,181,378 trainable parameters;
+the complete frozen-backbone model has 1,487,731,202 parameters. Contact sigmoid
+outputs estimate correctness, and a pooled sigmoid output estimates rollout
+recall. All supplied contacts can inform each contact judgment. This experiment
+keeps every model weight fixed and changes inference and map aggregation only.
+
+The reader was trained on actual generator rollouts from 50,000 experimental
+PDB chain structures (46,933 PDB entries), with 34,894 distinct supplied sequences
+in 9,074 connected related groups. Its validation split has 1,552 structures in
+287 groups. The larger inference-validation panel here excludes all 32 pilot
+groups, leaving 1,375 structures in 255 groups; it is not simply the validation
+split minus 32 individual proteins. Split construction and the original model
+release are documented in [exp356](../exp356_models_pdb_rollout_proofreader/README.md).
+
 Reference labels inherit exp356's audited experimental targets from exp222:
 native-only pyconfind contacts, a 3 Å side-chain threshold, minimum contact
 degree 0.001, and sequence separation at least six. Targets exclude internal
@@ -173,8 +191,10 @@ frequency, its gains are 0.00426 (0.00173–0.00763) overall and 0.00412
 Every unique eligible contact in a rollout receives that rollout's predicted
 F1 as its vote weight. Predicted precision is the mean confidence over all
 unique parsed contact pairs, including invalid pairs; predicted recall is the
-reader's rollout-level output. Only eligible pairs vote in the final map, and
-native labels are not used to set weights. This variant was added after the ordinary-pool pilot, and these
+reader's rollout-level output. The trajectory weight is
+$2\widehat P\widehat R/(\widehat P+\widehat R)$, with a numerical floor of
+$10^{-8}$. Only eligible pairs vote in the final map, and native labels are not
+used to set weights. This variant was added after the ordinary-pool pilot, and these
 intervals are not adjusted for selecting among aggregation rules. This is
 validation evidence, not a reserved-test confirmation.
 
@@ -610,6 +630,25 @@ treated as independent samples; intervals resample the same 32 homology groups.
 ![Fixed-length rollout quality and reader predictions](plots/length_probe_quality.png)
 
 ![Fixed-length map accuracy and measured GPU cost](plots/length_probe_frontier.png)
+
+A retrospective decomposition of these same complete continuations shows that
+both contact selection and retrospective scoring degrade beyond L. In guided
+rollouts, the newly added second L contacts have actual precision **0.07286**,
+while their mean predicted correctness is **0.50726**. For control, the same
+quantities are 0.12232 and 0.24450. This is not merely a shift in the total
+number of predictions.
+
+The first L contact identities and labels are verified identical across prefix
+records. After the guided continuation, their mean predicted correctness rises
+from 0.49471 to 0.54250, while their actual precision remains 0.49286. Their
+Brier score worsens by 0.02068 (95% paired group interval 0.01511–0.02654), and
+mean within-rollout AUROC declines by 0.04665 (−0.06241 to −0.03346). Thus later
+forced contacts can also harm judgments of earlier contacts. This exploratory
+diagnostic uses all 32 proteins and all four trajectories, with no new model
+inference. Data are in `data/prefix_revision/`; AUROC excludes trajectories
+without both label classes.
+
+![Earlier contact judgments and new contacts after forced continuation](plots/prefix_revision.png)
 
 ## Current scientific conclusion
 

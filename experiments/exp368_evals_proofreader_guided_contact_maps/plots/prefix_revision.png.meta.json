@@ -1,0 +1,14 @@
+{
+  "script": "analyze_prefix_revision.py",
+  "args": [
+    "--plan",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/length_probe.json",
+    "--root",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/_cache/length-probe-native-v1",
+    "--out",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/data/prefix_revision",
+    "--plot",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/plots/prefix_revision.png"
+  ],
+  "caption": "Retrospective analysis of all 32 validation proteins and four trajectories per sampler. First-L pairs and labels are verified identical before and after continuation. Means average trajectories within each protein, then proteins; 95% intervals resample homology groups. The second half is generated with EOS disabled. No test-set data or new model inference is used."
+}

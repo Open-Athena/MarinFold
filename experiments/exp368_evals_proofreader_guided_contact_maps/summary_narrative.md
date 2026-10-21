@@ -317,3 +317,15 @@ Full-universe average precision improves by 0.01334 (0.00847 to 0.01985), and
 native-contact coverage reaches 99.21%. The same distinction appears on GB200:
 additional sampling improves coverage and ranking below the top-R cutoff,
 without establishing a better top-R map.
+
+## Forced continuation also corrupts retrospective judgments
+
+For top-10% guidance, the second L contacts have actual precision 0.07286,
+while mean predicted correctness is 0.50726. The corresponding control values
+are 0.12232 and 0.24450. These are complete-cohort descriptive diagnostics.
+
+The identical first L contacts are also rescored too confidently after continuing:
+mean predicted correctness rises from 0.49471 to 0.54250, with actual precision
+fixed at 0.49286. Early-contact Brier score worsens by 0.02068 (95% paired
+interval 0.01511 to 0.02654), and AUROC falls by 0.04665 (−0.06241 to −0.03346).
+Later evidence is not reliably helpful under this forced guided distribution.
