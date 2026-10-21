@@ -1,0 +1,32 @@
+{
+  "status": "complete",
+  "input": "/data/exp225_decontam/contacts_v1_decontam/*.parquet",
+  "expected_documents": 3963003,
+  "expected_source_tokens": 4432940838,
+  "source_token_definition": "num_tokens + one EOS token per document",
+  "representative_order": "global_plddt DESC, entry_id ASC",
+  "cluster_distributions": [
+    {
+      "lineage": "afdb50_sequence",
+      "groups": 3963003,
+      "singleton_groups": 3963003,
+      "max_group_size": 1,
+      "mean_group_size": 1.0
+    },
+    {
+      "lineage": "sequence_and_foldseek_intersection",
+      "groups": 3963003,
+      "singleton_groups": 3963003,
+      "max_group_size": 1,
+      "mean_group_size": 1.0
+    },
+    {
+      "lineage": "foldseek_structure",
+      "groups": 928841,
+      "singleton_groups": 10740,
+      "max_group_size": 5,
+      "mean_group_size": 4.266610754693215
+    }
+  ],
+  "warning": "Lineage groups are transitive source metadata, not direct pairwise identity/TM witnesses. These rows are pilot proxies, not threshold results."
+}

@@ -1,0 +1,5 @@
+{
+  "script": "plot_pilots.py",
+  "args": [],
+  "caption": "Documents removed by a deterministic direct-witness selector within frozen 50%-identity Linclust candidate neighborhoods. This is a sequence-only ceiling for joint sequence/structure removal, not the final structure-aware result."
+}
