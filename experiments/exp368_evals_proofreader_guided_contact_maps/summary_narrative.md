@@ -281,3 +281,15 @@ frequency are 0.00459 (95% interval 0.00207 to 0.00790) and 0.00453
 Mean warm generation-plus-proofreading time is 4.622 GB200 seconds, versus
 3.054 for frequency alone. These are the same validation proteins as the H100
 phase, so this is a runtime/stochastic replication, not a new biological cohort.
+
+## Exploratory scoring of the larger existing pools
+
+At 20:15 UTC, the frequency plateau and the 128-rollout F1-weighting gains
+motivated one further validation check. Four GB200 workers score the existing
+512- and 2,048-rollout pools on all 32 pilot proteins. No new rollouts or model
+updates are involved, and no new reserved-test scores have been inspected.
+
+The frozen primary contrast is 2,048 versus 128 with F1-weighted votes. All
+seven existing aggregators will also be reported, with paired group intervals
+and generation-plus-proofreading costs. This adaptive extension is documented
+before scoring and is not a prespecified confirmation.

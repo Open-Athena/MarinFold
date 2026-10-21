@@ -504,6 +504,16 @@ of the candidate pool. These results do not test proofreader ranking at 2,048.
 Data and paired comparisons are in `data/pilot_large_gb200/`; the combined
 frequency curve is in `data/pilot_pool_scaling_gb200/`.
 
+At 20:15 UTC, after observing the frequency plateau and the full-panel
+128-rollout F1-weighting gains, an additional exploratory scoring phase was
+frozen in `data/large_pool_proofreading_extension.json`. It applies the same
+released full-forward reader to all 64 existing GB200 pools at 512 and 2,048
+rollouts. Its primary contrast is 2,048 versus 128 with F1-weighted votes;
+all seven existing aggregation rules will also be reported. It generates no
+new rollouts, changes no weights, and uses no new reserved-test metrics.
+This is an adaptive validation extension, not a prespecified confirmation.
+Four workers score the complete 32-protein cohort before any selection.
+
 ![Frequency ranking and candidate coverage through 2,048 rollouts](plots/pilot_large_gb200.png)
 
 The separate larger GB200 validation panel is complete for frequency ranking:
