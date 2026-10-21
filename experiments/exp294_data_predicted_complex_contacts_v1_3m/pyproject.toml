@@ -1,0 +1,35 @@
+[project]
+name = "exp294-predicted-complex-contacts-v1"
+version = "0.1.0"
+description = "Metadata census and selection for a 3M predicted-complex contacts-v1 corpus."
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "duckdb>=1.4,<2",
+    "gemmi>=0.6",
+    "marinfold[contacts-v1]",
+    "pyconfind[fast]",          # the numba backend the corpora are defined by
+    "zstandard>=0.22",
+    "fsspec>=2026.7.0",
+    "gcsfs>=2025.1,<2026.5",
+    "matplotlib>=3.9",
+    "pyarrow>=18",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.uv.sources]
+# A git revision rather than the usual `path = "../../marinfold"`: Iris builds
+# the container from this bundled project, and a path dep pointing outside the
+# bundle fails the build ("cannot normalize a relative path beyond the base
+# directory"). The revision is this branch's base, which is byte-identical to
+# origin/main's marinfold, so the generator is pinned rather than floating.
+marinfold = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "marinfold", rev = "7ccac0f8fccdea8cac1da59bafadfd18adedd08c" }
+
+[tool.uv]
+environments = ["sys_platform == 'linux'"]

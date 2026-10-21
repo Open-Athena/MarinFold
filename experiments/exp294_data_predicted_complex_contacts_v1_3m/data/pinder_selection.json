@@ -1,0 +1,41 @@
+{
+  "manifest": "/data/exp294_stageE/selection/pinder_selected.parquet",
+  "ledger": "/data/exp294_stageE/selection/pinder_ledger.parquet",
+  "zip_url": "https://pinderdata.org/2024-02/pdbs.zip",
+  "max_total_residues": 1998,
+  "source_rows": 2319564,
+  "selected_systems": 449835,
+  "unique_uniprot_pairs": 37644,
+  "interface_clusters": 25298,
+  "download_bytes": 35324200608,
+  "download_gb": 35.32,
+  "systems_on_pairs_absent_from_afcdb": 406495,
+  "pairs_absent_from_afcdb": 34690,
+  "clusters_on_pairs_absent_from_afcdb": 23639,
+  "ledger_breakdown": [
+    {
+      "reason": "homodimer_not_this_arm",
+      "rows": 1559387
+    },
+    {
+      "reason": "selected",
+      "rows": 449835
+    },
+    {
+      "reason": "pinder_invalid_split",
+      "rows": 231277
+    },
+    {
+      "reason": "no_uniprot_mapping",
+      "rows": 67190
+    },
+    {
+      "reason": "does_not_fit_contacts_ring",
+      "rows": 6076
+    },
+    {
+      "reason": "no_reported_interaction",
+      "rows": 5799
+    }
+  ]
+}
