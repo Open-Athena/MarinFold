@@ -64,7 +64,8 @@ RUN_ID = f"{GPU_RUN_ID}-tpu-{REGION}"
 # v5p names count cores: v5p-64 is 32 chips on eight four-chip VMs.
 # Microbatch one also fits the previously validated 5.86B v5p-64 model
 # (exp363); global batch 128 is preserved by gradient accumulation.
-TPU = "v5p-64"
+DEFAULT_TPU = "v5p-64"
+SUPPORTED_TPUS = ("v5p-8", "v5p-64")
 
 
 def validate_inputs() -> None:
@@ -128,8 +129,12 @@ def run_tpu_job(config: TrainLmOnPodConfig) -> None:
         raise ValueError(f"TPU job did not finish at expected step {final_step}")
 
 
-def build_run(*, smoke: bool, attempt: int = 1) -> ArtifactStep[LevanterCheckpoint]:
+def build_run(
+    *, smoke: bool, attempt: int = 1, tpu: str = DEFAULT_TPU
+) -> ArtifactStep[LevanterCheckpoint]:
     """Keep the GPU fork's absolute step, data order, optimizer, and cooldown."""
+    if tpu not in SUPPORTED_TPUS:
+        raise ValueError(f"Unsupported v5p shape: {tpu}")
     parent = build_cooldown_run(
         smoke=smoke,
         nodes=4,
@@ -165,7 +170,7 @@ def build_run(*, smoke: bool, attempt: int = 1) -> ArtifactStep[LevanterCheckpoi
                     "trial=lr5e-4-1ep-cooldown-tpu",
                     "tpu-replica",
                     f"region={REGION}",
-                    f"tpu={TPU}",
+                    *([] if ctx.is_fingerprint else [f"tpu={tpu}"]),
                 ],
             ),
         )
@@ -191,7 +196,7 @@ def build_run(*, smoke: bool, attempt: int = 1) -> ArtifactStep[LevanterCheckpoi
         runtime_args={
             **parent.runtime_args,
             "train_resources": ResourceConfig.with_tpu(
-                TPU,
+                tpu,
                 zone=ZONE,
                 regions=[REGION],
                 preemptible=True,
@@ -210,6 +215,7 @@ def main() -> ArtifactStep[LevanterCheckpoint]:
     return build_run(
         smoke=os.environ.get("SMOKE") == "1",
         attempt=int(os.environ["ATTEMPT"]),
+        tpu=os.environ.get("TPU", DEFAULT_TPU),
     )
 
 

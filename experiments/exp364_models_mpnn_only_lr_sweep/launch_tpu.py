@@ -20,6 +20,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("phase", choices=("stage", "smoke", "train"))
     parser.add_argument("--attempt", type=int, default=1)
+    parser.add_argument("--tpu", choices=("v5p-8", "v5p-64"), default="v5p-64")
     parser.add_argument("--iris-bin", default=os.environ.get("IRIS_BIN", DEFAULT_IRIS))
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
@@ -31,6 +32,7 @@ def main() -> None:
         "WANDB_PROJECT": "MarinFold",
         "PYTHONPATH": ".",
         "ATTEMPT": str(args.attempt),
+        "TPU": args.tpu,
         "SMOKE": "1" if args.phase == "smoke" else "0",
         "GIT_COMMIT": subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=root, text=True
@@ -113,7 +115,9 @@ def main() -> None:
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source, destination)
     print(
-        f"{args.phase}: us-east5-a, batch; training shape v5p-64 (32 chips)", flush=True
+        f"{args.phase}: us-east5-a, batch; training shape {args.tpu} "
+        f"({int(args.tpu.split('-')[1]) // 2} chips)",
+        flush=True,
     )
     if args.dry_run:
         print(f"Bundle: {bundle}; entrypoint: {entry}; forwarded keys: {sorted(env)}")

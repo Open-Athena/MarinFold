@@ -27,9 +27,9 @@ from experiments.exp364_models_mpnn_only_lr_sweep.stage_tpu_inputs import (
 from experiments.exp364_models_mpnn_only_lr_sweep.test_train import resolve
 
 
-def resolve_tpu(*, smoke: bool, attempt: int = 1):
+def resolve_tpu(*, smoke: bool, attempt: int = 1, tpu_shape: str = "v5p-64"):
     with build_context(BuildContext(VersionCodex(VERSION))):
-        step = tpu.build_run(smoke=smoke, attempt=attempt)
+        step = tpu.build_run(smoke=smoke, attempt=attempt, tpu=tpu_shape)
         fingerprint = step.fingerprint()
         ctx = StepContext.for_run(
             output_path=step.path(tpu.PREFIX),
@@ -121,6 +121,25 @@ def test_retries_resume_one_identity_and_smoke_is_separate() -> None:
     assert smoke.trainer.checkpointer.base_path != first.trainer.checkpointer.base_path
     assert smoke.trainer.num_train_steps == SOURCE_STEP + 11
     assert smoke.trainer.initialize_from == first.trainer.initialize_from
+
+
+def test_smaller_v5p_placement_preserves_trajectory_and_identity() -> None:
+    large, _, fingerprint = resolve_tpu(smoke=False)
+    small, pod, other = resolve_tpu(smoke=False, tpu_shape="v5p-8")
+    assert fingerprint == other
+    assert pod.resources.replicas == 1
+    assert get_tpu_topology(pod.resources.device.variant).chip_count == 4
+    assert small.trainer.train_batch_size == large.trainer.train_batch_size == 128
+    assert (
+        small.trainer.per_device_parallelism
+        == large.trainer.per_device_parallelism
+        == 1
+    )
+    assert asdict(small.optimizer) == asdict(large.optimizer)
+    assert asdict(small.data) == asdict(large.data)
+    assert small.trainer.initialize_from == large.trainer.initialize_from
+    assert small.trainer.checkpointer == large.trainer.checkpointer
+    assert small.trainer.id == large.trainer.id
 
 
 def test_transfer_inventory_rejects_missing_or_changed_objects() -> None:
