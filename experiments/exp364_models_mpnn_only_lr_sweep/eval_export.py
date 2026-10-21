@@ -49,20 +49,63 @@ def freeze_source(fs: fsspec.AbstractFileSystem, checkpoint: dict) -> None:
         json.dump(checkpoint["objects"], handle)
 
 
+def stage_native_local(
+    fs: fsspec.AbstractFileSystem, checkpoint: dict, directory: Path
+) -> dict:
+    """Pin native bytes on worker disk when the storage account rejects writes."""
+    native = directory / checkpoint["run_id"] / f"step-{checkpoint['step']}"
+    native.mkdir(parents=True, exist_ok=True)
+
+    def download(obj: dict) -> None:
+        source = checkpoint["source"] + "/" + obj["path"]
+        destination = native / obj["path"]
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        before = fs.info(source)
+        if (before["size"], before["ETag"]) != (obj["size"], obj["etag"]):
+            raise ValueError(f"Source changed before download: {source}")
+        fs.get_file(source, str(destination))
+        after = fs.info(source)
+        if (after["size"], after["ETag"]) != (obj["size"], obj["etag"]):
+            raise ValueError(f"Source changed during download: {source}")
+        if destination.stat().st_size != obj["size"]:
+            raise ValueError(f"Incomplete local checkpoint object: {source}")
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        list(pool.map(download, checkpoint["objects"]))
+    metadata = json.loads((native / "metadata.json").read_text())
+    if metadata["step"] != checkpoint["step"]:
+        raise ValueError("Local native checkpoint has the wrong step")
+    return {
+        **checkpoint,
+        "frozen": str(native),
+        "hf_export": str(
+            directory / checkpoint["run_id"] / "hf" / f"step-{checkpoint['step']}"
+        ),
+    }
+
+
 def main() -> None:
     """Convert full-precision model weights and save the tokenizer beside them."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--plan", type=Path, required=True)
     parser.add_argument("--trial", required=True)
     parser.add_argument("--freeze-only", action="store_true")
+    parser.add_argument(
+        "--scratch", type=Path, help="Export to worker disk without any S3 writes"
+    )
     args = parser.parse_args()
     plan = json.loads(args.plan.read_text())
     checkpoint = next(c for c in plan["checkpoints"] if c["trial"] == args.trial)
     fs = fsspec.filesystem("s3", use_listings_cache=False)
-    freeze_source(fs, checkpoint)
+    if args.scratch:
+        checkpoint = stage_native_local(fs, checkpoint, args.scratch)
+        fs = fsspec.filesystem("file")
+        manifest_uri = str(args.scratch / "export.json")
+    else:
+        freeze_source(fs, checkpoint)
+        manifest_uri = f"{plan['root']}/manifests/{checkpoint['label']}.json"
     if args.freeze_only:
         return
-    manifest_uri = f"{plan['root']}/manifests/{checkpoint['label']}.json"
     if fs.exists(manifest_uri):
         with fs.open(manifest_uri) as handle:
             manifest = json.load(handle)

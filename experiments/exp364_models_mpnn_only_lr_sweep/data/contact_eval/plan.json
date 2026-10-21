@@ -781,6 +781,11 @@
     "chosen_by": "user",
     "recorded_at_utc": "2026-10-21T17:09:56.735986+00:00",
     "max_h100s": 12,
-    "model_egress": false
-  }
+    "model_egress": false,
+    "runtime": "four independent one-H100 jobs; worker-local native and HF exports",
+    "persistent_model_copies": false,
+    "storage_write_error": "Account is write suspended for this availability zone. Please check capacity quota and contact support.",
+    "cancelled_initial_job": "/bizon/exp364-contact-eval-a01"
+  },
+  "artifact_root": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-10-21/latest-01"
 }

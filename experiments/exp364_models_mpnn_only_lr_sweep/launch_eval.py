@@ -5,6 +5,7 @@ import configparser
 import hashlib
 import json
 import os
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -20,7 +21,9 @@ def build_bundle() -> Path:
     bundle = Path(tempfile.mkdtemp(prefix="exp364-contact-eval-"))
     for name in ("pyproject.toml", "uv.lock"):
         shutil.copyfile(HERE / name, bundle / name)
-    sources = [HERE / name for name in ("eval_run.py", "eval_export.py")]
+    sources = [
+        HERE / name for name in ("eval_run.py", "eval_export.py", "eval_local.py")
+    ]
     sources += [
         HERE / "data/contact_eval" / name
         for name in (
@@ -57,6 +60,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--submit", action="store_true")
     parser.add_argument("--attempt", type=int, default=1)
+    parser.add_argument("--local-scratch", action="store_true")
+    parser.add_argument(
+        "--trial", choices=("lr5e-4", "lr1e-3", "lr2e-3", "lr5e-4-cooldown")
+    )
     parser.add_argument("--iris-bin", default=os.environ.get("IRIS_BIN", DEFAULT_IRIS))
     args = parser.parse_args()
     plan = json.loads((HERE / "data/contact_eval/plan.json").read_text())
@@ -73,33 +80,58 @@ def main() -> None:
         "-m",
         "experiments.exp364_models_mpnn_only_lr_sweep.eval_run",
     ]
+    if args.local_scratch:
+        if not args.trial:
+            parser.error("--local-scratch requires --trial")
+        package = "marinfold @ git+https://github.com/Open-Athena/MarinFold.git@d1bea417a64cc042ad931422200c3edeb873f2e0#subdirectory=marinfold"
+        shell = "\n".join(
+            [
+                "set -euo pipefail",
+                "VLLM_PY=''",
+                'for candidate in /app/.venv/bin/python /usr/local/bin/python /usr/bin/python3 /opt/venv/bin/python python3 python; do if "$candidate" -c "import vllm" >/dev/null 2>&1; then VLLM_PY="$candidate"; break; fi; done',
+                'test -n "$VLLM_PY"',
+                'export VLLM_PORT=$("$VLLM_PY" -c \'import socket; s=socket.socket(); s.bind(("",0)); print(s.getsockname()[1]); s.close()\')',
+                '"$VLLM_PY" -m pip install --quiet "uv==0.9.18" "fsspec==2026.1.0" "s3fs==2026.1.0" "aiobotocore==2.26.0" "pyarrow>=23,<24"',
+                '"$VLLM_PY" -m pip install --quiet --no-deps ' + shlex.quote(package),
+                "exec uv run --frozen --with scikit-learn==1.7.2 python -m experiments.exp364_models_mpnn_only_lr_sweep.eval_local --trial "
+                + shlex.quote(args.trial)
+                + ' --vllm-python "$VLLM_PY"',
+            ]
+        )
+        entry = ["bash", "-lc", shell]
     command = [
         args.iris_bin,
         "--cluster",
-        "marin",
+        "cw-us-east-02a" if args.local_scratch else "marin",
         "job",
         "run",
         "--user",
         "bizon",
-        "--target-cluster",
-        plan["cluster"],
         "--priority",
         "batch",
         "--job-name",
-        f"exp364-contact-eval-a{args.attempt:02d}",
+        f"exp364-contact-eval-{args.trial}-a{args.attempt:02d}"
+        if args.local_scratch
+        else f"exp364-contact-eval-a{args.attempt:02d}",
         "--no-wait",
         "--max-retries",
         "0",
         "--enable-extra-resources",
         "--cpu",
-        "4",
+        "8" if args.local_scratch else "4",
         "--memory",
         "64GB",
         "--disk",
-        "64GB",
+        "128GB" if args.local_scratch else "64GB",
     ]
+    if args.local_scratch:
+        command.extend(
+            ["--gpu", "H100x1", "--no-sync", "--task-image", "vllm/vllm-openai:v0.9.2"]
+        )
+    else:
+        command.extend(["--target-cluster", plan["cluster"]])
     print(
-        f"Bundle: {bundle}; CPU export driver; up to 12 batch H100s in {plan['cluster']}"
+        f"Bundle: {bundle}; {'one H100 with local models' if args.local_scratch else 'CPU export driver, up to 12 H100s'}; batch in {plan['cluster']}"
     )
     if not args.submit:
         print(f"Dry run only. Entrypoint: {entry}")

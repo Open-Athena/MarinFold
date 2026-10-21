@@ -9,6 +9,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from experiments.exp364_models_mpnn_only_lr_sweep.eval_export import stage_native_local
+from experiments.exp364_models_mpnn_only_lr_sweep.eval_local import completed_files
 from experiments.exp364_models_mpnn_only_lr_sweep.eval_prepare import select_targets
 from experiments.exp364_models_mpnn_only_lr_sweep.eval_run import (
     markers_for,
@@ -161,3 +163,71 @@ def test_sparse_votes_use_ground_truth_coordinates(
         matrix = np.load(handle)["score"]
     assert matrix.shape == (record["L"], record["L"])
     assert np.array_equal(matrix, matrix.T)
+
+
+class ReadOnlyCheckpointSource(fsspec.AbstractFileSystem):
+    """A source exposing only metadata and downloads, never storage writes."""
+
+    def __init__(self, *, truncate: bool = False) -> None:
+        super().__init__()
+        self.payloads = {
+            "/source/metadata.json": b'{"step":123}',
+            "/source/model/data": b"weights",
+        }
+        self.truncate = truncate
+
+    def info(self, path: str, **kwargs) -> dict:
+        payload = self.payloads[path]
+        return {"size": len(payload), "ETag": hashlib.md5(payload).hexdigest()}
+
+    def get_file(self, source: str, destination: str, **kwargs) -> None:
+        payload = self.payloads[source]
+        Path(destination).write_bytes(payload[:-1] if self.truncate else payload)
+
+
+@pytest.mark.parametrize("truncate", [False, True])
+def test_local_staging_needs_no_source_writes(tmp_path: Path, truncate: bool) -> None:
+    fs = ReadOnlyCheckpointSource(truncate=truncate, skip_instance_cache=True)
+    checkpoint = {
+        "source": "/source",
+        "step": 123,
+        "run_id": "test-run",
+        "objects": [
+            {
+                "path": p.removeprefix("/source/"),
+                "size": len(value),
+                "etag": hashlib.md5(value).hexdigest(),
+            }
+            for p, value in fs.payloads.items()
+        ],
+    }
+    if truncate:
+        with pytest.raises(ValueError, match="Incomplete local checkpoint"):
+            stage_native_local(fs, checkpoint, tmp_path)
+        return
+    result = stage_native_local(fs, checkpoint, tmp_path)
+    assert Path(result["frozen"]).is_relative_to(tmp_path)
+    assert (Path(result["frozen"]) / "model/data").read_bytes() == b"weights"
+    assert checkpoint["source"] == "/source"
+
+
+def test_publication_selects_only_completed_parts(tmp_path: Path) -> None:
+    part = tmp_path / "rollout/model"
+    (part / "complete").mkdir(parents=True)
+    score, timing = part / "scores.parquet", part / "timings.parquet"
+    score.write_bytes(b"closed")
+    timing.write_bytes(b"closed")
+    (part / "unfinished.parquet").write_bytes(b"still writing")
+    marker = part / "complete/part.json"
+    marker.write_text(json.dumps({"score_uri": str(score), "timing_uri": str(timing)}))
+    assert set(completed_files(tmp_path)) == {score, timing, marker}
+    marker.write_text(
+        json.dumps(
+            {
+                "score_uri": str(tmp_path.parent / "model.safetensors"),
+                "timing_uri": str(timing),
+            }
+        )
+    )
+    with pytest.raises(ValueError, match="outside the output directory"):
+        completed_files(tmp_path)
