@@ -100,10 +100,10 @@ def main() -> None:
         raise ValueError('Native RNO workers must write to the verified regional bucket')
     bootstrap = json.loads(BOOTSTRAP.read_text())
     script = '''set -euo pipefail
-python -m pip install --quiet --no-deps --target /tmp/exp368-bootstrap-tools uv==0.10.7
+python3 -m pip install --quiet --no-deps --target /tmp/exp368-bootstrap-tools uv==0.10.7
 export PATH=/tmp/exp368-bootstrap-tools/bin:$PATH
 export PYTHONPATH=/tmp/exp368-bootstrap-tools${PYTHONPATH:+:$PYTHONPATH}
-python - <<'PY'
+python3 - <<'PY'
 import hashlib,tarfile
 from pathlib import Path
 path=Path('/bundle/source.tar.gz')
