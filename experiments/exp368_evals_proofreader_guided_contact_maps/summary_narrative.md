@@ -151,9 +151,10 @@ difference from saved H100 predictions was 0.0800, against a 0.01 guard. A real
 prefix also exceeded the unchanged 1e-5 FP32 cache-equivalence threshold.
 
 Forcing math attention did not meet the BF16 guard; memory-efficient attention
-was unsupported for this cache path. A matching CUDA 12.8 build is being checked.
-Failed checks are retained. No full guided GB200 campaign is authorized by them,
-and cost plots reject mixtures of GPU models.
+was unsupported for this cache path. Matching CUDA 12.8 passed the BF16 replay:
+two batches match exactly and the third has maximum difference 0.001523. One
+cache test still fails, so cached guidance remains pending. Ordinary generation
+and full-forward scoring can proceed. Cost plots reject mixtures of GPU models.
 
 ## How to interpret the eventual comparison
 

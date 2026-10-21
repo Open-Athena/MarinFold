@@ -315,8 +315,13 @@ campaign to this runtime. Explicit math and memory-efficient attention backends
 with full-precision reductions are being tested without changing acceptance
 thresholds. The forced math backend still failed (maximum BF16 probability
 error 0.0342); the forced memory-efficient backend was unsupported for the FP32
-cache path. A subsequent check pins the official ARM CUDA 12.8 wheel to match
-the original H100 proofreader's `torch==2.10.0+cu128`, instead of CUDA 13.
+cache path. Pinning the official ARM CUDA 12.8 wheel to match the original H100
+proofreader's `torch==2.10.0+cu128` **passed** the original BF16 replay guard:
+the 193- and 937-residue reference batches match exactly, and the 33-residue
+batch has maximum contact-score error 0.001523. This validates the full-forward
+scoring route. The separate 48-residue cache check still fails at 1.2279e-5,
+so cached guidance is not yet admitted. An explicit cuBLASLt check includes that
+failing prefix and keeps the original threshold.
 PyTorch documents that [different attention implementations can
 produce different numerical results](https://docs.pytorch.org/docs/main/generated/torch.nn.functional.scaled_dot_product_attention.html);
 that is a possible explanation, not a diagnosis established by these checks.
@@ -329,6 +334,10 @@ pools of 8, 32, 128, 512 and 2,048 rollouts. These reuse the frozen cohort, plan
 and seeds. Their outputs and timings are separate from the H100 phase. The larger
 pools test whether additional ordinary sampling is competitive with expensive
 guided search; no guided backend is approved by this baseline-only expansion.
+After the CUDA 12.8 full-forward replay passed, the same independent ordinary
+baseline was also launched on the original 1,375-structure validation extension.
+`data/gb200_ordinary_phase.json` freezes the exact plan hashes, runtime, output
+location and separation from H100 results before reading GB200 cohort accuracy.
 
 ## Conclusion
 
