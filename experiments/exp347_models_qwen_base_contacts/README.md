@@ -227,6 +227,38 @@ The resumes restore the full saved optimizer/RNG/data state and retain the
 100B-token budgets and periodic evaluation schedule. RNO placement is awaiting
 explicit approval for this experiment's cross-region storage traffic.
 
+### October 21 restart memory repair and interim evaluation
+
+Both October 19 resumes advanced and saved complete checkpoints with the new
+storage path. Raw reached step 4620 / 498,970,942 additional tokens, then failed
+on October 20 during its first backward pass after a preemption. The new error
+is NCCL reporting CUDA out of memory, distinct from the storage barrier stall.
+Prompted continued past 450M additional tokens. Both runs experienced frequent
+preemptions (30 raw and 45 prompted as of October 21, 13:51 UTC).
+
+After constructing DDP, gradients initially have independent storage. Starting
+with unsynchronized microbatches retains that extra storage until the last
+microbatch, increasing the first-update peak when optimizer moments have already
+been restored. `accumulation.py` synchronizes the first microbatch of the first
+update to establish gradient bucket views early; subsequent updates retain the
+usual accumulation schedule. A two-rank test reconstructs DDP with saved Adam
+state and checks buffer sharing, global gradients, and updates against a single
+global batch. All 37 tests, Ruff, and Pyrefly pass. Commit `d2836a26` contains the
+repair; raw production attempt a03 resumes its existing checkpoint and budget.
+Both corrected a03 production jobs passed their first restored update. The raw
+run advanced past the previously failing step to 4621; prompted advanced to
+12157. Both committed complete model/tokenizer and all eight optimizer shards,
+independently verified from S3 on October 21 at 14:15 UTC. Their first-update
+peak PyTorch allocations were 76.55 GB raw and 55.62 GB prompted. These are
+different batches and should not be treated as a format memory comparison.
+
+For interim eval-val measurements, immutable copies preserve raw step 4620
+(498,970,942 tokens) and prompted step 12051 (450,586,475 tokens) independently
+of rolling checkpoint pruning. `export_eval_checkpoint.py` converts their FP32
+weight shards to BF16 without changing tensor names, shapes, or integer buffers,
+and includes the tokenizer. Exports remain in the east-region checkpoint bucket.
+The same validated 97-protein, 100-rollout evaluation contract applies below.
+
 `eval_contract.py` freezes the **97-protein eval-val set** from exp245's pinned
 membership, sequences, and resolved-residue ground truth. It never selects
 `eval-test`. The evaluator samples **100 rollouts**, temperature 1, top-p 0.95,

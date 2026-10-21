@@ -73,8 +73,18 @@ Nested storage retries could outlast the ten-minute NCCL timeout.
 Fix: bounded per-operation retries and an eight-minute checkpoint storage budget.
 Previous recovery pointers survive failed uploads; add pre-timeout stack dumps.
 36 local tests, Ruff, Pyrefly and a real CoreWeave storage probe passed.
-Both eight-H100 production resumes are queued; east-region capacity is full.
-No new full-corpus R-precision measurement is available.
+Both resumes advanced and saved complete production checkpoints.
+
+## Restart memory repair — October 21
+
+Raw later failed during its first backward pass after checkpoint restore.
+First-update accumulation retained independent gradients before DDP bucket views.
+Synchronize the first microbatch early; retain the global token-mean objective.
+Two-rank regression covers restored Adam state, gradients, updates, and shared storage.
+Both corrected 8-H100 runs passed the first restored update and saved checkpoints.
+Verified raw step4621 and prompted step12157, including all8 optimizer shards.
+37 tests, Ruff and Pyrefly pass; implementation commit d2836a26.
+Interim eval-val: raw step4620/498.97M tokens; prompted step12051/450.59M tokens.
 
 ## Periodic R-precision contract
 

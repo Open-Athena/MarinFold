@@ -14,8 +14,19 @@ marinfold_run:
   git_sha: e0182f6cdcdb279323d2b3de833cdc3ff1ba001c
   iris_job_ids:
   - /timodonnell/exp347-4b-contacts-v1-corpus235m-eval-val-a01
+  - /timodonnell/exp347-raw-step4620-eval-a01-s00
+  - /timodonnell/exp347-raw-step4620-eval-a01-s01
+  - /timodonnell/exp347-raw-step4620-eval-a01-s02
+  - /timodonnell/exp347-raw-step4620-eval-a01-s03
+  - /timodonnell/exp347-raw-step4620-eval-a01-s04
+  - /timodonnell/exp347-raw-step4620-eval-a01-s05
+  - /timodonnell/exp347-raw-step4620-eval-a01-s06
+  - /timodonnell/exp347-raw-step4620-eval-a01-s07
+  - /timodonnell/exp347-raw-step4620-eval-a01-s08
+  - /timodonnell/exp347-raw-step4620-eval-a01-s09
+  - /timodonnell/exp347-raw-step4620-eval-a01-s10
+  - /timodonnell/exp347-raw-step4620-eval-a01-s11
 ---
-
 # 2026-10-05 · exp347_models_qwen_base_contacts · exp347-4b-contacts-v1-corpus235m-eval-val
 
 **Launched:** 2026-10-05T16:10:25Z by bizon  

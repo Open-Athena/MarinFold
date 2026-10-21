@@ -1,11 +1,15 @@
-"""Summarize complete pilot evaluations by the frozen eval-val viral labels."""
+"""Summarize complete evaluations by the frozen eval-val viral labels."""
 
+import argparse
 import csv
 from pathlib import Path
 
 
 def main() -> None:
     here = Path(__file__).parent
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--root", type=Path, default=here / "data/eval_val_pilot")
+    args = parser.parse_args()
     source = here.parent / "exp245_evals_foldbench_held_out_monomers/data/eval_sets.csv"
     with source.open() as handle:
         membership = {
@@ -15,9 +19,7 @@ def main() -> None:
         }
     output = []
     for document_format in ["contacts_v1", "prompted"]:
-        with (
-            here / "data/eval_val_pilot" / document_format / "metrics.csv"
-        ).open() as handle:
+        with (args.root / document_format / "metrics.csv").open() as handle:
             rows = list(csv.DictReader(handle))
         if {row["stem"] for row in rows} != set(membership):
             raise ValueError("Incomplete eval-val membership")
@@ -43,7 +45,7 @@ def main() -> None:
                         "r_precision": sum(values) / len(values),
                     }
                 )
-    with (here / "data/eval_val_pilot/strata.csv").open("w") as handle:
+    with (args.root / "strata.csv").open("w") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(output[0]))
         writer.writeheader()
         writer.writerows(output)
