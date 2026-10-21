@@ -113,17 +113,19 @@ def test_worker_stays_local_at_batch_priority() -> None:
 
 
 @pytest.mark.parametrize("invalid_coordinates", [False, True])
+@pytest.mark.parametrize("filesystem", ["memory", "file"])
 def test_sparse_votes_use_ground_truth_coordinates(
-    published_inputs, invalid_coordinates: bool
+    published_inputs, invalid_coordinates: bool, filesystem: str, tmp_path: Path
 ) -> None:
     targets, sets, truth = published_inputs
     _, selected = select_targets(targets, sets, truth)
     record = next(r for r in selected if len(r["contacts"]) > 100)
     key = {"dataset": record["dataset"], "stem": record["stem"], "L": record["L"]}
-    fs = fsspec.filesystem("memory")
-    plan = {"root": f"/exp364-test-votes-{invalid_coordinates}"}
+    fs = fsspec.filesystem(filesystem)
+    plan = {"root": str(tmp_path / f"exp364-test-votes-{invalid_coordinates}")}
     checkpoint = {"label": "test-model-step-123"}
     root = f"{plan['root']}/smoke/{checkpoint['label']}"
+    fs.makedirs(root + "/complete", exist_ok=True)
     pairs = {
         (int(i), int(j))
         for i, j, degree in record["contacts"]

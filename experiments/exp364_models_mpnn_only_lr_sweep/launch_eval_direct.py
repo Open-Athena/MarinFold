@@ -27,6 +27,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--submit", action="store_true")
     parser.add_argument("--attempt", type=int, default=3)
+    parser.add_argument(
+        "--trials", nargs="+", choices=("lr5e-4", "lr1e-3", "lr2e-3", "lr5e-4-cooldown")
+    )
     args = parser.parse_args()
     plan = json.loads((HERE / "data/contact_eval/plan.json").read_text())
     bundle = build_bundle()
@@ -69,11 +72,13 @@ def main() -> None:
         f"assert hashlib.sha256(payload).hexdigest()=={digest!r}; "
         f"zipfile.ZipFile(io.BytesIO(payload)).extractall({workdir!r})"
     )
-    launches = []
     record = HERE / "data/contact_eval/launches.json"
+    launches = json.loads(record.read_text()) if record.exists() else []
     with open_iris_client(cluster_name="cw-us-east-02a", workspace=None) as iris:
         client = FrayIrisClient.from_iris_client(iris)
         for checkpoint in plan["checkpoints"]:
+            if args.trials and checkpoint["trial"] not in args.trials:
+                continue
             shell = "\n".join(
                 [
                     "set -euo pipefail",

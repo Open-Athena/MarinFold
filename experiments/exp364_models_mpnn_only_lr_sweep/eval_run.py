@@ -198,6 +198,7 @@ def score_checkpoint(
     ).all():
         raise ValueError("Timing records reveal incomplete rollouts")
     rows = []
+    fs.makedirs(f"{plan['root']}/dense/{phase}/{checkpoint['label']}", exist_ok=True)
     for key, record in gt.items():
         matrix = matrices[key]
         if not np.array_equal(matrix, matrix.T):
