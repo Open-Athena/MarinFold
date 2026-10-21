@@ -10,7 +10,8 @@ import pyarrow.parquet as pq
 
 from metrics import aggregate, bootstrap, map_metrics
 
-METHODS = ['frequency', 'sumq', 'meanq', 'sqrt_frequency_meanq', 'diversity_sumq']
+METHODS = ['frequency', 'sumq', 'meanq', 'sqrt_frequency_meanq', 'diversity_sumq',
+           'frequency_then_meanq', 'f1_weighted_frequency']
 
 
 def evaluate(rows: list[dict], target: dict, method: str, seconds: float, policy: str) -> dict:
@@ -37,7 +38,8 @@ def main() -> None:
     parser.add_argument('--out', type=Path, required=True)
     args = parser.parse_args()
     plan = json.loads(args.plan.read_text())
-    targets = {row['entry_id']: row for row in pq.read_table(args.targets).to_pylist()}
+    targets = {row['entry_id']: row for row in pq.read_table(args.targets,
+        filters=[('entry_id', 'in', plan['entries'])]).to_pylist()}
     if any(targets[entry]['split'] != plan['split'] for entry in plan['entries']):
         raise ValueError('Analysis split differs from the frozen plan')
     results, ledger, calibration, trajectory_quality, completeness = [], [], [], [], []
@@ -92,6 +94,8 @@ def main() -> None:
                 if not complete:
                     break
                 wave = pq.read_table(key.with_suffix('.parquet')).to_pylist()
+                if plan.get('pool_mode') == 'independent':
+                    rows, generation_seconds, score_seconds = [], 0., 0.
                 rows.extend(wave)
                 if len(rows) != size or {r['sample'] for r in rows} != set(range(size)):
                     raise ValueError('Ordinary pool contains missing or duplicate samples')
@@ -102,7 +106,8 @@ def main() -> None:
                 score_seconds += st['elapsed_seconds']
                 for method in METHODS:
                     seconds = generation_seconds + (score_seconds if method != 'frequency' else 0.)
-                    results.append(evaluate(rows, target, method, seconds, 'ordinary'))
+                    name = 'ordinary-direct' if plan.get('pool_mode') == 'independent' else 'ordinary'
+                    results.append(evaluate(rows, target, method, seconds, name))
     args.out.mkdir(parents=True, exist_ok=True)
     frame = pd.DataFrame(results)
     pd.DataFrame(completeness).to_csv(args.out / 'completeness.csv', index=False)
@@ -117,7 +122,7 @@ def main() -> None:
     for (policy, n, method), rows in frame.groupby(['policy', 'rollouts', 'method']):
         record = dict(policy=policy, rollouts=n, method=method, structures=len(rows),
             groups=rows.group_id.nunique(), gpu_seconds=rows.elapsed_seconds.sum(),
-            mean_seconds=rows.elapsed_seconds.mean())
+            mean_seconds=rows.elapsed_seconds.mean(), long_structures=int(rows.long_r_precision.notna().sum()))
         for metric in ['r_precision', 'average_precision', 'oracle_coverage', 'long_r_precision',
                        'long_average_precision', 'long_oracle_coverage', 'mean_contacts',
                        'precision_L', 'precision_L2', 'precision_L5']:

@@ -3,7 +3,7 @@
 import numpy as np
 from sklearn.metrics import average_precision_score
 
-from metrics import map_metrics
+from metrics import aggregate, map_metrics
 
 
 def test_sparse_ap_includes_missing_positives_and_all_zero_ties() -> None:
@@ -17,3 +17,10 @@ def test_sparse_ap_includes_missing_positives_and_all_zero_ties() -> None:
     assert actual['oracle_coverage'] == .5
     assert actual['r_precision'] == .5
     assert map_metrics({}, truth, length)['average_precision'] == len(truth) / len(pairs)
+
+
+def test_confidence_tiebreak_cannot_reverse_an_extra_vote() -> None:
+    rows = [dict(L=20, pairs=[[0, 8], [1, 9], [2, 10]], probabilities=[.999, .001, .5]),
+            dict(L=20, pairs=[[1, 9]], probabilities=[.001])]
+    scores = aggregate(rows, 'frequency_then_meanq')
+    assert scores[(1, 9)] > scores[(0, 8)] > scores[(2, 10)]

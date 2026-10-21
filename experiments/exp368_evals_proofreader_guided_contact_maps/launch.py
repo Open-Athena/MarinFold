@@ -18,7 +18,7 @@ def main() -> None:
     """Bundle the pinned source and write durable job ownership metadata."""
     parser = argparse.ArgumentParser()
     parser.add_argument('--name', required=True)
-    parser.add_argument('--kind', choices=['guided', 'pool', 'score', 'serve'], default='guided')
+    parser.add_argument('--kind', choices=['guided', 'pool', 'score', 'serve', 'recover'], default='guided')
     parser.add_argument('--cluster', default='cw-us-east-02a')
     parser.add_argument('--dry-run', action='store_true')
     args, remaining = parser.parse_known_args()
@@ -32,8 +32,8 @@ def main() -> None:
     (HERE / 'code_manifest.json').write_text(json.dumps(source, indent=2))
     client = HERE.parent.parent / 'scratch/exp368-iris-client'
     server = args.kind == 'serve'
-    if args.cluster != 'cw-us-east-02a' and not server:
-        raise ValueError('Cross-region jobs must use the bounded shared-model server')
+    if args.cluster != 'cw-us-east-02a':
+        raise ValueError('All new jobs must be colocated with storage; preemption can repeat model staging')
     command = ['uv', 'run', '--project', str(client), '--package', 'marin-iris',
         'iris', '--cluster', 'marin', 'job', 'run', '--target-cluster', args.cluster,
         '--priority', 'batch', '--user', 'bizon', '--job-name', args.name, '--no-wait',
@@ -46,7 +46,8 @@ def main() -> None:
         '--include', 'code_manifest.json',
         '-e', 'EXP368_JOB_ID', '/bizon/' + args.name, '--gpu', 'H100x8' if server else 'H100x1',
         '--', 'bash', 'pool_bootstrap.sh' if args.kind == 'pool' else 'bootstrap.sh',
-        *(['--score'] if args.kind == 'score' else ['--serve'] if server else []), *remaining]
+        *(['--score'] if args.kind == 'score' else ['--serve'] if server else
+          ['--recover'] if args.kind == 'recover' else []), *remaining]
     exact = shlex.join(command)
     print(exact, flush=True)
     if args.dry_run:

@@ -22,13 +22,25 @@ def aggregate(rollouts: list[dict], method: str) -> dict[tuple[int, int], float]
         for i, a in enumerate(sets):
             neighbors = sum(bool(a | b) and len(a & b) / len(a | b) >= .8 for b in sets)
             weights[i] = 1 / max(1, neighbors)
+    if method == 'f1_weighted_frequency':
+        for i, row in enumerate(rollouts):
+            unique = {}
+            for pair, probability in zip(row['pairs'], row['probabilities'], strict=True):
+                unique.setdefault(tuple(pair), probability)
+            precision = float(np.mean(list(unique.values()))) if unique else 0.
+            recall = row['predicted_recall']
+            weights[i] = max(1e-8, 2 * precision * recall / max(1e-8, precision + recall))
     count, total = defaultdict(float), defaultdict(float)
     for pairs, weight in zip(observations, weights, strict=True):
         for pair, probability in pairs.items():
             count[pair] += weight
             total[pair] += weight * probability
-    if method == 'frequency':
+    if method in {'frequency', 'f1_weighted_frequency'}:
         return dict(count)
+    if method == 'frequency_then_meanq':
+        # Integer vote counts remain strictly ordered. Confidence can resolve a
+        # frequency tie but cannot outweigh even one additional independent vote.
+        return {pair: count[pair] + .5 * total[pair] / count[pair] for pair in count}
     if method in {'sumq', 'diversity_sumq'}:
         return dict(total)
     if method == 'meanq':

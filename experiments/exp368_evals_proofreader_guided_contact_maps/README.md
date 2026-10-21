@@ -36,14 +36,29 @@ At least one guided policy should improve final contact-map quality over ordinar
 
 ## Results
 
-Implementation and validation are in progress on 2026-10-21. Four CPU tests
+Implementation and validation are in progress on 2026-10-21. Five CPU tests
 cover cache isolation, full-forward equivalence, proposal resampling, lookahead
 commit boundaries, repair-prefix reconstruction, and full-universe AP. The first
 H100 smoke test verified that every frozen backbone weight matches the original
 generator. It also caught a BF16 incremental/full-forward discrepancy (maximum
 0.02394 contact probability); the experiment therefore tests FP32 cached search
 and rescores final maps through the released BF16 full-forward implementation.
-No guided-policy accuracy result is available yet.
+The complete guided pilot is still pending; partial cohorts are not used for
+policy selection. The ordinary nested-pool baseline is complete on all 32
+pilot structures. Sum-q R-precision rises from 0.5792 at eight rollouts to 0.5993
+at 128; long-range R-precision rises from 0.5537 to 0.5806. The paired all-contact
+gain is 0.0200 (95% group-bootstrap interval 0.0050–0.0329). Oracle candidate
+coverage rises from 0.7765 to 0.9509. At 128 rollouts, frequency alone gives
+0.6040 all-contact and 0.5864 long-range R-precision. These pilot means should
+not be compared with means on the larger validation cohort.
+
+Two aggregation variants were added after observing the pilot: confidence as a
+tie-breaker for integer vote counts, and votes weighted by predicted rollout F1.
+Their all-contact gains over frequency at 128 rollouts are 0.0004 and 0.0018;
+both paired 95% intervals include zero. These are exploratory validation results.
+CSV inputs and timings are in `data/pilot_pool/`; the figure is
+`plots/pilot_pool.png`. An independent-pool latency benchmark requests each
+pool in a single vLLM call, avoiding the staged baseline's repeated batch costs.
 
 ### Frozen pilot protocol
 
@@ -110,6 +125,19 @@ current controller. `data/dispatches.jsonl` records exact commands, source hashe
 job IDs and monitoring ownership. Per-rollout commit markers permit restart
 without losing completed trajectories. A changed code or plan requires a new
 output prefix. No new model training is part of this experiment.
+
+A temporary eight-GPU RNO server staged a shared 6.014 GB model/input copy to
+use available capacity. Iris preempted it four times; `--max-retries=0` only
+disabled failure retries, while preemption retries defaulted to 1000. Local
+state was lost, the staging counter reset, and repeated input transfers exceeded
+the intended 9.5 GB campaign ceiling. The server was canceled when this was
+detected at 15:20 UTC. `data/preemption_incident.json` records the evidence.
+All new launches are now restricted to storage-colocated `cw-us-east-02a`.
+`recover_task.py` downloads and verifies each original task's frozen source
+bundle and resumes directly from its durable S3 trajectories. Twelve independent
+H100 recovery jobs retain the original sampling plan and sharding. The ordinary
+baseline is also queued on all 1,375 structures from the 255 remaining validation
+groups, excluding every pilot group. No guided winner or test policy is selected.
 
 ## Conclusion
 

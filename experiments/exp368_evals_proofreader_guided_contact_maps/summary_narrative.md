@@ -7,6 +7,19 @@ larger independent rollout pools?
 Frozen generator: exp277 step 266344. Frozen proofreader: exp356 step 18000.
 Implementation and GPU validation are in progress; no guided-policy result yet.
 
+## Complete ordinary-pool pilot
+
+On 32 validation structures, sum-q R-precision increases from 0.5792 with eight
+rollouts to 0.5993 with 128. The paired gain is 0.0200, with 95% group-bootstrap
+interval 0.0050–0.0329. Long-range R-precision rises from 0.5537 to 0.5806.
+
+Candidate coverage grows from 0.7765 to 0.9509. At 128 rollouts, frequency alone
+slightly exceeds sum-q: all-contact R-precision 0.6040, long-range 0.5864. Most
+remaining error is ranking error despite the much larger candidate pool.
+
+Confidence tie-breaking and predicted-F1 vote weighting were added as exploratory
+validation tests. Their tiny gains over frequency have intervals including zero.
+
 ## First result: aggregation baseline
 
 On existing validation rollouts, sum q remains strongest among five simple
@@ -26,6 +39,17 @@ one-pass repair, plus ordinary vLLM pools of 8, 32 and 128 rollouts.
 Measure full-universe AP, all/long-range R-precision and complete search cost.
 Select policies on validation, then lock a reserved-test confirmation plan.
 Jobs use co-located CoreWeave H100s and resumable per-rollout artifacts.
+
+## Execution recovery
+
+An eight-H100 RNO worker was preempted repeatedly. Iris failure-retry limits do
+not limit preemption retries, so the worker repeated its shared model transfer
+and lost local progress. It was canceled on detection; the incident is recorded.
+
+Twelve colocated H100 workers now resume the original source snapshots directly
+from durable S3 trajectories. A complete guided comparison is still pending.
+Ordinary baselines are queued for 1,375 structures from 255 validation groups
+outside the pilot. The reserved test set has not been read for this campaign.
 
 ## Numerical validation
 

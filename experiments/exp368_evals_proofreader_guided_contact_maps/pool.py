@@ -1,4 +1,4 @@
-"""Generate nested ordinary rollout pools with measured cumulative GPU cost."""
+"""Generate nested or independent ordinary pools with measured GPU cost."""
 
 import argparse
 import json
@@ -17,7 +17,7 @@ from runtime import GENERATOR, HERE, ROOT, TARGETS, load_release, pin_run
 
 
 def main() -> None:
-    """Generate 8, then 24, then 96 samples per protein, committing each wave."""
+    """Generate the plan's pool sizes, committing each batch independently."""
     parser = argparse.ArgumentParser()
     parser.add_argument('--plan', default='pilot.json')
     parser.add_argument('--out', default=ROOT + '/pool-v1')
@@ -51,12 +51,13 @@ def main() -> None:
     for target in panel:
         previous = 0
         for size in plan.get('pool_sizes', [8, 32, 128]):
+            first_sample = 0 if plan.get('pool_mode') == 'independent' else previous
             key = f"{target['entry_id']}/pool-{size}"
             if fs.exists(root + '/' + key + '.done.json'):
                 previous = size
                 continue
             prompts, settings, work = [], [], []
-            for sample in range(previous, size):
+            for sample in range(first_sample, size):
                 identity = f"exp368:{target['entry_id']}:r{sample}"
                 prompt, offset = api.records.make_prompt(target['sequence'], identity)
                 ids = tokenizer.encode(prompt, add_special_tokens=False)
@@ -82,14 +83,15 @@ def main() -> None:
             api.storage.write_rows(rows, args.out + '/' + key + '.parquet')
             timing = dict(stem=target['entry_id'], n_residues=target['L'],
                 n_pairs=sum(len(row['pairs']) for row in rows), mode='vllm-ordinary',
-                sample_start=previous, sample_end=size, elapsed_seconds=elapsed,
+                sample_start=first_sample, sample_end=size, elapsed_seconds=elapsed,
                 model_load_seconds=load_seconds, total_seconds=time.perf_counter() - start + load_seconds,
-                timing_scope='one protein, this wave only; sum waves for cumulative pool cost',
+                timing_scope=('one protein, independent complete pool' if plan.get('pool_mode') == 'independent'
+                              else 'one protein, this wave only; sum waves for cumulative pool cost'),
                 timestamp_utc=datetime.now(UTC).isoformat(), **worker)
             api.storage.write_csv([timing], args.out + '/' + key + '.timings.csv')
             api.storage.write_json(dict(rollouts=len(rows), **pin),
                                    args.out + '/' + key + '.done.json')
-            print(f'[exp368] {key} added={size-previous} seconds={elapsed:.2f}', flush=True)
+            print(f'[exp368] {key} added={size-first_sample} seconds={elapsed:.2f}', flush=True)
             previous = size
     api.storage.write_json(dict(proteins=len(panel), **pin),
                            args.out + f'/shard-{args.shard:03d}.complete.json')
