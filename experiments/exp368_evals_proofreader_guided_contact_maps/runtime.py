@@ -7,6 +7,7 @@ files and experimental inputs are read from the co-located CoreWeave store.
 import hashlib
 import importlib.util
 import json
+import os
 import sys
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
@@ -17,7 +18,7 @@ HERE = Path(__file__).resolve().parent
 RELEASE = 'buckets/open-athena/MarinFold/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18000'
 READER = 's3://marin-us-east-02a/MarinFold/exp356/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18000'
 GENERATOR = 's3://marin-us-east-02a/MarinFold/exp304/model/exp277-step-266344'
-TARGETS = 's3://marin-us-east-02a/MarinFold/exp356/data/v1/targets.parquet'
+TARGETS = os.environ.get('EXP368_TARGETS', 's3://marin-us-east-02a/MarinFold/exp356/data/v1/targets.parquet')
 ROOT = 's3://marin-us-east-02a/MarinFold/exp368'
 
 
@@ -59,7 +60,8 @@ def load_release(names: tuple[str, ...] = ('model', 'records', 'storage')) -> Si
 
 def stage_reader(api: SimpleNamespace, destination: Path) -> None:
     """Stage and hash-check the released reader against its public manifest."""
-    api.storage.stage_directory(READER, destination, include_training_state=False)
+    if not os.environ.get('EXP368_SHARED_MODELS'):
+        api.storage.stage_directory(READER, destination, include_training_state=False)
     manifest = json.loads((HERE / 'release_manifest.json').read_text())
     for name in ['model.safetensors', 'heads.pt', 'config.json', 'proofreader.json',
                  'tokenizer.json', 'tokenizer_config.json']:

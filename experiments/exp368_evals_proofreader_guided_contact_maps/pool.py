@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import os
 import platform
 import socket
 import time
@@ -25,7 +26,7 @@ def main() -> None:
     args = parser.parse_args()
     api = load_release(('records', 'storage'))
     plan = json.loads((HERE / args.plan).read_text())
-    pin = pin_run(api, plan, args.out, args.shard, kind='ordinary-generation')
+    pin = pin_run(api, plan, args.out, args.shard, kind='ordinary-generation', shards=args.shards)
     targets = {row['entry_id']: row for row in api.storage.read_rows(TARGETS)}
     panel = sorted([targets[entry] for entry in plan['entries']], key=lambda row: (row['L'], row['entry_id']))
     if any(row['split'] != plan['split'] for row in panel):
@@ -34,7 +35,8 @@ def main() -> None:
     fs, root = api.storage.filesystem(args.out)
     model = Path('/tmp/exp368-generator')
     started = time.perf_counter()
-    api.storage.stage_directory(GENERATOR, model, include_training_state=False)
+    if not os.environ.get('EXP368_SHARED_MODELS'):
+        api.storage.stage_directory(GENERATOR, model, include_training_state=False)
     tokenizer = AutoTokenizer.from_pretrained(model)
     llm = LLM(model=str(model), dtype='bfloat16', max_model_len=8192,
         gpu_memory_utilization=.88, enable_prefix_caching=False,

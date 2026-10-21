@@ -168,7 +168,11 @@ class Engine:
             legal[rows, b, a] = False
         if not legal.any(dim=-1).any(dim=-1).all():
             raise ValueError('Contact universe exhausted')
+        previous_triples, previous_pairs = state.triples, state.pairs
         current, marker_hidden = self.advance(state, state.tokens.new_full((batch, 1), self.contact_id))
+        # The input branch can carry tens of GB of KV tensors. Retain its small
+        # readout evidence, but release this local reference before the next append.
+        del state
         allowed = torch.zeros((batch, self.lm_head.out_features), device=self.device, dtype=torch.bool)
         allowed[:, position_tokens] = legal.any(dim=-1)
         first = self.sample(current.hidden, allowed, rng)
@@ -183,8 +187,8 @@ class Engine:
         current, second_hidden = self.advance(current, second)
         triple = torch.cat([marker_hidden, first_hidden, second_hidden], dim=-1)
         pairs = torch.stack([a, b], dim=-1).sort(dim=-1).values[:, None]
-        return replace(current, triples=torch.cat([state.triples, triple], dim=1),
-                       pairs=torch.cat([state.pairs, pairs], dim=1))
+        return replace(current, triples=torch.cat([previous_triples, triple], dim=1),
+                       pairs=torch.cat([previous_pairs, pairs], dim=1))
 
     @torch.inference_mode()
     def score(self, state: State) -> tuple[torch.Tensor, torch.Tensor]:
@@ -212,8 +216,9 @@ class Engine:
         if policy.candidates == 1:
             return self.extend(state, length, offset, rng)
         objectives, completions, pairs = [], [], []
-        for start in range(0, policy.candidates, policy.candidate_batch):
-            batch = min(policy.candidate_batch, policy.candidates - start)
+        batch_limit = min(policy.candidate_batch, 4) if policy.lookahead else policy.candidate_batch
+        for start in range(0, policy.candidates, batch_limit):
+            batch = min(batch_limit, policy.candidates - start)
             candidates = self.extend(select(state, state.tokens.new_zeros(batch)), length, offset, rng)
             q, _ = self.score(candidates)
             objective = q[:, -1] if policy.objective == 'new' else q.sum(-1)

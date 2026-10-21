@@ -3,6 +3,7 @@
 import argparse
 import gc
 import json
+import os
 import platform
 import socket
 import time
@@ -22,7 +23,8 @@ def load_engine(api) -> Engine:
     """Verify the generator/reader backbone identity before sharing its cache."""
     reader_dir, generator_dir = Path('/tmp/exp368-reader'), Path('/tmp/exp368-generator')
     stage_reader(api, reader_dir)
-    api.storage.stage_directory(GENERATOR, generator_dir, include_training_state=False)
+    if not os.environ.get('EXP368_SHARED_MODELS'):
+        api.storage.stage_directory(GENERATOR, generator_dir, include_training_state=False)
     reader, tokenizer = api.model.load_model(reader_dir)
     state = reader.backbone.state_dict()
     seen = set()
@@ -99,15 +101,24 @@ def main() -> None:
     parser.add_argument('--smoke', action='store_true')
     args = parser.parse_args()
     torch.set_num_threads(4)
+    torch.set_float32_matmul_precision('highest')
     api = load_release()
     plan = json.loads((HERE / args.plan).read_text())
-    pin = pin_run(api, plan, args.out, args.shard, kind='guided-search')
+    pin = pin_run(api, plan, args.out, args.shard, kind='guided-search', shards=args.shards)
     targets = {row['entry_id']: row for row in api.storage.read_rows(TARGETS)}
     panel = sorted([targets[entry] for entry in plan['entries']], key=lambda row: (row['L'], row['entry_id']))
     if any(row['split'] != plan['split'] for row in panel):
         raise ValueError('Panel includes the wrong data split')
-    panel = panel[args.shard::args.shards]
     policies = [Policy(**p) for p in plan['policies']]
+    work = []
+    for target in panel:
+        for policy in policies:
+            cost = target['L'] ** 2 * (1 + policy.candidates * (1 + policy.lookahead * policy.repeats)
+                / (4 if policy.lookahead else policy.candidate_batch) + 2 * policy.particles + int(policy.repair))
+            for sample in range(plan['rollouts']):
+                work.append((cost, target['entry_id'], policy.name, sample))
+    work.sort(reverse=True)
+    assigned = {(entry, name, sample) for _, entry, name, sample in work[args.shard::args.shards]}
     fs, root = api.storage.filesystem(args.out)
     started = time.perf_counter()
     engine = load_engine(api)
@@ -121,11 +132,15 @@ def main() -> None:
     print(f'[exp368] loaded in {load_seconds:.1f}s; proteins={len(panel)} policies={len(policies)}', flush=True)
     for target in panel:
         for policy in policies:
+            samples = [sample for sample in range(plan['rollouts'])
+                       if (target['entry_id'], policy.name, sample) in assigned]
+            if not samples:
+                continue
             key = target['entry_id'] + '/' + policy.name
             if fs.exists(root + '/' + key + '.done.json'):
                 continue
             rows = []
-            for sample in range(plan['rollouts']):
+            for sample in samples:
                 sample_key = key + f'-r{sample}'
                 if fs.exists(root + '/' + sample_key + '.done.json'):
                     rows.extend(api.storage.read_rows(args.out + '/' + sample_key + '.parquet'))
@@ -170,10 +185,14 @@ def main() -> None:
                 api.storage.write_json(pin, args.out + '/' + sample_key + '.done.json')
                 print(f"[exp368] {key} r{sample} contacts={state.count} seconds={elapsed:.2f}", flush=True)
                 del state, q
-            api.storage.write_rows(rows, args.out + '/' + key + '.parquet')
-            api.storage.write_json(dict(proteins=1, rollouts=len(rows), policy=asdict(policy), **pin),
-                                   args.out + '/' + key + '.done.json')
-    api.storage.write_json(dict(proteins=len(panel), policies=len(policies), **pin),
+            sample_keys = [key + f'-r{sample}' for sample in range(plan['rollouts'])]
+            if all(fs.exists(root + '/' + sample_key + '.done.json') for sample_key in sample_keys):
+                complete_rows = [row for sample_key in sample_keys
+                                 for row in api.storage.read_rows(args.out + '/' + sample_key + '.parquet')]
+                api.storage.write_rows(complete_rows, args.out + '/' + key + '.parquet')
+                api.storage.write_json(dict(proteins=1, rollouts=len(complete_rows), policy=asdict(policy), **pin),
+                                       args.out + '/' + key + '.done.json')
+    api.storage.write_json(dict(proteins=len(panel), policies=len(policies), trajectories=len(assigned), **pin),
                            args.out + f'/shard-{args.shard:03d}.complete.json')
 
 

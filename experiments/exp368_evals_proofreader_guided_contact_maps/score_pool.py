@@ -25,7 +25,7 @@ def main() -> None:
     torch.set_num_threads(4)
     api = load_release()
     plan = json.loads((HERE / args.plan).read_text())
-    pin = pin_run(api, plan, args.out, args.shard, kind='ordinary-proofreading', input=args.input)
+    pin = pin_run(api, plan, args.out, args.shard, kind='ordinary-proofreading', input=args.input, shards=args.shards)
     targets = {row['entry_id']: row for row in api.storage.read_rows(TARGETS)}
     panel = sorted([targets[entry] for entry in plan['entries']], key=lambda row: (row['L'], row['entry_id']))
     if any(row['split'] != plan['split'] for row in panel):
