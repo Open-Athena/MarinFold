@@ -1,0 +1,29 @@
+{
+  "phase": "full",
+  "n_gpus": 12,
+  "n_shards": 12,
+  "shard_indices": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+  ],
+  "priority": 3,
+  "image": "vllm/vllm-openai:v0.9.2",
+  "bundle_sha256": "2e09a01610f1f3baae727de0fea4085d028491d6ee9df31335d57e6843e36bf4",
+  "bundle_bytes": 511253,
+  "checkpoint_bytes_per_gpu": 5885618986,
+  "checkpoint_transfer": "CoreWeave S3 to CoreWeave H100 only",
+  "out": "s3://marin-us-east-02a/MarinFold/exp369/spiking-v2/full",
+  "eval_set": "eval-val",
+  "n_targets": 97,
+  "submit": true
+}

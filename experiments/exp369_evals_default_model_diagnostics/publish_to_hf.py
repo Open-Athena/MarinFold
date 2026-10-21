@@ -24,6 +24,7 @@ def main() -> None:
              if path.is_file() and not any(part.startswith(".") or part == "__pycache__" for part in path.relative_to(HERE).parts)
              and path.name != "public_artifacts.json"}
     files["inputs/spiking_plan.json"] = args.work / "spiking_plan.json"
+    files.update({f"execution_bundles/{path.name}": path for path in (args.work / "execution_bundles").glob("*.tar.gz")})
     plan = json.loads((HERE / "data/afdb_inference_plan.json").read_text())
     for target in plan["targets"]:
         accession, pdb, chain = target["uniprot"], target["pdb"], target["chain"]

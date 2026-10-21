@@ -1,0 +1,14 @@
+[
+  {
+    "phase": "cases",
+    "source": "s3://marin-us-east-02a/MarinFold/exp369/spiking-v2/inputs/3967865a676e6f149d8a2cd666fb62fd1d4f948d8120ff209530e8c227073d4c.tar.gz",
+    "sha256": "3967865a676e6f149d8a2cd666fb62fd1d4f948d8120ff209530e8c227073d4c",
+    "size": 165963
+  },
+  {
+    "phase": "full",
+    "source": "s3://marin-us-east-02a/MarinFold/exp369/spiking-v2/inputs/2e09a01610f1f3baae727de0fea4085d028491d6ee9df31335d57e6843e36bf4.tar.gz",
+    "sha256": "2e09a01610f1f3baae727de0fea4085d028491d6ee9df31335d57e6843e36bf4",
+    "size": 511253
+  }
+]

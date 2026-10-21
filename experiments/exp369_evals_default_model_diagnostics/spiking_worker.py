@@ -124,12 +124,15 @@ def main() -> None:
     device = torch.cuda.get_device_properties(0)
     metadata = {"model_nickname": plan["model"], "step": plan["step"], "runner_tag": "iris" if args.out.startswith("s3:") else "local",
                 "completion_policy": "retain_all_samples_count_generation_errors",
+                "worker_id": f"{args.out}:{args.shard}:{datetime.now(UTC).isoformat()}",
+                "shard": shard, "n_shards": n_shards,
                 "gpu_name": device.name, "gpu_total_memory_gb": device.total_memory / 2**30,
                 "gpu_compute_capability": f"{device.major}.{device.minor}", "hostname": socket.gethostname(),
                 "platform": platform.platform(), "torch_version": torch.__version__, "vllm_version": vllm.__version__,
                 "transformers_version": transformers.__version__, "plan_sha256": plan_sha,
                 "worker_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-                "model_load_seconds": load_seconds, "model_load_accounting": "once_per_worker_not_additive_across_conditions"}
+                "model_load_seconds": load_seconds, "model_load_accounting": "once_per_worker_not_additive_across_conditions",
+                "total_seconds_accounting": "condition_setup_inference_and_dump_excludes_once_per_worker_model_load"}
     end_id = tokenizer.convert_tokens_to_ids("<end>")
     fs, _ = fsspec.core.url_to_fs(args.out)
     for target, repeat, count, policy in conditions:

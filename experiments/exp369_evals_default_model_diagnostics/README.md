@@ -42,7 +42,7 @@ The existing canonical exp277 rollout evaluation contains all **97 eval-val prot
 
 `plot_length.py` regenerates the plot and `data/length_*.csv` from exp277's archived scores and the exp245 split manifest. `data/length_statistics.json` records source hashes. All-range means resolved residue pairs separated by at least six positions; long-range uses at least 24.
 
-### Contact injection — restart validation
+### Contact injection — running
 
 The frozen plan has **6,664 conditions / 666,400 rollouts**, covering 97 proteins and two independent context draws. Each condition has 100 newly resampled sequence documents. Count doses are 0, 1, 2, 4, 8, 16, 32, 64, 128 where truth remains; fraction doses are 1%, 2%, 5%, 10%, 20%, 40%, 60%, 80% of all true contacts. Fractions use floor with a minimum of one contact. Random and SSE-balanced conditions use nested subsets.
 
@@ -52,9 +52,9 @@ Every supplied pair is removed from both the prediction candidate set and the tr
 
 `prepare_spiking.py` freezes the plan and records its hash in `data/spiking_plan_manifest.json`. `dispatch_spiking.py --smoke --submit` runs the initial 1,000-rollout validation. The full launch uses `dispatch_spiking.py --submit`; the case launch uses `--cases --submit`. `analyze_spiking.py --run <output-prefix>` requires all conditions before publishing the curves. Checkpoint, prompt, plan, worker, completion, and vote-array provenance are saved with per-condition timings. Every requested sample is retained; malformed statements and nonexistent-residue pairs are counted and cannot vote. The canonical score includes valid live pairs from all samples; a sensitivity score gives zero votes to any unfinished or invalid rollout, retaining the denominator of 100.
 
-The smoke run passed all 1,000 completions, with no unfinished, malformed, or out-of-range outputs. On 7qp5_A, the two unconditioned scores were 0.5477 and 0.5560, versus the archived 0.5560. The initial 12-worker run was submitted on 2026-10-21; its job IDs are in `data/jobs_full_v1.json`. It exposed an incorrect orchestration gate: isolated out-of-range model predictions stopped a whole shard, although the canonical evaluator simply ignores nonexistent pairs. The correction retains every draw without retries or selection and reports those errors plus a zero-invalid-rollout sensitivity analysis. Original attempts remain under `spiking-v1`; corrected runs use `spiking-v2`. The corrected case run is validating the bookkeeping before the full restart. A revision-matched isolated Iris client was built from Marin `af9c6789e8` because older workstation clients were rejected by the current controller. A task-local copy of that revision's cluster connection config points to the existing RNO2A kubeconfig; no cluster configuration was changed.
+The smoke run passed all 1,000 completions, with no unfinished, malformed, or out-of-range outputs. On 7qp5_A, the two unconditioned scores were 0.5477 and 0.5560, versus the archived 0.5560. The initial 12-worker run was submitted on 2026-10-21; its job IDs are in `data/jobs_full_v1.json`. It exposed an incorrect orchestration gate: isolated out-of-range model predictions stopped a whole shard, although the canonical evaluator simply ignores nonexistent pairs. The correction retains every draw without retries or selection and reports those errors plus a zero-invalid-rollout sensitivity analysis. Original attempts remain under `spiking-v1`; corrected runs use `spiking-v2`. The corrected case run completed all 1,200 samples. The full corrected sweep restarted on twelve H100s at 14:45 UTC; current job IDs are in `data/jobs_full.json`. A revision-matched isolated Iris client was built from Marin `af9c6789e8` because older workstation clients were rejected by the current controller. A task-local copy of that revision's cluster connection config points to the existing RNO2A kubeconfig; no cluster configuration was changed.
 
-### AFDB versus later PDB structures — cases verified, inference pending
+### AFDB versus later PDB structures — complete
 
 The candidate screen starts from retained AFDB entries in the actual decontaminated training corpus, joins SIFTS, and screens 700 recent-PDB candidates. Of these, 357 have usable sequence/construct mappings and enough common contacts; 206 fail mapping, 108 fail the length/truncation filter, and 29 have too few common contacts. There were no fetch/parse failures. This is a targeted search, not an unbiased prevalence estimate or exhaustive search for the first experimental structure.
 
@@ -75,10 +75,27 @@ Twenty candidates were checked against their **original AFDB v4 coordinates**. R
 
 NDUFA4 has severe contact disagreement despite substantial backbone similarity. SemiSWEET and photoactivated OCP are alternate-state controls. The three largest global discrepancies also differ in assembly context; they establish disagreement with the subsequently observed state, not that an isolated monomer must have that state. Their sparse nonlocal contacts warrant case-by-case interpretation.
 
-`data/afdb_selected_cases.csv` records release dates, resolutions, identities, original source URLs, structure/document hashes, and qualifications. `screen_training_errors.py`, `confirm_training_errors.py`, and `prepare_cases.py` reproduce selection and structural comparisons. Sequence-only MarinFold predictions use two independent sets of 100 rollouts. `analyze_cases.py` will report R-precision against both label sets plus mean vote support on AFDB-only versus PDB-only contacts and the probability a PDB-only contact outranks an AFDB-only contact (ties count half). The exclusive-contact comparison avoids treating shared contacts or unequal set sizes as a preference.
+`data/afdb_selected_cases.csv` records release dates, resolutions, identities, original source URLs, structure/document hashes, and qualifications. `screen_training_errors.py`, `confirm_training_errors.py`, and `prepare_cases.py` reproduce selection and structural comparisons. Sequence-only MarinFold predictions use two independent sets of 100 rollouts. `analyze_cases.py` reports R-precision against both label sets plus mean vote support on AFDB-only versus PDB-only contacts and the probability a PDB-only contact outranks an AFDB-only contact (ties count half). The exclusive-contact comparison avoids treating shared contacts or unequal set sizes as a preference.
 
 The six exact training documents and their source-index rows are saved in `data/afdb_training_membership.json`. `plot_structures.py` shows sequence-matched least-squares backbone overlays; the separately computed TM-scores use structural alignment. `publish_to_hf.py --upload` packages code, source CSVs, figures, frozen plans, and original case structures into a versioned public archive. `data/public_artifacts.json` records its URI, size, and SHA-256. `collect_run.py` inventories remote outputs and enforces a transfer budget before collecting vote matrices, timings, and optional raw completions; completed outputs can be included in the public archive with `--run-dir`.
 
+### MarinFold preference on the six cases
+
+All 1,200 sequence-only rollouts completed without hitting the token cap. Six rollouts (0.5%) contained malformed statements or out-of-range final pairs. All samples were retained; zeroing these six rollouts gives the same qualitative conclusions. Pure generation took 65.55 seconds on one H100; model initialization took 63.55 seconds separately.
+
+| Accession / case | R-precision versus AFDB | R-precision versus PDB | AFDB-only mean vote | PDB-only mean vote | Interpretation |
+|---|---:|---:|---:|---:|---|
+| Q24GZ2, centrosomal | 0.000 | 0.000 | 0.036 | 0.023 | Neither structure is recovered; low support for both |
+| Q384U1, dynein regulatory complex | 0.326 | 0.194 | 0.206 | 0.025 | Favors AFDB training contacts |
+| A0A7M7RBC4, Tex36/CFAP95 | 0.093 | 0.156 | 0.041 | 0.066 | Weak experimental preference, poor overall accuracy |
+| O00483, NDUFA4 | 0.115 | 0.174 | 0.048 | 0.055 | Low support; exclusive-contact ranking is essentially tied |
+| Q89G85, SemiSWEET state control | 0.773 | 0.385 | 0.650 | 0.059 | Strongly favors AFDB conformation |
+| P74102, OCP state control | 0.417 | 0.422 | 0.123 | 0.095 | Mixed: AFDB has greater mean exclusive support, PDB wins more pairwise rankings |
+
+![MarinFold preference](plots/afdb_marinfold_preference.png)
+
+Mean votes are fractions of rollouts containing a contact, averaged over the respective exclusive contact set. R-precision uses each structure's own R, so the exclusive-contact contrast is the more direct preference diagnostic. The probability a PDB-only contact outranks an AFDB-only contact is 0.207 for dynein, 0.594 for Tex36, 0.374 for the centrosomal case, 0.495 for NDUFA4, 0.035 for SemiSWEET, and 0.572 for OCP. OCP's disagreement between average support and pairwise ranking reflects uneven vote distributions; it does not support a simple winner. These selected examples cannot estimate error-correction prevalence across the training corpus.
+
 ## Conclusion
 
-The existing default-model evaluation shows no detectable length trend across these 97 proteins. Six retained AFDB training examples with verified later experimental disagreements are ready for model comparison. The injection dose response and MarinFold's preference on those cases require the approved GPU runs and are not yet measured.
+The existing default-model evaluation shows no detectable length trend across these 97 proteins. On the three largest verified AFDB/PDB structural disagreements, MarinFold does not reliably recover the later experimental state: it favors AFDB for dynein, weakly favors PDB for Tex36, and recovers neither contact set for the centrosomal protein. Assembly and biological-state differences remain essential qualifications. The contact-injection dose response is still running.

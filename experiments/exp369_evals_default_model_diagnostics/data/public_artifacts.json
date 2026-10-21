@@ -1,7 +1,7 @@
 {
-  "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/860722a8d7fc7e93f54c1a22d269f84c06e4765196cc92c6975f9106d97ededf/results.tar.gz",
-  "sha256": "860722a8d7fc7e93f54c1a22d269f84c06e4765196cc92c6975f9106d97ededf",
-  "size_bytes": 1727961,
-  "n_files": 62,
+  "uri": "hf://buckets/open-athena/MarinFold/data/exp369-default-model-diagnostics/b04ba53b72442c30b91da021d42ab57506d5433af3f19cde3bbadae0d0d430ce/results.tar.gz",
+  "sha256": "b04ba53b72442c30b91da021d42ab57506d5433af3f19cde3bbadae0d0d430ce",
+  "size_bytes": 4252945,
+  "n_files": 130,
   "uploaded": true
 }

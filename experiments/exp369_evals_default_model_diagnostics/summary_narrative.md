@@ -20,7 +20,7 @@ Long-range R-precision: 0.538 (95% CI 0.494–0.580).
 Length association: Spearman rho −0.068, p=0.507 (all-range).
 No detectable monotonic trend in this sample; longest bin has only eight proteins.
 
-## Contact injection: restart validation
+## Contact injection: running
 
 6,664 conditions, 666,400 rollouts on the 97 eval-val proteins.
 Random versus SSE-balanced true contacts; two independent context draws.
@@ -28,7 +28,7 @@ Count, fraction, and one/two/four contacts per element views.
 Supplied pairs never score. Unconditioned comparator uses the same remaining pairs.
 Report 95% protein-bootstrap intervals and first tested dose with a 0.05 gain or R-precision 0.80.
 All 1,000 initial validation completions passed. Rare out-of-range model predictions exposed an incorrect shard-stop gate in the larger run.
-Corrected bookkeeping retains all samples and reports generation errors plus a zero-invalid-rollout sensitivity score. A one-H100 case run precedes the restart.
+Corrected bookkeeping retains all samples and reports generation errors plus a zero-invalid-rollout sensitivity score. The one-H100 case run completed all 1,200 samples; twelve workers restarted the full sweep.
 
 ## Verified AFDB/PDB disagreements
 
@@ -38,9 +38,10 @@ Six cases selected: three large assembly-bound discrepancies (TM-score 0.25–0.
 Later PDB release dates follow the original November 2022 AFDB objects.
 Assembly context and biological state prevent labeling all disagreements as unequivocal folding errors.
 
-## Model preference: awaiting execution
+## Model preference: mixed, no reliable correction
 
-Sequence-only predictions: two independent sets of 100 rollouts per case.
-Score against both structures on their common resolved sequence.
-Compare AFDB-only and PDB-only contact support, excluding shared contacts from the preference contrast.
-No inference-based preference conclusion is available yet.
+Dynein regulatory complex subunit 2 favors AFDB: exclusive mean votes 0.206 vs 0.025; R-precision 0.326 vs 0.194.
+Tex36 weakly favors PDB, but accuracy is low: 0.093 versus AFDB, 0.156 versus PDB.
+Centrosomal protein: R-precision zero against both structures.
+SemiSWEET strongly favors the AFDB state; NDUFA4 is weak and OCP is mixed.
+All 1,200 rollouts finished. Six had generation errors; zeroing them preserves these conclusions.

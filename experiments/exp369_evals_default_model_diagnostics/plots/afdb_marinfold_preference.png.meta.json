@@ -1,0 +1,8 @@
+{
+  "script": "analyze_cases.py",
+  "args": [
+    "--run",
+    "/data/exp369/cases-v2"
+  ],
+  "caption": "Bars average two 100-rollout repeats; dots show each repeat. Left: mean support over contacts unique to each structure, on common resolved residues. Right: R-precision against each contact set, whose sizes differ. The first three cases have large assembly-bound discrepancies; the others are contact/state controls. Predictions have no structure contacts in their prompts."
+}
