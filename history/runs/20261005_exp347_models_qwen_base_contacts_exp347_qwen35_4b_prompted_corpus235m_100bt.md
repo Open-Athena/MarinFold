@@ -17,6 +17,7 @@ marinfold_run:
   - /timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a02
   - /timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a03
   - /timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a04
+  - /timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a05
 ---
 # 2026-10-05 · exp347_models_qwen_base_contacts · exp347-qwen35-4b-prompted-corpus235m-100bt
 
@@ -50,3 +51,10 @@ it retains the same optimizer/data/RNG state, run identity, world size, and
 all R=0.15239 / long R=0.10738 on all 97 eval-val proteins.
 At 14:47 UTC, a04 had advanced to step 12219 / 460,005,111 tokens and saved
 a new complete 20-object checkpoint with all eight optimizer shards and tokenizer.
+
+October 22: the preceding attempt failed after preemption restart, with seven
+ranks waiting for the first token-count reduction while rank zero had printed
+WANDB_RUN but not completed the run-registration write. Commit 7d9849d3 bounds
+startup metadata writes and starts diagnostics earlier. Attempt a05 was
+submitted with explicit valid CoreWeave credentials; at 19:53 UTC it remains
+capacity-pending in east. No GPU progress with this repair is yet verified.

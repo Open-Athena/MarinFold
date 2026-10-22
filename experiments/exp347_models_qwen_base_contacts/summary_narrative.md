@@ -89,6 +89,20 @@ Interim eval-val completed: raw step4620/498.97M; prompted step12051/450.59M tok
 Prompted was briefly paused for scoring capacity, then resumed as a04.
 Its new step12219 full recovery checkpoint was independently verified at 14:47 UTC.
 
+## Startup metadata repair — October 22
+
+Later preemption restarts stalled after W&B initialization, before training began.
+Seven ranks reached the first token-count reduction; rank zero never joined it.
+Neither small run-registration object was updated during the failed attempts.
+The startup metadata write had escaped the earlier bounded checkpoint-I/O repair.
+Registration and eval requests now use a 60-second budget and 20-second attempts.
+Diagnostics start before startup bookkeeping; all 37 tests and storage probes pass.
+New Iris jobs require explicit CoreWeave credentials; the valid cw profile is verified.
+Recovery checkpoints are intact: raw step5229/+574.65M; prompted step12538/+476.91M.
+Raw a04 and prompted a05 were accepted October 22 at 19:50–19:51 UTC.
+At 19:53 UTC both await east-region H100 capacity; renewed GPU progress is unverified.
+October 21 R-precision remains the latest completed measurement.
+
 ## Periodic R-precision contract
 
 Frozen 97-protein eval-val only; eval-test is untouched.

@@ -16,6 +16,7 @@ marinfold_run:
   - /timodonnell/exp347-qwen35-4b-contacts_v1-corpus235m-100bt-a01
   - /timodonnell/exp347-qwen35-4b-contacts_v1-corpus235m-100bt-a02
   - /timodonnell/exp347-qwen35-4b-contacts_v1-corpus235m-100bt-a03
+  - /timodonnell/exp347-qwen35-4b-contacts_v1-corpus235m-100bt-a04
 ---
 # 2026-10-05 · exp347_models_qwen_base_contacts · exp347-qwen35-4b-contacts_v1-corpus235m-100bt
 
@@ -47,3 +48,10 @@ Attempt a03 passed step 4621 and saved the model, tokenizer, and all eight
 optimizer shards; continued progress was observed beyond step 4800.
 The immutable step-4620 BF16 export scored eval-val all R=0.14481 / long R=0.10787.
 The full 100B-additional-token target and 235.49M-document source pool are unchanged.
+
+October 22: the preceding attempt failed after preemption restart, with seven
+ranks waiting for the first token-count reduction while rank zero had printed
+WANDB_RUN but not completed the run-registration write. Commit 7d9849d3 bounds
+startup metadata writes and starts diagnostics earlier. Attempt a04 was
+submitted with explicit valid CoreWeave credentials; at 19:53 UTC it remains
+capacity-pending in east. No GPU progress with this repair is yet verified.

@@ -325,6 +325,12 @@ Recovery uses the existing valid local `cw` credential profile. The older
 `cw-rno2a.env` credentials failed storage authentication and are not used.
 The independently verified recovery points are raw step 5229 / 574,648,070
 additional tokens and prompted step 12538 / 476,908,170 tokens.
+Corrected production roots are raw
+`/timodonnell/exp347-qwen35-4b-contacts_v1-corpus235m-100bt-a04` and prompted
+`/timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a05`, accepted at
+19:50:47 and 19:51:14 UTC on October 22. At 19:53 UTC they are capacity-pending
+in east; no resumed update is yet verified for this repair. The two-step diagnostic
+submissions were retired before GPU admission once the startup write was isolated.
 
 ## Results
 
