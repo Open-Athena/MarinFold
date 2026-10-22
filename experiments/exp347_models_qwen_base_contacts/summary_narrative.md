@@ -99,9 +99,24 @@ Registration and eval requests now use a 60-second budget and 20-second attempts
 Diagnostics start before startup bookkeeping; all 37 tests and storage probes pass.
 New Iris jobs require explicit CoreWeave credentials; the valid cw profile is verified.
 Recovery checkpoints are intact: raw step5229/+574.65M; prompted step12538/+476.91M.
-Raw a04 and prompted a05 were accepted October 22 at 19:50–19:51 UTC.
-At 19:53 UTC both await east-region H100 capacity; renewed GPU progress is unverified.
+East submissions were canceled before handoff after the authorized RNO2A move.
 October 21 R-precision remains the latest completed measurement.
+
+## Regional recovery — October 22
+
+The user approved RNO2A compute with all new checkpoints written in that region.
+CoreWeave confirms marin-rno2a BucketRegion=RNO2A; storage PUT/GET succeeds.
+Recovery checkpoints, BF16 exports, requests, results and timings all use that bucket.
+Evaluation drivers and their GPU workers also use RNO2A.
+Existing source URIs preserve the catalog hash, seeded row order and saved cursors.
+Old recovery checkpoints are read once; subsequent restarts prefer local successors.
+All 39 tests, Ruff and Pyrefly pass, including rejecting inconsistent resume pointers.
+A separate eight-H100 replay passed two restored updates and exited successfully.
+Verified step5231 / 574.90M tokens: 20 objects, 50.49GB, all eight optimizer shards.
+Production identities and the 100B targets / 1B evaluation cadence stay unchanged.
+Both production runs now train on eight RNO2A H100s each.
+Verified first local saves: raw5230 / +574.765M; prompted12539 / +476.967M tokens.
+No new checkpoint objects were written to the original east roots after relocation.
 
 ## Periodic R-precision contract
 

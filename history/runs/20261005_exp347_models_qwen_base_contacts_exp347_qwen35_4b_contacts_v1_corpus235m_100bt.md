@@ -17,6 +17,7 @@ marinfold_run:
   - /timodonnell/exp347-qwen35-4b-contacts_v1-corpus235m-100bt-a02
   - /timodonnell/exp347-qwen35-4b-contacts_v1-corpus235m-100bt-a03
   - /timodonnell/exp347-qwen35-4b-contacts_v1-corpus235m-100bt-a04
+  - /timodonnell/exp347-qwen35-4b-contacts_v1-corpus235m-100bt-a05
 ---
 # 2026-10-05 · exp347_models_qwen_base_contacts · exp347-qwen35-4b-contacts_v1-corpus235m-100bt
 
@@ -55,3 +56,5 @@ WANDB_RUN but not completed the run-registration write. Commit 7d9849d3 bounds
 startup metadata writes and starts diagnostics earlier. Attempt a04 was
 submitted with explicit valid CoreWeave credentials; at 19:53 UTC it remains
 capacity-pending in east. No GPU progress with this repair is yet verified.
+
+October 22 regional relocation: the east pending root was canceled before handoff. Production resumed on eight RNO2A H100s with commit 990e3641. Independently verified local checkpoint step 5230 / 574,764,731 additional tokens, all 20 objects (50,489,547,803 bytes), tokenizer and eight optimizer shards at `s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-contacts_v1-corpus235m-100bt/step-5230`. All new checkpoints and periodic exports use marin-rno2a (verified physical region RNO2A). Source-corpus URIs and full optimizer/data/RNG state are preserved; subsequent recovery prefers local successors. No checkpoint objects were written to the east root after relocation.

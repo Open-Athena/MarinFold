@@ -27,6 +27,7 @@ marinfold_run:
   - /timodonnell/exp347-prompt-step12051-eval-a01-s10
   - /timodonnell/exp347-prompt-step12051-eval-a01-s11
   - /timodonnell/exp347-prompt-step12051-eval-smoke-a01-s00
+  - /timodonnell/exp347-4b-prompted-corpus235m-eval-val-a02
 ---
 # 2026-10-05 · exp347_models_qwen_base_contacts · exp347-4b-prompted-corpus235m-eval-val
 
@@ -60,3 +61,5 @@ Metrics, timings, dispatches, and per-worker provenance are under
 `experiments/exp347_models_qwen_base_contacts/data/eval_val_interim_20261021/prompted/`
 and the public HF bucket at `data/exp347-qwen-base-contacts/data/eval_val_interim_20261021/prompted/`.
 The regular driver remains active at the 1B-additional-token cadence.
+
+October 22: prior east a01 driver confirmed killed before replacement. The a02 driver is live in RNO2A, watches the regional request prefix, and explicitly places GPU children there. New checkpoint exports and evaluation results stay in marin-rno2a. Evaluation cadence remains 1B additional tokens; October 21 remains the latest completed R-precision point.

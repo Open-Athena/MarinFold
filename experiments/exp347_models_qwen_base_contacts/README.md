@@ -69,9 +69,10 @@ Resumed production skips a duplicate validation pass at the restored step;
 validation still runs every 250 steps and at completion, and smoke recovery
 checks still validate the restored state.
 The final export also includes BF16 inference weights and tokenizer. Resume keeps
-the same run identity and requires the original rank count (eight for pilots). Working artifacts are
-under `s3://marin-us-east-02a/MarinFold/exp347_qwen_base_contacts/`; durable public
-publication and contact-generation evaluation follow completed training.
+the same run identity and requires the original rank count (eight for pilots). Pilot working artifacts are under
+`s3://marin-us-east-02a/MarinFold/exp347_qwen_base_contacts/`. The full-corpus 4B
+runs moved to `s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/` on October 22,
+with regional checkpoint and evaluation outputs as described below.
 
 [`launch.py`](launch.py) submits one explicitly chosen trial through the Marin
 controller at batch priority, pins the PyTorch container digest, forwards W&B
@@ -329,8 +330,53 @@ Corrected production roots are raw
 `/timodonnell/exp347-qwen35-4b-contacts_v1-corpus235m-100bt-a04` and prompted
 `/timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a05`, accepted at
 19:50:47 and 19:51:14 UTC on October 22. At 19:53 UTC they are capacity-pending
-in east; no resumed update is yet verified for this repair. The two-step diagnostic
-submissions were retired before GPU admission once the startup write was isolated.
+in east. Those submissions were subsequently stopped before handoff for the
+authorized RNO2A relocation below. Earlier east diagnostic submissions were
+retired before GPU admission once the startup write was isolated.
+
+### October 22 relocation to RNO2A
+
+The user approved moving both runs to RNO2A, with the explicit condition that new
+checkpoints must stay in the new region. CoreWeave `HeadBucket` verifies
+`marin-rno2a` has `BucketRegion=RNO2A`; the original bucket reports `US-EAST-02A`.
+All new recovery checkpoints, BF16 evaluation exports, evaluation requests and
+results, run metadata, and timing outputs resolve to
+`s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/` on this compute pool.
+The two evaluation drivers also move to RNO2A and explicitly place their GPU
+children there. Changing compute alone while keeping east checkpoint writes is
+not supported by this placement mapping.
+
+`--relocate-from` restores the same run's complete FP32 model, eight optimizer
+shards, RNG states, and corpus cursors from its previous recovery point. The first
+resumed update saves locally; subsequent attempts prefer that local successor
+over the original source. Local pointers are checked against their completion
+markers and must remain within the run's regional checkpoint root. Tests cover
+recovery after the old source has been removed and reject inconsistent pointers.
+The original source is retained during relocation.
+
+The approved source-corpus reads retain their immutable east-region URIs and use
+CoreWeave's LOTA read cache. This preserves the catalog hash and URI-dependent
+row shuffling exactly. Checkpoint weights cross regions only for initial recovery;
+future periodic saves and evaluation exports stay local. No large data passes
+through the workstation. All 39 tests, Ruff, and Pyrefly pass.
+
+Both production roots were admitted in RNO2A: contacts-v1 `a05` at 20:35:01 UTC
+and prompted `a06` at 20:36:50 UTC. At 20:44 UTC both have completed a restored
+optimizer update and committed a full local checkpoint, independently verified
+with matching completion/resume markers, all eight optimizer shards, the five
+model shards, and the tokenizer (20 objects / 50.49 GB each):
+
+| Format | First verified RNO checkpoint | Additional tokens |
+| --- | ---: | ---: |
+| contacts-v1 | 5230 | 574,764,731 |
+| prompted | 12539 | 476,967,387 |
+
+Both original east checkpoint roots have no new objects written since the
+migration. The separate two-update validation run
+`exp347-qwen35-4b-rno-recovery-check-20261022` succeeded through step 5231,
+with its own full local checkpoint. Both periodic evaluation drivers are live
+as `a02` in RNO2A; their next scheduled point remains 1B additional tokens.
+The October 21 values below remain the latest completed R-precision measurements.
 
 ## Results
 
