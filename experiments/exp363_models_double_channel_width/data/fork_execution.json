@@ -1,0 +1,79 @@
+{
+  "run_id": "contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4",
+  "parent_run_id": "contacts-v1-exp363-m2-p06-full-epoch-5.86B",
+  "source_checkpoint_step": 74178,
+  "resume_step": 74179,
+  "target_lr": 0.000707,
+  "transition_updates": 2114,
+  "target_reached_at_step": 76293,
+  "final_cooldown_start": 213076,
+  "num_train_steps": 266345,
+  "final_lr": 7.07e-05,
+  "driver_job_id": "/bizon/exp363-fork-train-a02",
+  "child_job_id": "/bizon/exp363-fork-train-a02/exp363-train-755515df",
+  "source_git_sha": "9d0d088e18f9cd7393293e9ac490a4f44b6beeae",
+  "target_cluster": "cw-us-east-02a",
+  "gpu_count": 32,
+  "nodes": 4,
+  "priority": "batch",
+  "state": "queued_for_gpu_quota",
+  "submission_client": {
+    "git_sha": "fe4fbd383dd8ad37a0839b15fb09811b6a72f342",
+    "iris_binary": "/home/bizon/.cache/MarinFold/exp363-iris-src/.venv/bin/iris",
+    "dependency_lock": "marin checkout uv.lock at the recorded git SHA",
+    "setup": "uv sync --project /home/bizon/.cache/MarinFold/exp363-iris-src --package marin-iris --extra controller --extra iap --frozen"
+  },
+  "submit_command": "uv run --no-project python experiments/exp363_models_double_channel_width/launch.py fork-train --nodes 4 --attempt 2",
+  "local_tests": "13 passed, including full Adam checkpoint round-trip and fork resumption",
+  "pre_submission_failure": "Old root launcher rejected by controller: build 2026-10-06, minimum accepted 2026-10-08; no job created. Upgraded only workstation submission client; training dependency lock unchanged.",
+  "submitted_at": "2026-10-22T20:39:50.846Z",
+  "attempts": [
+    {
+      "job_id": "/bizon/exp363-fork-train-a01",
+      "state": "killed_before_execution",
+      "reason": "Peer required explicit CW_KEY_ID/CW_KEY_SECRET in addition to the existing FSSPEC_S3 blob; credential forwarding fixed for driver and child."
+    }
+  ],
+  "recovery_command": "uv run --no-project python experiments/exp363_models_double_channel_width/launch.py fork-train --nodes 4 --attempt 3 --resume",
+  "child_submitted_at": "2026-10-22T20:40:08.628Z",
+  "verified_at": "2026-10-22T20:45:22Z",
+  "parent_status": {
+    "state": "running",
+    "global_step": 74366,
+    "learning_rate": 0.0010000000474974513,
+    "job_id": "/bizon/exp363-train-a03/exp363-train-0cdc9fb5"
+  },
+  "task_state_counts": {
+    "building": 4
+  },
+  "pending_reason": "SchedulingGated: Scheduling is blocked due to non-empty scheduling gates; Kueue workload iris-pg-377b6f0cd1faa8e1-0: queue=cw-use02a-lq; QuotaReserved (Pending): couldn't assign flavors to pod set a6780464: insufficient unused quota for nvidia.com/gpu in flavor cw-tas, 32 more needed, insufficient unused quota for rdma/ib in flavor cw-tas, 32 more needed",
+  "training_started": false,
+  "wandb_initialized": false,
+  "iris_job_state": "JOB_STATE_RUNNING",
+  "tasks": [
+    {
+      "task_id": "/bizon/exp363-fork-train-a02/exp363-train-755515df/0",
+      "state": "TASK_STATE_BUILDING",
+      "status_message": "SchedulingGated: Scheduling is blocked due to non-empty scheduling gates; Kueue workload iris-pg-377b6f0cd1faa8e1-0: queue=cw-use02a-lq; QuotaReserved (Pending): couldn't assign flavors to pod set a6780464: insufficient unused quota for nvidia.com/gpu in flavor cw-tas, 32 more needed, insufficient unused quota for rdma/ib in flavor cw-tas, 32 more needed",
+      "current_attempt_id": 0
+    },
+    {
+      "task_id": "/bizon/exp363-fork-train-a02/exp363-train-755515df/1",
+      "state": "TASK_STATE_BUILDING",
+      "status_message": "SchedulingGated: Scheduling is blocked due to non-empty scheduling gates; Kueue workload iris-pg-377b6f0cd1faa8e1-0: queue=cw-use02a-lq; QuotaReserved (Pending): couldn't assign flavors to pod set a6780464: insufficient unused quota for nvidia.com/gpu in flavor cw-tas, 32 more needed, insufficient unused quota for rdma/ib in flavor cw-tas, 32 more needed",
+      "current_attempt_id": 0
+    },
+    {
+      "task_id": "/bizon/exp363-fork-train-a02/exp363-train-755515df/2",
+      "state": "TASK_STATE_BUILDING",
+      "status_message": "SchedulingGated: Scheduling is blocked due to non-empty scheduling gates; Kueue workload iris-pg-377b6f0cd1faa8e1-0: queue=cw-use02a-lq; QuotaReserved (Pending): couldn't assign flavors to pod set a6780464: insufficient unused quota for nvidia.com/gpu in flavor cw-tas, 32 more needed, insufficient unused quota for rdma/ib in flavor cw-tas, 32 more needed",
+      "current_attempt_id": 0
+    },
+    {
+      "task_id": "/bizon/exp363-fork-train-a02/exp363-train-755515df/3",
+      "state": "TASK_STATE_BUILDING",
+      "status_message": "SchedulingGated: Scheduling is blocked due to non-empty scheduling gates; Kueue workload iris-pg-377b6f0cd1faa8e1-0: queue=cw-use02a-lq; QuotaReserved (Pending): couldn't assign flavors to pod set a6780464: insufficient unused quota for nvidia.com/gpu in flavor cw-tas, 32 more needed, insufficient unused quota for rdma/ib in flavor cw-tas, 32 more needed",
+      "current_attempt_id": 0
+    }
+  ]
+}

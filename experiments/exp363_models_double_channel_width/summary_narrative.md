@@ -56,4 +56,6 @@ Linear reduction to 0.000707 over 2,114 updates; target reached at step 76,293.
 Hold until original final cooldown at step 213,076; final LR target 0.0000707.
 Same 266,345-update horizon, separate W&B and checkpoint identities.
 Source copy and counters verified; 13 local configuration and restore tests passed.
-Four-node / 32-H100 batch placement; the initial local pool had no free GPUs.
+Submitted a02 at 20:39 UTC: four-node / 32-H100 batch placement.
+At 20:45 UTC, queued for GPU/RDMA quota; training and W&B have not started.
+Original verified running at step 74,366, LR 0.001.

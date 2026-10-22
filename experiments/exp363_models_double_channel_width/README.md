@@ -39,9 +39,22 @@ Thirteen local tests passed, including an actual checkpoint round-trip of
 nonzero Adam moments and counters, use of the new LR schedule after restoration,
 subsequent fork recovery, exact schedule endpoints, matching data configuration
 and disjoint output paths. The fork uses the already exercised four-node / 32-H100
-profile at batch priority in `cw-us-east-02a`. The initial placement snapshot
-reported zero free H100s, so it may queue. Launch/status evidence is recorded
-in `data/fork_execution.json` after submission.
+profile at batch priority in `cw-us-east-02a`. Driver
+`/bizon/exp363-fork-train-a02` was submitted at 20:39:50 UTC; its accelerator child
+is `/bizon/exp363-fork-train-a02/exp363-train-755515df`. At 20:45 UTC the fork was
+**queued for 32 H100s**: Kueue reports insufficient unused GPU/RDMA quota and all
+four pods are scheduling-gated. Iris labels the job running and its tasks
+building, but no GPUs have been allocated and no training or W&B initialization
+has occurred. The original run remained running at step 74,366 with LR 0.001.
+Launch/status evidence is in `data/fork_execution.json`.
+
+The current controller rejects old workstation submission clients. The launcher
+uses an isolated Iris checkout at `fe4fbd383dd8ad37a0839b15fb09811b6a72f342`, synced
+with its committed lock; the experiment's training dependency lock is unchanged.
+CoreWeave also now requires named `CW_KEY_ID` / `CW_KEY_SECRET` credentials for
+both driver and child submission. The launcher forwards these through the
+supported environment API. Attempt a01 was rejected before execution because
+it supplied only the existing `FSSPEC_S3` blob; a02 includes both forms.
 
 ## Latest comparison update (2026-10-22)
 
