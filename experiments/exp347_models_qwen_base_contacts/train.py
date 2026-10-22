@@ -260,8 +260,10 @@ def request_evaluation(
         "final": marker["final"],
     }
     uri = f"{ROOT}/eval_requests/{name}/step-{marker['step']}.json"
-    with fsspec.open(uri, "w") as handle:
-        json.dump(request, handle)
+    fs, path = fsspec.core.url_to_fs(uri)
+    CheckpointIO(fs, budget_seconds=60, operation_seconds=20).call(
+        "pipe_file", path, json.dumps(request).encode()
+    )
 
 
 def evaluate(
@@ -373,6 +375,11 @@ def main() -> None:
     local_rank = int(os.environ["LOCAL_RANK"])
     torch.cuda.set_device(local_rank)
     dist.init_process_group("nccl", device_id=torch.device("cuda", local_rank))
+    # Rank zero also performs startup bookkeeping before the first collective.
+    # Arm diagnostics here so a stalled metadata write cannot hide its stack
+    # while the other ranks time out in their first token-count reduction.
+    faulthandler.enable()
+    faulthandler.dump_traceback_later(180, repeat=True)
     torch.set_num_threads(4)
     random.seed(SEED + rank)
     np.random.seed(SEED + rank)
@@ -458,6 +465,12 @@ def main() -> None:
         optimizer.optim.load_state_dict(state["optimizer"])
         stream.state = state["stream"]
         step, tokens = state["step"], state["tokens"]
+        if args.trace_steps:
+            print(
+                f"TRACE rank={rank} phase=restored step={step} tokens={tokens} "
+                f"checkpoint={resume['uri']}",
+                flush=True,
+            )
         torch.set_rng_state(state["rng"])
         torch.cuda.set_rng_state(state["cuda_rng"])
         random.setstate(state["python_rng"])
@@ -516,17 +529,19 @@ def main() -> None:
             run.define_metric("eval_val/checkpoint_tokens")
             run.define_metric("eval_val/*", step_metric="eval_val/checkpoint_tokens")
         print(f"WANDB_RUN {run.url}", flush=True)
-        with fsspec.open(f"{ROOT}/runs/{name}.json", "w") as handle:
-            json.dump(
-                {
-                    "wandb_url": run.url,
-                    "wandb_id": run.id,
-                    "name": name,
-                    "iris_job_id": os.environ.get("IRIS_JOB_ID"),
-                    "checkpoint_root": root,
-                },
-                handle,
-            )
+        # A blocking buffered-file close here previously outlived NCCL's
+        # watchdog after W&B initialization. Use the same cancellable coroutine
+        # path as recovery checkpoints, with a shorter budget for tiny metadata.
+        metadata = {
+            "wandb_url": run.url,
+            "wandb_id": run.id,
+            "name": name,
+            "iris_job_id": os.environ.get("IRIS_JOB_ID"),
+            "checkpoint_root": root,
+        }
+        CheckpointIO(fs, budget_seconds=60, operation_seconds=20).call(
+            "pipe_file", f"{ROOT}/runs/{name}.json", json.dumps(metadata).encode()
+        )
     # Production resumes prioritize saving new progress. Repeating validation
     # at the restored step costs much of a short preemptible allocation; smoke
     # recovery checks still evaluate it to verify exact restoration.
@@ -562,7 +577,6 @@ def main() -> None:
         else None
     )
     logged_evaluations: set[str] = set()
-    faulthandler.enable()
     while tokens < args.tokens or (args.resume_check and step == resumed_step):
         # Capture Python stacks before NCCL's ten-minute watchdog terminates the
         # gang. Re-arm on progress so healthy training produces no stack dumps.
@@ -570,6 +584,12 @@ def main() -> None:
         began = time.perf_counter()
         batch = [stream.next() for _ in range(args.accumulation)]
         data_seconds = time.perf_counter() - began
+        if args.trace_steps:
+            print(
+                f"TRACE rank={rank} step={step + 1} phase=batch_ready "
+                f"lengths={[len(r[args.format]) for r in batch]}",
+                flush=True,
+            )
         counts = torch.tensor(
             [
                 sum(len(r[args.format]) - 1 for r in batch),

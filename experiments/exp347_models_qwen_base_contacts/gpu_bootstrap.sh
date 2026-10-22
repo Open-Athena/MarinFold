@@ -7,6 +7,13 @@ export MAX_JOBS=8
 export PYTORCH_ALLOC_CONF=expandable_segments:True
 export WANDB_PROJECT=MarinFold
 export WANDB_ENTITY=open-athena
+for argument in "$@"; do
+  if [[ "$argument" == "--trace-steps" ]]; then
+    export TORCH_DISTRIBUTED_DEBUG=DETAIL
+    export TORCH_NCCL_TRACE_BUFFER_SIZE=16384
+    export TORCH_NCCL_DESYNC_DEBUG=1
+  fi
+done
 if [[ "${IRIS_NUM_TASKS:-1}" -gt 1 ]]; then
   export NCCL_DEBUG=INFO
 fi

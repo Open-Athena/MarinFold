@@ -95,6 +95,12 @@ def main() -> None:
         "-e",
         "WANDB_API_KEY",
         "<redacted>",
+        "-e",
+        "CW_KEY_ID",
+        "<redacted-CW_KEY_ID>",
+        "-e",
+        "CW_KEY_SECRET",
+        "<redacted-CW_KEY_SECRET>",
         "--",
         "bash",
         "gpu_bootstrap.sh",
@@ -182,6 +188,13 @@ def main() -> None:
                 raise ValueError("W&B credential missing")
             key = auth[2]
         command[command.index("<redacted>")] = key
+        credentials = {"WANDB_API_KEY": key}
+        for variable in ["CW_KEY_ID", "CW_KEY_SECRET"]:
+            value = os.environ.get(variable)
+            if not value:
+                raise ValueError(f"Export {variable} before launching CoreWeave jobs")
+            credentials[variable] = value
+            command[command.index(f"<redacted-{variable}>")] = value
         submitted = datetime.now(UTC).isoformat()
         result = subprocess.run(
             command,
@@ -190,8 +203,10 @@ def main() -> None:
             text=True,
             check=False,
         )
-        print(result.stderr.replace(key, "<redacted>"), flush=True)
-        print(result.stdout.replace(key, "<redacted>"), flush=True)
+        output = result.stderr + result.stdout
+        for value in credentials.values():
+            output = output.replace(value, "<redacted>")
+        print(output, flush=True)
         if result.returncode:
             raise RuntimeError(f"Iris submission failed with exit {result.returncode}")
         job_id = f"/timodonnell/{job}"

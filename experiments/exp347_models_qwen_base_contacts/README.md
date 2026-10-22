@@ -301,6 +301,31 @@ measurement after training exits. The trainer also imports completed all/long
 R-precision while running. Iris handles preemption; there is no scheduled agent
 that diagnoses or repairs arbitrary failures.
 
+### October 22 startup metadata repair
+
+After further preemptions, both jobs stalled at the first token-count reduction:
+seven ranks queued NCCL collective 54 while rank zero remained at 53. Their
+last messages were `WANDB_RUN`; neither run-registration object was updated,
+and neither published the restored-step W&B log that follows that write.
+The control flow and storage timestamps locate the stall in the buffered S3
+write between W&B initialization and the training loop. All eight optimizer
+shards per arm agree on their checkpoint step, token count, world size, and
+stream rank, ruling out inconsistent recovery counters.
+
+Startup registration and evaluation-request publication now use cancellable
+`pipe_file` calls with a 60-second total budget and 20-second per-attempt limits.
+Stack diagnostics start before startup bookkeeping. Optional replay traces also
+enable PyTorch collective mismatch checks and record restored state and batches.
+The numerical training path, corpus, budgets, and optimizer state are unchanged.
+All 37 tests, Ruff, Pyrefly, and a real storage write/read check passed.
+
+New CoreWeave submissions also require explicit `CW_KEY_ID` and `CW_KEY_SECRET`;
+`launch.py` forwards them and redacts their values from its command/output records.
+Recovery uses the existing valid local `cw` credential profile. The older
+`cw-rno2a.env` credentials failed storage authentication and are not used.
+The independently verified recovery points are raw step 5229 / 574,648,070
+additional tokens and prompted step 12538 / 476,908,170 tokens.
+
 ## Results
 
 As of **2026-10-05 13:25 UTC**, five production trials have finished their
