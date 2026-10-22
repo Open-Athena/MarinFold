@@ -43,7 +43,9 @@ def run_train_job(config: TrainLmOnPodConfig) -> None:
         raise ValueError("Training requires an output path for its completion checkpoint")
     env = resolve_training_env(config.env_vars, config.resources)
     tpu = isinstance(config.resources.device, TpuConfig)
-    keys = ("WANDB_API_KEY",) if tpu else ("WANDB_API_KEY", "FSSPEC_S3")
+    keys = ("WANDB_API_KEY",) if tpu else (
+        "WANDB_API_KEY", "FSSPEC_S3", "CW_KEY_ID", "CW_KEY_SECRET",
+    )
     env.update({key: os.environ[key] for key in keys})
     extras = ["tpu"] if tpu else ["gpu"]
     setup_scripts = [

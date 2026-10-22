@@ -12,7 +12,7 @@ from pathlib import Path
 
 PREFIX = "s3://marin-us-east-02a/MarinFold/exp363_models_double_channel_width"
 VERSION = "2026.10.13.1"
-DEFAULT_IRIS = "/home/bizon/git/marin-freshiris/.venv/bin/iris"
+DEFAULT_IRIS = "/home/bizon/.cache/MarinFold/exp363-iris-src/.venv/bin/iris"
 IMPORTED_SOURCES = (
     "experiments/exp232_sweep_cv1_decontam/training_contract.py",
     "experiments/exp277_models_single_mpnn_pilot/config.py",
@@ -69,6 +69,9 @@ def main() -> None:
         credentials = configparser.ConfigParser()
         credentials.read(Path.home() / ".aws/credentials")
         cw = credentials["cw"]
+        # CoreWeave validates the named credentials on root and child jobs.
+        env["CW_KEY_ID"] = cw["aws_access_key_id"]
+        env["CW_KEY_SECRET"] = cw["aws_secret_access_key"]
         env["FSSPEC_S3"] = json.dumps({
             "key": cw["aws_access_key_id"],
             "secret": cw["aws_secret_access_key"],
