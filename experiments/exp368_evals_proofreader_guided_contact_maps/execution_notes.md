@@ -177,3 +177,15 @@ priority, but was preempted again at 21:56:17 before observed model startup.
 The pod had remained Pending; an active Job did not mean GPU computation had
 resumed. The existing Job returned to the queue. No duplicate replacement
 or additional regional mirror was submitted.
+
+### Guided completion and native cleanup
+
+The last original guided worker completed at 01:49:17 UTC on 2026-10-22.
+All 1,920 trajectories and 480 policy groups were verified when the session
+resumed on 2026-10-22. Subsequent admissions and preemptions were handled by
+the existing Kueue Job retry behavior. All 64 owned native Jobs were terminal.
+Their final statuses were archived, then the Jobs and owned bootstrap Secret
+and ConfigMap were removed. A label-scoped read verified zero remaining owned
+Jobs, Pods, Secrets or ConfigMaps. Durable scientific outputs are retained.
+See `data/guided_pilot_completion.json`, `data/native_final_status.json` and
+`data/native_cleanup.json`.

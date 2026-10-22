@@ -6,8 +6,9 @@ independent rollout pools?
 
 Completed validation supports larger ordinary pools and a small benefit from
 weighting votes by predicted rollout quality. Forced long guided rollouts expose
-a substantial overconfidence failure. The original 15-policy pilot is still
-running; final policy selection and its new reserved-test comparison remain pending.
+a substantial overconfidence failure. The original 15-policy pilot is complete and none of its guided methods improves
+the measured ordinary-sampling frontier. The bounded weight refinement selected F1 squared; its new reserved-test
+comparison is now in progress.
 
 ## Frozen models and experimental references
 
@@ -55,8 +56,8 @@ prefix F1 estimates with a Jaccard diversity penalty after blocks of eight.
 
 Repair identifies the lowest-confidence contact in the first half of a rollout,
 rewinds to it, and regenerates the suffix. Ordinary and uniform-proposal controls
-isolate guidance effects. All 15 original families must finish before selection;
-at most three promising new configurations may advance to larger validation.
+isolate guidance effects. All 15 original families finished before selection. One new configuration,
+F1 weight raised to power 2, advances to larger validation using existing outputs.
 
 ## Metrics and compute accounting
 
@@ -178,8 +179,8 @@ durable transfer reservations. No shared cluster configuration was changed.
 
 ## Limits and remaining confirmation
 
-The original guided cohort must finish before final selection. The reserved
-comparison will freeze exactly two configurations and require all 1,473
+The original guided cohort and bounded validation refinement are complete.
+The frozen reserved comparison contains exactly two configurations and requires all 1,473
 structures to finish before metric analysis. The reserved set was previously
 used for the proofreader release; it is not an untouched external benchmark.
 Generator pretraining decontamination is not established.
@@ -188,5 +189,45 @@ Adaptive additions and unadjusted validation intervals are identified explicitly
 Weighted votes are ranking scores, not calibrated pair probabilities. A positive
 local proposal-ranking effect need not improve a complete map, and good
 calibration on ordinary rollouts need not survive guided distribution shift.
-The remaining experiment will determine whether the original search policies
-improve the measured quality/cost frontier.
+The guided methods do not improve the measured quality/cost frontier. The
+remaining comparison will check the selected aggregation rule on reserved data.
+
+## Complete guided pilot: cleaner trajectories, poorer maps
+
+All 1,920 trajectories are saved. Top-10%-of-16 filtering raises mean individual
+precision from 0.48287 to 0.71445, but halves emitted contacts per residue
+(0.89804 to 0.46402) and lowers recall from 0.49001 to 0.40480. Four-rollout
+sum-q map R-precision falls by 0.05164 (95% interval −0.07400 to −0.02909).
+
+The best sum-q guided method is soft exponent-1 weighting: R-precision 0.56773
+at 77.076 warm H100 seconds per map. Ordinary frequency ranking at 128 rollouts
+gives 0.60365 at 7.165 seconds. Thirty-two-contact lookahead gives 0.49875
+at 3,117.978 seconds. No guided method, across all seven aggregators, improves
+the measured ordinary-pool quality/cost frontier.
+
+## Useful local ranking is insufficient
+
+With top-10%-of-16 filtering, within-prefix candidate AUC is 0.77781 and the
+chosen contact is 0.26803 more likely to be correct than an average sampled
+proposal. Thus the reader is useful at the local decision, while reduced contact
+coverage and shorter rollouts still harm the final map.
+
+Mean immediate confidence is 0.68368 versus actual selected-contact accuracy
+0.72061 under ordinary stopping. This underconfidence differs from the severe
+overconfidence after forced 2L continuation. Diagnostics use the first four
+decisions and every eighth thereafter; they compare each policy's own prefixes
+and do not establish a causal decomposition of the final-map loss.
+
+## Validation refinement selects squared F1 votes
+
+Only power 2 advanced to the larger validation panel after the guided pilot.
+Its promotion rule was committed before these new metrics. Against ordinary
+F1 votes, squared F1 improves R-precision by 0.00239 (95% interval
+0.00022–0.00508) on H100 and 0.00279 (0.00076–0.00523) on GB200.
+Long-range effects are positive on both, satisfying every promotion condition.
+
+The final comparison was frozen and committed before new test generation:
+128 ordinary rollouts, frequency versus F1-squared votes, on all 1,473 reserved
+proteins in 295 groups. Generation and full-forward scoring use the verified
+GB200 runtime. No test metric analysis occurs before the complete cohort is
+saved, and no additional configurations will be tried after those results.

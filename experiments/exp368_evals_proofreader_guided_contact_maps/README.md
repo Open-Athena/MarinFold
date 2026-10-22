@@ -63,7 +63,8 @@ At least one guided policy should improve final contact-map quality over ordinar
 
 ## Results
 
-Implementation and validation are in progress on 2026-10-21. Eleven CPU tests
+The original guided pilot completed on 2026-10-22 UTC: all 1,920 trajectories
+and 480 protein-policy groups are committed. Eleven CPU tests
 cover cache isolation, full-forward equivalence, proposal resampling, lookahead
 commit boundaries, repair-prefix reconstruction, full-universe AP, exact
 diversity-discount equivalence to a set-based reference, and restriction of
@@ -72,8 +73,8 @@ H100 smoke test verified that every frozen backbone weight matches the original
 generator. It also caught a BF16 incremental/full-forward discrepancy (maximum
 0.02394 contact probability); the experiment therefore tests FP32 cached search
 and rescores final maps through the released BF16 full-forward implementation.
-The complete guided pilot is still pending; partial cohorts are not used for
-policy selection. The ordinary nested-pool baseline is complete on all 32
+The complete guided pilot is reported below; no partial cohort was used for
+final policy selection. The ordinary nested-pool baseline is complete on all 32
 pilot structures. Sum-q R-precision rises from 0.5792 at eight rollouts to 0.5993
 at 128; long-range R-precision rises from 0.5537 to 0.5806. The paired all-contact
 gain is 0.0200 (95% group-bootstrap interval 0.0050–0.0329). Oracle candidate
@@ -128,6 +129,74 @@ additional ranking benefit at 128 rollouts. This is a retrospective diagnostic
 of existing complete pools; the larger validation comparison is reported below.
 
 ![True contacts gained and lost by proofreader reranking](plots/pilot_reranking.png)
+
+### Complete original guided pilot
+
+All 15 policy families are complete on all 32 pilot proteins. No guided
+configuration improves the measured H100 ordinary-sampling quality/cost frontier,
+including any of the seven aggregation rules. The highest guided all-contact
+R-precision is 0.56871 (soft guidance with exponent 1, four rollouts and
+sqrt-frequency aggregation), versus 0.60365 for 128 ordinary frequency-ranked
+rollouts. Its mean cost is 77.076 versus 7.165 warm H100 seconds. These are
+implementation-level compute comparisons, not lower bounds on search cost.
+
+| Policy (four rollouts, sum q) | R-precision | Long-range R-precision | Coverage | Mean warm H100 seconds |
+| --- | ---: | ---: | ---: | ---: |
+| control | 0.56322 | 0.52742 | 0.70294 | 32.504 |
+| uniform-k16 | 0.55386 | 0.53310 | 0.68620 | 116.457 |
+| top10-k16 | 0.51157 | 0.46787 | 0.51502 | 44.348 |
+| top25-k16 | 0.52087 | 0.48558 | 0.52608 | 49.167 |
+| top50-k16 | 0.56507 | 0.52850 | 0.58970 | 63.542 |
+| top10-k64 | 0.49120 | 0.45467 | 0.49243 | 150.065 |
+| soft1-k16 | 0.56773 | 0.54915 | 0.63991 | 77.076 |
+| soft2-k16 | 0.55830 | 0.52851 | 0.59182 | 58.423 |
+| soft4-k16 | 0.53864 | 0.50056 | 0.54824 | 48.604 |
+| explore10-k16 | 0.52199 | 0.48822 | 0.52812 | 48.798 |
+| look8-k16 | 0.51696 | 0.46836 | 0.51860 | 824.419 |
+| look32-k16 | 0.49875 | 0.45427 | 0.50193 | 3117.978 |
+| total-k16 | 0.51505 | 0.47178 | 0.52196 | 46.531 |
+| particles8-b8 | 0.56620 | 0.53538 | 0.68123 | 510.151 |
+| repair-k16 | 0.53922 | 0.50662 | 0.56137 | 79.652 |
+
+Top-10%-of-16 filtering produces individually cleaner but shorter rollouts:
+mean precision rises from 0.48287 for the matched control to 0.71445, while
+contacts per sequence residue fall from 0.89804 to 0.46402 and recall falls
+from 0.49001 to 0.40480. Four-rollout sum-q R-precision falls by 0.05164
+(95% paired group interval −0.07400 to −0.02909), and long-range R-precision
+falls by 0.05956 (−0.08403 to −0.03520), at 1.364 times control cost.
+
+Soft exponent-1 guidance gives the best sum-q guided map: 0.56773 overall and
+0.54915 long-range. Relative to the constrained control, the all-contact change
+is +0.00452 (−0.00854 to +0.01625); long-range improves by 0.02173
+(0.00974–0.03493), at 2.371 times the cost. Against 128 ordinary frequency
+rollouts, however, it loses 0.03592 overall (−0.05070 to −0.02305) and 0.04023
+long-range (−0.05398 to −0.02745), at 10.757 times the cost. Population search
+has no established all-contact gain against its constrained control. Thirty-two
+contact lookahead costs 3,117.978 seconds per four-rollout map and loses
+0.06447 R-precision against that control (−0.08603 to −0.04204).
+
+![Complete guided-policy quality and compute comparison](plots/pilot_guided_frontier.png)
+
+![Complete guided trajectory precision, recall and length](plots/pilot_guided_quality.png)
+
+Conditional candidate diagnostics show that the reader does identify better
+next contacts. For top-10%-of-16 sampling, within-prefix AUC is 0.77781 and
+selected-contact accuracy exceeds the mean sampled-proposal accuracy by 0.26803.
+The selected contacts are slightly underconfident in these ordinary-stopping
+rollouts: mean immediate score 0.68368 versus actual accuracy 0.72061. This
+local benefit fails to produce a better complete map because coverage and
+trajectory length decline. It is distinct from the overconfidence observed
+under forced 2L continuation below. Diagnostics sample the first four decisions
+and every eighth thereafter, average within proteins, and retain proposal-slot
+multiplicity. They are descriptive comparisons across each policy's own prefixes.
+
+![Conditional next-contact ranking and selection effects](plots/pilot_guided_candidates.png)
+
+Data and all 1,920 measured inference timings are in `data/pilot_guided/`;
+all candidate diagnostics are in `data/pilot_guided_candidates/`. After this complete pilot, only F1-weight power 2 advanced as a new aggregation
+configuration on the existing larger-validation pools; its promotion rule was
+committed before those new metrics were computed. The resulting frozen reserved
+comparison is documented below.
 
 ### Larger validation frequency baseline
 
@@ -488,11 +557,49 @@ on H100 and +0.00137 (−0.00181–0.00584) on GB200. This pilot does not establ
 a stronger weighting rule. All variants reuse the same measured generation and
 reader costs: 9.581 H100 or 5.204 GB200 seconds per map, excluding CPU aggregation.
 The original frequency and exponent-1 values reproduce exactly for every input.
-These are adaptive validation comparisons; no final policy is chosen before
-the original guided pilot completes. Data are in `data/pilot_weight_power/`
+These adaptive validation comparisons preceded final policy selection and used
+no new reserved-test metrics. Data are in `data/pilot_weight_power/`
 and `data/pilot_weight_power_gb200/`.
 
 ![Stronger rollout-quality weights on the complete pilot](plots/pilot_weight_power.png)
+
+### One larger-validation refinement and frozen reserved comparison
+
+After all original guided trajectories finished, `data/validation_weight_power_decision.json`
+committed a single new larger-validation configuration: F1 squared. Powers 4 and
+8 were not extended. The promotion rule required a positive lower 95% bound for
+all-contact R-precision versus power 1 on H100, a positive GB200 point effect,
+and nonnegative long-range point effects on both. The same 1,375 structures and
+existing 128-rollout pools were used; no extra GPU inference was needed.
+
+| Runtime | Weight | R-precision | Long-range R-precision | Mean warm GPU seconds |
+| --- | --- | ---: | ---: | ---: |
+| H100 | Frequency | 0.54769 | 0.52153 | 6.599 |
+| H100 | F1 | 0.55195 | 0.52565 | 8.921 |
+| H100 | F1 squared | 0.55435 | 0.52870 | 8.921 |
+| GB200 | Frequency | 0.54779 | 0.52194 | 3.054 |
+| GB200 | F1 | 0.55239 | 0.52647 | 4.622 |
+| GB200 | F1 squared | 0.55518 | 0.53016 | 4.622 |
+
+F1 squared met every promotion condition. Against F1, its all-contact gain is
+0.00239 (95% paired interval 0.00022–0.00508) on H100 and 0.00279
+(0.00076–0.00523) on GB200. Long-range gains are 0.00305 (0.00064–0.00615)
+and 0.00369 (0.00077–0.00703). Against frequency, H100 gains are 0.00665
+(0.00224–0.01256) overall and 0.00717 (0.00237–0.01394) long-range; GB200
+gains are 0.00738 (0.00303–0.01313) and 0.00822 (0.00300–0.01445).
+Original frequency and power-1 metrics reproduce exactly for all 2,750 rows
+per runtime. This is an adaptive validation refinement, with unadjusted intervals.
+
+At 14:51 UTC on 2026-10-22, before new test generation, `final_test.json` froze
+exactly two configurations on all 1,473 reserved structures from 295 groups:
+128 ordinary rollouts ranked by frequency and the identical rollouts ranked by
+F1-squared votes. The plan and selection evidence were committed in `ce6bd1a1`.
+Its SHA256 is `35a563b7c067b8eaf98b63e140d79f8bb7be58d2023989b01a6cd2beaa31a9e8`.
+The GB200 runtime matches the verified validation replication. Every protein
+must finish generation and full-forward proofreading before test metric analysis;
+no further test configurations or policy changes are allowed after those scores.
+The reserved set was previously used for the reader release. Execution is in
+progress; this report does not yet contain its new comparison results.
 
 ### Larger ordinary pools on H100
 
@@ -574,5 +681,7 @@ weighting votes by predicted rollout F1 adds a smaller exploratory gain of
 0.00426 (0.00173–0.00763). On GB200, increasing ordinary pools to 2,048
 does not establish an accuracy gain over 128 despite 23.68 times the cost.
 The fixed-length comparison is complete and does not improve the measured
-accuracy/cost frontier. The original 15-policy guided comparison remains
-incomplete, so policy selection still waits for that full cohort.
+accuracy/cost frontier. The original 15-policy guided comparison is complete and none of its methods
+improves the measured ordinary-pool frontier. A single bounded rollout-weight
+refinement selected squared F1 weights for the frozen reserved comparison, which
+is now being executed.

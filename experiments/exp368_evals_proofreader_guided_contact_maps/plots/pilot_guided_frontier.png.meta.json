@@ -1,0 +1,16 @@
+{
+  "script": "plot_frontier.py",
+  "args": [
+    "--input",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/data/pilot_guided/per_protein.csv.gz",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/data/pilot_direct/per_protein.csv.gz",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/data/pilot_large/per_protein.csv.gz",
+    "--plan",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/pilot.json",
+    "--out",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/plots/pilot_guided_frontier.png",
+    "--title",
+    "Complete guided pilot: contact-map quality and H100 cost"
+  ],
+  "caption": "GPU model: NVIDIA H100 80GB HBM3. Each point averages the same planned structures. Guided curves use sum-q aggregation over increasing independent trajectories; ordinary curves show frequency, sum q and predicted-rollout-F1-weighted votes. The F1 rule is an exploratory addition after the ordinary-pool pilot. Search cost includes discarded proposals, lookahead, population branches, repair and final scoring. Ordinary frequency omits proofreader cost. GPU resource seconds sum the work for all trajectories; they are not parallel serving latency. Model staging and loading are excluded. These are measured compute envelopes, not exactly cost-matched experiments."
+}

@@ -1,0 +1,11 @@
+{
+  "verified_at": "2026-10-22T14:48:08.357445+00:00",
+  "owned_jobs_pods_secrets_configmaps_remaining": 0,
+  "selector": "marinfold-experiment=exp368,marinfold-owner=bizon",
+  "removed_terminal_jobs": 64,
+  "removed_configmap": "exp368-native-source-f387ee88086c",
+  "removed_secret": "exp368-native-storage-f387ee88086c",
+  "shared_cluster_configuration_changed": false,
+  "science_artifacts_retained": true,
+  "final_status_archive": "data/native_final_status.json"
+}

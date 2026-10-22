@@ -1,0 +1,59 @@
+{
+  "sources": [
+    {
+      "phase": "pilot_nested_h100",
+      "timings": "experiments/exp368_evals_proofreader_guided_contact_maps/data/pilot_pool/timings.csv",
+      "sha256": "e44fd3aeac6708cff136c310ea8f5fd75f6956052ecccbf173e209bf963a2a22",
+      "retained": "all stage records"
+    },
+    {
+      "phase": "pilot_direct_h100",
+      "timings": "experiments/exp368_evals_proofreader_guided_contact_maps/data/pilot_direct/timings.csv",
+      "sha256": "46693ff0dc2cefc1611f46426a65e1990c7084146510fc3c7b9b2579608a2cc9",
+      "retained": "all stage records"
+    },
+    {
+      "phase": "pilot_large_h100",
+      "timings": "experiments/exp368_evals_proofreader_guided_contact_maps/data/pilot_large/timings.csv",
+      "sha256": "44c30d18a54f93d54d47193937f8d345e005420b0f44069664fb36fc3573a603",
+      "retained": "all stage records"
+    },
+    {
+      "phase": "validation_h100",
+      "timings": "experiments/exp368_evals_proofreader_guided_contact_maps/data/validation_pool/timings.csv",
+      "sha256": "3dcec537190cfab603d272c3a32390c0af98a382a3d441050b4459e6b5230637",
+      "retained": "all stage records"
+    },
+    {
+      "phase": "fixed_length",
+      "timings": "experiments/exp368_evals_proofreader_guided_contact_maps/data/length_probe/timings.csv",
+      "sha256": "2e437988c3dd346be0db75256679fa8628bb38988c7a6a460db22cd3100330cc",
+      "retained": "only final cumulative 2L records"
+    },
+    {
+      "phase": "pilot_guided_h100",
+      "timings": "experiments/exp368_evals_proofreader_guided_contact_maps/data/pilot_guided/timings.csv",
+      "sha256": "a4a77d3a3856a7e3d25d7331ded03bd85f0005ff8d111e16e477daf22b146fb9",
+      "retained": "all stage records"
+    },
+    {
+      "phase": "pilot_direct_gb200",
+      "timings": "experiments/exp368_evals_proofreader_guided_contact_maps/data/pilot_direct_gb200/timings.csv",
+      "sha256": "6dbf66c37f1776fb1edc07c7a42cf8cd263f826d4da5dcd481c77ece09ff3259",
+      "retained": "all stage records"
+    },
+    {
+      "phase": "pilot_large_scored_gb200",
+      "timings": "experiments/exp368_evals_proofreader_guided_contact_maps/data/pilot_large_scored_gb200/timings.csv",
+      "sha256": "072e8977858b64cc193bd548082e57f9a3c7df3642ae68ae2564a22b143b7b97",
+      "retained": "all stage records"
+    },
+    {
+      "phase": "validation_gb200",
+      "timings": "experiments/exp368_evals_proofreader_guided_contact_maps/data/validation_pool_gb200/timings.csv",
+      "sha256": "29566bf022f058a0561673a4054764d43951193d9fc528d9f581fd9c5a2a71f2",
+      "retained": "all stage records"
+    }
+  ],
+  "scope": "Successful warm single-GPU inference stages only. Not billed GPU-hours. Excludes staging, loading, queueing, CPU aggregation, diagnostics, smoke tests and work lost to failed/preempted attempts. Nested L/2L continuations count only the cumulative 2L timing."
+}
