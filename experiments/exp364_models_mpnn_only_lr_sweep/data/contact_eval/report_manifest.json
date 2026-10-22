@@ -1,0 +1,47 @@
+{
+  "completed_checkpoints": 4,
+  "requested_checkpoints": 4,
+  "results": [
+    {
+      "trial": "lr5e-4",
+      "files": {
+        "manifest.json": "160aa9c43cdee8f575b20d16c9237469a4ae3dd3e5ee10c0714a5aa3b21efc3e",
+        "contact_precision_all.csv": "8fc70529c14bac0b47ccd188ed1554a349d09bb7b48a906ee3f0969660151981",
+        "timings.csv": "ca13914bc3ed2e31da2c7ee04438e9b63ff5cfc6569046422e05057aea6bffef"
+      }
+    },
+    {
+      "trial": "lr1e-3",
+      "files": {
+        "manifest.json": "ee0946a6c89eb7815c739d88967ff226894c496308f62f5e2c6ef7a3c4bcbd41",
+        "contact_precision_all.csv": "ceccfd5b8d12b5a806f248cb8dd571dc3185c5ea5429d1638facb54457669df0",
+        "timings.csv": "69104173d126d421457ef21ecc3dcf6a942c6cd5f4e578e3d44ac5ad99592793"
+      }
+    },
+    {
+      "trial": "lr2e-3",
+      "files": {
+        "manifest.json": "45fc4cdb68b2cd432e2c03e2c09fa785a68ed2bae3d1ad95cc9b88be1d262ca9",
+        "contact_precision_all.csv": "e9d551139a2ed9862cb960978dea64c80525d8486a1cde09305ee431b7529eb8",
+        "timings.csv": "0ba177a01f4d3444ad6fcac2dc282af214e705f743877110337f5ee829488ddc"
+      }
+    },
+    {
+      "trial": "lr5e-4-cooldown",
+      "files": {
+        "manifest.json": "fe3ea27f935f44289febbb04a78dd87741d3b0d8c1bebaab8f8c9f6fa50b1bc0",
+        "contact_precision_all.csv": "58e5269fa2c5d86e7b4429a9064ec125345a0262b1fd0d8c755a529df0953ffe",
+        "timings.csv": "b70265b0e89c8a5055c9f464d94beae9806f8c8b6bfd3e02063ff896cfb49fad"
+      }
+    }
+  ],
+  "bootstrap": {
+    "replicates": 10000,
+    "seed": 20261021,
+    "unit": "protein"
+  },
+  "low_msa_membership_sha256": "32b7083af03ccd874d796732c8297e10aafe52de3c92f12be2c247442da3b45f",
+  "scope": "eval-val and eval-denovo only; no eval-test or legacy read",
+  "eval_set": "all",
+  "matched_sequence_knn_null": null
+}
