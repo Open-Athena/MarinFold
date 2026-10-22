@@ -14,12 +14,12 @@ Architecture, tokenizer, data and recovery checks passed.
 2.821 seconds/update; native and HF checkpoints saved with tokenizer.
 Compressed smoke schedule was spiky; this is an execution check.
 
-## Current status — October 19
-GPU production running: step 48,451, 18.19% of one epoch.
-Train loss 2.893; validation loss 3.123, previously 3.465.
-Complete rolling checkpoint step 48,452; permanent step 26,634.
-32 H100s: 5.61 s/update; about 14.2 compute days remaining.
-Queueing, validation, checkpoints and preemptions add wall time.
+## Current status — October 22
+W&B reports production running: step 73,740, 27.69% of one epoch.
+Train loss 2.870; latest full validation at step 71,876 is 3.09976.
+October 19 checkpoint verification: rolling step 48,452; permanent step 26,634.
+This update refreshed W&B metrics and curves, not checkpoint storage.
+The 266,345-update training schedule remains unchanged.
 
 ## TPU trial succeeded
 Interactive v5p-64: 32 chips across 8 VMs; all 20 updates completed.
@@ -32,10 +32,11 @@ Production continues on GPUs. No bulk transfer or migration performed.
 ## Matched validation: no width benefit yet
 Same native + MPNN corpus, global batch, validation and optimizer schedule.
 Wider model led early; default overtook it between steps 33,824 and 35,938.
-Default has lower loss at all six subsequent full evaluations.
-At step 46,508: default 3.11447; wider 3.12334.
-Gap +0.00887 nats/token, or 0.89% higher perplexity.
-Single seed, about 18% of the epoch; baseline LR retained without retuning.
+Default has lower loss at all 18 subsequent full evaluations.
+At step 71,876: default 3.08621; wider 3.09976.
+Gap +0.01354 nats/token, or 1.36% higher perplexity.
+Gap narrowed from its +0.01685 peak at step 61,306.
+Single seed, incomplete epoch; baseline LR retained without retuning.
 Both losses keep falling. No contact-accuracy evaluation for the wider model yet.
 
 ## Other architectures: context, not a common leaderboard

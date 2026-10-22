@@ -10,7 +10,15 @@ marinfold_experiment:
 
 **Issue:** [#363](https://github.com/Open-Athena/MarinFold/issues/363) · **Kind:** `models` · **Branch:** `exp363/double-channel-width`
 
-## Current status (2026-10-19)
+## Latest comparison update (2026-10-22)
+
+W&B reports step **73,740**, **27.69%** complete, with the run marked running.
+Latest full validation at step **71,876** is **3.09976**, versus **3.08621** for
+exp277 at the same step. The [updated comparison](#comparison-with-previous-architectures-2026-10-22)
+includes all 34 full-validation observations. This update refreshed W&B metrics;
+the checkpoint and hardware verification below is the dated October 19 record.
+
+## Previous infrastructure status (2026-10-19)
 
 **GPU production is running at 18.19% of its epoch.** The latest observed W&B
 step is 48,451 (48,452 optimizer updates of 266,345), train loss **2.89288** and
@@ -45,16 +53,20 @@ Evidence: `data/progress_20261019.json`,
 `data/checkpoint_verification_20261019.json`, and the TPU run history. The
 historical launch/recovery notes below preserve what was known at each stage.
 
-## Comparison with previous architectures (2026-10-19)
+## Comparison with previous architectures (2026-10-22)
 
-**Optimization is progressing, but extra width has not improved validation at
-the latest matched exposure.** The wider model led at the first 16 evaluations;
-exp277 overtook it between steps 33,824 and 35,938 and has lower loss at all six
-subsequent observations. At step 46,508, exp363 is **3.12334** versus exp277's
-**3.11447**: **+0.00887 nats/token**, equivalent to **0.89% higher perplexity**.
-This is a small, consistent recent gap, not evidence of divergence. Both curves
-continue downward. The production run was at step 48,568 when the comparison
-was fetched; 46,508 was its latest completed full validation.
+**The wider model is still behind at matched training exposure.** The October 22
+W&B snapshot reports step **73,740**, or **27.69%** of the planned 266,345 updates,
+with the run marked running. Its latest full validation is at **step 71,876**:
+**3.09976** versus exp277's **3.08621**, a gap of **+0.01354 nats/token** or
+**1.36% higher perplexity**. The gap peaked at +0.01685 at step 61,306 and has
+narrowed since, but remains larger than the October 19 observation (+0.00887).
+Both losses continue downward; no width advantage is established yet.
+
+The wider model led at the first 16 evaluations; exp277 overtook it between
+steps 33,824 and 35,938 and has lower loss at all 18 subsequent observations.
+This is a single-seed, incomplete training comparison. Contact accuracy has not
+yet been evaluated for exp363.
 
 | Exact matched step | Default 1.471B | Double width 5.862B | Wider minus default |
 | ---: | ---: | ---: | ---: |
@@ -63,6 +75,8 @@ was fetched; 46,508 was its latest completed full validation.
 | 33,824 | 3.14812 | 3.14168 | -0.00644 |
 | 35,938 | 3.13426 | 3.13841 | +0.00415 |
 | 46,508 | 3.11447 | 3.12334 | +0.00887 |
+| 61,306 | 3.09283 | 3.10968 | +0.01685 |
+| 71,876 | 3.08621 | 3.09976 | +0.01354 |
 
 ![Matched validation comparison](plots/training_comparison.png)
 
@@ -72,9 +86,9 @@ bundles the verified pinned snapshot), and model configs differ only in
 `hidden_dim` and `intermediate_dim`. Both use the same four caches, full
 validation cache, global batch 128, sequence length 8192, 266,345-update schedule,
 augmentation and seeds. Hardware allocation and gradient accumulation differ.
-This is one seed and about 18% of an epoch; the baseline learning rate was
-retained without tuning for the larger model. Exp277 eventually reached 2.98441
-at step 266,344, which is a final target rather than a matched-exposure comparison.
+The baseline learning rate was retained without tuning for the larger model.
+Exp277 eventually reached 2.98441 at step 266,344, which is a final target rather
+than a matched-exposure comparison.
 [Default run](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B)
 and [wider run](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B).
 
@@ -94,11 +108,12 @@ In particular, #157's direct reevaluation of the old vanilla checkpoint changed
 its apparent CE from the old logged 2.7037 to 3.0815 on the comparison cache;
 historical raw W&B loss values are not a common leaderboard.
 
-The committed `data/training_comparison_curves.csv` contains all 22 wider-model
+The committed `data/training_comparison_curves.csv` contains all 34 wider-model
 and 126 baseline full-validation observations available at export time.
 `data/matched_width_comparison.csv` is the exact-step join, and
 `data/training_comparison_provenance.json` records W&B links, configs and the
-historical run inventory. Every baseline observation was checked against
+historical run inventory. `data/comparison_progress_20261022.json` records the
+latest W&B status and validation step. Every baseline observation was checked against
 exp277's committed epoch-validation CSV. `plot_training_comparison.py` regenerates
 the figure offline without interpolation or smoothing.
 
@@ -170,9 +185,9 @@ The first GPU smoke `/bizon/exp363-train-smoke-a01` failed before model/W&B init
 ## Conclusion
 
 The requested architecture is implemented and its exact parameter count is verified.
-At the October 19 snapshot, full-validation loss decreases steadily but is
-0.00887 nats/token worse than exp277 at matched step 46,508, after an early lead
-reversed. The run is incomplete; final training-quality and contact-accuracy
+At the October 22 snapshot, full-validation loss decreases but is
+0.01354 nats/token worse than exp277 at matched step 71,876, after an early lead
+reversed. The gap has narrowed from its peak at step 61,306. The run is incomplete; final training-quality and contact-accuracy
 conclusions remain open.
 
 ## TPU trial (2026-10-14)

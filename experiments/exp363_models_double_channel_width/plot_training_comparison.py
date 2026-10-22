@@ -6,8 +6,11 @@ matching uses exact optimizer steps, without interpolation or smoothing.
 """
 
 import csv
+import json
 import math
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import matplotlib.pyplot as plt
 
@@ -35,6 +38,9 @@ def load_curves() -> dict[str, dict[int, float]]:
 def main() -> None:
     """Save the matched CSV and a full-curve plus late-gap figure."""
     curves = load_curves()
+    provenance = json.loads((HERE / "data/training_comparison_provenance.json").read_text())
+    exported = datetime.fromisoformat(provenance["observed_at"]).astimezone(ZoneInfo("America/New_York"))
+    export_date = exported.strftime("%B %d, %Y")
     steps = sorted(curves[WIDE])
     missing = set(steps) - curves[BASELINE].keys()
     if missing:
@@ -52,11 +58,11 @@ def main() -> None:
             writer.writerow([step, b, w, delta, 100 * math.expm1(delta)])
 
     plt.rcParams.update({"font.size": 11, "axes.spines.top": False, "axes.spines.right": False})
-    fig, (left, right) = plt.subplots(1, 2, figsize=(12, 4.7), layout="constrained")
+    fig, (left, right) = plt.subplots(1, 2, figsize=(12, 5.2), layout="constrained")
     x = [step / 1000 for step in steps]
     left.plot(x, baseline, "o-", color="#2864a5", markersize=3, label="Default: 1.471B (exp277)")
     left.plot(x, wide, "o-", color="#d36b2c", markersize=3, label="Double width: 5.862B (exp363)")
-    left.set(title="Wider model led early; default caught up", ylabel="Full validation loss (nats/token)")
+    left.set(title="Matched full-validation loss", ylabel="Full validation loss (nats/token)")
     left.legend(frameon=False, fontsize=10)
 
     # Show the small late reversal at a readable scale; the left panel preserves
@@ -65,21 +71,25 @@ def main() -> None:
     right.axhline(0, color="#333333", linewidth=1)
     right.plot([s / 1000 for s, _ in late], [d for _, d in late], "o-", color="#8a4d98")
     right.set(title="Late gap: wider minus default", ylabel="Validation loss difference (nats/token)")
-    right.set_ylim(-0.016, 0.017)
+    right.set_ylim(min(-0.016, min(d for _, d in late) - 0.004), max(0.017, max(d for _, d in late) + 0.008))
     right.text(0.02, 0.92, "Above zero: wider model worse", transform=right.transAxes, fontsize=10)
     right.text(0.02, 0.05, "Below zero: wider model better", transform=right.transAxes, fontsize=10)
     right.annotate(
         f"{steps[-1]:,}: {deltas[-1]:+.5f}",
-        xy=(x[-1], deltas[-1]), xytext=(-115, 13), textcoords="offset points", fontsize=10,
+        xy=(x[-1], deltas[-1]), xytext=(-115, -35), textcoords="offset points", fontsize=10,
+        arrowprops={"arrowstyle": "-", "color": "#777777"},
     )
     for axis in (left, right):
         axis.set_xlabel("Optimizer step (thousands)")
         axis.grid(alpha=0.18)
-    fig.suptitle("Same native + MPNN corpus, global batch 128, sequence length 8192, LR schedule", fontsize=12)
+    fig.suptitle(
+        f"Updated {export_date}\nSame native + MPNN corpus · batch 128 · sequence 8192 · matched LR schedule",
+        fontsize=11,
+    )
     save_plot_with_meta(
         fig, HERE / "plots/training_comparison.png", dpi=180,
         caption=(
-            f"Full-validation observations through step {steps[-1]:,}, exported October 19, 2026. "
+            f"Full-validation observations through step {steps[-1]:,}, exported {export_date}. "
             "Exact-step comparison; no interpolation or smoothing. Same logical training recipe, "
             "different hardware/gradient accumulation; single seed, incomplete epoch. "
             "The right panel zooms into observations after step 25,000."
