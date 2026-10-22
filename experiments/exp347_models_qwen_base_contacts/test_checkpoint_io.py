@@ -1,12 +1,43 @@
 """Exercise real fsspec coroutine cancellation without an S3 service."""
 
 import asyncio
+import json
 import time
 
 import pytest
 from fsspec.asyn import AsyncFileSystem
+from fsspec.implementations.memory import MemoryFileSystem
 
-from checkpoint_io import CheckpointIO
+from checkpoint_io import CheckpointIO, load_resume_marker
+
+
+def test_relocation_uses_local_successor_after_original_source_is_removed() -> None:
+    fs = MemoryFileSystem()
+    source, root = "s3://east/migration-test/step-10", "s3://rno/migration-test"
+    original = {"uri": source, "step": 10, "tokens": 123, "world": 8}
+    fs.pipe_file(source + "/complete.json", json.dumps(original).encode())
+    assert load_resume_marker(fs, root, source) == original
+    successor = {**original, "uri": root + "/step-11", "step": 11, "tokens": 456}
+    fs.pipe_file(successor["uri"] + "/complete.json", json.dumps(successor).encode())
+    fs.pipe_file(root + "/resume.json", json.dumps(successor).encode())
+    fs.rm(source, recursive=True)
+    assert load_resume_marker(fs, root, source) == successor
+
+
+def test_relocation_rejects_cross_region_or_uncommitted_local_pointer() -> None:
+    fs = MemoryFileSystem()
+    root = "s3://rno/migration-invalid"
+    marker = {"uri": "s3://east/migration-invalid/step-10", "step": 10}
+    fs.pipe_file(root + "/resume.json", json.dumps(marker).encode())
+    with pytest.raises(ValueError, match="output region"):
+        load_resume_marker(fs, root, None)
+    marker["uri"] = root + "/step-10"
+    fs.pipe_file(root + "/resume.json", json.dumps(marker).encode())
+    fs.pipe_file(
+        marker["uri"] + "/complete.json", json.dumps({**marker, "step": 9}).encode()
+    )
+    with pytest.raises(ValueError, match="differs"):
+        load_resume_marker(fs, root, None)
 
 
 class DelayedStorage(AsyncFileSystem):

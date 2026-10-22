@@ -11,6 +11,28 @@ import time
 from typing import Any
 
 from fsspec.asyn import AsyncFileSystem, FSTimeoutError
+from fsspec.spec import AbstractFileSystem
+
+
+def load_resume_marker(
+    fs: AbstractFileSystem, root: str, fallback: str | None
+) -> dict | None:
+    """Prefer a locally committed successor over a one-time remote recovery source."""
+    pointer = root + "/resume.json"
+    if fs.exists(pointer):
+        marker = json.loads(fs.cat_file(pointer))
+        if not marker["uri"].startswith(root + "/step-"):
+            raise ValueError("Resume pointer must stay in this run's output region")
+        committed = json.loads(fs.cat_file(marker["uri"] + "/complete.json"))
+        if marker != committed:
+            raise ValueError("Resume pointer differs from its committed checkpoint")
+        return marker
+    if fallback is None:
+        return None
+    marker = json.loads(fs.cat_file(fallback + "/complete.json"))
+    if marker["uri"] != fallback:
+        raise ValueError("Recovery marker points to another checkpoint")
+    return marker
 
 
 class CheckpointIO:

@@ -36,8 +36,17 @@ from transformers.models.qwen3_5.modeling_qwen3_5 import is_fast_path_available
 
 import wandb
 from accumulation import accumulation_context
-from checkpoint_io import CheckpointIO
-from common import FORMATS, MAX_LENGTH, MODELS, ROOT, SEED, TOKEN_BUDGET, run_name
+from checkpoint_io import CheckpointIO, load_resume_marker
+from common import (
+    FORMATS,
+    MAX_LENGTH,
+    MODELS,
+    ROOT,
+    SEED,
+    TOKEN_BUDGET,
+    output_root,
+    run_name,
+)
 from corpus_stream import COUNTERS, CorpusStream
 
 
@@ -246,7 +255,7 @@ def checkpoint(
 
 
 def request_evaluation(
-    root: str, name: str, document_format: str, marker: dict
+    root: str, name: str, document_format: str, marker: dict, outputs: str
 ) -> None:
     """Publish an idempotent request, including after a crash following checkpoint commit."""
     if not marker.get("evaluation_export", False):
@@ -259,7 +268,7 @@ def request_evaluation(
         "checkpoint": f"{root}/hf/step-{marker['step']}",
         "final": marker["final"],
     }
-    uri = f"{ROOT}/eval_requests/{name}/step-{marker['step']}.json"
+    uri = f"{outputs}/eval_requests/{name}/step-{marker['step']}.json"
     fs, path = fsspec.core.url_to_fs(uri)
     CheckpointIO(fs, budget_seconds=60, operation_seconds=20).call(
         "pipe_file", path, json.dumps(request).encode()
@@ -343,6 +352,9 @@ def main() -> None:
     parser.add_argument("--eval-documents", type=int, default=64)
     parser.add_argument("--run-id")
     parser.add_argument(
+        "--relocate-from", help="Same run's committed checkpoint in its previous region"
+    )
+    parser.add_argument(
         "--resume-from", help="Committed checkpoint for an isolated recovery replay"
     )
     parser.add_argument(
@@ -390,17 +402,24 @@ def main() -> None:
         )
     name = args.run_id or run_name(args.size, args.format, args.smoke)
     run_id = name
-    root = f"{ROOT}/checkpoints/{name}"
+    outputs = output_root(os.environ["EXP347_CLUSTER"])
+    root = f"{outputs}/checkpoints/{name}"
+    if args.relocate_from and (
+        not args.run_id
+        or args.resume_from
+        or args.relocate_from.startswith(root + "/")
+        or not re.fullmatch(
+            rf"s3://[^/]+/MarinFold/exp347_qwen_base_contacts/checkpoints/{re.escape(name)}/step-\d+",
+            args.relocate_from,
+        )
+    ):
+        raise ValueError(
+            "Relocation must load this run's committed checkpoint in another region"
+        )
     if args.resume_from and args.resume_from.startswith(root + "/"):
         raise ValueError("Use normal resume for this run's own checkpoint")
-    fs, root_path = fsspec.core.url_to_fs(root)
-    resume = None
-    if args.resume_from:
-        with fsspec.open(args.resume_from + "/complete.json") as handle:
-            resume = json.load(handle)
-    if fs.exists(root_path + "/resume.json"):
-        with fsspec.open(root + "/resume.json") as handle:
-            resume = json.load(handle)
+    fs, _ = fsspec.core.url_to_fs(root)
+    resume = load_resume_marker(fs, root, args.resume_from or args.relocate_from)
     if resume is not None and resume["world"] != world:
         raise ValueError("This optimizer checkpoint requires the original world size")
     with fsspec.open(args.data + "/manifest.json") as handle:
@@ -540,7 +559,7 @@ def main() -> None:
             "checkpoint_root": root,
         }
         CheckpointIO(fs, budget_seconds=60, operation_seconds=20).call(
-            "pipe_file", f"{ROOT}/runs/{name}.json", json.dumps(metadata).encode()
+            "pipe_file", f"{outputs}/runs/{name}.json", json.dumps(metadata).encode()
         )
     # Production resumes prioritize saving new progress. Repeating validation
     # at the restored step costs much of a short preemptible allocation; smoke
@@ -554,7 +573,7 @@ def main() -> None:
             step,
             model_load_seconds,
             name,
-            f"{ROOT}/runs/{name}",
+            f"{outputs}/runs/{name}",
         )
         if resume is None or args.smoke
         else {}
@@ -570,7 +589,15 @@ def main() -> None:
         )
     last_checkpoint = time.monotonic()
     if rank == 0 and resume is not None:
-        request_evaluation(root, name, args.format, resume)
+        if (
+            args.relocate_from
+            and not resume["uri"].startswith(root + "/")
+            and resume.get("evaluation_export")
+        ):
+            raise ValueError(
+                "Relocation of an evaluation milestone requires its export in the new region"
+            )
+        request_evaluation(root, name, args.format, resume, outputs)
     next_evaluation = (
         (tokens // args.eval_every_tokens + 1) * args.eval_every_tokens
         if args.eval_every_tokens
@@ -725,12 +752,13 @@ def main() -> None:
                             "final": final,
                             "evaluation_export": True,
                         },
+                        outputs,
                     )
                 next_evaluation = (
                     tokens // args.eval_every_tokens + 1
                 ) * args.eval_every_tokens
         if run and args.eval_every_tokens and step % 100 == 0:
-            for result_path in fs.glob(f"{ROOT}/eval_results/{name}/step-*.json"):
+            for result_path in fs.glob(f"{outputs}/eval_results/{name}/step-*.json"):
                 if result_path in logged_evaluations:
                     continue
                 with fs.open(result_path) as handle:
@@ -754,7 +782,7 @@ def main() -> None:
                 step,
                 model_load_seconds,
                 name,
-                f"{ROOT}/runs/{name}",
+                f"{outputs}/runs/{name}",
             )
             if run:
                 run.log(

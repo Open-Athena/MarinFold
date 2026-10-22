@@ -8,6 +8,7 @@ does not make training placement, recovery, or convergence decisions.
 import argparse
 import hashlib
 import json
+import os
 import time
 from pathlib import Path
 
@@ -24,16 +25,24 @@ from iris.client.client import get_iris_ctx
 
 import wandb
 from aggregate_eval import aggregate, read_json, write_json
-from common import ROOT
+from common import output_root
 
 IMAGE = "vllm/vllm-openai@sha256:5f5e535216848d0c52159c8c13a0af04be5f6fe1a84e79914300610796f76d40"
 
 
 def evaluate_request(request: dict, shards: int, reference_e8: bool) -> dict:
     """Evaluate exactly one immutable export and join its complete target universe."""
+    cluster = os.environ["EXP347_CLUSTER"]
+    outputs = output_root(cluster)
     output = request.get(
-        "output", f"{ROOT}/eval-val/{request['run_id']}/step-{request['step']}"
+        "output", f"{outputs}/eval-val/{request['run_id']}/step-{request['step']}"
     )
+    if not output.startswith(outputs + "/") or not request["checkpoint"].startswith(
+        outputs + "/"
+    ):
+        raise ValueError(
+            "Evaluation inputs and outputs must be local to its compute cluster"
+        )
     client = current_client()
     identity = hashlib.sha256((request["checkpoint"] + output).encode()).hexdigest()[
         :12
@@ -66,8 +75,15 @@ def evaluate_request(request: dict, shards: int, reference_e8: bool) -> dict:
                     ram="64Gi",
                     disk="128Gi",
                     image=IMAGE,
+                    target_cluster=cluster,
                 ),
-                environment=create_environment(docker_image=IMAGE, setup_scripts=[]),
+                environment=create_environment(
+                    docker_image=IMAGE,
+                    setup_scripts=[],
+                    env_vars={
+                        key: os.environ[key] for key in ["CW_KEY_ID", "CW_KEY_SECRET"]
+                    },
+                ),
                 priority=3,
                 max_retries_failure=0,
                 max_retries_preemption=100,
@@ -123,7 +139,8 @@ def main() -> None:
         raise RuntimeError("The evaluation driver must run inside Iris")
     if not 1 <= args.shards <= 12:
         raise ValueError("Expected 1-12 explicitly reserved evaluation GPUs")
-    fs, _ = fsspec.core.url_to_fs(ROOT)
+    outputs = output_root(os.environ["EXP347_CLUSTER"])
+    fs, _ = fsspec.core.url_to_fs(outputs)
     with wandb.init(
         entity="open-athena",
         project="MarinFold",
@@ -140,7 +157,9 @@ def main() -> None:
             if args.request_file:
                 requests = [json.loads(args.request_file.read_text())]
             else:
-                paths = fs.glob(f"{ROOT}/eval_requests/{args.training_run}/step-*.json")
+                paths = fs.glob(
+                    f"{outputs}/eval_requests/{args.training_run}/step-*.json"
+                )
                 requests = sorted(
                     (read_json("s3://" + p) for p in paths), key=lambda r: r["tokens"]
                 )
@@ -149,7 +168,7 @@ def main() -> None:
                     raise ValueError("Request belongs to another training run")
                 if request["step"] in completed:
                     continue
-                result_uri = f"{ROOT}/eval_results/{args.training_run}/step-{request['step']}.json"
+                result_uri = f"{outputs}/eval_results/{args.training_run}/step-{request['step']}.json"
                 if fs.exists(result_uri):
                     result = read_json(result_uri)
                     if (

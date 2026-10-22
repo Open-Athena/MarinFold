@@ -11,6 +11,7 @@ import tempfile
 from pathlib import Path
 
 import wandb
+from common import OUTPUT_ROOTS
 from launch_eval import HERE, build_bundle
 
 
@@ -19,6 +20,7 @@ def main() -> None:
     parser.add_argument("--training-run", required=True)
     parser.add_argument("--evaluation-run", required=True)
     parser.add_argument("--attempt", type=int, required=True)
+    parser.add_argument("--cluster", choices=OUTPUT_ROOTS, default="cw-us-east-02a")
     parser.add_argument("--shards", type=int, default=4)
     parser.add_argument("--timeout-days", type=int, default=14)
     parser.add_argument("--request-file", type=Path)
@@ -58,7 +60,7 @@ def main() -> None:
             "job",
             "run",
             "--target-cluster",
-            "cw-us-east-02a",
+            args.cluster,
             "--priority",
             "batch",
             "--user",
@@ -78,6 +80,15 @@ def main() -> None:
             "-e",
             "WANDB_API_KEY",
             "<redacted>",
+            "-e",
+            "EXP347_CLUSTER",
+            args.cluster,
+            "-e",
+            "CW_KEY_ID",
+            "<redacted-CW_KEY_ID>",
+            "-e",
+            "CW_KEY_SECRET",
+            "<redacted-CW_KEY_SECRET>",
             "--",
             "uv",
             "run",
@@ -165,11 +176,18 @@ def main() -> None:
         )
         print(shlex.join(command), flush=True)
         command[command.index("<redacted>")] = key
+        credentials = [key]
+        for variable in ["CW_KEY_ID", "CW_KEY_SECRET"]:
+            value = os.environ[variable]
+            command[command.index(f"<redacted-{variable}>")] = value
+            credentials.append(value)
         result = subprocess.run(
             command, cwd=destination, capture_output=True, text=True, check=False
         )
-        print(result.stdout.replace(key, "<redacted>"), flush=True)
-        print(result.stderr.replace(key, "<redacted>"), flush=True)
+        output = result.stdout + result.stderr
+        for value in credentials:
+            output = output.replace(value, "<redacted>")
+        print(output, flush=True)
         if result.returncode:
             raise RuntimeError(f"Iris submission failed: {result.returncode}")
         print(

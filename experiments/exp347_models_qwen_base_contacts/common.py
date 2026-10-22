@@ -11,6 +11,17 @@ MODELS = {
 }
 FORMATS = ("contacts_v1", "prompted")
 ROOT = "s3://marin-us-east-02a/MarinFold/exp347_qwen_base_contacts"
+OUTPUT_ROOTS = {
+    "cw-us-east-02a": ROOT,
+    "cw-rno2a": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts",
+}
+
+
+def output_root(cluster: str) -> str:
+    """Resolve durable outputs to the bucket physically local to the compute pool."""
+    return OUTPUT_ROOTS[cluster]
+
+
 SOURCE = "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/data/afdb"
 MAX_LENGTH = 16384
 TOKEN_BUDGET = 1_000_000_000

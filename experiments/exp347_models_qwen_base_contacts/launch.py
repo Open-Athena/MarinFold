@@ -10,7 +10,7 @@ import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 
-from common import FORMATS, MODELS, ROOT, TOKEN_BUDGET, run_name
+from common import FORMATS, MODELS, TOKEN_BUDGET, output_root, run_name
 
 IMAGE = "pytorch/pytorch@sha256:b574d4ccf6d8856a5d87dcadc667aa4f95dc18d337ef3a28d02b7b01897d7081"
 
@@ -32,6 +32,7 @@ def main() -> None:
     parser.add_argument("--accumulation", type=int)
     parser.add_argument("--run-id")
     parser.add_argument("--resume-from")
+    parser.add_argument("--relocate-from")
     parser.add_argument("--stop-after-steps", type=int)
     parser.add_argument("--trace-steps", action="store_true")
     parser.add_argument("--data")
@@ -132,6 +133,8 @@ def main() -> None:
         command += ["--eval-every-tokens", str(args.eval_every_tokens)]
     if args.resume_from:
         command += ["--resume-from", args.resume_from]
+    if args.relocate_from:
+        command += ["--relocate-from", args.relocate_from]
     if args.stop_after_steps:
         command += ["--stop-after-steps", str(args.stop_after_steps)]
     if args.trace_steps:
@@ -174,7 +177,7 @@ def main() -> None:
         config = json.dumps(configuration)
         db.execute(
             "INSERT OR IGNORE INTO trials(trial_id,env_json,wandb_run_id,checkpoint_root) VALUES(?,?,?,?)",
-            (name, config, name, f"{ROOT}/checkpoints/{name}"),
+            (name, config, name, f"{output_root(args.cluster)}/checkpoints/{name}"),
         )
         old = db.execute(
             "SELECT env_json FROM trials WHERE trial_id=?", (name,)
@@ -230,6 +233,10 @@ def main() -> None:
                 redacted,
                 submitted,
             ),
+        )
+        db.execute(
+            "UPDATE trials SET checkpoint_root=? WHERE trial_id=?",
+            (f"{output_root(args.cluster)}/checkpoints/{name}", name),
         )
         db.execute(
             "INSERT INTO events(recorded_at,kind,trial_id,dispatch_id,detail) VALUES(?,?,?,?,?)",
