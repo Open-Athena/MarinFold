@@ -1,0 +1,14 @@
+{
+  "script": "plot_mixtures.py",
+  "args": [
+    "--input",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/data/pilot_mixtures/per_protein.csv.gz",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/data/pilot_guided/per_protein.csv.gz",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/data/pilot_direct/per_protein.csv.gz",
+    "--plan",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/pilot_mixtures.json",
+    "--out",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/plots/pilot_mixtures.png"
+  ],
+  "caption": "Exploratory validation-only reuse of top-10%, top-25%, top-50% and ordinary constrained trajectories. Four-rollout mixtures rotate component assignments over four distinct sample identities and average metrics within each protein; rotations reuse trajectories and are not independent observations. Full pools include four trajectories per component (12 or 16). Sum q is used except where labeled. The full 16-rollout F1-squared point is the highest all-contact mixture result among three prespecified aggregation rules; this display does not constitute a separate confirmation. Warm cost sums the original included-trajectory inference timings and excludes loading, staging and CPU aggregation. These mixtures add no GPU work. Top-20% and within-rollout threshold changes were not tested. Reserved-test configurations remain unchanged."
+}

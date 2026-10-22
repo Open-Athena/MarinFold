@@ -1,0 +1,10 @@
+{
+  "observed_at": "2026-10-21T16:50:05Z",
+  "cluster": "cw-rno2a",
+  "advertised_free_h100": 16,
+  "physical_unrequested_h100": 16,
+  "schedulable_unrequested_h100": 0,
+  "unschedulable_node_count_with_free_gpu": 2,
+  "interpretation": "Both nodes with physically free GPUs were cordoned; one was also NotReady. No shared cluster state was changed. The scoring pod was subsequently admitted at 16:50:04 UTC with its original eight-CPU request.",
+  "monitoring_change": "Show task_state_counts in active jobs; JOB_STATE_RUNNING can include TASK_STATE_BUILDING pods waiting for Kubernetes admission."
+}

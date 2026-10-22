@@ -1,0 +1,12 @@
+{
+  "script": "plot_weight_power.py",
+  "args": [
+    "--h100",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/data/pilot_weight_power",
+    "--gb200",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/data/pilot_weight_power_gb200",
+    "--out",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/plots/pilot_weight_power.png"
+  ],
+  "caption": "Paired 95% homology-group bootstrap intervals on the complete 32-protein pilot. The same proteins are used on both hardware/runtime phases; they are not independent biological cohorts. Powers 2, 4, 8 were fixed after observing the power-1 validation result, before computing these comparisons. All variants reuse identical generated pools and reader outputs within each runtime. Intervals are exploratory and unadjusted for multiple comparisons; no test metrics are used."
+}

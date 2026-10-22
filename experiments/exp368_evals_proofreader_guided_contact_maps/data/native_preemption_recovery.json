@@ -1,0 +1,19 @@
+{
+  "observed_at": "2026-10-21T19:50:49.008619+00:00",
+  "failed_job": "kueue://cw-rno2a/iris/exp368-native-guided-v1-014",
+  "failed_pod": "exp368-native-guided-v1-014-qgkm4",
+  "failure_reason": "Kubernetes node-level preemption; Job backoffLimit=0 made this terminal. Pod event explicitly says Preempted. The pod was deleted, so no application traceback was available.",
+  "replacement_job": "kueue://cw-rno2a/iris/exp368-native-guided-v2-014",
+  "task": "70-native-guided-014",
+  "source_and_plan_changed": false,
+  "other_suspended_jobs": "Kueue reports preemption to accommodate higher-priority work; those Job objects remain resumable and are left in the same batch queue.",
+  "additional_recoveries": [
+    {
+      "failed_job": "kueue://cw-rno2a/iris/exp368-native-guided-v1-039",
+      "failed_pod": "exp368-native-guided-v1-039-ttk8t",
+      "failure_reason": "Pod event explicitly reports node-level Preempted; Job then reaches BackoffLimitExceeded. No scientific code changed.",
+      "replacement_job": "kueue://cw-rno2a/iris/exp368-native-guided-v2-039",
+      "task": "70-native-guided-039"
+    }
+  ]
+}

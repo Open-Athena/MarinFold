@@ -1,0 +1,13 @@
+{
+  "rollouts": 256,
+  "identical_token_sequences": 171,
+  "original_job": "/bizon/exp368-pool-smoke-v2",
+  "derived_job": "/bizon/exp368-shared-rno-v1",
+  "derived_task": "01-pool-smoke-000",
+  "matching_prompts": 256,
+  "interpretation": "Identical frozen weights and prompts did not yield bitwise identical stochastic vLLM outputs across worker deployments. Inference comparisons are paired by protein, not by identical sampled token sequences.",
+  "first_differing_token_range": [
+    1,
+    91
+  ]
+}

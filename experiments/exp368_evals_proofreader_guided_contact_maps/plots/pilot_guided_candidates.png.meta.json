@@ -1,0 +1,14 @@
+{
+  "script": "plot_candidates.py",
+  "args": [
+    "--data",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/data/pilot_guided_candidates",
+    "--completeness",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/data/pilot_guided/completeness.csv",
+    "--plan",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/pilot.json",
+    "--out",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/plots/pilot_guided_candidates.png"
+  ],
+  "caption": "Diagnostics at the first four contact decisions and every eighth decision thereafter. Sampled decisions are averaged within each protein, then proteins equally; intervals resample homology groups. AUC uses only candidate pools containing both labels. Proposal duplicates retain their sampling weight. A positive confidence gap means overconfidence. Policies without candidate comparisons are omitted. These local measurements do not by themselves establish an improvement in final contact maps."
+}

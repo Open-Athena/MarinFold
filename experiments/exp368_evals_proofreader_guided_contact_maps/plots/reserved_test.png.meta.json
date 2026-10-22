@@ -1,0 +1,19 @@
+{
+  "script": "plot_frozen_comparison.py",
+  "args": [
+    "--plan",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/final_test.json",
+    "--data",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/data/reserved_test",
+    "--paired",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/data/reserved_test/paired.csv",
+    "--labels",
+    "Frequency votes",
+    "Squared F1 votes",
+    "--title",
+    "Reserved comparison: 128 ordinary rollouts",
+    "--out",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/plots/reserved_test.png"
+  ],
+  "caption": "Only the two configurations in the frozen comparison plan are shown. Structures are weighted equally; paired 95% intervals resample related groups. R-precision is primary; the other metrics are secondary and intervals are not multiplicity-adjusted. Long-range metrics require sequence separation at least 24 and exclude targets without such contacts. GPU-stage times exclude model loading, staging, CPU aggregation and failed/preempted work. The reserved set was previously used for the proofreader release; generator pretraining decontamination is not established."
+}

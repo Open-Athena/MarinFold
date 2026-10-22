@@ -1,0 +1,16 @@
+{
+  "script": "plot_pools.py",
+  "args": [
+    "--data",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/data/validation_frequency",
+    "--out",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/plots/validation_frequency.png",
+    "--title",
+    "1375 validation structures: frequency-ranked rollout pools",
+    "--methods",
+    "frequency",
+    "--coverage-method",
+    "frequency"
+  ],
+  "caption": "Mean over the same validation structures. Error bars are 95% homology-group bootstrap intervals. Oracle coverage measures whether a native contact was proposed; it is not an attainable ranking result. Long-range means sequence separation at least 24. No test-set results appear here."
+}

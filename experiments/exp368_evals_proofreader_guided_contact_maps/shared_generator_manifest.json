@@ -1,0 +1,22 @@
+{
+  "config.json": {
+    "size": 2005,
+    "sha256": "03cd68867df12e95cb18cb689c0cbfc3adc96acd9b6eb8b344a28e7ab4e5fc0f"
+  },
+  "lm_head.safetensors": {
+    "size": 23306336,
+    "sha256": "e971fc71fc7f625a5b9b49f8a677fc88e5efe29f8cee01c42775807b0260ebba"
+  },
+  "provenance.json": {
+    "size": 545,
+    "sha256": "10502a8350de072ae2a15ecfdb46a9ded66af282e5ab1796468536a5fe34c468"
+  },
+  "tokenizer.json": {
+    "size": 64407,
+    "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+  },
+  "tokenizer_config.json": {
+    "size": 296,
+    "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+  }
+}

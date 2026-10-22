@@ -1,0 +1,6 @@
+.venv/
+_cache/
+release_api/
+__pycache__/
+.pytest_cache/
+code_manifest.json

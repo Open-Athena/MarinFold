@@ -1,0 +1,87 @@
+{
+  "status": "failed",
+  "plan": {
+    "selection": "First, middle and last length-ranked structures of the frozen pilot; no accuracy used.",
+    "references": [
+      {
+        "entry_id": "6dsl_A",
+        "L": 33,
+        "uri": "s3://marinfold-exp368-rno2a/MarinFold/exp368/results/pilot-direct-scored/6dsl_A/pool-8.parquet",
+        "bytes": 9394,
+        "sha256": "3bb2659e19775836bff16863fe836dcc3f3566e5d2eb80d929e86042f6076aff"
+      },
+      {
+        "entry_id": "5gp9_A",
+        "L": 193,
+        "uri": "s3://marinfold-exp368-rno2a/MarinFold/exp368/results/pilot-direct-scored/5gp9_A/pool-8.parquet",
+        "bytes": 25136,
+        "sha256": "576ea07e4f9f3d3a7720fe6070d039add58ad8afc5781b444b559873aeded308"
+      },
+      {
+        "entry_id": "1q2l_A",
+        "L": 937,
+        "uri": "s3://marinfold-exp368-rno2a/MarinFold/exp368/results/pilot-direct-scored/1q2l_A/pool-8.parquet",
+        "bytes": 121842,
+        "sha256": "a8d5f2977a1125365393990743a73132a5fea792088ea0dea8c108ad2b6de6a0"
+      }
+    ],
+    "maximum_reference_bytes": 5000000,
+    "max_bf16_probability_error": 0.01,
+    "max_bf16_recall_error": 0.01,
+    "fp32_cache_tolerance": 1e-05,
+    "note": "Cross-GPU BF16 replay guard fixed before measurement. Does not establish bitwise equivalence; FP32 cached/full equivalence retains the original stricter gate."
+  },
+  "source_sha256": "17293e3fe366349300cb0c33cc9c68fcaa6ae5c7143a95ee7aff2a41de5e8a12",
+  "results": [
+    {
+      "entry_id": "6dsl_A",
+      "L": 33,
+      "contacts": 133,
+      "max_bf16_probability_error": 0.01584911346435547,
+      "mean_bf16_probability_error": 0.0027028075279317853,
+      "max_bf16_recall_error": 0.007462620735168457,
+      "max_probability_error": 4.887580871582031e-06,
+      "mean_probability_error": 1.2228265404701233e-06,
+      "max_recall_error": 1.2218952178955078e-06,
+      "fp32_vs_released_bf16_max_difference": 0.007355213165283203
+    },
+    {
+      "entry_id": "5gp9_A",
+      "L": 193,
+      "contacts": 1290,
+      "max_bf16_probability_error": 0.020810365676879883,
+      "mean_bf16_probability_error": 0.0028929437373497687,
+      "max_bf16_recall_error": 0.001741647720336914,
+      "max_probability_error": 9.59634780883789e-06,
+      "mean_probability_error": 3.17208468914032e-06,
+      "max_recall_error": 1.0803341865539551e-07,
+      "fp32_vs_released_bf16_max_difference": 0.009740054607391357
+    },
+    {
+      "entry_id": "1q2l_A",
+      "L": 937,
+      "contacts": 9361,
+      "max_bf16_probability_error": 0.03424710035324097,
+      "mean_bf16_probability_error": 0.003931148031807265,
+      "max_bf16_recall_error": 0.013974428176879883,
+      "max_probability_error": 7.62939453125e-06,
+      "mean_probability_error": 3.052176907658577e-06,
+      "max_recall_error": 5.820766091346741e-09,
+      "fp32_vs_released_bf16_max_difference": 0.009315192699432373
+    }
+  ],
+  "worker": {
+    "model_nickname": "exp356-step-18000",
+    "runner_tag": "iris",
+    "gpu_name": "NVIDIA GB200",
+    "gpu_total_memory_gb": 197.890015232,
+    "gpu_compute_capability": "10.0",
+    "hostname": "sj9txs64",
+    "platform": "Linux-6.17.13-155-gdec5393c-coreweave-arm64-aarch64-with-glibc2.36",
+    "torch_version": "2.10.0+cu130",
+    "cuda_version": "13.0",
+    "attention_backend": "math",
+    "full_precision_reductions": true
+  },
+  "limitation": "Numerical agreement, not bitwise sampler equivalence."
+}

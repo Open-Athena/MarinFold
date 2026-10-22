@@ -1,0 +1,916 @@
+{
+  "inputs": [
+    {
+      "source": "marin-us-east-02a/MarinFold/exp356/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18000/config.json",
+      "relative": "reader/config.json",
+      "bytes": 1447
+    },
+    {
+      "source": "marin-us-east-02a/MarinFold/exp356/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18000/heads.pt",
+      "relative": "reader/heads.pt",
+      "bytes": 88743900
+    },
+    {
+      "source": "marin-us-east-02a/MarinFold/exp356/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18000/manifest.json",
+      "relative": "reader/manifest.json",
+      "bytes": 5666
+    },
+    {
+      "source": "marin-us-east-02a/MarinFold/exp356/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18000/model.safetensors",
+      "relative": "reader/model.safetensors",
+      "bytes": 5862227888
+    },
+    {
+      "source": "marin-us-east-02a/MarinFold/exp356/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18000/proofreader.json",
+      "relative": "reader/proofreader.json",
+      "bytes": 4820
+    },
+    {
+      "source": "marin-us-east-02a/MarinFold/exp356/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18000/tokenizer.json",
+      "relative": "reader/tokenizer.json",
+      "bytes": 64590
+    },
+    {
+      "source": "marin-us-east-02a/MarinFold/exp356/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18000/tokenizer_config.json",
+      "relative": "reader/tokenizer_config.json",
+      "bytes": 337
+    },
+    {
+      "source": "marin-us-east-02a/MarinFold/exp368/shared-generator-v1/config.json",
+      "relative": "head/config.json",
+      "bytes": 2005
+    },
+    {
+      "source": "marin-us-east-02a/MarinFold/exp368/shared-generator-v1/lm_head.safetensors",
+      "relative": "head/lm_head.safetensors",
+      "bytes": 23306336
+    },
+    {
+      "source": "marin-us-east-02a/MarinFold/exp368/shared-generator-v1/provenance.json",
+      "relative": "head/provenance.json",
+      "bytes": 545
+    },
+    {
+      "source": "marin-us-east-02a/MarinFold/exp368/shared-generator-v1/tokenizer.json",
+      "relative": "head/tokenizer.json",
+      "bytes": 64407
+    },
+    {
+      "source": "marin-us-east-02a/MarinFold/exp368/shared-generator-v1/tokenizer_config.json",
+      "relative": "head/tokenizer_config.json",
+      "bytes": 296
+    },
+    {
+      "source": "marin-us-east-02a/MarinFold/exp356/data/v1/targets.parquet",
+      "relative": "targets.parquet",
+      "bytes": 39745586
+    }
+  ],
+  "input_bytes": 6014167823,
+  "reserved_bytes": 6014167823,
+  "completed": [
+    "reader/model.safetensors",
+    "reader/heads.pt",
+    "targets.parquet",
+    "head/lm_head.safetensors",
+    "reader/tokenizer.json",
+    "head/tokenizer.json",
+    "reader/manifest.json",
+    "reader/proofreader.json",
+    "head/config.json",
+    "reader/config.json",
+    "head/provenance.json",
+    "reader/tokenizer_config.json",
+    "head/tokenizer_config.json"
+  ],
+  "objects": {
+    "reader/model.safetensors": {
+      "upload_id": "9a5424c3-f66e-4ddc-b307-2fd236cc856c",
+      "parts": [
+        {
+          "PartNumber": 1,
+          "ETag": "\"060cdb65282293dfe29838fe86f587a4\""
+        },
+        {
+          "PartNumber": 2,
+          "ETag": "\"2810f69d48a0041246396cbf10c2c827\""
+        },
+        {
+          "PartNumber": 3,
+          "ETag": "\"c627816733240a6966ad168ee287bdb0\""
+        },
+        {
+          "PartNumber": 4,
+          "ETag": "\"842e76e3f2f1b1580c493cf41511d3e8\""
+        },
+        {
+          "PartNumber": 5,
+          "ETag": "\"9b2e4045a1af591b156124bf7ab87935\""
+        },
+        {
+          "PartNumber": 6,
+          "ETag": "\"eafa7e6d9d63da822863cb740a2d8112\""
+        },
+        {
+          "PartNumber": 7,
+          "ETag": "\"6f99b8f8d46e69654e8b214c81bb873c\""
+        },
+        {
+          "PartNumber": 8,
+          "ETag": "\"27e60718c4ec9d8d100bbf5c13b3f89c\""
+        },
+        {
+          "PartNumber": 9,
+          "ETag": "\"f1d26a240977c6ccbf8e94f97376394c\""
+        },
+        {
+          "PartNumber": 10,
+          "ETag": "\"97d2d97cf43c5d1feb55a3d5cc91b870\""
+        },
+        {
+          "PartNumber": 11,
+          "ETag": "\"309d9034aff3f567e09d7e87da1c4a5b\""
+        },
+        {
+          "PartNumber": 12,
+          "ETag": "\"29842836572b17155a0d3891a56bf863\""
+        },
+        {
+          "PartNumber": 13,
+          "ETag": "\"aea593824be33d558b25c073fdfc8dfd\""
+        },
+        {
+          "PartNumber": 14,
+          "ETag": "\"2b391203d6622821ce6ce5c0c840a698\""
+        },
+        {
+          "PartNumber": 15,
+          "ETag": "\"345da872e40e705cdf2cf936b2e49b9a\""
+        },
+        {
+          "PartNumber": 16,
+          "ETag": "\"eeb062180de134eae5160f07bf3b0720\""
+        },
+        {
+          "PartNumber": 17,
+          "ETag": "\"894d9599ec095f0090958116d1519c60\""
+        },
+        {
+          "PartNumber": 18,
+          "ETag": "\"eb7e7a94880c59de929e525ac7986cfc\""
+        },
+        {
+          "PartNumber": 19,
+          "ETag": "\"1dbbf89da3c87567c91ac03d6eee19bd\""
+        },
+        {
+          "PartNumber": 20,
+          "ETag": "\"40f8a816721ee5a572203480fc1f001c\""
+        },
+        {
+          "PartNumber": 21,
+          "ETag": "\"3b9817727e8c7e926acb13c171a5fa84\""
+        },
+        {
+          "PartNumber": 22,
+          "ETag": "\"990f2a0ea7fc20e57e6664fb7002fe36\""
+        },
+        {
+          "PartNumber": 23,
+          "ETag": "\"34b0e16b8b0b3859013bb2504aa30b8b\""
+        },
+        {
+          "PartNumber": 24,
+          "ETag": "\"2f7f102b06bd0ec9ca4629c00e1914ea\""
+        },
+        {
+          "PartNumber": 25,
+          "ETag": "\"3bbf76d0330d1fcf662dcf4b560d11f2\""
+        },
+        {
+          "PartNumber": 26,
+          "ETag": "\"d71325ce41768596082a2d3dea3bdb70\""
+        },
+        {
+          "PartNumber": 27,
+          "ETag": "\"5daaa54cdb8ebaa3d9b009f4cbabdde3\""
+        },
+        {
+          "PartNumber": 28,
+          "ETag": "\"66632919d35b1150bb2476d1dcc6b1c3\""
+        },
+        {
+          "PartNumber": 29,
+          "ETag": "\"9279446a5fda945deac33f3fc3d2a931\""
+        },
+        {
+          "PartNumber": 30,
+          "ETag": "\"e754806f4823098bd2d224a850462bbb\""
+        },
+        {
+          "PartNumber": 31,
+          "ETag": "\"343d20d29044217be285b1dd0cd745de\""
+        },
+        {
+          "PartNumber": 32,
+          "ETag": "\"c7545163a985a2b98d2f053a43180668\""
+        },
+        {
+          "PartNumber": 33,
+          "ETag": "\"3a796e78f69b300a21e349a37704a99a\""
+        },
+        {
+          "PartNumber": 34,
+          "ETag": "\"805d9d4f41c6c3c517fa91cd5dacecda\""
+        },
+        {
+          "PartNumber": 35,
+          "ETag": "\"71ad63e416fe23f303c0e6ed48a22ba2\""
+        },
+        {
+          "PartNumber": 36,
+          "ETag": "\"918f463ec895170da38296161ce35dcd\""
+        },
+        {
+          "PartNumber": 37,
+          "ETag": "\"6b63e05c3ee334bfef067cb9078b8e9a\""
+        },
+        {
+          "PartNumber": 38,
+          "ETag": "\"5ca0a4fe662c7bec7e086f1564758512\""
+        },
+        {
+          "PartNumber": 39,
+          "ETag": "\"202d3a034bc489e54eaea537efebc0a6\""
+        },
+        {
+          "PartNumber": 40,
+          "ETag": "\"f0863b1c681f1fe135613c3e188cae38\""
+        },
+        {
+          "PartNumber": 41,
+          "ETag": "\"5db19e8677cc159e995d8994e2e9f7c2\""
+        },
+        {
+          "PartNumber": 42,
+          "ETag": "\"d128bd52c2703ee7b1441d37add7baae\""
+        },
+        {
+          "PartNumber": 43,
+          "ETag": "\"2e8cdb0526ee65d9075cf539e1bd03d0\""
+        },
+        {
+          "PartNumber": 44,
+          "ETag": "\"1f95005cb11416a80e0aeedfa282781a\""
+        },
+        {
+          "PartNumber": 45,
+          "ETag": "\"75565ec48738188399308ad2fff04613\""
+        },
+        {
+          "PartNumber": 46,
+          "ETag": "\"ed40c57ccd853eb41524dd182d27a6cf\""
+        },
+        {
+          "PartNumber": 47,
+          "ETag": "\"856b763e2d7952a991715222ad4feb46\""
+        },
+        {
+          "PartNumber": 48,
+          "ETag": "\"1812a2b774709085919cb8f4f7674c90\""
+        },
+        {
+          "PartNumber": 49,
+          "ETag": "\"cc6ff84f6892d094689179b3614235a4\""
+        },
+        {
+          "PartNumber": 50,
+          "ETag": "\"27d718e4a8863046ea94288a8c7d9f6c\""
+        },
+        {
+          "PartNumber": 51,
+          "ETag": "\"3b1299bc4ddfe6f4fa41484d1f7a7837\""
+        },
+        {
+          "PartNumber": 52,
+          "ETag": "\"1ed74dd3578245c36e9fb95ecfab5112\""
+        },
+        {
+          "PartNumber": 53,
+          "ETag": "\"c55c700f5de262149c583e3c76673a2b\""
+        },
+        {
+          "PartNumber": 54,
+          "ETag": "\"dae3af0df1591bf73b3fe824acde1872\""
+        },
+        {
+          "PartNumber": 55,
+          "ETag": "\"c81849670a19b5a65e820d787abc351a\""
+        },
+        {
+          "PartNumber": 56,
+          "ETag": "\"a8e0586fdf500201d97cf05d111a3e5d\""
+        },
+        {
+          "PartNumber": 57,
+          "ETag": "\"c9de12cd9816f19e41953b79abc6074c\""
+        },
+        {
+          "PartNumber": 58,
+          "ETag": "\"8f01fb0255e657eb87807ee4bf013fb7\""
+        },
+        {
+          "PartNumber": 59,
+          "ETag": "\"239d92efb8e576ca6893ad273b1f7b04\""
+        },
+        {
+          "PartNumber": 60,
+          "ETag": "\"6f2ad1e6580adc6f9d72254c84bd2db9\""
+        },
+        {
+          "PartNumber": 61,
+          "ETag": "\"52af8538f5094166d3b3f8d66537e4a3\""
+        },
+        {
+          "PartNumber": 62,
+          "ETag": "\"be3176d2e7276a80893dadc4a9b8a678\""
+        },
+        {
+          "PartNumber": 63,
+          "ETag": "\"8e0cc1bd1219c3df1ea0236090a6a0f6\""
+        },
+        {
+          "PartNumber": 64,
+          "ETag": "\"97ca43cf16d6a53e19810a5a48687d59\""
+        },
+        {
+          "PartNumber": 65,
+          "ETag": "\"eb4680cdf4df97765b2306efe4641097\""
+        },
+        {
+          "PartNumber": 66,
+          "ETag": "\"133cd9e132a5bae4e9b2504697d9d2c6\""
+        },
+        {
+          "PartNumber": 67,
+          "ETag": "\"056f6fa8c3803b83e9150881502a7a48\""
+        },
+        {
+          "PartNumber": 68,
+          "ETag": "\"7090612cb9693c9f4fe8ca3b248a09c6\""
+        },
+        {
+          "PartNumber": 69,
+          "ETag": "\"e1a0499468e11b1982e5ecda4ab85067\""
+        },
+        {
+          "PartNumber": 70,
+          "ETag": "\"c8af5fe42bd70b49187d00ea851921e2\""
+        },
+        {
+          "PartNumber": 71,
+          "ETag": "\"cf48aec85a67fbf83ec3e8b890d52e68\""
+        },
+        {
+          "PartNumber": 72,
+          "ETag": "\"3b54d8ba462491fa4fc48ae2c4690c68\""
+        },
+        {
+          "PartNumber": 73,
+          "ETag": "\"4aa75eae2c611d1d84181e7c5a27ab1f\""
+        },
+        {
+          "PartNumber": 74,
+          "ETag": "\"3209b151258e005a94cc219e65a26959\""
+        },
+        {
+          "PartNumber": 75,
+          "ETag": "\"b17997bb3ddcdd67106b4a89d90ac114\""
+        },
+        {
+          "PartNumber": 76,
+          "ETag": "\"459d10e5cde580a9f849a07f4afe0e8d\""
+        },
+        {
+          "PartNumber": 77,
+          "ETag": "\"92e873f92b6bd3d0b4bec62044fc2c78\""
+        },
+        {
+          "PartNumber": 78,
+          "ETag": "\"a11ccc895d30307d6183eb29650db6ee\""
+        },
+        {
+          "PartNumber": 79,
+          "ETag": "\"a69e4cf6d43501afa35da2c56d817ac3\""
+        },
+        {
+          "PartNumber": 80,
+          "ETag": "\"3166f3901762f895addf41e44ae20bbc\""
+        },
+        {
+          "PartNumber": 81,
+          "ETag": "\"a00af322011f03eb67e1fe9f379957c7\""
+        },
+        {
+          "PartNumber": 82,
+          "ETag": "\"65008da7c2356b5c9726fa358b6dc1da\""
+        },
+        {
+          "PartNumber": 83,
+          "ETag": "\"d4b7dd4ca465d634ad4fe28b514712c4\""
+        },
+        {
+          "PartNumber": 84,
+          "ETag": "\"7325cc795843c45b1686a256eff361cd\""
+        },
+        {
+          "PartNumber": 85,
+          "ETag": "\"286d24dad089fee0c211862352ce5573\""
+        },
+        {
+          "PartNumber": 86,
+          "ETag": "\"513044dc4d118966a6498252894f7969\""
+        },
+        {
+          "PartNumber": 87,
+          "ETag": "\"4740d9fdfb0e6717b68d011bcba5c7a2\""
+        },
+        {
+          "PartNumber": 88,
+          "ETag": "\"556b004c8275d4009f5ac119c71adac0\""
+        },
+        {
+          "PartNumber": 89,
+          "ETag": "\"f83cb244a9544152eb674081efdb4767\""
+        },
+        {
+          "PartNumber": 90,
+          "ETag": "\"483d6f8e79491a341ea594457a47da6f\""
+        },
+        {
+          "PartNumber": 91,
+          "ETag": "\"621765af55fc294d902cd9bddd99a82f\""
+        },
+        {
+          "PartNumber": 92,
+          "ETag": "\"1c883e8b7c0f70a38c2a26726bdbfa4a\""
+        },
+        {
+          "PartNumber": 93,
+          "ETag": "\"8a2cbdcda75cded5d677b9b2d0bd42c3\""
+        },
+        {
+          "PartNumber": 94,
+          "ETag": "\"5ba28916429fbd2aa9692ae374dd07da\""
+        },
+        {
+          "PartNumber": 95,
+          "ETag": "\"c8321178849e357cf5e528a1e7dca234\""
+        },
+        {
+          "PartNumber": 96,
+          "ETag": "\"4b22bf12352a14a6140cf014eb617277\""
+        },
+        {
+          "PartNumber": 97,
+          "ETag": "\"6edba2ee50fed845648568760a60ff56\""
+        },
+        {
+          "PartNumber": 98,
+          "ETag": "\"fdd397ca693c6798e11f276639f4e8ce\""
+        },
+        {
+          "PartNumber": 99,
+          "ETag": "\"2160b874a6aecfbc02fbf540e1dc472a\""
+        },
+        {
+          "PartNumber": 100,
+          "ETag": "\"7b0eb22c137e4383f10396b712e8ddd2\""
+        },
+        {
+          "PartNumber": 101,
+          "ETag": "\"ab59b851e21a76dc96aa68c2e04a676f\""
+        },
+        {
+          "PartNumber": 102,
+          "ETag": "\"5bce670936104389de9e6b9d77832164\""
+        },
+        {
+          "PartNumber": 103,
+          "ETag": "\"0a44d093bb1e3fff4b68a79d8fd5dc2e\""
+        },
+        {
+          "PartNumber": 104,
+          "ETag": "\"616db17903512f93eaacb250e6d6c9ab\""
+        },
+        {
+          "PartNumber": 105,
+          "ETag": "\"51c9c1879c2217529ebc65c1f9847986\""
+        },
+        {
+          "PartNumber": 106,
+          "ETag": "\"c6c582a64de9e89816648514b1c7e1d4\""
+        },
+        {
+          "PartNumber": 107,
+          "ETag": "\"01c265d22c2ece14162e6a8cea70bf47\""
+        },
+        {
+          "PartNumber": 108,
+          "ETag": "\"cb31b045d00b35afa1bd7b289c49d0b7\""
+        },
+        {
+          "PartNumber": 109,
+          "ETag": "\"71e66833ef4a5f789e9c050e2f61ff2b\""
+        },
+        {
+          "PartNumber": 110,
+          "ETag": "\"81b0ff0238c451b9994adfda625d39e7\""
+        },
+        {
+          "PartNumber": 111,
+          "ETag": "\"2a21dba8d367a4a9a64e2487d56ca96a\""
+        },
+        {
+          "PartNumber": 112,
+          "ETag": "\"724d4ff54be70e34cea901e54b3f9119\""
+        },
+        {
+          "PartNumber": 113,
+          "ETag": "\"4ef98b5c5557e0c4948fe3add47d06e5\""
+        },
+        {
+          "PartNumber": 114,
+          "ETag": "\"eaaf044372ae087350cdb03a4c239d24\""
+        },
+        {
+          "PartNumber": 115,
+          "ETag": "\"eee8d4667fc05b61f29e50e710781cfe\""
+        },
+        {
+          "PartNumber": 116,
+          "ETag": "\"9589fc688e9ea6800b1f65732d98aa89\""
+        },
+        {
+          "PartNumber": 117,
+          "ETag": "\"076b17ae5fb1d16dc1dbac10aaa8ebe0\""
+        },
+        {
+          "PartNumber": 118,
+          "ETag": "\"13e3e292c7f73a6eda76704e580d8497\""
+        },
+        {
+          "PartNumber": 119,
+          "ETag": "\"fd5463f2852b02c9b1e7e0ab9227798c\""
+        },
+        {
+          "PartNumber": 120,
+          "ETag": "\"88368c28b014f25dbc6e0461ce8fd98f\""
+        },
+        {
+          "PartNumber": 121,
+          "ETag": "\"94f5113514d44d271a9446cf015ad194\""
+        },
+        {
+          "PartNumber": 122,
+          "ETag": "\"d269d74b0c90a732e1795c471c31c27c\""
+        },
+        {
+          "PartNumber": 123,
+          "ETag": "\"8625b87e168084277a7e13732896e62d\""
+        },
+        {
+          "PartNumber": 124,
+          "ETag": "\"d69a7d1b69490fd95ddab20937e305f2\""
+        },
+        {
+          "PartNumber": 125,
+          "ETag": "\"f8a07df0dfb6dc3ec157aade5c93fe2e\""
+        },
+        {
+          "PartNumber": 126,
+          "ETag": "\"d2030a787897543c45cc55709a37c534\""
+        },
+        {
+          "PartNumber": 127,
+          "ETag": "\"39dd6938863a189c178daddd600844d2\""
+        },
+        {
+          "PartNumber": 128,
+          "ETag": "\"1991b0feba91fe7d78093a7aeb5d7798\""
+        },
+        {
+          "PartNumber": 129,
+          "ETag": "\"99512541f1a1f46e5aced018b9eb7a6b\""
+        },
+        {
+          "PartNumber": 130,
+          "ETag": "\"3f39cef9e4c7896b4733387b86b01b0b\""
+        },
+        {
+          "PartNumber": 131,
+          "ETag": "\"3fd53ef92ca23b441e8d5e36c5df68ae\""
+        },
+        {
+          "PartNumber": 132,
+          "ETag": "\"d2676d30630b839dc9c21dbbfdbc682a\""
+        },
+        {
+          "PartNumber": 133,
+          "ETag": "\"779109b1e68abab7f5c792f53c364956\""
+        },
+        {
+          "PartNumber": 134,
+          "ETag": "\"e6464153f36c7d685895e63213dfdf67\""
+        },
+        {
+          "PartNumber": 135,
+          "ETag": "\"ce285dde166d949c1cbd4d8e9a382cfb\""
+        },
+        {
+          "PartNumber": 136,
+          "ETag": "\"11b29217604ed5d82cf07e3c28c2a005\""
+        },
+        {
+          "PartNumber": 137,
+          "ETag": "\"64dc9b69296ac3803be6fd071a8ecd3c\""
+        },
+        {
+          "PartNumber": 138,
+          "ETag": "\"670a7eaf5fd46d107d551e00f46ed7d4\""
+        },
+        {
+          "PartNumber": 139,
+          "ETag": "\"795d230629b88f02e8257b2da763392e\""
+        },
+        {
+          "PartNumber": 140,
+          "ETag": "\"56e681d5296ded462bf970ba7d5d42d3\""
+        },
+        {
+          "PartNumber": 141,
+          "ETag": "\"688c45f66cccf0cb5f31b8a9b5b8484f\""
+        },
+        {
+          "PartNumber": 142,
+          "ETag": "\"2ae9e817c2e18ef8a06d5fb6605d27ea\""
+        },
+        {
+          "PartNumber": 143,
+          "ETag": "\"7004368c709527db22418a0f075d7475\""
+        },
+        {
+          "PartNumber": 144,
+          "ETag": "\"e221734b1cac221257ddf833f423d9de\""
+        },
+        {
+          "PartNumber": 145,
+          "ETag": "\"3ab5adc8123ab0b0ecdb35b6b963ae4c\""
+        },
+        {
+          "PartNumber": 146,
+          "ETag": "\"627ab8be5d8f7ae1ea9f770ce1527272\""
+        },
+        {
+          "PartNumber": 147,
+          "ETag": "\"d9932fec7327a0164c5f9e63ffc57b11\""
+        },
+        {
+          "PartNumber": 148,
+          "ETag": "\"5039ea9a6e288cf2090531c3f1141c43\""
+        },
+        {
+          "PartNumber": 149,
+          "ETag": "\"c7dbc3d18a852a55337938ab6e348c6b\""
+        },
+        {
+          "PartNumber": 150,
+          "ETag": "\"adadcea3e3652270c5c7331b3bd9d088\""
+        },
+        {
+          "PartNumber": 151,
+          "ETag": "\"dadf71c5212cb7937ea1ed2c7cd91a63\""
+        },
+        {
+          "PartNumber": 152,
+          "ETag": "\"198c032ce7411c5afe76e33a99942502\""
+        },
+        {
+          "PartNumber": 153,
+          "ETag": "\"41247656d2ba19bbaa8fe312376c512b\""
+        },
+        {
+          "PartNumber": 154,
+          "ETag": "\"0a69c7be0be4121e2e53ab79ac1accb1\""
+        },
+        {
+          "PartNumber": 155,
+          "ETag": "\"5992219810113c7d07ae9fbf5a151068\""
+        },
+        {
+          "PartNumber": 156,
+          "ETag": "\"4be6327ccbd741148ce4af3527fe9dd6\""
+        },
+        {
+          "PartNumber": 157,
+          "ETag": "\"bdd616a8f9ce8ae49e5a980b514f9d74\""
+        },
+        {
+          "PartNumber": 158,
+          "ETag": "\"b1e8c6e3af17cae0b35c4ab48f143366\""
+        },
+        {
+          "PartNumber": 159,
+          "ETag": "\"3c2eb28c480f047ed66019c3e292d36c\""
+        },
+        {
+          "PartNumber": 160,
+          "ETag": "\"06414a1ddfc70726b40aa2a0d038c0dd\""
+        },
+        {
+          "PartNumber": 161,
+          "ETag": "\"ee7ea281907ca57594e6d1ea98ccea7e\""
+        },
+        {
+          "PartNumber": 162,
+          "ETag": "\"30e6e8edd4cd5eb7b82c8b57c5280d2c\""
+        },
+        {
+          "PartNumber": 163,
+          "ETag": "\"a17e4c558318d753b441f6adbf72d105\""
+        },
+        {
+          "PartNumber": 164,
+          "ETag": "\"5db8234440802ccd2f30562d595564c9\""
+        },
+        {
+          "PartNumber": 165,
+          "ETag": "\"400197638271b33478a327346c16d3ec\""
+        },
+        {
+          "PartNumber": 166,
+          "ETag": "\"23035c8726374516bfcf96106ba1a10f\""
+        },
+        {
+          "PartNumber": 167,
+          "ETag": "\"83df2439263cb69c6c637644d3ca9dd6\""
+        },
+        {
+          "PartNumber": 168,
+          "ETag": "\"39463af7d66aa39c15526a3ed8362c9e\""
+        },
+        {
+          "PartNumber": 169,
+          "ETag": "\"f1aaba5417e4b159476c2f6ebc9526b6\""
+        },
+        {
+          "PartNumber": 170,
+          "ETag": "\"1f1ee216af6bcf6985b040ef4097221b\""
+        },
+        {
+          "PartNumber": 171,
+          "ETag": "\"6ca09305d03ce2f027ce81e94e022823\""
+        },
+        {
+          "PartNumber": 172,
+          "ETag": "\"49667792da35568f83fa959ef1d40977\""
+        },
+        {
+          "PartNumber": 173,
+          "ETag": "\"0c4d19243f2ff32d03516bf220640be7\""
+        },
+        {
+          "PartNumber": 174,
+          "ETag": "\"ea99d5555e08a92ac92bb5d3078ee24d\""
+        },
+        {
+          "PartNumber": 175,
+          "ETag": "\"9ca5de3459a9affbbbfed1445cd284d2\""
+        }
+      ]
+    },
+    "reader/heads.pt": {
+      "upload_id": "0ee2baf1-fb05-4b4b-bf88-9698cb7b2e6b",
+      "parts": [
+        {
+          "PartNumber": 1,
+          "ETag": "\"1e9f3f898cb191d9988b85880bed8d77\""
+        },
+        {
+          "PartNumber": 2,
+          "ETag": "\"c80b9e814105329523d037a2ac98fad0\""
+        },
+        {
+          "PartNumber": 3,
+          "ETag": "\"fddcf9f32a0ddecaba14bc8f1cceaa4e\""
+        }
+      ]
+    },
+    "targets.parquet": {
+      "upload_id": "a98b85d6-de17-4f92-b60f-fb73b289ae1c",
+      "parts": [
+        {
+          "PartNumber": 1,
+          "ETag": "\"05de70d46fc757264809bf0049ff07f9\""
+        },
+        {
+          "PartNumber": 2,
+          "ETag": "\"be1e2c30c76a41f49261ecbf0cc27ab7\""
+        }
+      ]
+    },
+    "head/lm_head.safetensors": {
+      "upload_id": "e7e3d923-f2bc-4e7d-9ad0-ba703907f903",
+      "parts": [
+        {
+          "PartNumber": 1,
+          "ETag": "\"4e6caa454cd9cde01a66f8a273658a6b\""
+        }
+      ]
+    },
+    "reader/tokenizer.json": {
+      "upload_id": "4add9e79-76dd-4912-a027-913ec5ab0cd6",
+      "parts": [
+        {
+          "PartNumber": 1,
+          "ETag": "\"ee6473616040768e03d98f94d8e11ee4\""
+        }
+      ]
+    },
+    "head/tokenizer.json": {
+      "upload_id": "95635931-d731-46a4-b3bc-d2cba94f44a1",
+      "parts": [
+        {
+          "PartNumber": 1,
+          "ETag": "\"c4b3a16978e30eb150cca4fd8934b6ae\""
+        }
+      ]
+    },
+    "reader/manifest.json": {
+      "upload_id": "3b1af3e5-9a97-48ea-ae21-7387eb48f75c",
+      "parts": [
+        {
+          "PartNumber": 1,
+          "ETag": "\"b080912cd09b0316a2fce6d6734b3677\""
+        }
+      ]
+    },
+    "reader/proofreader.json": {
+      "upload_id": "98ed1b79-07c3-47c6-836f-f6808bac0701",
+      "parts": [
+        {
+          "PartNumber": 1,
+          "ETag": "\"0b536c2f881e923830fd6756e64dea4e\""
+        }
+      ]
+    },
+    "head/config.json": {
+      "upload_id": "fbd022c6-39fd-40e6-9f6a-731464ed6753",
+      "parts": [
+        {
+          "PartNumber": 1,
+          "ETag": "\"8856f16af240dd18d2ae6931ac93f079\""
+        }
+      ]
+    },
+    "reader/config.json": {
+      "upload_id": "30dbb79b-7199-46ca-9bcf-d1d61fe053ca",
+      "parts": [
+        {
+          "PartNumber": 1,
+          "ETag": "\"0508bf5a93c277376efe511918b5e016\""
+        }
+      ]
+    },
+    "head/provenance.json": {
+      "upload_id": "7c43726e-fab8-4929-ad91-1e7ab308ddda",
+      "parts": [
+        {
+          "PartNumber": 1,
+          "ETag": "\"f1899b5c037d3c473a7d03b491ad822e\""
+        }
+      ]
+    },
+    "reader/tokenizer_config.json": {
+      "upload_id": "14c78ac9-eb64-444b-b19c-c743b8d576c5",
+      "parts": [
+        {
+          "PartNumber": 1,
+          "ETag": "\"e1f76dc008d2881e126886f1c309f268\""
+        }
+      ]
+    },
+    "head/tokenizer_config.json": {
+      "upload_id": "6e03745f-6d15-4d46-bf1a-ccd1894fad1b",
+      "parts": [
+        {
+          "PartNumber": 1,
+          "ETag": "\"5acd13b50d727187034880bd78bcb928\""
+        }
+      ]
+    }
+  },
+  "created_at": "2026-10-21T16:10:01.834883+00:00",
+  "destination": "s3://marinfold-exp368-rno2a/MarinFold/exp368/inputs-v1",
+  "complete_at": "2026-10-21T16:11:10.570242+00:00"
+}

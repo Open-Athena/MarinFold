@@ -1,0 +1,6 @@
+{
+  "error": "InvalidRegion on first UploadPartCopy",
+  "accepted_parts": 0,
+  "cleanup": "Aborted task-owned empty multipart upload",
+  "next_step": "Bounded streaming mirror on regional CPU worker; durable per-part reservation cap 7 GB"
+}

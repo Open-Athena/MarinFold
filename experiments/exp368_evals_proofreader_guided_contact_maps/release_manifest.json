@@ -1,0 +1,57 @@
+{
+  "source_checkpoint": "s3://marin-us-east-02a/MarinFold/exp356/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18000",
+  "files": {
+    "README.md": {
+      "size": 6548,
+      "sha256": "54caecfbcd96187e4af6ae8fb5e71fc55bb24dec4ffa1ea1f4719b6d8c989467"
+    },
+    "config.json": {
+      "size": 1447,
+      "sha256": "dd81adeeb089aaaefea2a242bff777705aee71ca3319960c8b2d9e5c74d68ca6"
+    },
+    "heads.pt": {
+      "size": 88743900,
+      "sha256": "35e0a53dc29e713e9ecc835b8f9f7b822bcf49f98492109dc63ec750fa2caf53"
+    },
+    "infer.py": {
+      "size": 6850,
+      "sha256": "b0b68b98031884f3d16709b1a00c01deb6a0f48c731746103bf58b01427bdf77"
+    },
+    "model.py": {
+      "size": 10321,
+      "sha256": "f13d987f379955497a9a5d8667942549eb6d87df58c0a25879decfbfa5e25382"
+    },
+    "model.safetensors": {
+      "size": 5862227888,
+      "sha256": "7e9858031dfcc17f72215a4aba3cfcb18731f41a49730d30d9fec9f595337342"
+    },
+    "proofreader.json": {
+      "size": 4820,
+      "sha256": "6cafab15034febb3bd63cea3a410e93ef6a9376884a5529cfdec6b197a6a7cce"
+    },
+    "pyproject.toml": {
+      "size": 551,
+      "sha256": "038e9b5e97784a20c55692cef32b06bcff1b110750f7db560db5d9f9f98d5088"
+    },
+    "records.py": {
+      "size": 6100,
+      "sha256": "c5c4ca668e24c0bce9ec8a5daba967e80fa9c4140ff3790cc8d4ff7d8954b767"
+    },
+    "storage.py": {
+      "size": 4756,
+      "sha256": "37f4ec95ade1f8eee9f685dddafd692e4d8d8357112a0492b8f67345abdb4d21"
+    },
+    "tokenizer.json": {
+      "size": 64590,
+      "sha256": "12c2315686bab2c01048295f017b46de41a194cb40ee37a8cd66b75df2abaae6"
+    },
+    "tokenizer_config.json": {
+      "size": 337,
+      "sha256": "be97e152d80e27dbd7fc90b7cabdc85c0fff509ef943d200f9593c3e0eae8b2d"
+    },
+    "uv.lock": {
+      "size": 147424,
+      "sha256": "ca2922d87661e2afb21c5dd74d8329074fb3b07fc396e4ea7fa6ce46b6490499"
+    }
+  }
+}

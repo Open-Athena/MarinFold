@@ -1,0 +1,46 @@
+{
+  "observed_at": "2026-10-21T18:22:57.321201+00:00",
+  "job_id": "/bizon/exp368-guided-east-v3-002",
+  "task_state": "TASK_STATE_BUILDING",
+  "attempts": [
+    {
+      "attempt_id": 0,
+      "worker_id": "",
+      "state": "TASK_STATE_WORKER_FAILED",
+      "exit_code": 0,
+      "error": "PodDeleted: pod was deleted while the attempt was active",
+      "started_at": {
+        "epoch_ms": "1792605815316"
+      },
+      "finished_at": {
+        "epoch_ms": "1792606537743"
+      },
+      "is_worker_failure": true,
+      "attempt_uid": "f75ee3655aec49b1",
+      "pod_name": "iris-bizon-exp368-guided-east-v3-00-238cd771-0-f75ee3655aec49b1",
+      "pod_uid": "d4a4783c-e6f7-48c8-8776-faf03293e599",
+      "node_name": "g83bf4c",
+      "terminal_reason": "PodDeleted: pod was deleted while the attempt was active"
+    },
+    {
+      "attempt_id": 1,
+      "worker_id": "",
+      "state": "TASK_STATE_BUILDING",
+      "exit_code": 0,
+      "error": "",
+      "is_worker_failure": false,
+      "attempt_uid": "1347420fa8644214",
+      "pod_name": "iris-bizon-exp368-guided-east-v3-00-238cd771-1-1347420fa8644214",
+      "pod_uid": "1ab3f51d-aff4-46af-bd4d-eb83c34623a0",
+      "node_name": "",
+      "terminal_reason": ""
+    }
+  ],
+  "kubernetes_events": [
+    {
+      "reason": "Stopped",
+      "message": "Preempted to accommodate a workload (UID: 0ceeab91-a2a8-4707-ab79-107c50ace2d2, JobUID: UNKNOWN) due to prioritization in the ClusterQueue; preemptor path: /iris-cq; preemptee path: /iris-cq"
+    }
+  ],
+  "recovery": "Iris created replacement attempt 1 automatically; waiting for Kueue batch admission. Completed trajectories remain in the same durable regional output prefix. No cluster settings or job priority changed."
+}

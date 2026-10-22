@@ -1,0 +1,14 @@
+{
+  "observed_at": "2026-10-22T15:19:36.665015+00:00",
+  "owned_iris_jobs": 131,
+  "iris_state_counts": {
+    "JOB_STATE_SUCCEEDED": 51,
+    "JOB_STATE_FAILED": 15,
+    "JOB_STATE_KILLED": 65
+  },
+  "active_iris_jobs": [],
+  "owned_native_jobs_and_pods_remaining": 0,
+  "native_secret_and_configmap_cleanup_manifest": "data/native_cleanup.json",
+  "final_test_manifest": "data/reserved_test_complete.json",
+  "monitoring_finished": true
+}
