@@ -49,7 +49,7 @@ def main() -> None:
     wide = [curves[WIDE][step] for step in steps]
     deltas = [w - b for w, b in zip(wide, baseline, strict=True)]
     with (HERE / "data/matched_width_comparison.csv").open("w") as handle:
-        writer = csv.writer(handle)
+        writer = csv.writer(handle, lineterminator="\n")
         writer.writerow([
             "global_step", "exp277_validation_loss", "exp363_validation_loss",
             "wide_minus_default_nats", "perplexity_increase_percent",
