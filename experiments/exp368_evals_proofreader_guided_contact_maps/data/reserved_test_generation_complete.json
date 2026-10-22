@@ -1,0 +1,243 @@
+{
+  "verified_at": "2026-10-22T15:09:53.145707+00:00",
+  "proteins": 1473,
+  "rollouts_per_protein": 128,
+  "rollouts": 188544,
+  "shards": 8,
+  "all_jobs_succeeded": true,
+  "test_quality_metrics_read": false,
+  "jobs": [
+    {
+      "job_id": "/bizon/exp368-test-pool-gb200-v1-007",
+      "state": "JOB_STATE_SUCCEEDED",
+      "exit_code": 0,
+      "error": "",
+      "started_at": {
+        "epoch_ms": "1792680786814"
+      },
+      "finished_at": {
+        "epoch_ms": "1792681696027"
+      },
+      "failure_count": 0,
+      "preemption_count": 0,
+      "name": "/bizon/exp368-test-pool-gb200-v1-007",
+      "submitted_at": {
+        "epoch_ms": "1792680774737"
+      },
+      "task_state_counts": {
+        "succeeded": 1
+      },
+      "task_count": 1,
+      "completed_count": 1,
+      "pending_reason": "",
+      "has_children": false,
+      "parent_job_id": "",
+      "backend_id": "",
+      "cluster": "cw-us-east-08a",
+      "peer_status": "PEER_STATUS_SYNCED"
+    },
+    {
+      "job_id": "/bizon/exp368-test-pool-gb200-v1-006",
+      "state": "JOB_STATE_SUCCEEDED",
+      "exit_code": 0,
+      "error": "",
+      "started_at": {
+        "epoch_ms": "1792680786814"
+      },
+      "finished_at": {
+        "epoch_ms": "1792681684365"
+      },
+      "failure_count": 0,
+      "preemption_count": 0,
+      "name": "/bizon/exp368-test-pool-gb200-v1-006",
+      "submitted_at": {
+        "epoch_ms": "1792680767649"
+      },
+      "task_state_counts": {
+        "succeeded": 1
+      },
+      "task_count": 1,
+      "completed_count": 1,
+      "pending_reason": "",
+      "has_children": false,
+      "parent_job_id": "",
+      "backend_id": "",
+      "cluster": "cw-us-east-08a",
+      "peer_status": "PEER_STATUS_SYNCED"
+    },
+    {
+      "job_id": "/bizon/exp368-test-pool-gb200-v1-005",
+      "state": "JOB_STATE_SUCCEEDED",
+      "exit_code": 0,
+      "error": "",
+      "started_at": {
+        "epoch_ms": "1792680763775"
+      },
+      "finished_at": {
+        "epoch_ms": "1792681678465"
+      },
+      "failure_count": 0,
+      "preemption_count": 0,
+      "name": "/bizon/exp368-test-pool-gb200-v1-005",
+      "submitted_at": {
+        "epoch_ms": "1792680755483"
+      },
+      "task_state_counts": {
+        "succeeded": 1
+      },
+      "task_count": 1,
+      "completed_count": 1,
+      "pending_reason": "",
+      "has_children": false,
+      "parent_job_id": "",
+      "backend_id": "",
+      "cluster": "cw-us-east-08a",
+      "peer_status": "PEER_STATUS_SYNCED"
+    },
+    {
+      "job_id": "/bizon/exp368-test-pool-gb200-v1-004",
+      "state": "JOB_STATE_SUCCEEDED",
+      "exit_code": 0,
+      "error": "",
+      "started_at": {
+        "epoch_ms": "1792680763775"
+      },
+      "finished_at": {
+        "epoch_ms": "1792681654814"
+      },
+      "failure_count": 0,
+      "preemption_count": 0,
+      "name": "/bizon/exp368-test-pool-gb200-v1-004",
+      "submitted_at": {
+        "epoch_ms": "1792680748495"
+      },
+      "task_state_counts": {
+        "succeeded": 1
+      },
+      "task_count": 1,
+      "completed_count": 1,
+      "pending_reason": "",
+      "has_children": false,
+      "parent_job_id": "",
+      "backend_id": "",
+      "cluster": "cw-us-east-08a",
+      "peer_status": "PEER_STATUS_SYNCED"
+    },
+    {
+      "job_id": "/bizon/exp368-test-pool-gb200-v1-003",
+      "state": "JOB_STATE_SUCCEEDED",
+      "exit_code": 0,
+      "error": "",
+      "started_at": {
+        "epoch_ms": "1792680752496"
+      },
+      "finished_at": {
+        "epoch_ms": "1792681576944"
+      },
+      "failure_count": 0,
+      "preemption_count": 0,
+      "name": "/bizon/exp368-test-pool-gb200-v1-003",
+      "submitted_at": {
+        "epoch_ms": "1792680741583"
+      },
+      "task_state_counts": {
+        "succeeded": 1
+      },
+      "task_count": 1,
+      "completed_count": 1,
+      "pending_reason": "",
+      "has_children": false,
+      "parent_job_id": "",
+      "backend_id": "",
+      "cluster": "cw-us-east-08a",
+      "peer_status": "PEER_STATUS_SYNCED"
+    },
+    {
+      "job_id": "/bizon/exp368-test-pool-gb200-v1-002",
+      "state": "JOB_STATE_SUCCEEDED",
+      "exit_code": 0,
+      "error": "",
+      "started_at": {
+        "epoch_ms": "1792680752496"
+      },
+      "finished_at": {
+        "epoch_ms": "1792681587577"
+      },
+      "failure_count": 0,
+      "preemption_count": 0,
+      "name": "/bizon/exp368-test-pool-gb200-v1-002",
+      "submitted_at": {
+        "epoch_ms": "1792680734763"
+      },
+      "task_state_counts": {
+        "succeeded": 1
+      },
+      "task_count": 1,
+      "completed_count": 1,
+      "pending_reason": "",
+      "has_children": false,
+      "parent_job_id": "",
+      "backend_id": "",
+      "cluster": "cw-us-east-08a",
+      "peer_status": "PEER_STATUS_SYNCED"
+    },
+    {
+      "job_id": "/bizon/exp368-test-pool-gb200-v1-001",
+      "state": "JOB_STATE_SUCCEEDED",
+      "exit_code": 0,
+      "error": "",
+      "started_at": {
+        "epoch_ms": "1792680741439"
+      },
+      "finished_at": {
+        "epoch_ms": "1792681576944"
+      },
+      "failure_count": 0,
+      "preemption_count": 0,
+      "name": "/bizon/exp368-test-pool-gb200-v1-001",
+      "submitted_at": {
+        "epoch_ms": "1792680722497"
+      },
+      "task_state_counts": {
+        "succeeded": 1
+      },
+      "task_count": 1,
+      "completed_count": 1,
+      "pending_reason": "",
+      "has_children": false,
+      "parent_job_id": "",
+      "backend_id": "",
+      "cluster": "cw-us-east-08a",
+      "peer_status": "PEER_STATUS_SYNCED"
+    },
+    {
+      "job_id": "/bizon/exp368-test-pool-gb200-v1-000",
+      "state": "JOB_STATE_SUCCEEDED",
+      "exit_code": 0,
+      "error": "",
+      "started_at": {
+        "epoch_ms": "1792680718639"
+      },
+      "finished_at": {
+        "epoch_ms": "1792681571809"
+      },
+      "failure_count": 0,
+      "preemption_count": 0,
+      "name": "/bizon/exp368-test-pool-gb200-v1-000",
+      "submitted_at": {
+        "epoch_ms": "1792680710342"
+      },
+      "task_state_counts": {
+        "succeeded": 1
+      },
+      "task_count": 1,
+      "completed_count": 1,
+      "pending_reason": "",
+      "has_children": false,
+      "parent_job_id": "",
+      "backend_id": "",
+      "cluster": "cw-us-east-08a",
+      "peer_status": "PEER_STATUS_SYNCED"
+    }
+  ]
+}

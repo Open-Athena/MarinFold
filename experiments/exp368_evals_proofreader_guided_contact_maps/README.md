@@ -10,6 +10,20 @@ marinfold_experiment:
 
 **Issue:** [#368](https://github.com/Open-Athena/MarinFold/issues/368) · **Kind:** `evals` · **Branch:** `codex/exp368-proofreader-guidance`
 
+**Completed 2026-10-22.** The useful inference change is to generate ordinary
+rollout pools and weight their contact votes by squared predicted rollout F1.
+On the frozen 1,473-structure reserved comparison, this raises R-precision from
+0.54501 to 0.55021: +0.00520 (95% paired group interval 0.00299–0.00767),
+at 1.513 times the warm GPU cost. The original 15 guided policies and the
+subsequent threshold mixtures do not improve the measured ordinary-pool
+accuracy/cost frontier. All experiment jobs are terminal.
+
+Read the [summary PDF](plots/summary.pdf), the
+[reserved comparison](#completed-reserved-comparison), or the
+[threshold-mixture results](#mixtures-of-thresholds-across-rollouts).
+Figures, tables, scripts and immutable execution source bundles are also in the
+[public artifact directory](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp368/reports).
+
 ## Question
 
 Can the released exp356 proofreader improve complete MarinFold contact maps by guiding candidate selection, lookahead, population search, repair, or aggregation at inference time?
@@ -197,6 +211,57 @@ all candidate diagnostics are in `data/pilot_guided_candidates/`. After this com
 configuration on the existing larger-validation pools; its promotion rule was
 committed before those new metrics were computed. The resulting frozen reserved
 comparison is documented below.
+
+### Mixtures of thresholds across rollouts
+
+At the user's request, `pilot_mixtures.json` was committed at `576c86cb`
+before a validation-only reuse analysis of the completed guided trajectories.
+Two mixtures combine top-10%, top-25% and top-50% selection, either alone or
+with ordinary constrained sampling. Top-20% was not separately generated;
+with 16 proposals, both the nominal 20% and 25% gates retain four slots under
+the ceiling rule. This tests
+different fixed thresholds across rollouts; it does not test changing the
+threshold within a rollout. The separately frozen reserved comparison is unchanged.
+
+For a fixed budget of four rollouts, each sample identity appears once. All
+three or four cyclic assignments of policies to sample identities are evaluated,
+then their metrics and costs are averaged within each protein. No favorable
+assignment is selected, and reused rotations do not count as independent
+proteins. Full-pool mixtures instead include four trajectories from every
+component, giving 12 or 16 rollouts. Frequency, sum q and squared-F1 votes were
+specified before this analysis. No additional GPU inference was needed.
+
+| Configuration | Rollouts | Aggregation | R-precision | Long-range | Coverage | Warm H100 seconds |
+| --- | ---: | --- | ---: | ---: | ---: | ---: |
+| Ordinary constrained control | 4 | Sum q | 0.56322 | 0.52742 | 0.70294 | 32.504 |
+| Top 50% | 4 | Sum q | 0.56507 | 0.52850 | 0.58970 | 63.542 |
+| 10/25/50% mixture | 4 | Sum q | 0.53920 | 0.50033 | 0.54825 | 52.352 |
+| Ordinary + 10/25/50% mixture | 4 | Sum q | 0.56158 | 0.53120 | 0.60379 | 47.390 |
+| 10/25/50% full pool | 12 | Sum q | 0.57042 | 0.53787 | 0.62196 | 157.057 |
+| Ordinary + 10/25/50% full pool | 16 | Sum q | 0.58153 | 0.55412 | 0.74542 | 189.561 |
+| Ordinary + 10/25/50% full pool | 16 | Squared F1 | 0.58393 | 0.55602 | 0.74542 | 189.561 |
+| Fast ordinary pool | 128 | Frequency | 0.60365 | 0.58938 | 0.95392 | 7.165 |
+
+The prespecified four-rollout 10/25/50% mixture loses 0.02587 R-precision
+against top-50% alone (95% paired group interval −0.03373 to −0.01777).
+Adding ordinary sampling gives a change of −0.00164 against the ordinary
+four-rollout control (−0.00998 to +0.00628), with a long-range change of
++0.00378 (−0.00415 to +0.01249), at 1.458 times its cost. These mixtures
+therefore do not establish a fixed-rollout-budget benefit.
+
+Pooling more trajectories improves coverage, but remains uncompetitive with
+the fast ordinary pool. Even the best all-contact mixture result among the
+three fixed aggregation rules, 16 rollouts with squared-F1 votes, loses
+0.01972 overall (−0.03135 to −0.00904) and 0.03336 long-range
+(−0.04744 to −0.01944) against ordinary frequency at 128, at 26.456 times
+the measured warm cost. This does not rule out other mixture weights or
+within-rollout schedules; neither was selected or tested here.
+
+![Threshold mixtures at fixed rollout budget and with larger pools](plots/pilot_mixtures.png)
+
+All assignment-level and protein-level metrics, paired comparisons, and
+assignment/coverage/cost integrity checks are in `data/pilot_mixtures/`.
+Uncertainty uses the same 32 pilot groups and is exploratory and unadjusted.
 
 ### Larger validation frequency baseline
 
@@ -395,8 +460,8 @@ frontier, with all-contact R-precision primary and long-range R-precision used
 to reject gains limited to local contacts. Extend these methods to the remaining
 validation groups before writing a fixed test plan. No reserved-test scores are
 read for tuning, panel selection or stopping decisions. The existing test set
-was previously used for the proofreader release, which is disclosed in the
-eventual report; generator pretraining decontamination is not established.
+was previously used for the proofreader release, as disclosed throughout this
+report; generator pretraining decontamination is not established.
 
 ### Exploratory fixed-length control
 
@@ -598,8 +663,58 @@ Its SHA256 is `35a563b7c067b8eaf98b63e140d79f8bb7be58d2023989b01a6cd2beaa31a9e8`
 The GB200 runtime matches the verified validation replication. Every protein
 must finish generation and full-forward proofreading before test metric analysis;
 no further test configurations or policy changes are allowed after those scores.
-The reserved set was previously used for the reader release. Execution is in
-progress; this report does not yet contain its new comparison results.
+The reserved set was previously used for the reader release. The new frozen
+comparison is now complete, with its results below.
+
+### Completed reserved comparison
+
+All 188,544 ordinary rollouts and their full-forward reader outputs completed
+before metrics were computed. The 1,473 structures belong to 295 related groups;
+1,465 structures in 292 groups have long-range native contacts. Both methods
+rank exactly the same sampled contact pool. The primary outcome is all-contact
+R-precision; other intervals are secondary and not multiplicity-adjusted.
+
+| Metric | Frequency | Squared F1 votes | Paired difference [95% interval] |
+| --- | ---: | ---: | --- |
+| R-precision (primary) | 0.54501 | 0.55021 | +0.00520 [0.00299, 0.00767] |
+| Long-range R-precision | 0.51188 | 0.51607 | +0.00419 [0.00199, 0.00657] |
+| Average precision | 0.56273 | 0.57373 | +0.01100 [0.00852, 0.01393] |
+| Long-range average precision | 0.53135 | 0.54156 | +0.01021 [0.00780, 0.01305] |
+| Precision at L | 0.51320 | 0.51785 | +0.00465 [0.00286, 0.00691] |
+| Precision at L/2 | 0.67841 | 0.68422 | +0.00581 [0.00293, 0.00921] |
+| Precision at L/5 | 0.79621 | 0.80449 | +0.00828 [0.00484, 0.01210] |
+| Candidate coverage | 0.94524 | 0.94524 | 0 |
+| Long-range candidate coverage | 0.92892 | 0.92892 | 0 |
+| Mean warm GB200 seconds | 3.620 | 5.477 | 1.513 times frequency cost |
+
+The selected rule therefore confirms a modest ranking gain on this reserved
+cohort: 0.520 percentage points in primary R-precision, with a 95% paired
+interval of 0.299–0.767 points. The gain does not come from additional
+candidates or knowledge of native contact counts during inference. Mean scoring
+overhead is 1.857 warm GB200 seconds per map, on top of ordinary generation.
+These resource times exclude loading, staging and CPU aggregation, and do not
+measure parallel serving latency.
+
+![Frozen reserved comparison of frequency and squared-F1 votes](plots/reserved_test.png)
+
+For this setup, the supported recipe is 128 ordinary rollouts, full-rollout
+proofreading, then contact votes weighted by the square of each rollout's
+predicted F1. Predicted precision is the mean reader correctness over unique
+parsed contacts, including invalid ones; predicted recall is the global head.
+Only eligible unique pairs contribute votes. Each rollout's F1 is its predicted
+precision/recall harmonic mean, floored at 1e-8 before squaring. The result is
+a contact ranking, not calibrated pair probabilities. The simpler frequency
+rule remains a reasonable choice when its lower cost is more valuable than
+the measured accuracy gain.
+
+The models, policy pair, seeds, cohort, primary outcome and stopping rule were
+frozen before new test generation; no additional test configurations were
+evaluated. This is confirmation on the previously reserved exp356 cohort, not
+an untouched external benchmark. The cohort was used for the reader release,
+and generator pretraining decontamination is not established. Per-protein
+metrics, the nine paired contrasts and all 2,946 contemporaneous stage timings
+are in `data/reserved_test/`; the complete-cohort identity and source checks
+are in `data/reserved_test_complete.json`.
 
 ### Larger ordinary pools on H100
 
@@ -669,19 +784,29 @@ without both label classes.
 
 ![Earlier contact judgments and new contacts after forced continuation](plots/prefix_revision.png)
 
-## Current scientific conclusion
+## Scientific conclusion
 
-The completed 32-protein pilot supports larger ordinary rollout pools: 128
-frequency-ranked rollouts improve both all-contact and long-range R-precision
-relative to eight proofreader-weighted rollouts. A separate 1,375-structure
-validation comparison confirms that increasing frequency-ranked pools from eight
-to 128 improves R-precision by 0.0463 (95% interval 0.0403–0.0526). Full
-proofreader validation confirms that sum q helps small pools; at 128 rollouts,
-weighting votes by predicted rollout F1 adds a smaller exploratory gain of
-0.00426 (0.00173–0.00763). On GB200, increasing ordinary pools to 2,048
-does not establish an accuracy gain over 128 despite 23.68 times the cost.
-The fixed-length comparison is complete and does not improve the measured
-accuracy/cost frontier. The original 15-policy guided comparison is complete and none of its methods
-improves the measured ordinary-pool frontier. A single bounded rollout-weight
-refinement selected squared F1 weights for the frozen reserved comparison, which
-is now being executed.
+The proofreader is most useful here for weighting ordinary rollout pools.
+Increasing ordinary pools from eight to 128 yields a substantial validation
+gain, while increasing further to 512 or 2,048 does not establish a better
+top-R map. At 128 rollouts, the selected squared-F1 vote rule confirms a smaller
+but positive reserved-cohort gain: +0.00520 overall and +0.00419 long-range
+R-precision, at 51.3% extra measured warm GPU time.
+
+The guided sampler identifies more accurate individual contacts but produces
+shorter, lower-coverage trajectories. Lookahead, population search, repair,
+forced longer generation, and the tested threshold mixtures fail to improve
+the measured ordinary-sampling quality/cost frontier. Forced continuation also
+exposes severe overconfidence and worsens earlier-contact judgments. These
+results support ordinary generation plus rollout-quality aggregation for the
+current frozen models; they do not prove that every future guidance method
+or within-rollout threshold schedule will fail.
+
+All planned and reported phases are complete. The successful warm-inference
+ledger totals 55.663 H100 GPU-hours and 5.769 GB200 GPU-hours, including 2.241
+GB200 GPU-hours for the reserved comparison. These are not billed totals:
+staging, loading, queueing, smoke checks and work lost to preemption are excluded.
+Mixture and weight-refinement analyses reuse existing outputs and are not
+counted again. The ledger and source timing hashes are in `data/compute_ledger.csv`
+and its provenance JSON. All owned Iris jobs are terminal; native Jobs, Pods,
+and bootstrap resources were cleaned up. No shared cluster configuration changed.

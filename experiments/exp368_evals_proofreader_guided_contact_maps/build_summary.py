@@ -250,7 +250,9 @@ def main() -> int:
     plot_entries = load_plots(PLOTS_DIR)
 
     PLOTS_DIR.mkdir(exist_ok=True)
-    with PdfPages(OUTPUT_PATH) as pdf:
+    # Publication rebuilds this file after commit; omit wall-clock metadata so
+    # unchanged report inputs retain the same artifact hash and clean provenance.
+    with PdfPages(OUTPUT_PATH, metadata={"CreationDate": None, "ModDate": None}) as pdf:
         for slide in narrative_slides:
             fig = render_text_slide(plt, slide)
             pdf.savefig(fig)

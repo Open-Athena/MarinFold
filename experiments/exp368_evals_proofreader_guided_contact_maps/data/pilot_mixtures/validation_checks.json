@@ -1,0 +1,12 @@
+{
+  "structures": 32,
+  "assignment_rows": 864,
+  "protein_configuration_rows": 384,
+  "all_rotations_balanced": true,
+  "no_sample_identity_repeated_within_assignment": true,
+  "full_pool_contains_every_component_sample": true,
+  "full_union_coverage_at_least_every_subset": true,
+  "full_cost_equals_sum_over_balanced_rotations": true,
+  "rotation_metrics_averaged_within_protein": true,
+  "reserved_test_data_used": false
+}

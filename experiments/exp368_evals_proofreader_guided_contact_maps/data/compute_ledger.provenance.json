@@ -53,6 +53,12 @@
       "timings": "experiments/exp368_evals_proofreader_guided_contact_maps/data/validation_pool_gb200/timings.csv",
       "sha256": "29566bf022f058a0561673a4054764d43951193d9fc528d9f581fd9c5a2a71f2",
       "retained": "all stage records"
+    },
+    {
+      "phase": "reserved_test_gb200",
+      "timings": "experiments/exp368_evals_proofreader_guided_contact_maps/data/reserved_test/timings.csv",
+      "sha256": "282cc6da71274eb005c176192a6eac9b9cdd5174397f470df0098c61c03ce46b",
+      "retained": "all stage records"
     }
   ],
   "scope": "Successful warm single-GPU inference stages only. Not billed GPU-hours. Excludes staging, loading, queueing, CPU aggregation, diagnostics, smoke tests and work lost to failed/preempted attempts. Nested L/2L continuations count only the cumulative 2L timing."

@@ -189,3 +189,28 @@ and ConfigMap were removed. A label-scoped read verified zero remaining owned
 Jobs, Pods, Secrets or ConfigMaps. Durable scientific outputs are retained.
 See `data/guided_pilot_completion.json`, `data/native_final_status.json` and
 `data/native_cleanup.json`.
+
+### Reserved comparison completed
+
+After the complete original guided pilot and the bounded validation refinement,
+`final_test.json` was frozen in commit `ce6bd1a1` before new test generation.
+Eight GB200 generation shards produced 188,544 ordinary rollouts across all
+1,473 reserved structures. Only after every generation output committed were
+eight GB200 full-forward scoring shards launched against those same outputs.
+All 16 jobs succeeded with zero failures or preemptions. The existing regional
+model mirror was reused; no additional model transfer was launched.
+
+Before metric analysis, all 16 shard-completion markers, 2,946 protein-stage
+markers, plan/source hashes and 128-row parquet counts were verified. Raw and
+scored contact identities, completion token IDs, sample identities and stopping
+flags agree exactly across all 188,544 trajectories. The marker plan hash uses
+canonical JSON serialization and differs intentionally from the frozen file's
+byte hash; both are recorded. Only the frozen frequency and squared-F1 vote
+configurations are analyzed. See `data/reserved_test_complete.json`.
+
+At the final 15:19 UTC status check, all 131 owned Iris job records were
+terminal (51 succeeded, 15 failed and 65 canceled over the complete campaign),
+and no owned native Jobs or Pods remained. Earlier native bootstrap credentials
+and configuration had already been removed. `data/final_compute_status.json`
+records this terminal check. The user-requested threshold-mixture analysis
+reused validation outputs and added no GPU jobs or reserved configurations.
