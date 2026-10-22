@@ -1,0 +1,5 @@
+{
+  "script": "prepare_cases.py",
+  "args": [],
+  "caption": "No MarinFold predictions yet. Contacts use the canonical pyconfind \u22650.001 and sequence-separation \u22656 definition on common resolved residues. AFDB contacts exactly reproduce the training documents. TM-score is structure-aligned over common residues; these assembly/state changes are not all unambiguous fold errors."
+}

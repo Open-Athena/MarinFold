@@ -1,0 +1,7 @@
+{
+  "script": "plot_structures.py",
+  "args": [
+    "--monomers"
+  ],
+  "caption": "C-alpha traces are least-squares aligned using identical common sequence positions; gaps are not connected. Plot panels have independent physical scales. TM-scores in titles come from the separate structural alignment in confirm_training_errors.py. Pru p 7 uses deposited NMR model 1 here; every conformer is assessed separately. These overlays do not establish catastrophic fold errors."
+}

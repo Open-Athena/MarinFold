@@ -1,0 +1,5 @@
+{
+  "script": "plot_length.py",
+  "args": [],
+  "caption": "100-rollout consensus; diamonds are length-bin protein means with 95% bootstrap intervals. All: sequence separation \u22656; long: \u226524. No new inference; no eval-test scores."
+}

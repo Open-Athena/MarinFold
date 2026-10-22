@@ -1,0 +1,49 @@
+{
+  "screen_date_utc": "2026-10-22",
+  "rcsb_assembly_hits": 27889,
+  "training_intersection_chains": 540,
+  "training_intersection_unique_proteins": 124,
+  "assembly_metadata_pass_chains": 534,
+  "assembly_metadata_pass_unique_proteins": 122,
+  "status_counts": {
+    "ineligible_mapping": 279,
+    "screened": 131,
+    "ineligible_strict_monomer_mapping": 109,
+    "ineligible_training_length_or_truncation": 15
+  },
+  "screened_unique_proteins": 37,
+  "source_coordinate_verified_unique_proteins": 20,
+  "minimum_verified_tm_score": 0.6759830142439955,
+  "selected_context_audited_monomers": [
+    "P86888",
+    "Q2FXT9",
+    "O34558"
+  ],
+  "interpretation": "No catastrophic fold errors identified among these 20 coordinate-verified candidates. Three moderate monomer discrepancies selected before inference. This is a targeted screen, not a prevalence estimate or an exhaustive search.",
+  "inputs": {
+    "rcsb_monomer_query.json": {
+      "size_bytes": 959,
+      "sha256": "6a9f542f7516bf2a08b3f45a63e313fcecc15e7273ff1c638f9b6d96af95c145"
+    },
+    "rcsb_monomer_search.json": {
+      "size_bytes": 1730036,
+      "sha256": "e537ed3e46b8eebb427c49a272418f7ff7d6986d98bb7c4261853e13ebdda949"
+    },
+    "entry_assemblies.json": {
+      "size_bytes": 916112,
+      "sha256": "8b01681276919596d7a395e8adafe152e7dc04a32ed6de8ff97178d975532f1c"
+    },
+    "screen_inputs.json": {
+      "size_bytes": 14491210,
+      "sha256": "d39cd4119aa545a8e247f1f8e8a2b19c53cbf687b5d735cb082d7f8242067dc8"
+    },
+    "confirmed_cases.json": {
+      "size_bytes": 1179916,
+      "sha256": "9aabeed7eefb38ede18878f052eeb759c2a9c6a9292e953507cb64e105932c7f"
+    },
+    "pdb_chain_uniprot.csv.gz": {
+      "size_bytes": 6292811,
+      "sha256": "0dafb1c7fa56e62ba0a34947feb26f96bdc05a58ce01ec173c432e1a82e4ca14"
+    }
+  }
+}

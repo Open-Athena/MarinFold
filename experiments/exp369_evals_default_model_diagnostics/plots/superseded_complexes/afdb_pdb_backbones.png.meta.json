@@ -1,0 +1,5 @@
+{
+  "script": "plot_structures.py",
+  "args": [],
+  "caption": "C-alpha traces are least-squares aligned using identical common sequence positions; gaps are not connected. Plot panels have independent physical scales. TM-scores in titles come from the separate structural alignment in confirm_training_errors.py. These show geometric disagreement, not proof that every isolated AFDB monomer state is biologically impossible."
+}

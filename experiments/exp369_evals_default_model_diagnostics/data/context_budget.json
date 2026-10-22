@@ -1,0 +1,681 @@
+[
+  {
+    "stem": "7t9r_A",
+    "L": 38,
+    "k": 19,
+    "prompt_tokens": 140,
+    "max_new_tokens": 356
+  },
+  {
+    "stem": "7yhr_A",
+    "L": 60,
+    "k": 32,
+    "prompt_tokens": 223,
+    "max_new_tokens": 488
+  },
+  {
+    "stem": "7xi5_A",
+    "L": 65,
+    "k": 33,
+    "prompt_tokens": 236,
+    "max_new_tokens": 518
+  },
+  {
+    "stem": "8b6e_A",
+    "L": 66,
+    "k": 35,
+    "prompt_tokens": 244,
+    "max_new_tokens": 524
+  },
+  {
+    "stem": "8b2g_A",
+    "L": 74,
+    "k": 47,
+    "prompt_tokens": 296,
+    "max_new_tokens": 572
+  },
+  {
+    "stem": "7pv5_A",
+    "L": 81,
+    "k": 51,
+    "prompt_tokens": 322,
+    "max_new_tokens": 614
+  },
+  {
+    "stem": "7xp9_A",
+    "L": 84,
+    "k": 36,
+    "prompt_tokens": 283,
+    "max_new_tokens": 632
+  },
+  {
+    "stem": "8eb9_A",
+    "L": 95,
+    "k": 64,
+    "prompt_tokens": 389,
+    "max_new_tokens": 698
+  },
+  {
+    "stem": "7y8i_A",
+    "L": 97,
+    "k": 66,
+    "prompt_tokens": 399,
+    "max_new_tokens": 710
+  },
+  {
+    "stem": "7y54_A",
+    "L": 100,
+    "k": 84,
+    "prompt_tokens": 459,
+    "max_new_tokens": 728
+  },
+  {
+    "stem": "7y8h_A",
+    "L": 100,
+    "k": 66,
+    "prompt_tokens": 405,
+    "max_new_tokens": 728
+  },
+  {
+    "stem": "7y5j_A",
+    "L": 102,
+    "k": 72,
+    "prompt_tokens": 427,
+    "max_new_tokens": 740
+  },
+  {
+    "stem": "7y5r_A",
+    "L": 105,
+    "k": 77,
+    "prompt_tokens": 448,
+    "max_new_tokens": 758
+  },
+  {
+    "stem": "7ykm_A",
+    "L": 105,
+    "k": 44,
+    "prompt_tokens": 349,
+    "max_new_tokens": 758
+  },
+  {
+    "stem": "7yug_A",
+    "L": 118,
+    "k": 75,
+    "prompt_tokens": 468,
+    "max_new_tokens": 836
+  },
+  {
+    "stem": "8bgb_A",
+    "L": 131,
+    "k": 80,
+    "prompt_tokens": 509,
+    "max_new_tokens": 914
+  },
+  {
+    "stem": "7zu3_A",
+    "L": 132,
+    "k": 73,
+    "prompt_tokens": 490,
+    "max_new_tokens": 920
+  },
+  {
+    "stem": "7tlh_A",
+    "L": 136,
+    "k": 91,
+    "prompt_tokens": 552,
+    "max_new_tokens": 944
+  },
+  {
+    "stem": "7zv1_A",
+    "L": 136,
+    "k": 88,
+    "prompt_tokens": 543,
+    "max_new_tokens": 944
+  },
+  {
+    "stem": "8b2e_A",
+    "L": 143,
+    "k": 128,
+    "prompt_tokens": 677,
+    "max_new_tokens": 986
+  },
+  {
+    "stem": "8dp9_A",
+    "L": 148,
+    "k": 128,
+    "prompt_tokens": 687,
+    "max_new_tokens": 1016
+  },
+  {
+    "stem": "7zoi_A",
+    "L": 151,
+    "k": 88,
+    "prompt_tokens": 573,
+    "max_new_tokens": 1034
+  },
+  {
+    "stem": "8dx0_A",
+    "L": 154,
+    "k": 128,
+    "prompt_tokens": 699,
+    "max_new_tokens": 1052
+  },
+  {
+    "stem": "7urp_A",
+    "L": 160,
+    "k": 128,
+    "prompt_tokens": 711,
+    "max_new_tokens": 1088
+  },
+  {
+    "stem": "7wz5_A",
+    "L": 161,
+    "k": 90,
+    "prompt_tokens": 599,
+    "max_new_tokens": 1094
+  },
+  {
+    "stem": "8axj_A",
+    "L": 162,
+    "k": 128,
+    "prompt_tokens": 715,
+    "max_new_tokens": 1100
+  },
+  {
+    "stem": "8ec3_A",
+    "L": 168,
+    "k": 100,
+    "prompt_tokens": 643,
+    "max_new_tokens": 1136
+  },
+  {
+    "stem": "7y5m_A",
+    "L": 170,
+    "k": 128,
+    "prompt_tokens": 731,
+    "max_new_tokens": 1148
+  },
+  {
+    "stem": "8dez_A",
+    "L": 173,
+    "k": 145,
+    "prompt_tokens": 788,
+    "max_new_tokens": 1166
+  },
+  {
+    "stem": "8bsb_A",
+    "L": 177,
+    "k": 92,
+    "prompt_tokens": 637,
+    "max_new_tokens": 1190
+  },
+  {
+    "stem": "7xcd_A",
+    "L": 178,
+    "k": 128,
+    "prompt_tokens": 747,
+    "max_new_tokens": 1196
+  },
+  {
+    "stem": "7uvg_A",
+    "L": 183,
+    "k": 142,
+    "prompt_tokens": 799,
+    "max_new_tokens": 1226
+  },
+  {
+    "stem": "7yd4_A",
+    "L": 185,
+    "k": 128,
+    "prompt_tokens": 761,
+    "max_new_tokens": 1238
+  },
+  {
+    "stem": "8bau_A",
+    "L": 189,
+    "k": 167,
+    "prompt_tokens": 886,
+    "max_new_tokens": 1262
+  },
+  {
+    "stem": "7ur2_A",
+    "L": 195,
+    "k": 128,
+    "prompt_tokens": 781,
+    "max_new_tokens": 1298
+  },
+  {
+    "stem": "8cpn_A",
+    "L": 207,
+    "k": 134,
+    "prompt_tokens": 823,
+    "max_new_tokens": 1370
+  },
+  {
+    "stem": "8baq_A",
+    "L": 208,
+    "k": 152,
+    "prompt_tokens": 879,
+    "max_new_tokens": 1376
+  },
+  {
+    "stem": "7uba_A",
+    "L": 213,
+    "k": 166,
+    "prompt_tokens": 931,
+    "max_new_tokens": 1406
+  },
+  {
+    "stem": "8add_A",
+    "L": 213,
+    "k": 168,
+    "prompt_tokens": 937,
+    "max_new_tokens": 1406
+  },
+  {
+    "stem": "8b6a_A",
+    "L": 214,
+    "k": 156,
+    "prompt_tokens": 903,
+    "max_new_tokens": 1412
+  },
+  {
+    "stem": "8cba_A",
+    "L": 214,
+    "k": 196,
+    "prompt_tokens": 1023,
+    "max_new_tokens": 1412
+  },
+  {
+    "stem": "8cih_A",
+    "L": 214,
+    "k": 128,
+    "prompt_tokens": 819,
+    "max_new_tokens": 1412
+  },
+  {
+    "stem": "8adc_A",
+    "L": 215,
+    "k": 136,
+    "prompt_tokens": 845,
+    "max_new_tokens": 1418
+  },
+  {
+    "stem": "7tjb_A",
+    "L": 227,
+    "k": 160,
+    "prompt_tokens": 941,
+    "max_new_tokens": 1490
+  },
+  {
+    "stem": "8ycm_A",
+    "L": 229,
+    "k": 156,
+    "prompt_tokens": 933,
+    "max_new_tokens": 1502
+  },
+  {
+    "stem": "8gmy_A",
+    "L": 236,
+    "k": 203,
+    "prompt_tokens": 1088,
+    "max_new_tokens": 1544
+  },
+  {
+    "stem": "8b61_A",
+    "L": 238,
+    "k": 169,
+    "prompt_tokens": 990,
+    "max_new_tokens": 1556
+  },
+  {
+    "stem": "7qp5_A",
+    "L": 245,
+    "k": 192,
+    "prompt_tokens": 1073,
+    "max_new_tokens": 1598
+  },
+  {
+    "stem": "8b2s_A",
+    "L": 245,
+    "k": 148,
+    "prompt_tokens": 941,
+    "max_new_tokens": 1598
+  },
+  {
+    "stem": "8arl_A",
+    "L": 246,
+    "k": 208,
+    "prompt_tokens": 1123,
+    "max_new_tokens": 1604
+  },
+  {
+    "stem": "8dhj_A",
+    "L": 249,
+    "k": 213,
+    "prompt_tokens": 1144,
+    "max_new_tokens": 1622
+  },
+  {
+    "stem": "7xlz_A",
+    "L": 266,
+    "k": 212,
+    "prompt_tokens": 1175,
+    "max_new_tokens": 1724
+  },
+  {
+    "stem": "8b4u_A",
+    "L": 277,
+    "k": 218,
+    "prompt_tokens": 1215,
+    "max_new_tokens": 1790
+  },
+  {
+    "stem": "8q8i_A",
+    "L": 282,
+    "k": 300,
+    "prompt_tokens": 1471,
+    "max_new_tokens": 1820
+  },
+  {
+    "stem": "7z65_A",
+    "L": 283,
+    "k": 256,
+    "prompt_tokens": 1341,
+    "max_new_tokens": 1826
+  },
+  {
+    "stem": "7xg9_A",
+    "L": 288,
+    "k": 192,
+    "prompt_tokens": 1159,
+    "max_new_tokens": 1856
+  },
+  {
+    "stem": "7x3h_A",
+    "L": 290,
+    "k": 236,
+    "prompt_tokens": 1295,
+    "max_new_tokens": 1868
+  },
+  {
+    "stem": "8eo5_A",
+    "L": 290,
+    "k": 202,
+    "prompt_tokens": 1193,
+    "max_new_tokens": 1868
+  },
+  {
+    "stem": "8ak2_A",
+    "L": 297,
+    "k": 251,
+    "prompt_tokens": 1354,
+    "max_new_tokens": 1910
+  },
+  {
+    "stem": "7w15_A",
+    "L": 302,
+    "k": 242,
+    "prompt_tokens": 1337,
+    "max_new_tokens": 1940
+  },
+  {
+    "stem": "8daj_A",
+    "L": 302,
+    "k": 239,
+    "prompt_tokens": 1328,
+    "max_new_tokens": 1940
+  },
+  {
+    "stem": "7x4p_A",
+    "L": 307,
+    "k": 266,
+    "prompt_tokens": 1419,
+    "max_new_tokens": 1970
+  },
+  {
+    "stem": "8ci9_A",
+    "L": 312,
+    "k": 269,
+    "prompt_tokens": 1438,
+    "max_new_tokens": 2000
+  },
+  {
+    "stem": "8c4y_A",
+    "L": 314,
+    "k": 298,
+    "prompt_tokens": 1529,
+    "max_new_tokens": 2012
+  },
+  {
+    "stem": "7zs2_A",
+    "L": 316,
+    "k": 178,
+    "prompt_tokens": 1173,
+    "max_new_tokens": 2024
+  },
+  {
+    "stem": "8au6_A",
+    "L": 321,
+    "k": 134,
+    "prompt_tokens": 1051,
+    "max_new_tokens": 2054
+  },
+  {
+    "stem": "7xz3_A",
+    "L": 325,
+    "k": 252,
+    "prompt_tokens": 1413,
+    "max_new_tokens": 2078
+  },
+  {
+    "stem": "8d2z_A",
+    "L": 327,
+    "k": 249,
+    "prompt_tokens": 1408,
+    "max_new_tokens": 2090
+  },
+  {
+    "stem": "7v3o_A",
+    "L": 328,
+    "k": 217,
+    "prompt_tokens": 1314,
+    "max_new_tokens": 2096
+  },
+  {
+    "stem": "7ylr_A",
+    "L": 330,
+    "k": 291,
+    "prompt_tokens": 1540,
+    "max_new_tokens": 2108
+  },
+  {
+    "stem": "8c4d_A",
+    "L": 330,
+    "k": 183,
+    "prompt_tokens": 1216,
+    "max_new_tokens": 2108
+  },
+  {
+    "stem": "8bux_A",
+    "L": 334,
+    "k": 192,
+    "prompt_tokens": 1251,
+    "max_new_tokens": 2132
+  },
+  {
+    "stem": "7xjr_A",
+    "L": 337,
+    "k": 283,
+    "prompt_tokens": 1530,
+    "max_new_tokens": 2150
+  },
+  {
+    "stem": "7y4h_A",
+    "L": 338,
+    "k": 256,
+    "prompt_tokens": 1451,
+    "max_new_tokens": 2156
+  },
+  {
+    "stem": "7yyg_A",
+    "L": 365,
+    "k": 176,
+    "prompt_tokens": 1265,
+    "max_new_tokens": 2318
+  },
+  {
+    "stem": "8e5h_A",
+    "L": 372,
+    "k": 275,
+    "prompt_tokens": 1576,
+    "max_new_tokens": 2360
+  },
+  {
+    "stem": "7qsj_A",
+    "L": 373,
+    "k": 277,
+    "prompt_tokens": 1584,
+    "max_new_tokens": 2366
+  },
+  {
+    "stem": "8akh_A",
+    "L": 374,
+    "k": 256,
+    "prompt_tokens": 1523,
+    "max_new_tokens": 2372
+  },
+  {
+    "stem": "8dqd_A",
+    "L": 377,
+    "k": 316,
+    "prompt_tokens": 1709,
+    "max_new_tokens": 2390
+  },
+  {
+    "stem": "8cpk_A",
+    "L": 384,
+    "k": 282,
+    "prompt_tokens": 1621,
+    "max_new_tokens": 2432
+  },
+  {
+    "stem": "7uk8_A",
+    "L": 394,
+    "k": 420,
+    "prompt_tokens": 2055,
+    "max_new_tokens": 2492
+  },
+  {
+    "stem": "7xrx_A",
+    "L": 398,
+    "k": 316,
+    "prompt_tokens": 1751,
+    "max_new_tokens": 2516
+  },
+  {
+    "stem": "8amo_A",
+    "L": 399,
+    "k": 289,
+    "prompt_tokens": 1672,
+    "max_new_tokens": 2522
+  },
+  {
+    "stem": "7y3h_A",
+    "L": 413,
+    "k": 249,
+    "prompt_tokens": 1580,
+    "max_new_tokens": 2606
+  },
+  {
+    "stem": "8bfy_A",
+    "L": 426,
+    "k": 287,
+    "prompt_tokens": 1720,
+    "max_new_tokens": 2684
+  },
+  {
+    "stem": "8b5w_A",
+    "L": 459,
+    "k": 296,
+    "prompt_tokens": 1813,
+    "max_new_tokens": 2882
+  },
+  {
+    "stem": "8e0r_A",
+    "L": 468,
+    "k": 396,
+    "prompt_tokens": 2131,
+    "max_new_tokens": 2936
+  },
+  {
+    "stem": "8dmu_A",
+    "L": 489,
+    "k": 456,
+    "prompt_tokens": 2353,
+    "max_new_tokens": 3062
+  },
+  {
+    "stem": "7wzm_A",
+    "L": 492,
+    "k": 364,
+    "prompt_tokens": 2083,
+    "max_new_tokens": 3080
+  },
+  {
+    "stem": "7x8l_A",
+    "L": 514,
+    "k": 464,
+    "prompt_tokens": 2427,
+    "max_new_tokens": 3212
+  },
+  {
+    "stem": "7xq4_A",
+    "L": 514,
+    "k": 377,
+    "prompt_tokens": 2166,
+    "max_new_tokens": 3212
+  },
+  {
+    "stem": "8azb_A",
+    "L": 521,
+    "k": 469,
+    "prompt_tokens": 2456,
+    "max_new_tokens": 3254
+  },
+  {
+    "stem": "7xyr_A",
+    "L": 591,
+    "k": 565,
+    "prompt_tokens": 2884,
+    "max_new_tokens": 3674
+  },
+  {
+    "stem": "7uww_A",
+    "L": 635,
+    "k": 554,
+    "prompt_tokens": 2939,
+    "max_new_tokens": 3938
+  },
+  {
+    "stem": "8bke_A",
+    "L": 638,
+    "k": 395,
+    "prompt_tokens": 2468,
+    "max_new_tokens": 3956
+  },
+  {
+    "stem": "8dge_A",
+    "L": 738,
+    "k": 731,
+    "prompt_tokens": 3676,
+    "max_new_tokens": 4516
+  },
+  {
+    "stem": "7znz_A",
+    "L": 761,
+    "k": 745,
+    "prompt_tokens": 3764,
+    "max_new_tokens": 4428
+  }
+]
