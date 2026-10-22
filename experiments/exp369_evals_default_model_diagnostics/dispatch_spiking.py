@@ -73,22 +73,25 @@ def main() -> None:
     parser.add_argument("--iris-config", type=Path, help="Cluster connection config matching the installed Iris revision")
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument("--cases", action="store_true", help="Run the six verified AFDB/PDB cases")
+    parser.add_argument("--monomers", action="store_true", help="Run the three context-audited monomer comparisons")
     parser.add_argument("--submit", action="store_true")
     args = parser.parse_args()
     if args.shards < 1:
         raise ValueError("At least one shard required")
-    if args.cases and args.smoke:
+    if sum((args.cases, args.monomers, args.smoke)) > 1:
         raise ValueError("Cases and spiking smoke are different cohorts")
     if args.cases:
         args.plan = HERE / "data/afdb_inference_plan.json"
+    if args.monomers:
+        args.plan = HERE / "data/monomer_inference_plan.json"
     payload = bundle(args.plan)
     digest = hashlib.sha256(payload).hexdigest()
     uri = f"{ROOT}/inputs/{digest}.tar.gz"
-    shards = 1 if args.smoke or args.cases else args.shards
+    shards = 1 if args.smoke or args.cases or args.monomers else args.shards
     indices = list(range(shards)) if args.only_shards is None else list(map(int, args.only_shards.split(",")))
     if len(set(indices)) != len(indices) or not indices or any(not 0 <= i < shards for i in indices):
         raise ValueError("Invalid subset of shard indices")
-    phase = "cases" if args.cases else "smoke" if args.smoke else "full"
+    phase = "monomers-v1" if args.monomers else "cases" if args.cases else "smoke" if args.smoke else "full"
     out = f"{ROOT}/{phase}"
     commands = {index: bootstrap(index, shards, uri, digest, out, args.smoke) for index in indices}
     plan = json.loads(args.plan.read_text())

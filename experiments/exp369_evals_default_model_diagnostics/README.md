@@ -32,6 +32,8 @@ Reproducible plots and source CSVs, explicit subset/completeness counts, checkpo
 
 ## Results
 
+**Correction (2026-10-22): the original AFDB case selection does not answer the requested monomer-error question.** It included chains extracted from multichain assemblies and state-dependent controls. Their discrepancies cannot establish errors in AF2 monomer predictions. The AFDB conclusions below are withdrawn as evidence about monomer error correction; the original results are retained below as a historical record. The replacement biological-monomer screen is reported separately. The eval-val contact-injection and length analyses are unaffected.
+
 ### Model and execution
 
 The registry default is `contacts-v1-exp277-m2-p06-full-epoch-1.5B`, step **266344**. The exact published file hashes are in exp277's `data/publication_manifest.json`. Workers verify all checkpoint and tokenizer files before loading. The compatible copy already resides at `s3://marin-us-east-02a/MarinFold/exp304/model/exp277-step-266344`; weights stay within CoreWeave. The approved execution is one H100 for validation, followed by 12 independent H100 workers at batch priority. Outputs are under `s3://marin-us-east-02a/MarinFold/exp369/spiking-v2/`.
@@ -84,7 +86,55 @@ The smoke run passed all 1,000 completions, with no unfinished, malformed, or ou
 
 The corrected sweep finished all **666,400 rollouts**. After the original workers were confirmed terminal, 325 unfinished conditions were redistributed into twelve disjoint batches using the exact frozen inference bundle; all final jobs succeeded (`data/jobs_tail.json`). The last retained inference completed at **16:20:30 UTC on 2026-10-21**. There were **zero token-cap hits** and **2,218 invalid rollouts (0.333%)**. Zeroing invalid rollouts changes no all-range curve mean by more than **0.00022**, or long-range mean by more than **0.00052**. The fresh unconditioned mean, **0.55449**, reproduces the archived **0.55375** (paired difference **0.00074**, 95% CI **−0.00205–0.00350**). `summarize_results.py` saves the completeness, timing, baseline, and sensitivity audit in `data/final_audit.json`. Retained pure inference totals **11.69 worker-hours**; this excludes canceled incomplete work and the abandoned v1 attempts.
 
-### AFDB versus later PDB structures — complete
+### Corrected AFDB screen: biological monomers only
+
+The replacement search starts from **biological assemblies**, not extracted chains. A frozen RCSB query for experimental assemblies released from December 2022 onward returned 27,889 assemblies. Joining SIFTS to the exact retained AFDB training IDs yielded 540 chain mappings across 124 proteins. Requiring every declared biological assembly to contain exactly one protein polymer and no other polymer partner left 534 mappings across 122 proteins. Separate copies in a crystal are allowed only when their biological assemblies are individually monomeric.
+
+The geometry screen requires nontruncated training sequences of 60–1,600 residues, at least 90% resolved sequence coverage, at least 98% observed-sequence identity, and at least 20 comparable training contacts. It retained 131 chain mappings across 37 proteins; 279 failed the initial mapping gate, 109 failed the stricter monomer mapping gate, and 15 failed length/truncation. All fetch failures were retried successfully: **zero unresolved errors**. Twenty distinct proteins with 100% identity in the observed-residue screen underwent original AFDB v4 coordinate verification, using the most discrepant qualifying chain per protein and deterministic tie-breaking. Regenerated AFDB contacts again exactly match the retained training documents on the common scoring residues.
+
+**None of these 20 coordinate-verified candidates is a clear catastrophic fold failure**: common-CA TM-scores range from 0.676 to 0.999. This is a limited, targeted search; it neither establishes that the training set has no monomer errors nor estimates their prevalence. The screen excludes incomplete constructs and is restricted to retained exact training accessions with SIFTS mappings. The later PDB release need not be the protein's first experimental structure.
+
+Assembly metadata alone is insufficient. [35VE](https://www.rcsb.org/experimental/35VE) is a symmetry-expanded protomer from a tetrameric SthK channel despite its monomer assembly annotation, so it is excluded. Lqq4 has reported cis–trans state heterogeneity; NCR1 and CDR1 have ligand/state-dependent conformations. Modified-residue constructs also need manual checking: OCP Trp-288 BTA and MtrC A293Boc-Lys can appear identical when the cheap screen omits nonstandard residues and were excluded. Decisions and primary-source links are recorded in `data/monomer_context_audit.csv`.
+
+Three **moderate monomer disagreements** were selected before MarinFold inference:
+
+| Protein / retained training accession | Later experimental structure | Biological unit | AFDB/PDB TM-score | Contact F1 |
+|---|---|---|---:|---:|
+| Pru p 7 / P86888 | [8X67](https://www.rcsb.org/structure/8X67), chain A | Assembly 1: monomer, solution NMR | 0.713 | 0.635 |
+| RecJ / Q2FXT9 | [8Y30](https://www.rcsb.org/structure/8Y30), chain B | Assembly 2: monomer, supported by gel filtration | 0.729 | 0.825 |
+| MrpR/YopR / O34558 | [8BJ6](https://www.rcsb.org/structure/8BJ6), chain C | Assembly 3: apo monomer | 0.676 | 0.797 |
+
+**Chains B and C here are separate crystallographic copies of monomers, not subunits selected from a multichain biological complex.** RecJ's deposited assemblies have one protein each, with gel-filtration evidence. MrpR's monomeric solution behavior is independently supported by [structural and biochemical work](https://doi.org/10.1093/nar/gkad675). Its structure uses standard selenomethionine substitution, canonicalized to methionine for contact scoring. The backbone comparison omits nonstandard residues and uses 312 common CAs; contact scoring uses 320 canonicalized resolved positions. The other comparisons use 63 and 756 common positions. None has another protein or nucleic acid partner in the compared biological assembly.
+
+![Verified monomer backbone comparisons](plots/monomer_pdb_backbones.png)
+
+For [Pru p 7](https://doi.org/10.3390/biom15020232), all **20 deposited NMR conformers** are evaluated. AFDB/PDB contact F1 spans 0.575–0.713 and TM-score spans 0.641–0.747; model 1 is the displayed reference, not a chosen best or worst match. The complete ensemble and per-conformer contacts are frozen in the public artifacts.
+
+`screen_monomer_errors.py`, `confirm_training_errors.py`, and `prepare_monomers.py` reproduce selection and source validation. `data/monomer_screen_audit.json` records counts and input hashes; `data/monomer_selected_cases.csv` records source dates, structure/document hashes, assembly IDs, and context references. `data/monomer_training_membership.json` preserves the exact selected training rows. Sequence-only inference uses two sets of 100 rollouts per protein on one batch-priority H100, with the same frozen checkpoint and generation policy as the original analysis. `data/jobs_monomers-v1.json` records the job and bundle; output is under `s3://marin-us-east-02a/MarinFold/exp369/spiking-v2/monomers-v1/`.
+
+### MarinFold preference on the corrected monomers
+
+All **600 rollouts** completed, with zero token-cap hits. Nineteen RecJ rollouts contained invalid statements or out-of-range pairs; all draws are retained in the canonical score, with invalid pairs unable to vote. Zeroing entire invalid rollouts changes either R-precision by at most 0.0013 and preserves the AFDB preference. Pure inference took 73.96 seconds, with 62.80 seconds of model initialization reported separately. The job succeeded without retries or preemptions. Raw completions, vote matrices, per-input timings, plan hashes, and file checksums are retained and published.
+
+| Monomer | R-precision vs AFDB | R-precision vs PDB | AFDB-only mean vote | PDB-only mean vote | Interpretation |
+|---|---:|---:|---:|---:|---|
+| Pru p 7 | 0.233 | 0.250 | 0.076 | 0.083 | Low accuracy; preference is sensitive to the NMR conformer |
+| RecJ | 0.681 | 0.651 | 0.343 | 0.219 | Favors AFDB contacts |
+| MrpR/YopR | 0.643 | 0.557 | 0.352 | 0.097 | Favors AFDB contacts |
+
+![MarinFold preference on verified monomers](plots/monomer_marinfold_preference.png)
+
+Bars average two independent sets of 100 rollouts. Pru p 7 uses deposited NMR model 1 for its bars; the whiskers show the full range across all 20 conformers after averaging repeats, **not confidence intervals**. Across those conformers, experimental R-precision spans 0.216–0.274, versus 0.233 against AFDB. Experimental-only minus AFDB-only mean support spans −0.029 to +0.041 and is positive for 14/20 conformers. Pairwise ranking favors experimental-only contacts for 18/20 conformers, but its range also crosses a tie (0.436–0.738). The experimental preference therefore is weak and conformer-dependent, with poor overall recovery.
+
+For RecJ and MrpR, the probabilities that a PDB-only contact outranks an AFDB-only contact are 0.388 and 0.197, respectively; 0.5 would be tied. These moderate monomer comparisons favor AFDB for two proteins, but do not establish how MarinFold behaves on a catastrophic AF2 monomer fold error. Neither preference nor training membership alone demonstrates memorization.
+
+`data/monomer_marinfold_per_repeat.csv`, `data/monomer_nmr_preference.csv`, and `data/monomer_timings.csv` contain the scores and timings. `data/monomer_inference_audit.json` records completeness, NMR ranges, and checksum validation. From the public result archive, regenerate the figure with:
+
+```bash
+uv run python analyze_cases.py --plan data/monomer_inference_plan.json --run predictions/monomers-v1
+```
+
+### Superseded AFDB case screen — unsuitable for monomer-error analysis
 
 The candidate screen starts from retained AFDB entries in the actual decontaminated training corpus, joins SIFTS, and screens 700 recent-PDB candidates. Of these, 357 have usable sequence/construct mappings and enough common contacts; 206 fail mapping, 108 fail the length/truncation filter, and 29 have too few common contacts. There were no fetch/parse failures. This is a targeted search, not an unbiased prevalence estimate or exhaustive search for the first experimental structure.
 
@@ -99,9 +149,9 @@ Twenty candidates were checked against their **original AFDB v4 coordinates**. R
 | Q89G85 | 9KBA A | SemiSWEET | 0.584 | 0.286 |
 | P74102 | 8TPJ B | Orange carotenoid-binding protein | 0.464 | 0.620 |
 
-![Verified AFDB/PDB contact discrepancies](plots/afdb_pdb_disagreements.png)
+![Verified AFDB/PDB contact discrepancies](plots/superseded_complexes/afdb_pdb_disagreements.png)
 
-![Sequence-matched backbone overlays](plots/afdb_pdb_backbones.png)
+![Sequence-matched backbone overlays](plots/superseded_complexes/afdb_pdb_backbones.png)
 
 NDUFA4 has severe contact disagreement despite substantial backbone similarity. SemiSWEET and photoactivated OCP are alternate-state controls. The three largest global discrepancies also differ in assembly context; they establish disagreement with the subsequently observed state, not that an isolated monomer must have that state. Their sparse nonlocal contacts warrant case-by-case interpretation.
 
@@ -122,7 +172,7 @@ uv run python build_summary.py
 
 The archive URI and SHA-256 are recorded in `data/public_artifacts.json` in this repository. The restored inference bundles total approximately 1.2 GB before archive compression. Eight protocol tests and twenty exact comparisons with the established evaluator passed; inference completeness and per-file checksums are checked separately.
 
-### MarinFold preference on the six cases
+### Historical preference on excluded complex/state cases
 
 All 1,200 sequence-only rollouts completed without hitting the token cap. Six rollouts (0.5%) contained malformed statements or out-of-range final pairs. All samples were retained; zeroing these six rollouts gives the same qualitative conclusions. Pure generation took 65.55 seconds on one H100; model initialization took 63.55 seconds separately.
 
@@ -135,10 +185,10 @@ All 1,200 sequence-only rollouts completed without hitting the token cap. Six ro
 | Q89G85, SemiSWEET state control | 0.773 | 0.385 | 0.650 | 0.059 | Strongly favors AFDB conformation |
 | P74102, OCP state control | 0.417 | 0.422 | 0.123 | 0.095 | Mixed: AFDB has greater mean exclusive support, PDB wins more pairwise rankings |
 
-![MarinFold preference](plots/afdb_marinfold_preference.png)
+![MarinFold preference](plots/superseded_complexes/afdb_marinfold_preference.png)
 
 Mean votes are fractions of rollouts containing a contact, averaged over the respective exclusive contact set. R-precision uses each structure's own R, so the exclusive-contact contrast is the more direct preference diagnostic. The probability a PDB-only contact outranks an AFDB-only contact is 0.207 for dynein, 0.594 for Tex36, 0.374 for the centrosomal case, 0.495 for NDUFA4, 0.035 for SemiSWEET, and 0.572 for OCP. OCP's disagreement between average support and pairwise ranking reflects uneven vote distributions; it does not support a simple winner. These selected examples cannot estimate error-correction prevalence across the training corpus.
 
 ## Conclusion
 
-Eight true contacts or a 5% contact budget give a useful average improvement, but no tested intervention yields mean remaining-contact R-precision of 0.80. Covering secondary-structure elements first offers no clear early advantage and becomes worse than random sampling at larger budgets. The existing default-model evaluation shows no detectable length trend across these 97 proteins. On the three largest verified AFDB/PDB structural disagreements, MarinFold does not reliably recover the later experimental state: it favors AFDB for dynein, weakly favors PDB for Tex36, and recovers neither contact set for the centrosomal protein. Assembly and biological-state differences remain essential qualifications.
+Eight true contacts or a 5% contact budget give a useful average improvement, but no tested intervention yields mean remaining-contact R-precision of 0.80. Covering secondary-structure elements first offers no clear early advantage and becomes worse than random sampling at larger budgets. The existing default-model evaluation shows no detectable length trend across these 97 proteins. The previous AFDB examples do not answer whether MarinFold corrects AF2 monomer errors: they compare assembly-bound or state-dependent structures. The corrected screen found three moderate monomer disagreements, but no clear catastrophic monomer fold failure among the 20 source-coordinate-verified candidates. On the three moderate monomer comparisons, MarinFold favors AFDB for RecJ and MrpR; Pru p 7 has low accuracy and conformer-dependent preference. This limited search cannot answer how often MarinFold corrects severe AF2 monomer errors.

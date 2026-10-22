@@ -95,7 +95,7 @@ def main() -> None:
     raw = args.plan.read_bytes()
     plan = json.loads(raw)
     plan_sha = hashlib.sha256(raw).hexdigest()
-    expected = {"eval-val": 97, "afdb-training-disagreements": 6}
+    expected = {"eval-val": 97, "afdb-training-disagreements": 6, "afdb-training-monomers": 3}
     if plan["eval_set"] not in expected or len(plan["targets"]) != expected[plan["eval_set"]]:
         raise ValueError("Unexpected frozen cohort or target count")
     shard, n_shards = map(int, args.shard.split("/"))

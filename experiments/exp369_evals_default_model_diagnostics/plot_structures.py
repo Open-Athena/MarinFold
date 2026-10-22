@@ -29,9 +29,12 @@ def main() -> None:
     """Plot common-residue C-alpha traces, breaking lines at missing residues."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--work", type=Path, default=Path("/data/exp369"))
+    parser.add_argument("--monomers", action="store_true")
     args = parser.parse_args()
-    plan = json.loads((HERE / "data/afdb_inference_plan.json").read_text())
-    fig = plt.figure(figsize=(14, 9), layout="constrained")
+    prefix = "monomer" if args.monomers else "afdb"
+    plan = json.loads((HERE / f"data/{prefix}_inference_plan.json").read_text())
+    plot_dir = HERE / "plots" if args.monomers else HERE / "plots/superseded_complexes"
+    fig = plt.figure(figsize=(14, 5 if args.monomers else 9), layout="constrained")
     for number, target in enumerate(plan["targets"], start=1):
         af = ca_coordinates(args.work / f"AF-{target['uniprot']}-F1-model_v4.cif", "A", target["sequence"])
         pdb = ca_coordinates(args.work / "pdb_chains" / f"{target['pdb']}_{target['chain']}.cif", target["chain"], target["sequence"])
@@ -44,7 +47,7 @@ def main() -> None:
         _, _, vt = np.linalg.svd(combined - center, full_matrices=False)
         vt[-1] *= np.linalg.det(vt)
         a, p = (a - center) @ vt.T, (p - center) @ vt.T
-        ax = fig.add_subplot(2, 3, number, projection="3d")
+        ax = fig.add_subplot(1 if args.monomers else 2, 3, number, projection="3d")
         breaks = np.flatnonzero(np.diff(indices) > 1) + 1
         segments = np.split(np.arange(len(indices)), breaks)
         for coords, color, label in ((a, "#CC6B25", "Original AFDB v4"), (p, "#167CA0", "Later experimental PDB")):
@@ -55,12 +58,14 @@ def main() -> None:
         ax.set_box_aspect(span)
         ax.view_init(elev=22, azim=-65)
         ax.set_axis_off()
-        ax.set_title(f"{target['uniprot']} / {target['pdb'].upper()} {target['chain']}\nTM-score {target['tm_score_common_residues']:.2f} • {len(indices)} common residues", fontsize=10)
+        name = target["protein_name"] if args.monomers else target["uniprot"]
+        ax.set_title(f"{name} / {target['pdb'].upper()} chain {target['chain']}\nTM-score {target['tm_score_common_residues']:.2f} • {len(indices)} common residues", fontsize=10)
         if number == 1:
             ax.legend(loc="lower left", frameon=False, fontsize=8)
-    fig.suptitle("AFDB training structures and later experimental conformations\nSequence-matched backbone overlays; assembly and alternate-state context matters", fontsize=14)
-    save_plot_with_meta(fig, str(HERE / "plots/afdb_pdb_backbones.png"),
-                        caption="C-alpha traces are least-squares aligned using identical common sequence positions; gaps are not connected. Plot panels have independent physical scales. TM-scores in titles come from the separate structural alignment in confirm_training_errors.py. These show geometric disagreement, not proof that every isolated AFDB monomer state is biologically impossible.")
+    context = "Verified monomers with moderate discrepancies; no catastrophic fold failure" if args.monomers else "Sequence-matched backbone overlays; assembly and alternate-state context matters"
+    fig.suptitle("AFDB training structures and later experimental conformations\n" + context, fontsize=14)
+    save_plot_with_meta(fig, str(plot_dir / f"{prefix}_pdb_backbones.png"),
+                        caption="C-alpha traces are least-squares aligned using identical common sequence positions; gaps are not connected. Plot panels have independent physical scales. TM-scores in titles come from the separate structural alignment in confirm_training_errors.py. Pru p 7 uses deposited NMR model 1 here; every conformer is assessed separately. These overlays do not establish catastrophic fold errors.")
     plt.close(fig)
 
 

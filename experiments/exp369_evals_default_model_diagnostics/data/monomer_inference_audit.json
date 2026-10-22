@@ -1,0 +1,38 @@
+{
+  "n_proteins": 3,
+  "n_conditions": 6,
+  "n_rollouts": 600,
+  "n_unfinished": 0,
+  "n_invalid_rollouts": 19,
+  "elapsed_seconds_sum": 73.95924134095549,
+  "model_load_seconds": 62.79592947100173,
+  "raw_and_vote_checksums_verified": true,
+  "nmr_conformer_mean_ranges": {
+    "afdb_r_precision": {
+      "min": 0.2333333333333333,
+      "max": 0.2333333333333333
+    },
+    "pdb_r_precision": {
+      "min": 0.2162162162162162,
+      "max": 0.27380952380952384
+    },
+    "afdb_only_mean_vote": {
+      "min": 0.0392857142857142,
+      "max": 0.09111111111111105
+    },
+    "pdb_only_mean_vote": {
+      "min": 0.057692307692307654,
+      "max": 0.0994444444444444
+    },
+    "exclusive_vote_delta_pdb_minus_afdb": {
+      "min": -0.028611111111111052,
+      "max": 0.041194444444444395
+    },
+    "pdb_only_ranking_preference": {
+      "min": 0.4355203619909501,
+      "max": 0.7375
+    }
+  },
+  "nmr_conformers_with_positive_mean_vote_delta": 14,
+  "nmr_conformers_with_pdb_ranking_preference": 18
+}

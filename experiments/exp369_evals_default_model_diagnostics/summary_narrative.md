@@ -48,18 +48,26 @@ Fresh unconditioned mean 0.55449 reproduces archived 0.55375; paired difference 
 Eight protocol tests and twenty exact canonical-scorer comparisons passed.
 Raw rollouts, vote matrices, timings, frozen inputs, and source code are published with checksums.
 
-## Verified AFDB/PDB disagreements
+## AFDB comparison corrected: biological monomers
 
-Screened 700 retained training entries; 357 usable mappings.
-Confirmed 20 against the original AFDB v4 source; training contacts reproduce exactly on the common resolved residues used in each comparison.
-Six cases selected: three large assembly-bound discrepancies (TM-score 0.25–0.33), NDUFA4 contact disagreement, and two alternate-state controls.
-Later PDB release dates follow the original November 2022 AFDB objects.
-Assembly context and biological state prevent labeling all disagreements as unequivocal folding errors.
+The original complex/state examples do not establish AF2 monomer errors; that conclusion is withdrawn.
+Replacement filter: every biological assembly has one protein and no other polymer partners. Crystal copies may be separate monomers. A literature/context audit rejects extracted oligomer protomers even when metadata says monomer.
+534 candidate chain mappings / 122 retained AFDB proteins pass assembly metadata; 131 mappings / 37 proteins pass geometry and coverage filters. No unresolved fetch errors.
+20 proteins undergo exact AFDB v4 source/contact verification. No clear catastrophic fold failures found (minimum common-CA TM-score 0.676). This is a limited search, not an error-prevalence estimate.
 
-## Model preference: mixed, no reliable correction
+## Three moderate monomer disagreements
 
-Dynein regulatory complex subunit 2 favors AFDB: exclusive mean votes 0.206 vs 0.025; R-precision 0.326 vs 0.194.
-Tex36 weakly favors PDB, but accuracy is low: 0.093 versus AFDB, 0.156 versus PDB.
-Centrosomal protein: R-precision zero against both structures.
-SemiSWEET strongly favors the AFDB state; NDUFA4 is weak and OCP is mixed.
-All 1,200 rollouts finished. Six had generation errors; zeroing them preserves these conclusions.
+Pru p 7: 8X67, monomer assembly 1; solution NMR, all 20 conformers assessed.
+RecJ: 8Y30, monomer assembly 2; gel-filtration evidence; chain B is a crystal copy, not a complex subunit.
+MrpR/YopR: 8BJ6, monomer assembly 3; apo monomer with independent solution evidence; chain C is a crystal copy. SeMet is canonicalized to Met for contacts.
+AFDB/PDB TM-scores: 0.713, 0.729, 0.676. Contact F1: 0.635, 0.825, 0.797.
+Pru p 7 ensemble range: contact F1 0.575–0.713; TM-score 0.641–0.747.
+These cases assess moderate discrepancies. They do not demonstrate correction of a catastrophic AF2 fold error.
+
+## MarinFold on the corrected monomers
+
+All 600 sequence-only rollouts complete; no token-cap hits. 19 invalid rollouts, all retained; sensitivity analysis preserves the conclusions. Inference: 73.96 s; model initialization: 62.80 s.
+RecJ: R-precision 0.681 vs AFDB / 0.651 vs PDB; exclusive mean votes 0.343 / 0.219. Favors AFDB.
+MrpR/YopR: R-precision 0.643 / 0.557; exclusive mean votes 0.352 / 0.097. Favors AFDB.
+Pru p 7: R-precision 0.233 vs AFDB and 0.216–0.274 across 20 experimental conformers. Low accuracy and conformer-dependent preference; no clear winner.
+This corrects the comparison to biological monomers but does not establish error correction on catastrophic AF2 monomer fold failures.

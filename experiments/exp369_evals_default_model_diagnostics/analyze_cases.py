@@ -35,16 +35,19 @@ def exclusive_preference(scores: np.ndarray, af_only: list, pdb_only: list) -> f
 
 
 def main() -> None:
-    """Require complete valid predictions for all six cases before comparison."""
+    """Require complete predictions for the frozen case cohort before comparison."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--plan", type=Path, default=HERE / "data/afdb_inference_plan.json")
     parser.add_argument("--run", required=True)
     args = parser.parse_args()
     raw = args.plan.read_bytes()
     plan = json.loads(raw)
+    monomers = plan["eval_set"] == "afdb-training-monomers"
+    prefix = "monomer" if monomers else "afdb"
+    plot_dir = HERE / "plots" if monomers else HERE / "plots/superseded_complexes"
     digest = hashlib.sha256(raw).hexdigest()
     fs, root = fsspec.core.url_to_fs(args.run)
-    rows, timings = [], []
+    rows, timings, ensemble_rows = [], [], []
     for target in plan["targets"]:
         matrices = []
         gated_matrices = []
@@ -80,10 +83,21 @@ def main() -> None:
                          "validity_gated_pdb_r_precision": gated_pdb["r_precision"],
                          "validity_gated_pdb_only_ranking_preference": exclusive_preference(gated_matrices[repeat], target["afdb_only"], target["pdb_only"]),
                          "interpretation": target["interpretation"]})
-    pd.DataFrame(rows).to_csv(HERE / "data/afdb_marinfold_per_repeat.csv", index=False)
-    pd.DataFrame(timings).to_csv(HERE / "data/afdb_timings.csv", index=False)
+            for conformer in target.get("pdb_ensemble", []):
+                metrics = remaining_metrics(scores, conformer["pdb_pairs"], target["resolved"], [])
+                af_vote = float(np.mean([scores[i, j] for i, j in conformer["afdb_only"]]))
+                pdb_vote = float(np.mean([scores[i, j] for i, j in conformer["pdb_only"]]))
+                ensemble_rows.append({"uniprot": target["uniprot"], "repeat": repeat, "model": conformer["model"],
+                                      "afdb_r_precision": af["r_precision"], "pdb_r_precision": metrics["r_precision"],
+                                      "afdb_only_mean_vote": af_vote, "pdb_only_mean_vote": pdb_vote,
+                                      "exclusive_vote_delta_pdb_minus_afdb": pdb_vote - af_vote,
+                                      "pdb_only_ranking_preference": exclusive_preference(scores, conformer["afdb_only"], conformer["pdb_only"])})
+    pd.DataFrame(rows).to_csv(HERE / f"data/{prefix}_marinfold_per_repeat.csv", index=False)
+    pd.DataFrame(timings).to_csv(HERE / f"data/{prefix}_timings.csv", index=False)
+    if ensemble_rows:
+        pd.DataFrame(ensemble_rows).to_csv(HERE / f"data/{prefix}_nmr_preference.csv", index=False)
     summary = pd.DataFrame(rows).groupby(["uniprot", "pdb", "chain", "interpretation"], as_index=False).mean(numeric_only=True).drop(columns="repeat")
-    summary.to_csv(HERE / "data/afdb_marinfold_preference.csv", index=False)
+    summary.to_csv(HERE / f"data/{prefix}_marinfold_preference.csv", index=False)
     ordered = summary.set_index("uniprot").loc[[target["uniprot"] for target in plan["targets"]]]
     positions = np.arange(len(ordered))
     fig, axes = plt.subplots(1, 2, figsize=(13, 5.2), layout="constrained")
@@ -97,17 +111,33 @@ def main() -> None:
                 ax.scatter(np.full(len(repeats), index + offset), [row[field] for row in repeats],
                            s=13, facecolors="white", edgecolors="black", linewidths=.6, zorder=3)
     for ax in axes:
-        ax.set_xticks(positions, [f"{target['uniprot']}\n{target['pdb'].upper()} {target['chain']}" for target in plan["targets"]], fontsize=8)
+        ax.set_xticks(positions, [f"{target['protein_name'] if monomers else target['uniprot']}\n{target['pdb'].upper()} chain {target['chain']}" for target in plan["targets"]], fontsize=9)
         ax.set_ylim(0, 1)
         ax.spines[["top", "right"]].set_visible(False)
         ax.grid(axis="y", alpha=.18)
-        ax.axvline(2.5, color="gray", linestyle=":", linewidth=1)
+        if not monomers:
+            ax.axvline(2.5, color="gray", linestyle=":", linewidth=1)
+    if ensemble_rows:
+        ensemble = pd.DataFrame(ensemble_rows).groupby(["uniprot", "model"]).mean(numeric_only=True)
+        for index, accession in enumerate(ordered.index):
+            if accession not in ensemble.index.get_level_values("uniprot"):
+                continue
+            for offset, suffix in ((-.18, "afdb"), (.18, "pdb")):
+                for ax, field in zip(axes, (f"{suffix}_only_mean_vote", f"{suffix}_r_precision")):
+                    values = ensemble.loc[accession, field]
+                    ax.vlines(index + offset, values.min(), values.max(), color="black", linewidth=1.7, zorder=4)
+                    ax.hlines([values.min(), values.max()], index + offset - .055, index + offset + .055, color="black", linewidth=1.7, zorder=4)
     axes[0].set_ylabel("Mean rollout vote on exclusive contacts")
     axes[1].set_ylabel("R-precision against each structure")
     axes[0].legend(frameon=False)
-    fig.suptitle("Does MarinFold favor AFDB training contacts or later experimental contacts?\nSequence only • exp277 step 266344 • two sets of 100 rollouts", fontsize=13)
-    save_plot_with_meta(fig, str(HERE / "plots/afdb_marinfold_preference.png"),
-                        caption="Bars average two 100-rollout repeats; dots show each repeat. Left: mean support over contacts unique to each structure, on common resolved residues. Right: R-precision against each contact set, whose sizes differ. The first three cases have large assembly-bound discrepancies; the others are contact/state controls. Predictions have no structure contacts in their prompts.")
+    title = "Verified monomer comparisons: moderate AFDB/PDB disagreements" if monomers else "Does MarinFold favor AFDB training contacts or later experimental contacts?"
+    fig.suptitle(title + "\nSequence only • exp277 step 266344 • two sets of 100 rollouts", fontsize=13)
+    if monomers:
+        fig.supxlabel("Pru p 7 whiskers: range across 20 NMR conformers (not confidence intervals). White dots: rollout repeats.", fontsize=9)
+    context = ("These are isolated biological monomers, not established catastrophic fold errors. Pru p 7 bars use deposited model 1; black whiskers span the 20-conformer NMR ensemble after averaging the two repeats, not confidence intervals."
+               if monomers else "The first three cases have large assembly-bound discrepancies; the others are contact/state controls.")
+    save_plot_with_meta(fig, str(plot_dir / f"{prefix}_marinfold_preference.png"),
+                        caption="Bars average two 100-rollout repeats; white dots show each repeat. Left: mean support over contacts unique to each structure, on common resolved residues. Right: R-precision against each contact set, whose sizes differ. " + context + " Predictions have no structure contacts in their prompts.")
     plt.close(fig)
     print(summary.to_string(index=False))
 

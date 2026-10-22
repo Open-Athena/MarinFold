@@ -53,7 +53,7 @@ def main() -> None:
         rows.append({key: value for key, value in case.items() if key not in ("sequence", "resolved", "afdb_pairs", "pdb_pairs", "afdb_only", "pdb_only")})
     axes.flat[0].legend(frameon=False, fontsize=8)
     fig.suptitle("Exact AFDB v4 training contacts versus later experimental structures\nUpper row: large assembly-bound discrepancies • lower row: contact/state controls", fontsize=13)
-    save_plot_with_meta(fig, str(HERE / "plots/afdb_pdb_disagreements.png"),
+    save_plot_with_meta(fig, str(HERE / "plots/superseded_complexes/afdb_pdb_disagreements.png"),
                         caption="No MarinFold predictions yet. Contacts use the canonical pyconfind ≥0.001 and sequence-separation ≥6 definition on common resolved residues. AFDB contacts exactly reproduce the training documents. TM-score is structure-aligned over common residues; these assembly/state changes are not all unambiguous fold errors.")
     plt.close(fig)
     pd.DataFrame(rows).to_csv(HERE / "data/afdb_selected_cases.csv", index=False)

@@ -46,12 +46,17 @@ def main() -> None:
              and path.name != "public_artifacts.json"}
     files["inputs/spiking_plan.json"] = args.work / "spiking_plan.json"
     files.update({f"execution_bundles/{path.name}": path for path in (args.work / "execution_bundles").glob("*.tar.gz")})
-    plan = json.loads((HERE / "data/afdb_inference_plan.json").read_text())
-    for target in plan["targets"]:
+    historical = json.loads((HERE / "data/afdb_inference_plan.json").read_text())["targets"]
+    monomers = json.loads((args.work / "monomers/confirmed_cases.json").read_text())
+    for target in historical + monomers:
         accession, pdb, chain = target["uniprot"], target["pdb"], target["chain"]
         for relative in (f"AF-{accession}-F1-model_v4.cif", f"AF-{accession}-F1-source-info.json",
                          f"pdb_chains/{pdb}_{chain}.cif", f"metadata/{pdb}.json"):
             files[f"inputs/{relative}"] = args.work / relative
+    for name in ("rcsb_monomer_query.json", "rcsb_monomer_search.json", "entry_assemblies.json",
+                 "screen_inputs.json", "confirmed_cases.json", "8x67_ensemble.cif"):
+        files[f"inputs/monomers/{name}"] = args.work / "monomers" / name
+    files.update({f"inputs/monomers/{path.name}": path for path in (args.work / "monomers").glob("8x67_model*.cif")})
     for run_dir in args.run_dir:
         files.update({f"predictions/{run_dir.name}/{path.relative_to(run_dir)}": path
                       for path in run_dir.rglob("*") if path.is_file() and not path.name.endswith(".partial")})

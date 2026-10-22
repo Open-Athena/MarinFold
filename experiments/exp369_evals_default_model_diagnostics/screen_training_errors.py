@@ -24,13 +24,13 @@ from marinfold.document_structures.contacts_v1.read import live_contacts, sequen
 HERE = Path(__file__).resolve().parent
 
 
-def screen(candidate: dict, training: dict, cache: Path) -> dict:
+def screen(candidate: dict, training: dict, cache: Path, max_length: int = 800) -> dict:
     """Compare one exact training row to the specified experimental chain."""
     result = {key: candidate[key] for key in ("PDB", "CHAIN", "SP_PRIMARY", "entry_id", "shard")}
     sequence = sequence_from_document(training["document"], training["seq_len"], training["n_term_index"])
     result.update(L=len(sequence), training_global_plddt=training["global_plddt"],
                   training_document_sha256=hashlib.sha256(training["document"].encode()).hexdigest())
-    if training["truncated"] or not 60 <= len(sequence) <= 800:
+    if training["truncated"] or not 60 <= len(sequence) <= max_length:
         return result | {"status": "ineligible_training_length_or_truncation"}
     path = cache / f"{candidate['PDB']}_{candidate['CHAIN']}.cif"
     if not path.exists():

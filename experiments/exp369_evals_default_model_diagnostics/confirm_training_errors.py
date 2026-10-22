@@ -37,12 +37,25 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--work", type=Path, default=Path("/data/exp369"))
     parser.add_argument("--top", type=int, default=20)
+    parser.add_argument("--screen", type=Path, default=HERE / "data/afdb_candidate_screen.csv")
+    parser.add_argument("--inputs", type=Path, default=Path("/data/exp369/screen_inputs.json"))
+    parser.add_argument("--output-csv", type=Path, default=HERE / "data/afdb_confirmed_disagreements.csv")
+    parser.add_argument("--output-cases", type=Path, default=Path("/data/exp369/afdb_cases.json"))
+    parser.add_argument("--unique-proteins", action="store_true")
+    parser.add_argument("--exact-identity", action="store_true")
     args = parser.parse_args()
-    candidates = pd.read_csv(HERE / "data/afdb_candidate_screen.csv").query("status == 'screened'").sort_values("fraction_over_12A", ascending=False).head(args.top)
-    inputs = {row["SP_PRIMARY"]: (row, train) for row, train in json.loads((args.work / "screen_inputs.json").read_text())}
+    candidates = pd.read_csv(args.screen).query("status == 'screened'").sort_values(
+        ["fraction_over_12A", "PDB", "CHAIN"], ascending=[False, True, True])
+    if args.exact_identity:
+        candidates = candidates.loc[candidates.identity == 1]
+    if args.unique_proteins:
+        candidates = candidates.drop_duplicates("SP_PRIMARY")
+    candidates = candidates.head(args.top)
+    inputs = {(row["PDB"], row["CHAIN"], row["SP_PRIMARY"]): (row, train)
+              for row, train in json.loads(args.inputs.read_text())}
     confirmed, targets = [], []
     for candidate in candidates.itertuples(index=False):
-        row, training = inputs[candidate.SP_PRIMARY]
+        row, training = inputs[candidate.PDB, candidate.CHAIN, candidate.SP_PRIMARY]
         source_manifest = Path(f"/home/bizon/exp53_scratch/selection_manifest/train/shard_{row['shard']:05d}.parquet")
         manifest = pq.read_table(source_manifest).to_pandas()
         source = manifest.loc[manifest.entry_id == row["entry_id"]].iloc[0]
@@ -106,8 +119,8 @@ def main() -> None:
         confirmed.append(result)
         targets.append(result | {"sequence": sequence, "resolved": common, "afdb_pairs": sorted(af_pairs), "pdb_pairs": sorted(pdb_pairs),
                                  "afdb_only": sorted(af_pairs - pdb_pairs), "pdb_only": sorted(pdb_pairs - af_pairs)})
-        pd.DataFrame(confirmed).to_csv(HERE / "data/afdb_confirmed_disagreements.csv", index=False)
-        (args.work / "afdb_cases.json").write_text(json.dumps(targets, indent=2) + "\n")
+        pd.DataFrame(confirmed).to_csv(args.output_csv, index=False)
+        args.output_cases.write_text(json.dumps(targets, indent=2) + "\n")
         print(json.dumps({key: result[key] for key in ("uniprot", "pdb", "chain", "contact_f1", "tm_score_common_residues", "afdb_object_created", "release_date")}), flush=True)
 
 
