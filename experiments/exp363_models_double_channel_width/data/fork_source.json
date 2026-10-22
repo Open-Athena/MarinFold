@@ -1,0 +1,13 @@
+{
+  "observed_at": "2026-10-22T20:28:15.946770+00:00",
+  "source": "s3://marin-us-east-02a/tmp/ttl=14d/checkpoints-temp/marin-us-east-02a/MarinFold/exp363_models_double_channel_width/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B/checkpoints/step-74178",
+  "destination": "s3://marin-us-east-02a/MarinFold/exp363_models_double_channel_width/fork_sources/contacts-v1-exp363-m2-p06-full-epoch-5.86B/step-74178",
+  "metadata": {
+    "step": 74178,
+    "timestamp": "2026-10-22T20:23:21.629892",
+    "is_temporary": true
+  },
+  "object_count": 89,
+  "total_bytes": 70326240651,
+  "method": "S3 same-bucket server-side copy; each object size verified; completion metadata copied last"
+}

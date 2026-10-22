@@ -47,3 +47,13 @@ Its early advantage reversed, illustrating why interim rankings can mislead.
 exp157 learned RoPE deltas: corrected CE 3.0654 versus vanilla 3.0815.
 Only exp277 provides the same native + MPNN recipe as the current wider run.
 Raw historical validation losses cannot be pooled across cache/logging paths.
+
+## Parallel LR fork — October 22
+Original run continues with its existing 0.001 plateau and final cooldown.
+Fork restores checkpoint 74,178, resuming at absolute step 74,179.
+Weights, Adam moments/counters, RNG, data position and augmentation are preserved.
+Linear reduction to 0.000707 over 2,114 updates; target reached at step 76,293.
+Hold until original final cooldown at step 213,076; final LR target 0.0000707.
+Same 266,345-update horizon, separate W&B and checkpoint identities.
+Source copy and counters verified; 13 local configuration and restore tests passed.
+Four-node / 32-H100 batch placement; the initial local pool had no free GPUs.

@@ -25,7 +25,7 @@ IMPORTED_SOURCES = (
 def main() -> None:
     """Bundle the locked recipe and submit without exposing credentials."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("phase", choices=("train-smoke", "train", "tpu-smoke"))
+    parser.add_argument("phase", choices=("train-smoke", "train", "tpu-smoke", "fork-smoke", "fork-train"))
     parser.add_argument("--nodes", type=int, choices=(1, 2, 4, 8, 16), default=4)
     parser.add_argument("--tpu", choices=("v5p-64", "v6e-32"), default="v5p-64")
     parser.add_argument("--attempt", type=int, default=1)
@@ -36,8 +36,8 @@ def main() -> None:
     parser.add_argument("--iris-bin", default=os.environ.get("IRIS_BIN", DEFAULT_IRIS))
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
-    if args.resume and args.phase != "train":
-        parser.error("--resume applies only to production train")
+    if args.resume and args.phase not in ("train", "fork-train"):
+        parser.error("--resume applies only to production train or fork-train")
     project = Path(__file__).resolve().parent
     root = project.parents[1]
     tpu = args.phase == "tpu-smoke"
@@ -55,7 +55,8 @@ def main() -> None:
         "WANDB_PROJECT": "MarinFold",
         "WANDB_API_KEY": wandb[2],
         "NODES": str(args.nodes),
-        "SMOKE": "1" if args.phase == "train-smoke" else "0",
+        "SMOKE": "1" if args.phase in ("train-smoke", "fork-smoke") else "0",
+        "ATTEMPT": str(args.attempt),
         "SMOKE_TAG": f"-n{args.nodes}-a{args.attempt:02d}",
         "PYTHONPATH": ".",
         "GIT_COMMIT": subprocess.check_output(
@@ -97,7 +98,7 @@ def main() -> None:
     ]
     for key, value in env.items():
         command.extend(["-e", key, value])
-    module = "tpu_smoke" if tpu else "train"
+    module = "tpu_smoke" if tpu else ("fork_train" if args.phase.startswith("fork-") else "train")
     # Inputs have explicit immutable versions. Only the training step is deferred;
     # a mutable version bypasses a stale executor success marker on recovery.
     version = "dev" if args.resume else ("2026.10.14.1" if tpu else VERSION)

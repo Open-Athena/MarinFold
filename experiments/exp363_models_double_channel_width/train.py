@@ -48,12 +48,15 @@ from experiments.exp363_models_double_channel_width.config import (
 from experiments.exp363_models_double_channel_width.runtime import run_train_job
 
 
-def build_run(*, smoke: bool, nodes: int, smoke_tag: str = "") -> ArtifactStep[LevanterCheckpoint]:
+def build_run(
+    *, smoke: bool, nodes: int, smoke_tag: str = "", run_id: str | None = None,
+) -> ArtifactStep[LevanterCheckpoint]:
     """Retain exp232 m2-p06 optimizer settings with finite full-corpus coverage."""
     if nodes not in (1, 2, 4, 8, 16):
         raise ValueError(f"Unsupported H100 gang size: {nodes}")
     per_device = 1
-    run_id = f"{RUN_ID}-smoke{smoke_tag}" if smoke else RUN_ID
+    if run_id is None:
+        run_id = f"{RUN_ID}-smoke{smoke_tag}" if smoke else RUN_ID
     steps = 10 if smoke else EPOCH_TRAIN_STEPS
     env = {
         "MARIN_PREFIX": PREFIX,

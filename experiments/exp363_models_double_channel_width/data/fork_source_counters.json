@@ -1,0 +1,11 @@
+{
+  "step": 74179,
+  "opt_state/count": 74179,
+  "opt_state/hyperparams_states/learning_rate/count": 74179,
+  "opt_state/inner_state/1/count": 74179,
+  "opt_state/hyperparams/learning_rate": 0.0010000000474974513,
+  "training_key": [
+    490673008,
+    2845908836
+  ]
+}

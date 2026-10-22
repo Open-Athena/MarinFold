@@ -10,6 +10,39 @@ marinfold_experiment:
 
 **Issue:** [#363](https://github.com/Open-Athena/MarinFold/issues/363) · **Kind:** `models` · **Branch:** `exp363/double-channel-width`
 
+## Lower-learning-rate fork (2026-10-22)
+
+The requester authorized a parallel continuation at LR **0.000707**, with the
+original run continuing at its existing LR. The fork restores the full state
+after checkpoint **74,178**: trainer step, Adam count and schedule count are all
+**74,179**. The 70.326 GB checkpoint was preserved using a same-bucket server-side
+copy in US-EAST-02A; all 89 object sizes were verified and completion metadata was
+copied last. The preserved counters were read back through TensorStore. Source
+and copy evidence are in `data/fork_source.json` and `data/fork_source_counters.json`.
+
+The fork's LR decreases linearly from **0.001 at step 74,179** to **0.000707 at
+step 76,293** (2,114 updates, one validation interval). It then holds 0.000707
+through the original plateau, with the final linear cooldown still starting at
+**step 213,076** and ending at the original **266,345-update** horizon. The original
+10% floor ratio gives a final target LR of **0.0000707**. No warmup is repeated.
+
+`fork_train.py` subclasses the supported AdamConfig scheduler interface while
+retaining the original optimizer-state structure. It uses
+`TrainerConfig.initialize_from` to preserve weights, Adam moments, RNG and the
+absolute data cursor; all corpus/shuffle/augmentation settings remain identical.
+Recovery first searches the fork's own checkpoints. Its distinct run identity is
+`contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4`, with outputs under
+the same experiment's `runs/` prefix. The original run's identity and storage
+paths are unchanged.
+
+Thirteen local tests passed, including an actual checkpoint round-trip of
+nonzero Adam moments and counters, use of the new LR schedule after restoration,
+subsequent fork recovery, exact schedule endpoints, matching data configuration
+and disjoint output paths. The fork uses the already exercised four-node / 32-H100
+profile at batch priority in `cw-us-east-02a`. The initial placement snapshot
+reported zero free H100s, so it may queue. Launch/status evidence is recorded
+in `data/fork_execution.json` after submission.
+
 ## Latest comparison update (2026-10-22)
 
 W&B reports step **73,740**, **27.69%** complete, with the run marked running.
