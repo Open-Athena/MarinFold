@@ -28,7 +28,7 @@ SOURCE = HERE.parent / "exp245_evals_foldbench_held_out_monomers/data"
 
 
 @pytest.mark.parametrize(
-    "fault", [None, "identity", "duplicate", "capped", "set", "timing"]
+    "fault", [None, "identity", "duplicate", "capped", "set", "viral", "timing"]
 )
 @pytest.mark.parametrize("eval_set", ["all", "eval-val"])
 def test_report_rejects_inconsistent_published_results(
@@ -44,6 +44,7 @@ def test_report_rejects_inconsistent_published_results(
                 "dataset": row.dataset,
                 "stem": row.stem,
                 "eval_set": row.eval_set,
+                "is_viral": row.is_viral,
                 "model": checkpoint["label"],
                 "range": contact_range,
                 "cut": cut,
@@ -68,6 +69,8 @@ def test_report_rejects_inconsistent_published_results(
         timings.loc[0, ["stopped_rollouts", "unfinished_rollouts"]] = [99, 1]
     elif fault == "set":
         precision.loc[0, "eval_set"] = "eval-test"
+    elif fault == "viral":
+        precision.loc[0, "is_viral"] = 1 - precision.loc[0, "is_viral"]
     elif fault == "timing":
         timings = timings.iloc[:-1]
     if fault is None:

@@ -85,12 +85,14 @@ def validate_result(
         raise ValueError("Incomplete or capped rollouts cannot enter the report")
     if set(timings.checkpoint) != {checkpoint["label"]}:
         raise ValueError("Timings identify a different checkpoint")
-    expected = targets[["dataset", "stem", "eval_set"]].rename(
-        columns={"eval_set": "expected_set"}
+    expected = targets[["dataset", "stem", "eval_set", "is_viral"]].rename(
+        columns={"eval_set": "expected_set", "is_viral": "expected_is_viral"}
     )
     joined = precision.merge(expected, on=["dataset", "stem"], validate="many_to_one")
     if not (joined.eval_set == joined.expected_set).all():
         raise ValueError("Evaluation-set labels changed")
+    if not (joined.is_viral == joined.expected_is_viral).all():
+        raise ValueError("Viral labels changed")
 
 
 def summarize(plan: dict, eval_set: str = "all") -> None:
@@ -159,11 +161,7 @@ def summarize(plan: dict, eval_set: str = "all") -> None:
                     else 0,
                 }
             )
-        annotated = precision.merge(
-            targets[["dataset", "stem", "is_viral"]],
-            on=["dataset", "stem"],
-            validate="many_to_one",
-        )
+        annotated = precision.copy()
         annotated["low_msa"] = [
             unit in low_msa_units
             for unit in zip(annotated.dataset, annotated.stem, strict=True)
@@ -236,14 +234,40 @@ def summarize(plan: dict, eval_set: str = "all") -> None:
     )
 
 
+def publish(plan: dict, eval_set: str = "all") -> None:
+    """Publish the small aggregate report beside its existing source results."""
+    suffix = "" if eval_set == "all" else "_" + eval_set
+    names = (
+        f"r_precision{suffix}.csv",
+        f"r_precision_subgroups{suffix}.csv",
+        f"report_manifest{suffix}.json",
+    )
+    manifest = json.loads((DATA / names[-1]).read_text())
+    if {r["trial"] for r in manifest["results"]} != {
+        c["trial"] for c in plan["checkpoints"]
+    }:
+        raise ValueError("Cannot publish an incomplete aggregate report")
+    for name in names:
+        subprocess.run(
+            [
+                "hf", "buckets", "cp", str(DATA / name),
+                plan["artifact_root"] + "/reports/" + name,
+            ],
+            check=True,
+        )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fetch", action="store_true")
+    parser.add_argument("--publish", action="store_true")
     parser.add_argument(
         "--eval-set", choices=("all", "eval-val", "eval-denovo"), default="all"
     )
     parser.add_argument("--trials", nargs="+")
     args = parser.parse_args()
+    if args.publish and args.trials:
+        parser.error("--publish requires the complete checkpoint plan")
     plan = json.loads((DATA / "plan.json").read_text())
     if args.trials:
         plan = {
@@ -257,6 +281,8 @@ def main() -> None:
     if args.fetch:
         collect(plan, args.eval_set)
     summarize(plan, args.eval_set)
+    if args.publish:
+        publish(plan, args.eval_set)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,185 @@
+{
+  "completed_at_utc": "2026-10-21T22:47:01.242307+00:00",
+  "checkpoint": {
+    "trial": "lr2e-3",
+    "run_id": "contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B",
+    "step": 105722,
+    "label": "contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B-step-105722",
+    "source": "s3://marin-us-east-02a/tmp/ttl=14d/checkpoints-temp/marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B/checkpoints/step-105722",
+    "frozen": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-02/sources/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B/step-105722",
+    "hf_export": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-02/models/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B/hf/step-105722",
+    "objects": [
+      {
+        "path": "d/093d52d5d2476fad65c0ee2685959e8e",
+        "size": 2214612992,
+        "etag": "\"d38bff7cb3136c0a081ddd73525f1cbd\""
+      },
+      {
+        "path": "d/0b00971cca08b7a000ff93ea0d587e73",
+        "size": 451129344,
+        "etag": "\"259b2409ce9296fc1dcd3fc6defd4b5b\""
+      },
+      {
+        "path": "d/1401e668d521e009e832cfc618191282",
+        "size": 2164281344,
+        "etag": "\"101a162f96b9564b3d11b9ec68f27ec0\""
+      },
+      {
+        "path": "d/16b91784ba06aa81f2c4c539a901ba64",
+        "size": 16496,
+        "etag": "\"64f65c14f5e001b1d207d76f16d571c5\""
+      },
+      {
+        "path": "d/2e6a294e576dc69df48770af2a5f1237",
+        "size": 1308631040,
+        "etag": "\"ded8d04a3cdc7120895b8505c4dae9d2\""
+      },
+      {
+        "path": "d/3c5bc8732833873ec1e8af82f21f2c01",
+        "size": 17286,
+        "etag": "\"8669c80295e5185c65fc2a023c3da99e\""
+      },
+      {
+        "path": "d/3d0a17f279aee1cd67678f0f63be5f91",
+        "size": 12587008,
+        "etag": "\"d2db0d91ef30862c8015feff4728c3a3\""
+      },
+      {
+        "path": "d/5035e8e26bd8b8662bbf50f4209291f9",
+        "size": 340,
+        "etag": "\"a11d001782623431b96b717b3aa61136\""
+      },
+      {
+        "path": "d/56760d535a518e9f88435067123f71f2",
+        "size": 2211295232,
+        "etag": "\"85d2e3d694b240a36ba2366c91a8b2c8\""
+      },
+      {
+        "path": "d/6b881899b7e726153e630828a80de919",
+        "size": 100667392,
+        "etag": "\"e9f0258ca8cbd1a7ef6d7c4f36f014ed\""
+      },
+      {
+        "path": "d/97fc1567634301a0fc712ccf1bae623b",
+        "size": 201334784,
+        "etag": "\"cbcac10dea174d9c2e3fce70ba4df4e1\""
+      },
+      {
+        "path": "d/ae7be5bcd514a48b0bc461784a8604ca",
+        "size": 2164477952,
+        "etag": "\"fd30a4c9a146588f546bdcb67ce7de52\""
+      },
+      {
+        "path": "d/c19d66cab691c0464d61b8b1e7673c8f",
+        "size": 2160766976,
+        "etag": "\"c40f24a23056008679ac38e67ff7146d\""
+      },
+      {
+        "path": "d/c5df521e3eee2e204858f6f7b67d78f2",
+        "size": 2164285440,
+        "etag": "\"e54b4aac98418dbf785285ba6826d439\""
+      },
+      {
+        "path": "d/cafd8eec35fdbc0b67cc4e6a6156473a",
+        "size": 3014,
+        "etag": "\"2cf7c953c0ada4f58d68bbd00e2e5b04\""
+      },
+      {
+        "path": "d/e8860e6e46ab28ac71b37bbcc256137d",
+        "size": 1812156416,
+        "etag": "\"ce968ca3caab295c5cea8e34e788a49e\""
+      },
+      {
+        "path": "d/f0d0e3fd9001efec5bd400d43258f9a5",
+        "size": 23310336,
+        "etag": "\"4630ca97e081b37a159dc192504a5e7f\""
+      },
+      {
+        "path": "d/f442a784b6b0af4d6e88781ba8cf6684",
+        "size": 503320576,
+        "etag": "\"f08d05db78705a45a18faa5991230bc1\""
+      },
+      {
+        "path": "d/f6aadac03b25ef01798e9fefc228c372",
+        "size": 163778560,
+        "etag": "\"37cee08a1327fc91cf0debf26b4133ba\""
+      },
+      {
+        "path": "manifest.json",
+        "size": 11214,
+        "etag": "\"244a750d7416a009fcf84c93f1041a19\""
+      },
+      {
+        "path": "manifest.ocdbt",
+        "size": 527,
+        "etag": "\"78172f6e1ca4c08f9030bbff23775f26\""
+      },
+      {
+        "path": "metadata.json",
+        "size": 81,
+        "etag": "\"005c6b53c4514eb3ed8a0b733e3e0db7\""
+      }
+    ],
+    "source_bytes": 17656684350,
+    "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B",
+    "model_config": {
+      "rope": {
+        "theta": 500000,
+        "factor": 8,
+        "low_freq_factor": 1,
+        "high_freq_factor": 4,
+        "original_max_position_embeddings": 8192
+      },
+      "head_dim": null,
+      "use_bias": false,
+      "num_heads": 32,
+      "tokenizer": null,
+      "hidden_dim": 2048,
+      "num_layers": 24,
+      "hybrid_norm": false,
+      "max_seq_len": 8192,
+      "scan_layers": true,
+      "upcast_attn": false,
+      "use_qk_norm": true,
+      "attn_backend": "JAX_FLASH",
+      "num_kv_heads": 8,
+      "sliding_window": 4096,
+      "intermediate_dim": 8192,
+      "initializer_range": 0.02,
+      "layer_norm_epsilon": 1e-05,
+      "use_sliding_window": false,
+      "activation_function": "silu",
+      "tie_word_embeddings": false,
+      "input_embedding_norm": false,
+      "reference_checkpoint": "Qwen/Qwen3-0.6B",
+      "use_layer_norm_weight": true,
+      "gradient_checkpointing": true,
+      "flash_attention_block_size": null
+    },
+    "latest_logged_step": 105889,
+    "latest_eval_loss": 3.153369188308716
+  },
+  "git_commit": "dd87fca4667ad26c19f758d60c853c577059a486",
+  "worker_sha256": "791c6e67e4d60c290cd42c4afafb5e4b3e1489220e4f0f3ac2b951581b8a6587",
+  "base_worker_sha256": "dd2f76dd5d34d1549e0be1197d9053d6e3aa0ef909f062ff5355d65f31cd571c",
+  "extension_sha256": "6fc4bd158ede76ab6daef74f5d508c62f16eeffb594cc04a0e665ed1e69c454d",
+  "metric_sha256": "6cbaa1c555763df07cb94ee81accebef25a5565590d47a32470ade78e36d824a",
+  "marinfold_revision": "d1bea417a64cc042ad931422200c3edeb873f2e0",
+  "eval_set": "all",
+  "units": 116,
+  "rollouts": 11600,
+  "unfinished_rollouts": 0,
+  "extended_rollouts": 0,
+  "sampling": {
+    "rollouts": 100,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "top_k": -1,
+    "token_budget": "6L+128",
+    "seed": 0,
+    "capped_sample_policy": "continue exact prompt and generated prefix to the remaining 8192-token context; independent SHA256-derived continuation seed"
+  },
+  "model_egress": false,
+  "artifact_root": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-10-21/latest-02/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B-step-105722",
+  "runtime": "one regional H100; frozen native checkpoint and reusable HF export in CoreWeave S3"
+}

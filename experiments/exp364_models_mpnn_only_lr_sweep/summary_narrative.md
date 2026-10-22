@@ -36,9 +36,9 @@ Latest LR 5e-4 validation: loss 3.09300 at step 181,804 versus full data 3.06074
 
 Full-data first epoch: final loss 2.98441 at step 266,344. Additional full-corpus pass: 2.98099 at absolute step 479,417.
 
-The continuation restores step 213,072 before cooldown; it is not an independent seed. Both completed trajectories include cooldown; current redesign-only runs do not yet.
+The continuation restores step 213,072 before cooldown; it is not an independent seed. Both completed trajectories include cooldown. The redesign-only two-epoch trials are still before cooldown; the TPU one-epoch fork entered cooldown on October 22.
 
-The current runs also have longer warmup and amino-acid augmentation ramps. Equal optimizer steps match packed token slots, not actual tokens or proteins. The gap is preliminary LM-validation evidence; contact accuracy has not been measured.
+The current runs also have longer warmup and amino-acid augmentation ramps. Equal optimizer steps match packed token slots, not actual tokens or proteins. The matched-step LM-validation gap and completed pre-cooldown contact evaluations both favor the full-data reference; the redesign-only trajectories are unfinished.
 
 ## One-epoch cooldown fork — 2026-10-19
 
@@ -65,12 +65,48 @@ Score 97 natural eval-val proteins and 19 eval-denovo designs. Eval-test is excl
 
 Keep the original 100-rollout, temperature-1, top-p-0.95 recipe. Start at 6L+128; the user approved continuing capped samples. Preserve each capped sample's exact prompt and generated tokens, then sample only its suffix within the remaining 8192-token context. Record continuation seeds, budgets and lengths. Require every sample to terminate; never discard capped samples from the score.
 
-Thirty-five CPU checks pass. Natural/design results and viral/low-MSA cuts stay separate. No complete new R-precision scores are available yet.
+All four full evaluations completed: 46,400 rollouts, zero unfinished samples, and zero extensions needed. Thirty-seven CPU checks pass. Natural/design results and viral/low-MSA cuts stay separate.
 
 ## Contact evaluation: durable sources restored
 
-CoreWeave writes recovered after the account suspension. All four refreshed native sources are frozen and independently verified: 124 files, 70.63 GB. All four CPU exports passed verification, including both weight shards and tokenizer files. Four one-H100 batch evaluation jobs are queued as of 21:08 UTC; model bytes stay regional.
+CoreWeave writes recovered after the account suspension. All four refreshed native sources are frozen and independently verified: 124 files, 70.63 GB. All four CPU exports passed verification, including both weight shards and tokenizer files. All four H100 evaluations succeeded by 22:47 UTC on October 21, without failures or preemptions. Model bytes stayed regional.
 
 The earlier attempt lost temporary source objects during repeated preemptions. Its diagnostics and snapshot are preserved; no full evaluation groups completed. The fork smoke capped 2/100 samples on 5sbj_A, motivating the approved continuation.
 
-Full-data first-epoch reference: eval-val 0.55510 / 0.53706; eval-denovo 0.69640 / 0.67497 (all / long). The continuation reference also had capped design samples, so the token-budget difference must be stated. No matched redesign-corpus KNN null is available.
+Full-data first-epoch reference: eval-val 0.55510 / 0.53706; eval-denovo 0.69640 / 0.67497 (all / long). The continuation reference had eight capped samples on 5sbj_A. The new full evaluations needed no extensions. No matched redesign-corpus KNN null is available.
+
+## Contact results: natural proteins first
+
+Eval-val, 97 natural proteins, all / long R-precision:
+
+5e-4, step 184314: 0.39711 / 0.37791
+1e-3, step 207865: 0.39562 / 0.37381
+2e-3, step 105722: 0.38884 / 0.36465
+GPU fork, step 146264: 0.38624 / 0.36627
+Completed full-data default: 0.55510 / 0.53706
+
+The redesign-only snapshots trail by 0.158–0.169 in all-range precision. The top two LR values are tied (difference 0.00148). Unequal exposure and unfinished cooldown prevent a final causal conclusion. Per-protein metrics, timings, bootstrap intervals and subgroup cuts are committed and public.
+
+## Contact results: 19 designs
+
+Eval-denovo, all / long R-precision:
+
+5e-4: 0.59671 / 0.54092
+1e-3: 0.59087 / 0.53839
+2e-3: 0.59242 / 0.53713
+GPU fork: 0.59834 / 0.55408
+Completed full-data default: 0.69640 / 0.67497
+
+The small design set is a sanity check. All four snapshots precede cooldown, including the checkpoint labeled as the one-epoch fork. TPU weights are not part of this evaluation snapshot.
+
+## Training progress — October 22, 14:48 UTC
+
+All five production runs are active. Epochs / target and latest validation loss:
+
+5e-4 GPU: 1.072 / 2; loss 3.08945
+1e-3 GPU: 1.186 / 2; loss 3.11922
+2e-3 GPU: 0.618 / 2; loss 3.16114
+GPU one-epoch fork: 0.791 / 1; loss 3.10318
+v5p-64 one-epoch fork: 0.809 / 1; loss 3.10050
+
+TPU cooldown has started. About 43 compute hours remain at current speed, putting the earliest finish on October 24; four prior preemptions show why calendar completion can be later. GPU fork: about 114 compute hours. Original two-epoch parent remains active and independent.
