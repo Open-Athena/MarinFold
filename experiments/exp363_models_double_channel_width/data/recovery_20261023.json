@@ -35,10 +35,218 @@
       "recent_validations": []
     }
   ],
-  "recovery_blocker": "Configured cw profile rejected by https://cwobject.com with InvalidAccessKeyId on ListObjectsV2; no replacement credentials found in the process environment.",
   "fork_failure": "TensorStore default AWS credential chain could not source credentials; data cache read failed with 403 AccessDenied before training.",
   "parent_failure": "Iris child worker_failed: missing CW_KEY_ID and CW_KEY_SECRET after the new credential policy; terminal driver failed.",
   "recovery_commands": [
+    "uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train --nodes 4 --attempt 5 --resume",
+    "uv run --no-project python experiments/exp363_models_double_channel_width/launch.py fork-train --nodes 4 --attempt 5 --resume"
+  ],
+  "initial_recovery_blocker": "Configured cw profile rejected by https://cwobject.com with InvalidAccessKeyId on ListObjectsV2; no replacement credentials found in the process environment.",
+  "credential_refresh_verified": {
+    "observed_at": "2026-10-23T14:33:14.948649+00:00",
+    "original_checkpoints": [
+      {
+        "path": "s3://marin-us-east-02a/MarinFold/exp363_models_double_channel_width/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B/checkpoints/step-26634",
+        "metadata": {
+          "step": 26634,
+          "timestamp": "2026-10-18T00:18:50.922604",
+          "is_temporary": false
+        }
+      },
+      {
+        "path": "s3://marin-us-east-02a/MarinFold/exp363_models_double_channel_width/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B/checkpoints/step-53268",
+        "metadata": {
+          "step": 53268,
+          "timestamp": "2026-10-19T21:36:15.216387",
+          "is_temporary": false
+        }
+      },
+      {
+        "path": "s3://marin-us-east-02a/tmp/ttl=14d/checkpoints-temp/marin-us-east-02a/MarinFold/exp363_models_double_channel_width/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B/checkpoints/step-75031",
+        "metadata": {
+          "step": 75031,
+          "timestamp": "2026-10-22T21:54:30.206179",
+          "is_temporary": true
+        }
+      }
+    ],
+    "fork_source": {
+      "path": "s3://marin-us-east-02a/MarinFold/exp363_models_double_channel_width/fork_sources/contacts-v1-exp363-m2-p06-full-epoch-5.86B/step-74178",
+      "metadata": {
+        "step": 74178,
+        "timestamp": "2026-10-22T20:23:21.629892",
+        "is_temporary": true
+      }
+    },
+    "data_metadata_bytes_read": 555,
+    "tensorstore_authenticated_data_metadata_read_bytes": 555
+  },
+  "recovery_state": "both_training",
+  "verified_checkpoint_counters": {
+    "original": {
+      "step": 75032,
+      "opt_state/count": 75032,
+      "opt_state/hyperparams_states/learning_rate/count": 75032,
+      "opt_state/hyperparams/learning_rate": 0.0010000000474974513
+    },
+    "fork": {
+      "step": 74179,
+      "opt_state/count": 74179,
+      "opt_state/hyperparams_states/learning_rate/count": 74179,
+      "opt_state/hyperparams/learning_rate": 0.0010000000474974513
+    }
+  },
+  "original_recovery": {
+    "driver_job_id": "/bizon/exp363-train-a04",
+    "child_job_id": "/bizon/exp363-train-a04/exp363-train-6d5c8a62",
+    "source_git_sha": "563579f2a32895375a5385bf49ed0e9f7070e168",
+    "submitted_at": "2026-10-23T14:34:01.260Z",
+    "state": "training",
+    "source_checkpoint_step": 75031,
+    "resume_step": 75032,
+    "learning_rate": 0.001,
+    "first_resumed_step": 75032,
+    "first_train_step_completed_at": "2026-10-23T14:43:58Z",
+    "fresh_training_log": {
+      "timestamp": "2026-10-23T14:46:03Z",
+      "rounded_step": "75.1k",
+      "rounded_loss": 2.93
+    }
+  },
+  "fork_recovery_attempts": [
+    {
+      "driver_job_id": "/bizon/exp363-fork-train-a03",
+      "child_job_id": "/bizon/exp363-fork-train-a03/exp363-train-fb907ed2",
+      "source_git_sha": "563579f2a32895375a5385bf49ed0e9f7070e168",
+      "submitted_at": "2026-10-23T14:35:52.208Z",
+      "state": "cancelled_before_training",
+      "reason": "Remote config serialization could not find choice name for __main__.ForkAdamConfig. Moved the registered optimizer to an importable module and added a subprocess serialization regression test."
+    }
+  ],
+  "local_tests": "14 passed, including remote optimizer serialization/decoding, native Adam checkpoint round-trip and LR schedule preservation",
+  "fork_recovery": {
+    "driver_job_id": "/bizon/exp363-fork-train-a04",
+    "child_job_id": "/bizon/exp363-fork-train-a04/exp363-train-3fc9d00b",
+    "source_git_sha": "d923758faf74f6174aa338d47475b5061e85cc01",
+    "submitted_at": "2026-10-23T14:41:30.496Z",
+    "state": "training",
+    "source_checkpoint_step": 74178,
+    "resume_step": 74179,
+    "target_learning_rate": 0.000707,
+    "restored_step": 74179,
+    "first_batch_loaded_at": "2026-10-23T14:49:20Z",
+    "first_train_step_completed_at": "2026-10-23T14:51:32Z",
+    "first_resumed_step": 74179
+  },
+  "live_schedule_verification": {
+    "observed_at": "2026-10-23T14:52:38.060664+00:00",
+    "fork_first_updates": [
+      {
+        "_step": 74179,
+        "global_step": 74179,
+        "train/loss": 2.90014386177063,
+        "optim/learning_rate": 0.0010000000474974513
+      },
+      {
+        "_step": 74180,
+        "global_step": 74180,
+        "train/loss": 2.830885171890259,
+        "optim/learning_rate": 0.0009998615132644773
+      },
+      {
+        "_step": 74181,
+        "global_step": 74181,
+        "train/loss": 2.884976863861084,
+        "optim/learning_rate": 0.0009997228626161814
+      },
+      {
+        "_step": 74182,
+        "global_step": 74182,
+        "train/loss": 2.8703033924102783,
+        "optim/learning_rate": 0.0009995842119678855
+      },
+      {
+        "_step": 74183,
+        "global_step": 74183,
+        "train/loss": 2.8761227130889893,
+        "optim/learning_rate": 0.0009994456777349114
+      },
+      {
+        "optim/learning_rate": 0.0009993070270866156,
+        "_step": 74184,
+        "global_step": 74184,
+        "train/loss": 2.880953311920166
+      },
+      {
+        "_step": 74185,
+        "global_step": 74185,
+        "train/loss": 2.904052257537842,
+        "optim/learning_rate": 0.0009991684928536415
+      },
+      {
+        "_step": 74186,
+        "global_step": 74186,
+        "train/loss": 2.901966094970703,
+        "optim/learning_rate": 0.0009990298422053456
+      },
+      {
+        "_step": 74187,
+        "global_step": 74187,
+        "train/loss": 2.8477697372436523,
+        "optim/learning_rate": 0.0009988911915570498
+      }
+    ],
+    "max_lr_absolute_error": 1.1307526247804345e-10,
+    "control_first_matching_update": [
+      {
+        "_step": 74179,
+        "optim/learning_rate": 0.0010000000474974513,
+        "train/loss": 2.90014386177063,
+        "global_step": 74179
+      }
+    ],
+    "first_loss_difference": 0.0
+  },
+  "verified_at": "2026-10-23T14:52:53.543688+00:00",
+  "recovered_metrics": [
+    {
+      "run_id": "contacts-v1-exp363-m2-p06-full-epoch-5.86B",
+      "state": "running",
+      "url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B",
+      "summary": {
+        "global_step": 75122,
+        "_timestamp": 1792706577.482081,
+        "optim/learning_rate": 0.0010000000474974513,
+        "train/loss": 2.8693652153015137,
+        "eval/loss": 3.098256826400757,
+        "throughput/duration": 5.654329768847674
+      }
+    },
+    {
+      "run_id": "contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4",
+      "state": "running",
+      "url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4",
+      "summary": {
+        "global_step": 74190,
+        "_timestamp": 1792767154.3809204,
+        "optim/learning_rate": 0.0009984754724428058,
+        "train/loss": 2.8404769897460938,
+        "throughput/duration": 5.589386258972809
+      }
+    }
+  ],
+  "original_summary_note": "At the snapshot, W&B summary still showed the pre-restart step 75122 timestamp. Fresh Iris logs independently confirm first resumed step 75032 at 14:43:58Z and continued loss output at 14:46:03Z.",
+  "original_latest_wandb_check": {
+    "observed_at": "2026-10-23T14:54:44.869235+00:00",
+    "state": "running",
+    "summary": {
+      "global_step": 75126,
+      "_timestamp": 1792767264.2631905,
+      "train/loss": 2.8462910652160645,
+      "optim/learning_rate": 0.0010000000474974513
+    }
+  },
+  "initial_prepared_recovery_commands": [
     "uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train --nodes 4 --attempt 4 --resume",
     "uv run --no-project python experiments/exp363_models_double_channel_width/launch.py fork-train --nodes 4 --attempt 3 --resume"
   ]

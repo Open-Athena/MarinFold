@@ -17,6 +17,8 @@ marinfold_run:
   - /bizon/exp363-train-a02/exp363-train-4fae9eab
   - /bizon/exp363-train-a03
   - /bizon/exp363-train-a03/exp363-train-0cdc9fb5
+  - /bizon/exp363-train-a04
+  - /bizon/exp363-train-a04/exp363-train-6d5c8a62
 ---
 # 2026-10-13 · exp363_models_double_channel_width · contacts-v1-exp363-m2-p06-full-epoch-5.86B
 
@@ -61,3 +63,18 @@ Relaunch is blocked: the local cw profile is rejected by the public CoreWeave
 storage endpoint with InvalidAccessKeyId. No replacement job has been submitted.
 The latest complete checkpoint cannot be reverified until credentials are
 refreshed. Recovery command and evidence: experiment data/recovery_20261023.json.
+
+## October 23 credentials refreshed
+
+At 10:33 EDT the refreshed key passed fsspec and TensorStore data reads.
+The latest complete checkpoint is step 75,031; direct scalar reads verified
+trainer, Adam and scheduler count 75,032 and LR 0.001. Driver a04 was submitted
+at 10:34 EDT from commit 563579f2. Its child confirmed resumption from 75,032
+at 10:42 EDT and entered first-step compilation. The original schedule is unchanged.
+
+Recovery verified: first resumed update 75,032 completed at 10:43:58 EDT;
+fresh training losses continued afterward. W&B temporarily retained the
+pre-restart high-water mark while earlier steps were replayed.
+
+At 10:54 EDT W&B also confirmed fresh progress beyond the old high-water mark:
+step 75,126, train loss 2.8462910652, LR 0.001.

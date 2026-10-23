@@ -10,9 +10,41 @@ marinfold_experiment:
 
 **Issue:** [#363](https://github.com/Open-Athena/MarinFold/issues/363) · **Kind:** `models` · **Branch:** `exp363/double-channel-width`
 
-## Recovery blocked by credentials (2026-10-23)
+## Both runs recovered (2026-10-23)
 
-At 10:27 EDT, both production jobs are stopped. The original run last reported
+**Both jobs are training.** The original completed its first resumed update at
+**10:43:58 EDT** and is producing fresh losses. The fork completed its first
+update at **10:51:32 EDT**; at 10:52 EDT W&B reports **step 74,190**, LR
+**0.00099847547**, and approximately **5.59 seconds/update**. The first nine
+recorded fork LRs match the planned ramp (maximum absolute error 1.14e-10).
+At the shared first step, **74,179**, the fork and original both report loss
+**2.90014386177063**, corroborating the restored state and data position.
+There is no post-fork full-validation comparison yet.
+
+The refreshed CoreWeave key passed authenticated reads through both fsspec and
+TensorStore at 10:33 EDT. The original's complete checkpoint **75,031** restores
+trainer, Adam and schedule counters **75,032** at LR **0.001**. The fork's preserved
+checkpoint **74,178** restores the same counters at **74,179**, with its planned
+reduction to **0.000707**. These scalar states were read directly from storage;
+the original will replay 91 updates since its last complete checkpoint.
+
+Original driver `/bizon/exp363-train-a04` was submitted at **10:34 EDT** from
+commit `563579f2`. Fork driver `/bizon/exp363-fork-train-a04` was submitted at
+**10:41 EDT** from commit `d923758f`. Both retain their W&B identities and training
+schedules, and request four nodes / 32 H100s each at batch priority. Startup
+verification and job details are recorded in `data/recovery_20261023.json`.
+
+Fork attempt a03 passed authentication but exposed a separate configuration
+serialization error: defining `ForkAdamConfig` in the CLI module made its remote
+identity `__main__.ForkAdamConfig`, which the choice registry could not encode.
+It was cancelled before training and replaced with a04. The registered class
+now lives in importable `fork_optimizer.py`. All **14 tests pass**, including a
+new driver-entrypoint/cloudpickle/subprocess encoding and decoding regression.
+The optimizer calculations and checkpoint state structure are unchanged.
+
+## Earlier credential failure (2026-10-23, 10:27 EDT)
+
+At 10:27 EDT, both production jobs were stopped. The original run last reported
 **step 75,122** (28.21% of 266,345 updates) at **18:02 EDT on October 22**,
 LR **0.001**, train loss **2.86937**. Its latest full validation, at **73,990**,
 is **3.09826**. Iris reports that the original child could not restart because
@@ -27,16 +59,15 @@ There are no fork loss measurements or LR updates to compare yet.
 
 The runtime now explicitly supplies `AWS_ACCESS_KEY_ID` and
 `AWS_SECRET_ACCESS_KEY` from the same CoreWeave credentials used by fsspec.
-All 13 local tests pass; live validation and relaunch remain blocked because
-CoreWeave's public storage endpoint rejects the workstation's `[cw]` key with
-**InvalidAccessKeyId**. Refreshed local credentials are required before either
-job can recover. The current latest original checkpoint could not be rechecked;
-the fork's immutable step-74,178 copy was verified on October 22.
+All 13 local tests passed. Initially, live validation and relaunch were blocked
+because CoreWeave's public storage endpoint rejected the workstation's `[cw]`
+key with **InvalidAccessKeyId**. The credential refresh and checkpoint
+verification above resolved that blocker.
 
 Evidence and prepared recovery commands are in `data/recovery_20261023.json`.
 The fork's [W&B record](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4)
-now has a history entry recording its startup failure. No replacement jobs have
-been submitted with the rejected key.
+has a history entry recording its startup failure and the subsequent recovery.
+No replacement jobs were submitted with the rejected key.
 
 ## Lower-learning-rate fork (2026-10-22)
 
@@ -54,7 +85,7 @@ through the original plateau, with the final linear cooldown still starting at
 **step 213,076** and ending at the original **266,345-update** horizon. The original
 10% floor ratio gives a final target LR of **0.0000707**. No warmup is repeated.
 
-`fork_train.py` subclasses the supported AdamConfig scheduler interface while
+`fork_optimizer.py` subclasses the supported AdamConfig scheduler interface while
 retaining the original optimizer-state structure. It uses
 `TrainerConfig.initialize_from` to preserve weights, Adam moments, RNG and the
 absolute data cursor; all corpus/shuffle/augmentation settings remain identical.

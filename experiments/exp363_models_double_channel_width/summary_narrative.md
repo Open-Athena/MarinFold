@@ -15,13 +15,14 @@ Architecture, tokenizer, data and recovery checks passed.
 Compressed smoke schedule was spiky; this is an execution check.
 
 ## Current status — October 23
-Both jobs stopped; recovery needs refreshed CoreWeave storage credentials.
-Original last reported step 75,122, 28.21% of the 266,345-update horizon.
-Train loss 2.86937; latest full validation at step 73,990 is 3.09826.
-Original restart rejected: old submission lacks newly required CW credentials.
-Fork failed before its first update: TensorStore could not authenticate data reads.
-Runtime credential wiring corrected; 13 local tests pass, live retry blocked.
-The local CW key now returns InvalidAccessKeyId; latest checkpoint not rechecked.
+Credentials refreshed; fsspec and TensorStore reads verified.
+Original a04 submitted at 10:34 EDT; restored checkpoint 75,031 -> step 75,032.
+Fork a04 submitted at 10:41 EDT; source checkpoint 74,178 -> step 74,179.
+Both use four nodes / 32 H100s, batch, with independent identities and paths.
+Both are training: original first resumed update 10:43 EDT; fork 10:51 EDT.
+Fork step 74,190: LR 0.00099847547, approximately 5.59 seconds/update.
+Fixed credential forwarding and remote optimizer class serialization; 14 tests pass.
+Latest pre-restart full validation: original 3.09826 at step 73,990.
 
 ## TPU trial succeeded
 Interactive v5p-64: 32 chips across 8 VMs; all 20 updates completed.
@@ -57,7 +58,8 @@ Weights, Adam moments/counters, RNG, data position and augmentation are preserve
 Linear reduction to 0.000707 over 2,114 updates; target reached at step 76,293.
 Hold until original final cooldown at step 213,076; final LR target 0.0000707.
 Same 266,345-update horizon, separate W&B and checkpoint identities.
-Source copy and counters verified; 13 local configuration and restore tests passed.
-Submitted a02 at 20:39 UTC: four-node / 32-H100 batch placement.
-W&B initialized at 21:08 UTC; startup failed before any training metrics.
-Both jobs await valid credentials; no lower-LR comparison is available yet.
+Source copy and counters verified; 14 local configuration/restore/serialization tests passed.
+October 22 a02 failed before training; October 23 credentials refreshed.
+Retry a03 exposed CLI-class serialization; moved optimizer into an importable module.
+Corrected a04 is training; first nine LRs match the schedule within 1.14e-10.
+First loss at 74,179 exactly matches the original; no new full validation yet.
