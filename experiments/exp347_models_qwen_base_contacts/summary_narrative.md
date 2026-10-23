@@ -118,6 +118,21 @@ Both production runs now train on eight RNO2A H100s each.
 Verified first local saves: raw5230 / +574.765M; prompted12539 / +476.967M tokens.
 No new checkpoint objects were written to the original east roots after relocation.
 
+## Storage credential recovery — October 23
+
+Both formats trained about five hours on RNO2A before storage rejected their key.
+Both training jobs and evaluation drivers failed with InvalidAccessKeyId.
+After the user refreshed credentials, independent storage reads and writes passed.
+Full local checkpoints verified: raw step7215 / +834.837M tokens;
+prompted step15637 / +678.645M tokens. Both contain all optimizer and model shards.
+Training replacements: raw a06 and prompted a07, eight RNO H100s each.
+Both persistent eval-val drivers restart as a03, with the same 1B-token cadence.
+All checkpoint and evaluation writes remain local to RNO2A.
+Three scheduler preemptions delayed startup; Iris retried the same roots.
+At 14:52 UTC, both restored updates and new local checkpoint commits are verified:
+raw step7216 / +834.955M; prompted step15638 / +678.720M tokens, 20 objects each.
+The October 21 R-precision measurements remain the latest completed results.
+
 ## Periodic R-precision contract
 
 Frozen 97-protein eval-val only; eval-test is untouched.

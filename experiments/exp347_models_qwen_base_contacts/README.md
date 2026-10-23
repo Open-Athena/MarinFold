@@ -378,6 +378,43 @@ with its own full local checkpoint. Both periodic evaluation drivers are live
 as `a02` in RNO2A; their next scheduled point remains 1B additional tokens.
 The October 21 values below remain the latest completed R-precision measurements.
 
+### October 23 storage credential recovery
+
+After approximately five hours of progress on RNO2A, both training processes and
+both evaluation drivers failed when object storage returned `InvalidAccessKeyId`.
+The training failures occurred at 01:58 and 02:00 UTC. Worker logs recorded
+successful checkpoint commits immediately before the failures. After the user
+refreshed credentials, storage reads and writes succeeded and both checkpoints
+were independently verified, including matching completion/resume markers,
+tokenizers, model shards, and all eight optimizer shards:
+
+| Format | Restored step | Additional tokens saved |
+| --- | ---: | ---: |
+| contacts-v1 | 7215 | 834,837,040 |
+| prompted | 15637 | 678,645,063 |
+
+The replacement training roots are
+`/timodonnell/exp347-qwen35-4b-contacts_v1-corpus235m-100bt-a06` and
+`/timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a07`, each requesting
+eight H100s on RNO2A. They use the existing local resume pointers, with no remote
+checkpoint fallback. Both persistent evaluation drivers restart as `a03`, also
+on RNO2A. Training configuration, corpus order, run identities, and the 1B-token
+evaluation cadence are unchanged. All new checkpoints and evaluation outputs
+remain under the `marin-rno2a` prefix above. Submission alone does not establish
+successful recovery: both jobs were preempted three times during startup and
+retried automatically under the same roots. At 14:52 UTC both had completed a
+restored optimizer update and committed a new local checkpoint, independently
+verified with all 20 objects present:
+
+| Format | First verified new checkpoint | Additional tokens saved |
+| --- | ---: | ---: |
+| contacts-v1 | 7216 | 834,955,320 |
+| prompted | 15638 | 678,719,739 |
+
+The credential refresh required no training-code change. Both evaluation drivers
+are running; the October 21 R-precision values remain the latest completed
+measurements while the next 1B-token milestones are pending.
+
 ## Results
 
 As of **2026-10-05 13:25 UTC**, five production trials have finished their

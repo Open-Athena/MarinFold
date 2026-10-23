@@ -19,6 +19,7 @@ marinfold_run:
   - /timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a04
   - /timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a05
   - /timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a06
+  - /timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a07
 ---
 # 2026-10-05 · exp347_models_qwen_base_contacts · exp347-qwen35-4b-prompted-corpus235m-100bt
 

@@ -28,6 +28,7 @@ marinfold_run:
   - /timodonnell/exp347-prompt-step12051-eval-a01-s11
   - /timodonnell/exp347-prompt-step12051-eval-smoke-a01-s00
   - /timodonnell/exp347-4b-prompted-corpus235m-eval-val-a02
+  - /timodonnell/exp347-4b-prompted-corpus235m-eval-val-a03
 ---
 # 2026-10-05 · exp347_models_qwen_base_contacts · exp347-4b-prompted-corpus235m-eval-val
 

@@ -28,6 +28,7 @@ marinfold_run:
   - /timodonnell/exp347-raw-step4620-eval-a01-s11
   - /timodonnell/exp347-raw-step4620-eval-smoke-a01-s00
   - /timodonnell/exp347-4b-contacts-v1-corpus235m-eval-val-a02
+  - /timodonnell/exp347-4b-contacts-v1-corpus235m-eval-val-a03
 ---
 # 2026-10-05 · exp347_models_qwen_base_contacts · exp347-4b-contacts-v1-corpus235m-eval-val
 

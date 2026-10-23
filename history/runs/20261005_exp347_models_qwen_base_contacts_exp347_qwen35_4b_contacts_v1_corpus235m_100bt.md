@@ -18,6 +18,7 @@ marinfold_run:
   - /timodonnell/exp347-qwen35-4b-contacts_v1-corpus235m-100bt-a03
   - /timodonnell/exp347-qwen35-4b-contacts_v1-corpus235m-100bt-a04
   - /timodonnell/exp347-qwen35-4b-contacts_v1-corpus235m-100bt-a05
+  - /timodonnell/exp347-qwen35-4b-contacts_v1-corpus235m-100bt-a06
 ---
 # 2026-10-05 · exp347_models_qwen_base_contacts · exp347-qwen35-4b-contacts_v1-corpus235m-100bt
 
