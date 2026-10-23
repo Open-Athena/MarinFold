@@ -1,8 +1,13 @@
 """Exercise full-state restoration and the fork's absolute LR/data timeline."""
 
+import json
+import runpy
+import subprocess
+import sys
 from dataclasses import asdict, replace
 from pathlib import Path
 
+import cloudpickle
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -14,15 +19,17 @@ from marin.training.training import TrainLmOnPodConfig, apply_output_path
 
 from experiments.exp277_models_single_mpnn_pilot.config import EPOCH_TRAIN_STEPS
 from experiments.exp363_models_double_channel_width.config import PREFIX, VERSION
-from experiments.exp363_models_double_channel_width.fork_train import (
+from experiments.exp363_models_double_channel_width.fork_optimizer import (
     FINAL_COOLDOWN_START,
-    FORK_RUN_ID,
     RESUME_STEP,
-    SOURCE_CHECKPOINT,
     SOURCE_CHECKPOINT_STEP,
     TARGET_LR,
     TRANSITION_STEPS,
     ForkAdamConfig,
+)
+from experiments.exp363_models_double_channel_width.fork_train import (
+    FORK_RUN_ID,
+    SOURCE_CHECKPOINT,
     build_fork_run,
 )
 from experiments.exp363_models_double_channel_width.test_train import resolved
@@ -123,3 +130,28 @@ def test_checkpoint_restores_adam_moments_and_uses_new_schedule(tmp_path: Path) 
     _, next_state = fork.update(grads, resumed, params)
     assert float(next_state.hyperparams["learning_rate"]) == pytest.approx(TARGET_LR)
     assert int(next_state.count) == int(final.count) + 1
+
+
+def test_entrypoint_optimizer_serializes_in_remote_process() -> None:
+    driver = runpy.run_path(
+        str(Path(__file__).with_name("fork_train.py")),
+        run_name="remote_driver_entrypoint",
+    )
+    source = resolved(smoke=False, nodes=4).train_config.optimizer
+    optimizer = driver["ForkAdamConfig"](**vars(source))
+    result = subprocess.run(
+        [
+            sys.executable, "-c",
+            "import cloudpickle, draccus, json, sys; "
+            "from levanter.optim.config import OptimizerConfig; "
+            "config = cloudpickle.loads(sys.stdin.buffer.read()); "
+            "encoded = draccus.encode(config, OptimizerConfig); "
+            "assert draccus.decode(OptimizerConfig, encoded) == config; "
+            "print(json.dumps(encoded))",
+        ],
+        input=cloudpickle.dumps(optimizer), capture_output=True, check=True,
+    )
+    encoded = json.loads(result.stdout)
+    assert encoded["type"] == "exp363-fork-adam"
+    assert encoded["target_learning_rate"] == TARGET_LR
+    assert encoded["source_resume_step"] == RESUME_STEP
