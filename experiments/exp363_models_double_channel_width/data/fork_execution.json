@@ -1,0 +1,101 @@
+{
+  "run_id": "contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4",
+  "parent_run_id": "contacts-v1-exp363-m2-p06-full-epoch-5.86B",
+  "source_checkpoint_step": 74178,
+  "resume_step": 74179,
+  "target_lr": 0.000707,
+  "transition_updates": 2114,
+  "target_reached_at_step": 76293,
+  "final_cooldown_start": 213076,
+  "num_train_steps": 266345,
+  "final_lr": 7.07e-05,
+  "driver_job_id": "/bizon/exp363-fork-train-a04",
+  "child_job_id": "/bizon/exp363-fork-train-a04/exp363-train-3fc9d00b",
+  "source_git_sha": "d923758faf74f6174aa338d47475b5061e85cc01",
+  "target_cluster": "cw-us-east-02a",
+  "gpu_count": 32,
+  "nodes": 4,
+  "priority": "batch",
+  "state": "running",
+  "submission_client": {
+    "git_sha": "fe4fbd383dd8ad37a0839b15fb09811b6a72f342",
+    "iris_binary": "/home/bizon/.cache/MarinFold/exp363-iris-src/.venv/bin/iris",
+    "dependency_lock": "marin checkout uv.lock at the recorded git SHA",
+    "setup": "uv sync --project /home/bizon/.cache/MarinFold/exp363-iris-src --package marin-iris --extra controller --extra iap --frozen"
+  },
+  "submit_command": "uv run --no-project python experiments/exp363_models_double_channel_width/launch.py fork-train --nodes 4 --attempt 4 --resume",
+  "local_tests": "14 passed, including remote optimizer serialization/decoding, native Adam checkpoint round-trip and LR schedule preservation",
+  "pre_submission_failure": "Old root launcher rejected by controller: build 2026-10-06, minimum accepted 2026-10-08; no job created. Upgraded only workstation submission client; training dependency lock unchanged.",
+  "submitted_at": "2026-10-23T14:41:30.496Z",
+  "attempts": [
+    {
+      "job_id": "/bizon/exp363-fork-train-a01",
+      "state": "killed_before_execution",
+      "reason": "Peer required explicit CW_KEY_ID/CW_KEY_SECRET in addition to the existing FSSPEC_S3 blob; credential forwarding fixed for driver and child."
+    },
+    {
+      "job_id": "/bizon/exp363-fork-train-a02",
+      "child_job_id": "/bizon/exp363-fork-train-a02/exp363-train-755515df",
+      "state": "failed_before_training",
+      "reason": "TensorStore default AWS credential chain could not source credentials; data cache read failed with 403 AccessDenied before training."
+    },
+    {
+      "child_job_id": "/bizon/exp363-fork-train-a03/exp363-train-fb907ed2",
+      "source_git_sha": "563579f2a32895375a5385bf49ed0e9f7070e168",
+      "submitted_at": "2026-10-23T14:35:52.208Z",
+      "state": "cancelled_before_training",
+      "reason": "Remote config serialization could not find choice name for __main__.ForkAdamConfig. Moved the registered optimizer to an importable module and added a subprocess serialization regression test.",
+      "job_id": "/bizon/exp363-fork-train-a03"
+    }
+  ],
+  "recovery_command": "uv run --no-project python experiments/exp363_models_double_channel_width/launch.py fork-train --nodes 4 --attempt 5 --resume",
+  "child_submitted_at": "2026-10-23T14:41:57.738Z",
+  "verified_at": "2026-10-23T14:52:53.543688+00:00",
+  "parent_status": {
+    "state": "running",
+    "job_id": "/bizon/exp363-train-a04/exp363-train-6d5c8a62",
+    "checkpoint_resume_step": 75032,
+    "learning_rate": 0.001,
+    "global_step": 75126,
+    "observed_at": "2026-10-23T14:54:44.869235+00:00"
+  },
+  "task_state_counts": {
+    "running": 4
+  },
+  "pending_reason": "",
+  "training_started": true,
+  "wandb_initialized": true,
+  "iris_job_state": "JOB_STATE_RUNNING",
+  "tasks": [
+    {
+      "task_id": "/bizon/exp363-fork-train-a04/exp363-train-3fc9d00b/0",
+      "state": "TASK_STATE_RUNNING",
+      "current_attempt_id": 0
+    },
+    {
+      "task_id": "/bizon/exp363-fork-train-a04/exp363-train-3fc9d00b/1",
+      "state": "TASK_STATE_RUNNING",
+      "current_attempt_id": 0
+    },
+    {
+      "task_id": "/bizon/exp363-fork-train-a04/exp363-train-3fc9d00b/2",
+      "state": "TASK_STATE_RUNNING",
+      "current_attempt_id": 0
+    },
+    {
+      "task_id": "/bizon/exp363-fork-train-a04/exp363-train-3fc9d00b/3",
+      "state": "TASK_STATE_RUNNING",
+      "current_attempt_id": 0
+    }
+  ],
+  "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4",
+  "driver_state": "JOB_STATE_RUNNING",
+  "first_train_step_completed_at": "2026-10-23T14:51:32Z",
+  "latest_metrics": {
+    "global_step": 74190,
+    "_timestamp": 1792767154.3809204,
+    "optim/learning_rate": 0.0009984754724428058,
+    "train/loss": 2.8404769897460938,
+    "throughput/duration": 5.589386258972809
+  }
+}

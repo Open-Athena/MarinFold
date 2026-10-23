@@ -1,0 +1,89 @@
+{
+  "observed_utc": "2026-10-13T14:43:31.616488+00:00",
+  "backends": [
+    {
+      "cluster": "cw-rno2a",
+      "reachable": true,
+      "pending_tasks": 2,
+      "running_tasks": 42,
+      "availability": {
+        "version": 3,
+        "observation_epoch_ms": "1791902588994",
+        "amounts": {
+          "h100": "260"
+        },
+        "total_amounts": {
+          "h100": "512"
+        },
+        "held_by_band": [
+          {
+            "band": "PRIORITY_BAND_INTERACTIVE",
+            "amounts": {
+              "h100": "16"
+            }
+          },
+          {
+            "band": "PRIORITY_BAND_BATCH",
+            "amounts": {
+              "h100": "236"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "cluster": "cw-us-east-02a",
+      "reachable": true,
+      "pending_tasks": 0,
+      "running_tasks": 10,
+      "availability": {
+        "version": 3,
+        "observation_epoch_ms": "1791902600407",
+        "amounts": {
+          "h100": "248"
+        },
+        "total_amounts": {
+          "h100": "256"
+        },
+        "held_by_band": [
+          {
+            "band": "PRIORITY_BAND_INTERACTIVE",
+            "amounts": {
+              "h100": "8"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "cluster": "cw-us-east-08a",
+      "reachable": true,
+      "pending_tasks": 1,
+      "running_tasks": 181,
+      "availability": {
+        "version": 3,
+        "observation_epoch_ms": "1791902606796",
+        "amounts": {
+          "gb200": "116"
+        },
+        "total_amounts": {
+          "gb200": "828"
+        },
+        "held_by_band": [
+          {
+            "band": "PRIORITY_BAND_SYSTEM",
+            "amounts": {
+              "gb200": "704"
+            }
+          },
+          {
+            "band": "PRIORITY_BAND_BATCH",
+            "amounts": {
+              "gb200": "8"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

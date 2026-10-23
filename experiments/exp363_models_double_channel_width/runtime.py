@@ -1,0 +1,84 @@
+"""Submit the width experiment and wait for its accelerator gang."""
+
+import json
+import os
+import sys
+import uuid
+from functools import partial
+
+import fsspec
+from fray.current_client import current_client
+from fray.types import Entrypoint, JobRequest, TpuConfig, create_environment
+from iris.rpc.job_pb2 import PRIORITY_BAND_BATCH, PRIORITY_BAND_INTERACTIVE
+from iris.cluster.setup_scripts import default_setup_script
+from marin.training.training import (
+    TrainLmOnPodConfig,
+    resolve_training_env,
+    run_levanter_train_lm,
+)
+
+from experiments.exp277_models_single_mpnn_pilot.runtime import (
+    _pinned_cuda_toolchain_setup_script,
+)
+
+
+def require_final_checkpoint(output_path: str, num_train_steps: int) -> None:
+    """Reject a zero-exit training job that stopped before its final checkpoint."""
+    expected_step = num_train_steps - 1
+    path = f"{output_path}/checkpoints/step-{expected_step}/metadata.json"
+    try:
+        with fsspec.open(path, "rt") as handle:
+            metadata = json.load(handle)
+    except FileNotFoundError as error:
+        raise RuntimeError(
+            f"Training job exited without its final step-{expected_step} checkpoint: {path}"
+        ) from error
+    if metadata["step"] != expected_step:
+        raise ValueError(f"Final checkpoint step mismatch at {path}: {metadata['step']}")
+
+
+def run_train_job(config: TrainLmOnPodConfig) -> None:
+    """Keep the CPU parent alive and allow bounded production recovery."""
+    if config.output_path is None:
+        raise ValueError("Training requires an output path for its completion checkpoint")
+    env = resolve_training_env(config.env_vars, config.resources)
+    tpu = isinstance(config.resources.device, TpuConfig)
+    keys = ("WANDB_API_KEY",) if tpu else (
+        "WANDB_API_KEY", "FSSPEC_S3", "CW_KEY_ID", "CW_KEY_SECRET",
+    )
+    env.update({key: os.environ[key] for key in keys})
+    if not tpu:
+        # TensorStore uses the AWS credential chain, independently of fsspec.
+        # The pinned runtime must receive credentials for both storage clients.
+        env.update(
+            AWS_ACCESS_KEY_ID=env["CW_KEY_ID"],
+            AWS_SECRET_ACCESS_KEY=env["CW_KEY_SECRET"],
+        )
+    extras = ["tpu"] if tpu else ["gpu"]
+    setup_scripts = [
+        default_setup_script(
+            extras=extras,
+            python_version=f"{sys.version_info.major}.{sys.version_info.minor}",
+        )
+    ]
+    if not tpu:
+        setup_scripts.append(_pinned_cuda_toolchain_setup_script())
+    smoke = "smoke" in config.train_config.trainer.id
+    handle = current_client().submit(
+        JobRequest(
+            name=f"exp363-train-{uuid.uuid4().hex[:8]}",
+            entrypoint=Entrypoint.from_callable(partial(run_levanter_train_lm, config)),
+            resources=config.resources,
+            environment=create_environment(
+                extras=extras,
+                env_vars=env,
+                setup_scripts=setup_scripts,
+            ),
+            # Set the accelerator gang's band as well as the CPU driver's band.
+            priority=PRIORITY_BAND_INTERACTIVE if tpu else PRIORITY_BAND_BATCH,
+            max_task_failures=0 if smoke else 20,
+            max_retries_failure=0 if smoke else 5,
+        )
+    )
+    handle.wait(raise_on_failure=True)
+    require_final_checkpoint(config.output_path, config.train_config.trainer.num_train_steps)

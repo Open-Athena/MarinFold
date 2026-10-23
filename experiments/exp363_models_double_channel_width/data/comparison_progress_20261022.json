@@ -1,0 +1,16 @@
+{
+  "observed_at": "2026-10-22T19:37:41.682714+00:00",
+  "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B",
+  "state": "running",
+  "summary": {
+    "_timestamp": 1792697828.2647622,
+    "eval/loss": 3.0997567176818848,
+    "global_step": 73740,
+    "throughput/tokens_per_second": 186007.05157600457,
+    "throughput/total_tokens": 77323042816,
+    "train/loss": 2.8702824115753174
+  },
+  "latest_validation_step": 71876,
+  "latest_validation_loss": 3.0997567176818848,
+  "validation_points": 34
+}
