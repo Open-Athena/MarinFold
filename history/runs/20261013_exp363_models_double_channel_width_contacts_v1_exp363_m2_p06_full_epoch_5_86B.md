@@ -48,3 +48,16 @@ _(Bullet list of differences from the last run of this kind.)_
 2026-10-16: reached step 8438 (3.17%), train loss 3.15777 and last eval loss 3.46485. Checkpoint barrier timeout stopped training despite Iris success. Last complete checkpoint: step 8120; step 8279 lacks completion metadata. Restart a03 submitted from commit 241b26c9 with the same run ID and data/optimizer schedule; runtime now requires the final checkpoint before success.
 
 2026-10-19: a03 is running after two preemptions and no recorded failures. Latest observed W&B step 48,451 (18.19%), train loss 2.89288 and last full eval loss 3.12334. Complete rolling checkpoint step 48,452 and permanent step 26,634 verified. Optimizer time 5.612 s/update on 32 H100s. The successful 32-chip v5p smoke measured 7.399 s/update; production remains on GPUs.
+
+## October 23 recovery blocked
+
+Last W&B update: step 75,122 at 2026-10-22 18:02 EDT, LR 0.001. Latest full
+validation at step 73,990: 3.0982568264. The a03 child is worker_failed: its
+old submission lacks the CoreWeave credentials now required by Iris. The driver
+is failed. The current launcher forwards the named CW credentials and the
+standard AWS variables needed by TensorStore.
+
+Relaunch is blocked: the local cw profile is rejected by the public CoreWeave
+storage endpoint with InvalidAccessKeyId. No replacement job has been submitted.
+The latest complete checkpoint cannot be reverified until credentials are
+refreshed. Recovery command and evidence: experiment data/recovery_20261023.json.

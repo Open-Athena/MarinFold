@@ -10,6 +10,34 @@ marinfold_experiment:
 
 **Issue:** [#363](https://github.com/Open-Athena/MarinFold/issues/363) · **Kind:** `models` · **Branch:** `exp363/double-channel-width`
 
+## Recovery blocked by credentials (2026-10-23)
+
+At 10:27 EDT, both production jobs are stopped. The original run last reported
+**step 75,122** (28.21% of 266,345 updates) at **18:02 EDT on October 22**,
+LR **0.001**, train loss **2.86937**. Its latest full validation, at **73,990**,
+is **3.09826**. Iris reports that the original child could not restart because
+its old submission lacked the now-required `CW_KEY_ID` / `CW_KEY_SECRET`.
+
+The lower-LR fork initialized W&B at 17:08 EDT on October 22 but failed before
+its first update. TensorStore's default AWS credential chain could not source
+credentials, and reading the first data-cache metadata returned **403
+AccessDenied**. The accelerator job's zero exit and W&B's finished label are
+misleading: the driver's final-checkpoint guard correctly marked the run failed.
+There are no fork loss measurements or LR updates to compare yet.
+
+The runtime now explicitly supplies `AWS_ACCESS_KEY_ID` and
+`AWS_SECRET_ACCESS_KEY` from the same CoreWeave credentials used by fsspec.
+All 13 local tests pass; live validation and relaunch remain blocked because
+CoreWeave's public storage endpoint rejects the workstation's `[cw]` key with
+**InvalidAccessKeyId**. Refreshed local credentials are required before either
+job can recover. The current latest original checkpoint could not be rechecked;
+the fork's immutable step-74,178 copy was verified on October 22.
+
+Evidence and prepared recovery commands are in `data/recovery_20261023.json`.
+The fork's [W&B record](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4)
+now has a history entry recording its startup failure. No replacement jobs have
+been submitted with the rejected key.
+
 ## Lower-learning-rate fork (2026-10-22)
 
 The requester authorized a parallel continuation at LR **0.000707**, with the

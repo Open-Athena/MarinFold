@@ -1,0 +1,45 @@
+{
+  "observed_at": "2026-10-23T14:27:00.569966+00:00",
+  "runs": [
+    {
+      "run_id": "contacts-v1-exp363-m2-p06-full-epoch-5.86B",
+      "url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B",
+      "state": "crashed",
+      "created_at": "2026-10-13T15:15:36Z",
+      "summary": {
+        "global_step": 75122,
+        "train/loss": 2.8693652153015137,
+        "optim/learning_rate": 0.0010000000474974513,
+        "eval/loss": 3.098256826400757,
+        "_timestamp": 1792706577.482081
+      },
+      "recent_validations": [
+        {
+          "_step": 71876,
+          "global_step": 71876,
+          "eval/loss": 3.0997567176818848
+        },
+        {
+          "eval/loss": 3.098256826400757,
+          "_step": 73990,
+          "global_step": 73990
+        }
+      ]
+    },
+    {
+      "run_id": "contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4",
+      "url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4",
+      "state": "finished",
+      "created_at": "2026-10-22T21:08:34Z",
+      "summary": {},
+      "recent_validations": []
+    }
+  ],
+  "recovery_blocker": "Configured cw profile rejected by https://cwobject.com with InvalidAccessKeyId on ListObjectsV2; no replacement credentials found in the process environment.",
+  "fork_failure": "TensorStore default AWS credential chain could not source credentials; data cache read failed with 403 AccessDenied before training.",
+  "parent_failure": "Iris child worker_failed: missing CW_KEY_ID and CW_KEY_SECRET after the new credential policy; terminal driver failed.",
+  "recovery_commands": [
+    "uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train --nodes 4 --attempt 4 --resume",
+    "uv run --no-project python experiments/exp363_models_double_channel_width/launch.py fork-train --nodes 4 --attempt 3 --resume"
+  ]
+}

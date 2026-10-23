@@ -14,12 +14,14 @@ Architecture, tokenizer, data and recovery checks passed.
 2.821 seconds/update; native and HF checkpoints saved with tokenizer.
 Compressed smoke schedule was spiky; this is an execution check.
 
-## Current status — October 22
-W&B reports production running: step 73,740, 27.69% of one epoch.
-Train loss 2.870; latest full validation at step 71,876 is 3.09976.
-October 19 checkpoint verification: rolling step 48,452; permanent step 26,634.
-This update refreshed W&B metrics and curves, not checkpoint storage.
-The 266,345-update training schedule remains unchanged.
+## Current status — October 23
+Both jobs stopped; recovery needs refreshed CoreWeave storage credentials.
+Original last reported step 75,122, 28.21% of the 266,345-update horizon.
+Train loss 2.86937; latest full validation at step 73,990 is 3.09826.
+Original restart rejected: old submission lacks newly required CW credentials.
+Fork failed before its first update: TensorStore could not authenticate data reads.
+Runtime credential wiring corrected; 13 local tests pass, live retry blocked.
+The local CW key now returns InvalidAccessKeyId; latest checkpoint not rechecked.
 
 ## TPU trial succeeded
 Interactive v5p-64: 32 chips across 8 VMs; all 20 updates completed.
@@ -49,7 +51,7 @@ Only exp277 provides the same native + MPNN recipe as the current wider run.
 Raw historical validation losses cannot be pooled across cache/logging paths.
 
 ## Parallel LR fork — October 22
-Original run continues with its existing 0.001 plateau and final cooldown.
+Original schedule retains its 0.001 plateau and final cooldown when resumed.
 Fork restores checkpoint 74,178, resuming at absolute step 74,179.
 Weights, Adam moments/counters, RNG, data position and augmentation are preserved.
 Linear reduction to 0.000707 over 2,114 updates; target reached at step 76,293.
@@ -57,5 +59,5 @@ Hold until original final cooldown at step 213,076; final LR target 0.0000707.
 Same 266,345-update horizon, separate W&B and checkpoint identities.
 Source copy and counters verified; 13 local configuration and restore tests passed.
 Submitted a02 at 20:39 UTC: four-node / 32-H100 batch placement.
-At 20:45 UTC, queued for GPU/RDMA quota; training and W&B have not started.
-Original verified running at step 74,366, LR 0.001.
+W&B initialized at 21:08 UTC; startup failed before any training metrics.
+Both jobs await valid credentials; no lower-LR comparison is available yet.

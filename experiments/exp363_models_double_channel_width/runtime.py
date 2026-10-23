@@ -47,6 +47,13 @@ def run_train_job(config: TrainLmOnPodConfig) -> None:
         "WANDB_API_KEY", "FSSPEC_S3", "CW_KEY_ID", "CW_KEY_SECRET",
     )
     env.update({key: os.environ[key] for key in keys})
+    if not tpu:
+        # TensorStore uses the AWS credential chain, independently of fsspec.
+        # The pinned runtime must receive credentials for both storage clients.
+        env.update(
+            AWS_ACCESS_KEY_ID=env["CW_KEY_ID"],
+            AWS_SECRET_ACCESS_KEY=env["CW_KEY_SECRET"],
+        )
     extras = ["tpu"] if tpu else ["gpu"]
     setup_scripts = [
         default_setup_script(

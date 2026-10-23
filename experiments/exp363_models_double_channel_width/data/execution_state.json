@@ -29,8 +29,8 @@
       "child_job_id": "/bizon/exp363-train-smoke-a03/exp363-train-ecf49211"
     }
   ],
-  "production_state": "running",
-  "resume_command": "uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train --nodes 4 --attempt 3 --resume",
+  "production_state": "failed_recovery_blocked_credentials",
+  "resume_command": "uv run --no-project python experiments/exp363_models_double_channel_width/launch.py train --nodes 4 --attempt 4 --resume",
   "production_job_id": "/bizon/exp363-train-a03",
   "production_git_sha": "241b26c99ea261a57a2695fe3b937471968e4da7",
   "production_attempts": [
@@ -52,18 +52,19 @@
     {
       "job_id": "/bizon/exp363-train-a03",
       "nodes": 4,
-      "state": "running",
+      "state": "worker_failed",
       "git_sha": "241b26c99ea261a57a2695fe3b937471968e4da7",
       "resume_from_step": 8120,
       "executor_version": "dev",
       "child_job_id": "/bizon/exp363-train-a03/exp363-train-0cdc9fb5",
       "preemptions": 2,
-      "failures": 0
+      "failures": 0,
+      "reason": "Iris child worker_failed: missing CW_KEY_ID and CW_KEY_SECRET after the new credential policy; terminal driver failed."
     }
   ],
   "production_submitted_at": "2026-10-16T15:42:01.858Z",
   "production_wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B",
-  "production_observed_at": "2026-10-19T13:18:55.232098+00:00",
+  "production_observed_at": "2026-10-23T14:27:00.569966+00:00",
   "production_preemptions": 14,
   "tpu_trials": [
     {
@@ -178,9 +179,11 @@
       "finished_at": "2026-10-16T17:18:21.285000+00:00"
     }
   ],
-  "production_last_reported_step": 48451,
+  "production_last_reported_step": 75122,
   "production_last_complete_checkpoint_step": 48452,
   "production_child_job_id": "/bizon/exp363-train-a03/exp363-train-0cdc9fb5",
   "preferred_tpu": "v5p-64",
-  "production_decision": "Continue on 32 H100s; initial v5p trial is successful but slower per update. No production migration performed."
+  "production_decision": "Continue on 32 H100s; initial v5p trial is successful but slower per update. No production migration performed.",
+  "production_failure_reason": "Iris child worker_failed: missing CW_KEY_ID and CW_KEY_SECRET after the new credential policy; terminal driver failed.",
+  "recovery_blocker": "Configured cw profile rejected by https://cwobject.com with InvalidAccessKeyId on ListObjectsV2; no replacement credentials found in the process environment."
 }
