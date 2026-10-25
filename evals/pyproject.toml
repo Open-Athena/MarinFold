@@ -1,0 +1,19 @@
+[project]
+name = "marinfold-evals"
+version = "0.1.0"
+description = "Shared evaluation utilities for MarinFold experiments."
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+dataframe = ["pandas>=2.2", "pyarrow>=15"]
+test = ["pytest>=8"]
+
+[tool.uv]
+package = true
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
