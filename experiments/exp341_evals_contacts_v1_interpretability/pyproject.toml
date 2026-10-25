@@ -1,0 +1,26 @@
+[project]
+name = "exp341-evals-contacts-v1-interpretability"
+version = "0.1.0"
+description = "Interpretability of contacts-v1 (issue #341): hooked transformers harness over the pairwise contact readout, for the layer-profile, Jacobian and held-out-panel analyses that settle family weighting and depth vs width."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "marinfold[transformers]",  # pairwise readout + TransformersBackend.from_model
+    "transformers>=4.51,<5",    # Qwen3; <5 so the rope repair path is the one exercised
+    "torch>=2.4",
+    "accelerate>=0.30",
+    "safetensors",
+    "huggingface_hub>=0.24",
+    "pandas>=2.0",
+    "numpy",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.uv.sources]
+marinfold = { path = "../../marinfold", editable = true }
+
+[tool.uv]
+package = false
+prerelease = "allow"
+environments = ["sys_platform == 'linux'"]

@@ -255,7 +255,7 @@ def structure_from_sequence(
 # --------------------------------------------------------------------------
 
 
-def _prefix_and_positions(
+def prefix_and_positions(
     structure: ContactStructure, *, entry_id: str
 ) -> tuple[str, list[int], int] | None:
     """Deterministic contacts-v1 sequence prefix + per-seq-index position ids.
@@ -281,7 +281,7 @@ def _prefix_and_positions(
     return prefix, seq_positions, result.seq_len
 
 
-def _fwd_matrix(
+def fwd_matrix(
     backend: Backend, prefix: str, seq_positions: list[int]
 ) -> np.ndarray:
     """``log P(i)·P(j|i)`` over all residue pairs for one sequence realization.
@@ -307,7 +307,7 @@ def _fwd_matrix(
     return lp1[:, None] + lp2  # log P(i)·P(j|i)
 
 
-def _pcontact_from_fwd(fwd: np.ndarray) -> np.ndarray:
+def pcontact_from_fwd(fwd: np.ndarray) -> np.ndarray:
     """Unordered ``P(contact)``: ``exp(fwd) + exp(fwd.T)`` (symmetric)."""
     return np.exp(fwd) + np.exp(fwd.T)
 
@@ -316,14 +316,14 @@ def _sym_from_fwd(fwd: np.ndarray) -> np.ndarray:
     """Symmetrized geo-mean log-score ``0.5·(fwd + fwd.T)``.
 
     Used only as the key that breaks rollout's large zero-vote mass. The
-    pairwise readout ranks by ``P(contact)`` (:func:`_pcontact_from_fwd`)
+    pairwise readout ranks by ``P(contact)`` (:func:`pcontact_from_fwd`)
     instead; the two orderings differ for orientation-asymmetric pairs but
     agree with the exp82/exp89 sym-ranked numbers within backend noise.
     """
     return 0.5 * (fwd + fwd.T)
 
 
-def _pcontact_matrix(
+def pcontact_matrix(
     backend: Backend, prefix: str, seq_positions: list[int]
 ) -> np.ndarray:
     """``P(contact)`` over all residue pairs for one sequence realization.
@@ -332,7 +332,7 @@ def _pcontact_matrix(
     contact statement, unordered. The diagonal / near-diagonal band is
     meaningless here; callers mask it.
     """
-    return _pcontact_from_fwd(_fwd_matrix(backend, prefix, seq_positions))
+    return pcontact_from_fwd(fwd_matrix(backend, prefix, seq_positions))
 
 
 # --------------------------------------------------------------------------
@@ -340,7 +340,7 @@ def _pcontact_matrix(
 # --------------------------------------------------------------------------
 
 
-def _pairwise_score_matrix(
+def pairwise_score_matrix(
     backend: Backend, structure: ContactStructure, cfg: "InferenceConfig"
 ) -> tuple[np.ndarray, int] | None:
     """Mean ``P(contact)`` over ``cfg.ensemble_k`` sequence-definition resamples.
@@ -358,11 +358,11 @@ def _pairwise_score_matrix(
             if cfg.ensemble_k == 1
             else f"{structure.entry_id}#cv1ens{k}"
         )
-        built = _prefix_and_positions(structure, entry_id=entry_id)
+        built = prefix_and_positions(structure, entry_id=entry_id)
         if built is None:
             return None
         prefix, seq_positions, seq_len = built
-        matrix = _pcontact_from_fwd(_fwd_matrix(backend, prefix, seq_positions))
+        matrix = pcontact_from_fwd(fwd_matrix(backend, prefix, seq_positions))
         acc = matrix if acc is None else acc + matrix
     assert acc is not None  # ensemble_k >= 1
     return acc / cfg.ensemble_k, seq_len
@@ -412,7 +412,7 @@ def _rollout_score_matrix(
     position_maps: list[dict[int, int]] = []
     seq_len = 0
     for r in range(cfg.n_rollouts):
-        built = _prefix_and_positions(structure, entry_id=f"{structure.entry_id}:r{r}")
+        built = prefix_and_positions(structure, entry_id=f"{structure.entry_id}:r{r}")
         if built is None:
             return None
         prefix, seq_positions, seq_len = built
@@ -457,10 +457,10 @@ def _rollout_score_matrix(
                 votes[hi, lo] += 1.0
 
     # Pairwise log-prob (one canonical realization) breaks the vote ties.
-    built = _prefix_and_positions(structure, entry_id=structure.entry_id)
+    built = prefix_and_positions(structure, entry_id=structure.entry_id)
     assert built is not None  # the rollout realizations already serialized
     prefix, seq_positions, _ = built
-    pairwise_sym = _sym_from_fwd(_fwd_matrix(backend, prefix, seq_positions))
+    pairwise_sym = _sym_from_fwd(fwd_matrix(backend, prefix, seq_positions))
     return _tiebreak(votes, pairwise_sym), seq_len
 
 
@@ -475,7 +475,7 @@ def _score_matrix(
     if cfg.method == "rollout":
         return _rollout_score_matrix(backend, structure, cfg)
     if cfg.method == "pairwise":
-        return _pairwise_score_matrix(backend, structure, cfg)
+        return pairwise_score_matrix(backend, structure, cfg)
     raise ValueError(
         f"Unknown method {cfg.method!r}. Expected 'pairwise' or 'rollout'."
     )
@@ -682,7 +682,7 @@ def predict(
 # --------------------------------------------------------------------------
 
 
-def _gt_contact_matrix(
+def gt_contact_matrix(
     gt_contacts: Iterable[RawContact], seq_len: int, min_seq_separation: int
 ) -> np.ndarray:
     """Boolean ``[L, L]`` GT matrix: degree >= floor and separation in range."""
@@ -723,7 +723,7 @@ def _rank_auc(scores: np.ndarray, labels: np.ndarray) -> float:
     return float((rank_sum_pos - n_pos * (n_pos + 1) / 2.0) / (n_pos * n_neg))
 
 
-def _metric_rows(
+def metric_rows(
     pcontact: np.ndarray, gt: np.ndarray, seq_len: int, min_seq_separation: int
 ) -> dict[str, dict[str, float]]:
     """Per-range precision @ {L, L/2, L/5, R} + AUC for one structure.
@@ -842,10 +842,10 @@ def evaluate(
             )
             continue
         score, seq_len = built
-        gt = _gt_contact_matrix(structure.gt_contacts, seq_len, cfg.min_seq_separation)
+        gt = gt_contact_matrix(structure.gt_contacts, seq_len, cfg.min_seq_separation)
         per_structure_n_residues[structure.entry_id] = seq_len
 
-        rows = _metric_rows(score, gt, seq_len, cfg.min_seq_separation)
+        rows = metric_rows(score, gt, seq_len, cfg.min_seq_separation)
         for rng, rng_metrics in rows.items():
             for key, value in rng_metrics.items():
                 if math.isfinite(value):
