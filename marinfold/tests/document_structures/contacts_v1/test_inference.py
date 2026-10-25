@@ -127,14 +127,14 @@ def test_structure_from_sequence_too_short_raises():
 
 def test_prefix_ends_with_begin_statements_and_is_deterministic():
     s = inf.structure_from_sequence(_SEQ, entry_id="x")
-    prefix, positions, seq_len = inf._prefix_and_positions(s, entry_id="x")
-    again = inf._prefix_and_positions(s, entry_id="x")
+    prefix, positions, seq_len = inf.prefix_and_positions(s, entry_id="x")
+    again = inf.prefix_and_positions(s, entry_id="x")
     assert prefix.endswith("<begin_statements>")
     assert prefix.startswith("<contacts-v1> <begin_sequence>")
     assert seq_len == len(s.residues)
     assert positions == again[1]  # deterministic given the entry id
     # A different ensemble salt reshuffles the numbering.
-    assert inf._prefix_and_positions(s, entry_id="x#cv1ens1")[1] != positions
+    assert inf.prefix_and_positions(s, entry_id="x#cv1ens1")[1] != positions
 
 
 def test_token_id_rejects_unk_collapse():
@@ -155,9 +155,9 @@ def test_token_id_rejects_unk_collapse():
 
 def test_pcontact_matrix_symmetric_and_planted_pair_wins():
     s = inf.structure_from_sequence(_SEQ, entry_id="demo")
-    prefix, seq_positions, seq_len = inf._prefix_and_positions(s, entry_id="demo")
+    prefix, seq_positions, seq_len = inf.prefix_and_positions(s, entry_id="demo")
     backend = _PlantedBackend(_tokenizer(), seq_positions, planted=[(0, 12)])
-    pcontact = inf._pcontact_matrix(backend, prefix, seq_positions)
+    pcontact = inf.pcontact_matrix(backend, prefix, seq_positions)
 
     assert pcontact.shape == (seq_len, seq_len)
     assert np.allclose(pcontact, pcontact.T)  # unordered ⇒ symmetric
@@ -188,7 +188,7 @@ def test_gt_contact_matrix_filters_degree_and_separation():
         RawContact(0, 3, 0.9),      # dropped: sep 3 < 6
         RawContact(1, 14, 0.0005),  # dropped: degree < 0.001
     ]
-    gt = inf._gt_contact_matrix(contacts, 16, 6)
+    gt = inf.gt_contact_matrix(contacts, 16, 6)
     assert gt[0, 12] and gt[12, 0]
     assert not gt[0, 3]
     assert not gt[1, 14]
@@ -202,7 +202,7 @@ def test_metric_rows_perfect_ranking():
     for i, j in truth:
         gt[i, j] = gt[j, i] = True
         pcontact[i, j] = pcontact[j, i] = 1.0  # true contacts score highest
-    rows = inf._metric_rows(pcontact, gt, seq_len, 6)
+    rows = inf.metric_rows(pcontact, gt, seq_len, 6)
     assert rows["all"]["auc"] == 1.0
     assert rows["all"]["r_precision"] == 1.0
     assert rows["short"]["r_precision"] == 1.0
@@ -215,7 +215,7 @@ def test_metric_rows_perfect_ranking():
 
 def test_predict_record_shape_and_ranking(monkeypatch):
     s = inf.structure_from_sequence(_SEQ, entry_id="demo")
-    prefix, seq_positions, seq_len = inf._prefix_and_positions(s, entry_id="demo")
+    prefix, seq_positions, seq_len = inf.prefix_and_positions(s, entry_id="demo")
     backend = _PlantedBackend(_tokenizer(), seq_positions, planted=[(0, 12)])
     monkeypatch.setattr(inf, "_make_backend", lambda cfg: backend)
 
@@ -246,7 +246,7 @@ def test_predict_empty_short_circuits():
 
 def test_evaluate_recovers_planted_contacts(monkeypatch):
     s0 = inf.structure_from_sequence(_SEQ, entry_id="demo")
-    prefix, seq_positions, _ = inf._prefix_and_positions(s0, entry_id="demo")
+    prefix, seq_positions, _ = inf.prefix_and_positions(s0, entry_id="demo")
     planted = [(0, 12), (2, 16)]
     backend = _PlantedBackend(_tokenizer(), seq_positions, planted=planted)
     monkeypatch.setattr(inf, "_make_backend", lambda cfg: backend)
@@ -304,7 +304,7 @@ def test_score_matrix_rejects_unknown_method():
 
 def test_rollout_contact_minimum_reaches_sampler():
     structure = inf.structure_from_sequence(_SEQ, entry_id="demo")
-    positions = inf._prefix_and_positions(structure, entry_id="demo")[1]
+    positions = inf.prefix_and_positions(structure, entry_id="demo")[1]
     backend = _PlantedBackend(_tokenizer(), positions, planted=[(0, 12)])
     cfg = inf.InferenceConfig(
         model="/stub", method="rollout", n_rollouts=2, min_new_contacts=1,
@@ -316,7 +316,7 @@ def test_rollout_contact_minimum_reaches_sampler():
 
 def test_predict_rollout_votes_and_ranks(monkeypatch):
     s = inf.structure_from_sequence(_SEQ, entry_id="demo")
-    canonical_positions = inf._prefix_and_positions(s, entry_id="demo")[1]
+    canonical_positions = inf.prefix_and_positions(s, entry_id="demo")[1]
     backend = _PlantedBackend(_tokenizer(), canonical_positions, planted=[(0, 12)])
     monkeypatch.setattr(inf, "_make_backend", lambda cfg: backend)
 
@@ -337,7 +337,7 @@ def test_predict_rollout_votes_and_ranks(monkeypatch):
 
 def test_evaluate_rollout_recovers_planted(monkeypatch):
     s0 = inf.structure_from_sequence(_SEQ, entry_id="demo")
-    canonical_positions = inf._prefix_and_positions(s0, entry_id="demo")[1]
+    canonical_positions = inf.prefix_and_positions(s0, entry_id="demo")[1]
     planted = [(0, 12), (2, 16)]
     backend = _PlantedBackend(_tokenizer(), canonical_positions, planted=planted)
     monkeypatch.setattr(inf, "_make_backend", lambda cfg: backend)
@@ -393,7 +393,7 @@ def test_rollout_honors_retraction(monkeypatch):
     # Both (0,12) and (2,16) are emitted, but (0,12) is retracted in every
     # rollout, so only (2,16) should collect votes.
     s = inf.structure_from_sequence(_SEQ, entry_id="demo")
-    canonical_positions = inf._prefix_and_positions(s, entry_id="demo")[1]
+    canonical_positions = inf.prefix_and_positions(s, entry_id="demo")[1]
     backend = _RetractingBackend(
         _tokenizer(), canonical_positions, planted=[(0, 12), (2, 16)], retract=(0, 12)
     )
