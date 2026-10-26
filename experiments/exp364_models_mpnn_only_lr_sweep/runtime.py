@@ -55,7 +55,12 @@ def run_train_job(config: TrainLmOnPodConfig) -> None:
     env = resolve_training_env(config.env_vars, config.resources)
     env.update({key: os.environ[key] for key in ("WANDB_API_KEY", "FSSPEC_S3")})
     storage = json.loads(env["FSSPEC_S3"])
-    env.update(CW_KEY_ID=storage["key"], CW_KEY_SECRET=storage["secret"])
+    env.update(
+        CW_KEY_ID=storage["key"],
+        CW_KEY_SECRET=storage["secret"],
+        AWS_ACCESS_KEY_ID=storage["key"],
+        AWS_SECRET_ACCESS_KEY=storage["secret"],
+    )
     worker_name = f"exp364-train-{uuid.uuid4().hex[:8]}"
     config_path = f"{config.output_path}/launches/{worker_name}.pkl"
     with fsspec.open(config_path, "wb") as stream:
