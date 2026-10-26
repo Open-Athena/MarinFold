@@ -4,7 +4,7 @@ marinfold_run:
   launched_at: '2026-10-13T15:15:36Z'
   experiment: exp363_models_double_channel_width
   kind: models
-  short_description: '5.862B double-width exp277 variant: one full epoch on 32 H100s'
+  short_description: '5.862B double-width exp277 variant: diverged at LR 0.001, stopped by user'
   wandb:
     url: https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B
     entity: open-athena
@@ -91,3 +91,14 @@ losses are 17.649031 / 3.066603 / 3.071639. Evidence is in experiment
 data/progress_20261026.json and data/original_loss_onset_20261026.csv.
 The original remains active per the user's instruction; stopping this
 divergent control is recommended. No schedule change or cancellation made.
+
+## October 26, 12:40 EDT: intentionally stopped
+
+User requested stopping the diverged original. Cancelled driver
+/bizon/exp363-train-a04; Iris confirms it and child
+/bizon/exp363-train-a04/exp363-train-6d5c8a62 are killed. Last observed W&B
+step 117,691, train loss 15.33718, LR 0.001. W&B still reported running at
+the immediate check; Iris terminal state is the cancellation confirmation.
+Do not recover this intentionally stopped run without a new user request.
+The separate lower-LR fork remains running. Evidence:
+experiment data/original_stopped_20261026.json.

@@ -15,13 +15,14 @@ Architecture, tokenizer, data and recovery checks passed.
 Compressed smoke schedule was spiky; this is an execution check.
 
 ## Current status — October 26
-Both a04 jobs remain running on four nodes / 32 H100s each, at batch priority.
-Original: step 117,186, 44.00% complete, LR 0.001; numerically diverged.
-Fork: step 116,027, 43.56% complete, LR 0.000707; stable.
+Original stopped at user request at 12:40 EDT; driver and child confirmed killed.
+Last observed original step: 117,691, LR 0.001; numerically diverged.
+Fork continues on four nodes / 32 H100s at batch priority.
+Fork at cancellation check: step 116,485, LR 0.000707, train loss 2.82176.
 Original first training loss above 4 in the inspected window: step 77,229.
 Original validation rose from 3.09974 at 76,104 to 11.88947 at 78,218.
 It peaked at 42.43565 and remains 17.96501 at step 116,270.
-Both remain active as requested. Recommend stopping the divergent control.
+Only the lower-LR fork remains active; original is intentionally stopped.
 Fork final cooldown still starts at 213,076; total horizon 266,345 updates.
 
 ## TPU trial succeeded

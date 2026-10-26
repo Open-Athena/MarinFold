@@ -10,7 +10,23 @@ marinfold_experiment:
 
 **Issue:** [#363](https://github.com/Open-Athena/MarinFold/issues/363) · **Kind:** `models` · **Branch:** `exp363/double-channel-width`
 
-## Current result: lower LR is stable; original diverged (2026-10-26)
+## Original stopped; lower-LR fork continues (2026-10-26, 12:40 EDT)
+
+At the requester's direction, cancelled original driver
+`/bizon/exp363-train-a04`. Iris confirms that both it and its accelerator child
+`/bizon/exp363-train-a04/exp363-train-6d5c8a62` are **killed**. The original's
+last observed W&B step is **117,691**, with train loss **15.33718**; its W&B
+running label had not yet caught up at verification. The explicit resume command
+was removed from the execution record so this intentional stop is not mistaken
+for a recoverable infrastructure failure.
+
+The independent fork driver `/bizon/exp363-fork-train-a04` and its accelerator
+child remain **running** on 32 H100s. At the cancellation check W&B reports
+step **116,485**, LR **0.000707**, and train loss **2.82176**. Its final cooldown
+at **213,076** and **266,345-update** horizon are unchanged. Cancellation and
+verification evidence: `data/original_stopped_20261026.json`.
+
+## Validation result before cancellation (2026-10-26, 11:55 EDT)
 
 At **11:55 EDT**, both a04 drivers and accelerator jobs remain running on
 32 H100s each. The original reports step **117,186** (44.00% of 266,345 updates)
@@ -41,9 +57,8 @@ final cooldown. It does not establish improved protein-contact accuracy.
 
 ![Lower-LR fork and original divergence](plots/lr_fork_comparison.png)
 
-Both runs were left active under the request to keep the original going.
-Stopping the divergent 0.001 control is recommended; no cancellation or schedule
-change was made during this status check. The fork still begins final cooldown
+Both runs were left active during this earlier status check. The original was
+subsequently stopped at the requester's direction, as recorded above. The fork still begins final cooldown
 at **213,076** and finishes at **266,345 updates**. The W&B snapshot and exact
 comparison are in `data/progress_20261026.json`, the plotted observations in
 `data/lr_fork_validation_20261026.csv`, and training-loss onset evidence in

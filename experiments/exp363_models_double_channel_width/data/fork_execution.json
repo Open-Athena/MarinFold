@@ -50,15 +50,16 @@
   ],
   "recovery_command": "uv run --no-project python experiments/exp363_models_double_channel_width/launch.py fork-train --nodes 4 --attempt 5 --resume",
   "child_submitted_at": "2026-10-23T14:41:57.738Z",
-  "verified_at": "2026-10-26T15:55:10.854315+00:00",
+  "verified_at": "2026-10-26T16:41:27.542040+00:00",
   "parent_status": {
-    "state": "running",
+    "state": "killed",
     "job_id": "/bizon/exp363-train-a04/exp363-train-6d5c8a62",
     "checkpoint_resume_step": 75032,
     "learning_rate": 0.001,
-    "global_step": 117186,
-    "observed_at": "2026-10-26T15:55:10.854315+00:00",
-    "training_health": "diverged"
+    "global_step": 117691,
+    "observed_at": "2026-10-26T16:41:13.548932+00:00",
+    "training_health": "diverged",
+    "reason": "Stopped at user request after divergence; fork continues."
   },
   "task_state_counts": {
     "running": 4
@@ -93,13 +94,11 @@
   "driver_state": "JOB_STATE_RUNNING",
   "first_train_step_completed_at": "2026-10-23T14:51:32Z",
   "latest_metrics": {
-    "_timestamp": 1793030073.3750875,
-    "eval/loss": 3.0666027069091797,
-    "global_step": 116027,
+    "global_step": 116499,
+    "_timestamp": 1793032878.075644,
+    "train/loss": 2.8721396923065186,
     "optim/learning_rate": 0.0007070000283420086,
-    "throughput/duration": 5.624975076178089,
-    "throughput/tokens_per_second": 186414.33709470925,
-    "train/loss": 2.8462822437286377
+    "eval/loss": 3.0670387744903564
   },
   "training_health": "stable"
 }
