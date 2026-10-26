@@ -45,6 +45,9 @@ from experiments.exp364_models_mpnn_only_lr_sweep.epoch_data import (
     two_epoch_data,
 )
 from experiments.exp364_models_mpnn_only_lr_sweep.runtime import run_train_job
+from experiments.exp364_models_mpnn_only_lr_sweep.padding_safe_model import (
+    padding_safe_model,
+)
 
 
 def build_run(
@@ -90,7 +93,7 @@ def build_run(
     step = train_lm(
         name=f"runs/{run_id}",
         run_id=run_id,
-        model=MODEL_CONFIG,
+        model=padding_safe_model(MODEL_CONFIG),
         optimizer=AdamConfig(
             learning_rate=LEARNING_RATES[trial],
             weight_decay=0.2,

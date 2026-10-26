@@ -52,6 +52,8 @@ def main() -> None:
         "WANDB_ENTITY": "open-athena",
         "WANDB_PROJECT": "MarinFold",
         "WANDB_API_KEY": wandb[2],
+        "CW_KEY_ID": cw["aws_access_key_id"],
+        "CW_KEY_SECRET": cw["aws_secret_access_key"],
         "NODES": str(args.nodes),
         "TRIAL": args.trial,
         "ATTEMPT": str(args.attempt),

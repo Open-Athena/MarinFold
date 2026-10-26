@@ -130,11 +130,17 @@ def run_tpu_job(config: TrainLmOnPodConfig) -> None:
 
 
 def build_run(
-    *, smoke: bool, attempt: int = 1, tpu: str = DEFAULT_TPU
+    *,
+    smoke: bool,
+    attempt: int = 1,
+    tpu: str = DEFAULT_TPU,
+    resume_step: int | None = None,
 ) -> ArtifactStep[LevanterCheckpoint]:
     """Keep the GPU fork's absolute step, data order, optimizer, and cooldown."""
     if tpu not in SUPPORTED_TPUS:
         raise ValueError(f"Unsupported v5p shape: {tpu}")
+    if resume_step is not None and (smoke or resume_step != 186880):
+        raise ValueError("Final-batch recovery must restore verified step 186880")
     parent = build_cooldown_run(
         smoke=smoke,
         nodes=4,
@@ -174,6 +180,14 @@ def build_run(
                 ],
             ),
         )
+        if resume_step is not None:
+            trainer = replace(
+                trainer,
+                load_checkpoint=True,
+                load_checkpoint_path=(
+                    f"{PREFIX}/runs/{RUN_ID}/checkpoints/step-{resume_step}"
+                ),
+            )
         return replace(
             pod,
             env_vars={
@@ -216,6 +230,9 @@ def main() -> ArtifactStep[LevanterCheckpoint]:
         smoke=os.environ.get("SMOKE") == "1",
         attempt=int(os.environ["ATTEMPT"]),
         tpu=os.environ.get("TPU", DEFAULT_TPU),
+        resume_step=int(os.environ["RESUME_STEP"])
+        if "RESUME_STEP" in os.environ
+        else None,
     )
 
 

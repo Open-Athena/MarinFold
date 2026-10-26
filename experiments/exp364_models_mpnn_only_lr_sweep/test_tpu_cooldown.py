@@ -27,9 +27,17 @@ from experiments.exp364_models_mpnn_only_lr_sweep.stage_tpu_inputs import (
 from experiments.exp364_models_mpnn_only_lr_sweep.test_train import resolve
 
 
-def resolve_tpu(*, smoke: bool, attempt: int = 1, tpu_shape: str = "v5p-64"):
+def resolve_tpu(
+    *,
+    smoke: bool,
+    attempt: int = 1,
+    tpu_shape: str = "v5p-64",
+    resume_step: int | None = None,
+):
     with build_context(BuildContext(VersionCodex(VERSION))):
-        step = tpu.build_run(smoke=smoke, attempt=attempt, tpu=tpu_shape)
+        step = tpu.build_run(
+            smoke=smoke, attempt=attempt, tpu=tpu_shape, resume_step=resume_step
+        )
         fingerprint = step.fingerprint()
         ctx = StepContext.for_run(
             output_path=step.path(tpu.PREFIX),
@@ -140,6 +148,23 @@ def test_smaller_v5p_placement_preserves_trajectory_and_identity() -> None:
     assert small.trainer.initialize_from == large.trainer.initialize_from
     assert small.trainer.checkpointer == large.trainer.checkpointer
     assert small.trainer.id == large.trainer.id
+
+
+def test_final_batch_recovery_replays_only_the_original_last_four_updates() -> None:
+    original, _, _ = resolve_tpu(smoke=False)
+    recovery, _, _ = resolve_tpu(smoke=False, attempt=2, resume_step=186880)
+    assert recovery.trainer.id == original.trainer.id
+    assert recovery.trainer.load_checkpoint is True
+    assert recovery.trainer.load_checkpoint_path == (
+        f"{tpu.PREFIX}/runs/{tpu.RUN_ID}/checkpoints/step-186880"
+    )
+    assert recovery.trainer.num_train_steps == 186885
+    assert recovery.trainer.num_train_steps - 186881 == 4
+    assert asdict(recovery.data) == asdict(original.data)
+    assert asdict(recovery.optimizer) == asdict(original.optimizer)
+    assert recovery.trainer.checkpointer == original.trainer.checkpointer
+    with pytest.raises(ValueError, match="verified step"):
+        tpu.build_run(smoke=False, resume_step=186884)
 
 
 def test_transfer_inventory_rejects_missing_or_changed_objects() -> None:

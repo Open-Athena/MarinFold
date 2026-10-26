@@ -23,7 +23,14 @@ def main() -> None:
     parser.add_argument("--tpu", choices=("v5p-8", "v5p-64"), default="v5p-64")
     parser.add_argument("--iris-bin", default=os.environ.get("IRIS_BIN", DEFAULT_IRIS))
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--resume-step", type=int)
     args = parser.parse_args()
+    if args.resume_step is not None and (
+        args.phase != "train" or args.resume_step != 186880
+    ):
+        parser.error(
+            "--resume-step 186880 is only supported for final-batch training recovery"
+        )
     root = Path(__file__).resolve().parents[2]
     project = Path(__file__).resolve().parent
     env = {
@@ -39,6 +46,8 @@ def main() -> None:
         ).strip(),
     }
     module = "experiments.exp364_models_mpnn_only_lr_sweep."
+    if args.resume_step is not None:
+        env["RESUME_STEP"] = str(args.resume_step)
     if args.phase == "stage":
         credentials = configparser.ConfigParser()
         credentials.read(Path.home() / ".aws/credentials")

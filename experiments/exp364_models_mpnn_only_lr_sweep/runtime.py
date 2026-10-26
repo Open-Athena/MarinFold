@@ -1,10 +1,12 @@
 """Batch-priority GPU submission, preserving exp277 CUDA setup and resume."""
 
+import json
 import os
 import sys
 import uuid
 from functools import partial
 
+import fsspec
 from fray.current_client import current_client
 from fray.types import Entrypoint, JobRequest, create_environment
 from iris.cluster.setup_scripts import cuda_toolchain_setup_script, default_setup_script
@@ -53,6 +55,8 @@ def run_train_job(config: TrainLmOnPodConfig) -> None:
     """Submit one GPU gang and keep its CPU parent alive until completion."""
     env = resolve_training_env(config.env_vars, config.resources)
     env.update({key: os.environ[key] for key in ("WANDB_API_KEY", "FSSPEC_S3")})
+    storage = json.loads(env["FSSPEC_S3"])
+    env.update(CW_KEY_ID=storage["key"], CW_KEY_SECRET=storage["secret"])
     handle = current_client().submit(
         JobRequest(
             name=f"exp364-train-{uuid.uuid4().hex[:8]}",
@@ -85,3 +89,11 @@ def run_train_job(config: TrainLmOnPodConfig) -> None:
         )
     )
     handle.wait(raise_on_failure=True)
+    # An externally stopped training process can exit zero. Its parent must
+    # not turn that into a cached SUCCESS that prevents later checkpoint resume.
+    final_step = config.train_config.trainer.num_train_steps - 1
+    metadata_path = f"{config.output_path}/checkpoints/step-{final_step}/metadata.json"
+    with fsspec.open(metadata_path) as stream:
+        metadata = json.load(stream)
+    if metadata["step"] != final_step:
+        raise ValueError(f"Training stopped without the expected step {final_step}")
