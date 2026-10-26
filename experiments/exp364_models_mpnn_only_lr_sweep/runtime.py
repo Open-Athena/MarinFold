@@ -4,8 +4,8 @@ import json
 import os
 import sys
 import uuid
-from functools import partial
 
+import cloudpickle
 import fsspec
 from fray.current_client import current_client
 from fray.types import Entrypoint, JobRequest, create_environment
@@ -13,7 +13,6 @@ from iris.cluster.setup_scripts import cuda_toolchain_setup_script, default_setu
 from marin.training.training import (
     TrainLmOnPodConfig,
     resolve_training_env,
-    run_levanter_train_lm,
 )
 
 CUDNN_X86_WHEEL = (
@@ -57,10 +56,25 @@ def run_train_job(config: TrainLmOnPodConfig) -> None:
     env.update({key: os.environ[key] for key in ("WANDB_API_KEY", "FSSPEC_S3")})
     storage = json.loads(env["FSSPEC_S3"])
     env.update(CW_KEY_ID=storage["key"], CW_KEY_SECRET=storage["secret"])
+    worker_name = f"exp364-train-{uuid.uuid4().hex[:8]}"
+    config_path = f"{config.output_path}/launches/{worker_name}.pkl"
+    with fsspec.open(config_path, "wb") as stream:
+        cloudpickle.dump(config, stream)
     handle = current_client().submit(
         JobRequest(
-            name=f"exp364-train-{uuid.uuid4().hex[:8]}",
-            entrypoint=Entrypoint.from_callable(partial(run_levanter_train_lm, config)),
+            name=worker_name,
+            # Iris's callable runner catches exceptions before sys.last_exc is
+            # set, defeating Levanter's clean-exit completion hook. A normal
+            # Python module leaves failures unhandled and preserves retry state.
+            entrypoint=Entrypoint.from_binary(
+                "python",
+                [
+                    "-u",
+                    "-m",
+                    "experiments.exp364_models_mpnn_only_lr_sweep.gpu_worker",
+                    config_path,
+                ],
+            ),
             resources=config.resources,
             environment=create_environment(
                 extras=["gpu"],
