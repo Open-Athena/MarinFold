@@ -41,6 +41,7 @@ from experiments.exp364_models_mpnn_only_lr_sweep.cooldown_train import (
     build_cooldown_run,
 )
 from experiments.exp364_models_mpnn_only_lr_sweep.stage_tpu_inputs import PLAN_PATH
+from experiments.exp364_models_mpnn_only_lr_sweep.verify_final import verify_export
 
 REGION = "us-east5"
 ZONE = "us-east5-a"
@@ -127,6 +128,9 @@ def run_tpu_job(config: TrainLmOnPodConfig) -> None:
         metadata = json.load(handle)
     if metadata["step"] != final_step:
         raise ValueError(f"TPU job did not finish at expected step {final_step}")
+    verification = verify_export(f"{config.output_path}/hf/step-{final_step}")
+    with fsspec.open(f"{config.output_path}/final_verification.json", "wt") as stream:
+        json.dump(verification, stream, indent=2)
 
 
 def build_run(

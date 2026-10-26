@@ -1,0 +1,303 @@
+{
+  "archived_at": "2026-10-26T16:57:47.521404+00:00",
+  "reason": "NaN weights after the final padded update",
+  "same_region": true,
+  "archive": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884",
+  "objects": [
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/0024dafea358de282241dac9736c4f19",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/0024dafea358de282241dac9736c4f19",
+      "bytes": 1552736256,
+      "md5": "sD89Mf97UFm0QjIiBkUQog=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/080b0eb10db2ee6ee7d7f6bb50159e9f",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/080b0eb10db2ee6ee7d7f6bb50159e9f",
+      "bytes": 25161,
+      "md5": "y1pjf3zbXmEQONeJU52hHQ=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/0b7765f837e541cecc32ed4e09d154ae",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/0b7765f837e541cecc32ed4e09d154ae",
+      "bytes": 7070,
+      "md5": "1DWjA8Ujze8YfbTPAvDShw=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/0d9fed41d9ad93d41896f4cf0a2a0a1e",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/0d9fed41d9ad93d41896f4cf0a2a0a1e",
+      "bytes": 1159720960,
+      "md5": "vU8i57ZrhSZ6U1CJIav4hQ=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/1043399d2ad8d2dfda04047b6b074da0",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/1043399d2ad8d2dfda04047b6b074da0",
+      "bytes": 16208,
+      "md5": "0V+YvF3DObCGh2fvO5r7IA=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/1581b555869c71f9c2bc2e55f21fc8f0",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/1581b555869c71f9c2bc2e55f21fc8f0",
+      "bytes": 5099520,
+      "md5": "uXqEHNXAHBM7HNptUwIkHQ=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/2b4af6790e654276cd4192902227f73b",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/2b4af6790e654276cd4192902227f73b",
+      "bytes": 1990172672,
+      "md5": "bCtBs/EvGVpNpEGgOepXsA=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/300cb3bddee6f5774d33e6eb45ff05fe",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/300cb3bddee6f5774d33e6eb45ff05fe",
+      "bytes": 1034776576,
+      "md5": "C3/m6dSVnoL+v991C7EjuQ=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/33f4c32a55b1f596d14a25f8fc07f6c4",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/33f4c32a55b1f596d14a25f8fc07f6c4",
+      "bytes": 2478,
+      "md5": "6O7tme2M5mpvcExLFXq/9Q=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/3d38efd2fa650daa01bc3d1a2befae11",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/3d38efd2fa650daa01bc3d1a2befae11",
+      "bytes": 16208,
+      "md5": "ux+zH/TUZE54yfwV7gYMew=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/41c254d44f097e14fcbe02f2cf7b3fc7",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/41c254d44f097e14fcbe02f2cf7b3fc7",
+      "bytes": 1446199296,
+      "md5": "hrzne+vbgtybllxU0nsaEA=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/453fa57f0e661ae9c9530d00cfdb3e62",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/453fa57f0e661ae9c9530d00cfdb3e62",
+      "bytes": 5722,
+      "md5": "DEM9EHrEKSrpElrlL728ow=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/491c8b0ab9b937e52fe4de21ad743ee2",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/491c8b0ab9b937e52fe4de21ad743ee2",
+      "bytes": 604012544,
+      "md5": "+FSmbUkfocq48IdfNIC8lg=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/53599b0fc2be297bf9a11ca63b9bdc28",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/53599b0fc2be297bf9a11ca63b9bdc28",
+      "bytes": 16208,
+      "md5": "ysSdqir++WKS1LVDjnptwA=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/5f697b2f4ec01aedd8dc51be18d2ae7c",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/5f697b2f4ec01aedd8dc51be18d2ae7c",
+      "bytes": 12587008,
+      "md5": "XzZA5K8Yt6L+eCYhXaZGLA=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/80c8f45c375eef5285318235593b8e97",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/80c8f45c375eef5285318235593b8e97",
+      "bytes": 1211691008,
+      "md5": "kINvKeBTjBAzft1p4uFlqQ=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/81e20a7f264e9e17eb1887a6ab97e524",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/81e20a7f264e9e17eb1887a6ab97e524",
+      "bytes": 760152064,
+      "md5": "yt7/qHttmATpbiiT5s2UtQ=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/8a24b36218f7f0b56a881301d7d6a9d0",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/8a24b36218f7f0b56a881301d7d6a9d0",
+      "bytes": 1605,
+      "md5": "PtsZLz8BMnrcpdCmTGPMTA=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/9032ff9a61599378e0543e196c90d68a",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/9032ff9a61599378e0543e196c90d68a",
+      "bytes": 216899584,
+      "md5": "XFEEZq9G+mZsBVtgrKeRwA=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/91e843da1030d61832dec68b13510967",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/91e843da1030d61832dec68b13510967",
+      "bytes": 16208,
+      "md5": "ueSPdtO4N6Lsk4z7TXefLw=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/933ebea32c24fb196413b626c508f8f3",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/933ebea32c24fb196413b626c508f8f3",
+      "bytes": 730222,
+      "md5": "x3jfjbAOtvKUMMOy1R0S0Q=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/95e3cf2607867be0fcc2d4f1866c1df4",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/95e3cf2607867be0fcc2d4f1866c1df4",
+      "bytes": 728909,
+      "md5": "uI750OroYJSUAnlhgtzMVA=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/968539220a313db2f31a2e7b19876526",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/968539220a313db2f31a2e7b19876526",
+      "bytes": 16208,
+      "md5": "TNxGMxe9Ugbw3tFQ7o8tew=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/98f0de0ce4a98c8c1b5206744b73a315",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/98f0de0ce4a98c8c1b5206744b73a315",
+      "bytes": 3357,
+      "md5": "vR1g/nccseR8ZOlDMWDdNA=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/9b955f58b5637d778497e62e472ef45f",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/9b955f58b5637d778497e62e472ef45f",
+      "bytes": 16208,
+      "md5": "CO5zv/HHL+fDF06IQhd2Ig=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/9d7600b2704655e15b43ddc92db50973",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/9d7600b2704655e15b43ddc92db50973",
+      "bytes": 4211,
+      "md5": "1NvCfIfpFPbUGXlbXqPc6w=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/9dc5d9f91eaf03b7011d7df7b11b5330",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/9dc5d9f91eaf03b7011d7df7b11b5330",
+      "bytes": 2156011520,
+      "md5": "q98byZgF9x/ZdgjBk1eykw=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/a00ba1fb5c4934f6e9542611ec45ab3e",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/a00ba1fb5c4934f6e9542611ec45ab3e",
+      "bytes": 3370,
+      "md5": "mWELfADH+o2OqkJzmucCiQ=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/a7fc0ba1c5689a4530c855159660fcc8",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/a7fc0ba1c5689a4530c855159660fcc8",
+      "bytes": 50335744,
+      "md5": "U2+hyrIpIY4d5bkKozzeIg=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/b6cfa3b0a31220661472e8cb03d00b10",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/b6cfa3b0a31220661472e8cb03d00b10",
+      "bytes": 16208,
+      "md5": "TYanSbJ+Q0oHqvVgtA7GQg=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/ba4829e81049c2ad49f8e4bb4532cada",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/ba4829e81049c2ad49f8e4bb4532cada",
+      "bytes": 1524609024,
+      "md5": "qTuNxY2X5VGQmDqLYZusRQ=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/c587840fd50b4cb7b8ba73057c099d44",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/c587840fd50b4cb7b8ba73057c099d44",
+      "bytes": 1179037696,
+      "md5": "RR3MQAjv2SXRWihlTggiZw=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/cdb3e7dbb88d69798a33fd22fb972443",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/cdb3e7dbb88d69798a33fd22fb972443",
+      "bytes": 12587008,
+      "md5": "iArnX7/ojqz3N7Bn+VrRMw=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/e123ba1102a5d286f30665351cd8c65b",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/e123ba1102a5d286f30665351cd8c65b",
+      "bytes": 1015463936,
+      "md5": "Ber9Mz013fJDGZ6zG6Welw=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/e6d0faeecd452aabd3acc652ae9baceb",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/e6d0faeecd452aabd3acc652ae9baceb",
+      "bytes": 50335744,
+      "md5": "/qNpMSRQNe1i58AqJAzoWQ=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/ed1c78a6085b3a824b2db53a4b82ea34",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/ed1c78a6085b3a824b2db53a4b82ea34",
+      "bytes": 4913,
+      "md5": "6HTmp/MstB7Y0AQCs1RGvQ=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/f545d97ea8d7bb972f42f598fce935c2",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/f545d97ea8d7bb972f42f598fce935c2",
+      "bytes": 15673,
+      "md5": "DwMGSqN4qBGSaHLTMg033A=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/f6bedcf92b89b1abc2fc5acd38fc842b",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/f6bedcf92b89b1abc2fc5acd38fc842b",
+      "bytes": 990294016,
+      "md5": "oCk1wlOf7YWf/3xl9BSuGw=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/f6c6ec3a147029532a03f729a227b472",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/f6c6ec3a147029532a03f729a227b472",
+      "bytes": 682446848,
+      "md5": "Yq8oaBntEJOPVv27hyZPLg=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/d/fada7d446e7786612e5b31c8f3a07752",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/d/fada7d446e7786612e5b31c8f3a07752",
+      "bytes": 6430,
+      "md5": "2znZQFtfl08XE2nVkWavkA=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/manifest.json",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/manifest.json",
+      "bytes": 11178,
+      "md5": "MKfyfONP6b+bkez0kRckfQ=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/manifest.ocdbt",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/manifest.ocdbt",
+      "bytes": 597,
+      "md5": "WTXmCDJxQSyjUNnZTQkLBg=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/step-186884/metadata.json",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/native/metadata.json",
+      "bytes": 82,
+      "md5": "cId5PhdyndKpPrImbgf7eQ=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/hf/step-186884/config.json",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/hf/config.json",
+      "bytes": 1726,
+      "md5": "Cf/bYBJwfK9rjZwHWD7wFA=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/hf/step-186884/model-00001-of-00002.safetensors",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/hf/model-00001-of-00002.safetensors",
+      "bytes": 4979485528,
+      "md5": "/3mGRhTfXvonpB/9SxWWvg=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/hf/step-186884/model-00002-of-00002.safetensors",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/hf/model-00002-of-00002.safetensors",
+      "bytes": 906042048,
+      "md5": "2HvPBZdnE0nypZETiqHYGg=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/hf/step-186884/model.safetensors.index.json",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/hf/model.safetensors.index.json",
+      "bytes": 20882,
+      "md5": "vApf0smq4JarrkyvkEDHnA=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/hf/step-186884/tokenizer.json",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/hf/tokenizer.json",
+      "bytes": 64407,
+      "md5": "xLOhaXjjDrFQzKT9iTS2rg=="
+    },
+    {
+      "source": "marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/hf/step-186884/tokenizer_config.json",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/diagnostics/invalid-final-2026-10-25/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/step-186884/hf/tokenizer_config.json",
+      "bytes": 296,
+      "md5": "Ws0TtQ1ycYcDSIC9eLy5KA=="
+    }
+  ],
+  "total_bytes": 23542448345
+}
