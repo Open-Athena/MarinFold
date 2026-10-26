@@ -15,8 +15,8 @@ marinfold_run:
   iris_job_ids:
   - /bizon/exp364-lr1e-3-train-a01
   - /bizon/exp364-lr1e-3-train-a01/exp364-train-0a239306
+  - /bizon/exp364-lr1e-3-train-a02
 ---
-
 # 2026-10-13 · exp364_models_mpnn_only_lr_sweep · contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B
 
 **Launched:** 2026-10-13T15:07:45Z by bizon  

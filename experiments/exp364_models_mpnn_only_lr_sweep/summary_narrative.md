@@ -1,3 +1,11 @@
+## Recovery audit — October 26
+
+GPU runs stopped October 22 following CoreWeave credential rotation. Reported success hid incomplete training. Last validation: 5e-4 3.09058; 1e-3 3.11904; 2e-3 3.15627; GPU fork 3.10000. Previous calendar ETAs are invalid.
+
+TPU reached one epoch October 25, but the final padded update produced NaN parameters. Last finite scheduled validation: 3.03731 at step 186032. A tested padding-gradient fix preserves real-example gradients. Recovery restores step 186880 and replays exactly four updates; every exported parameter must pass a finite check.
+
+TPU recovery a02 is queued for v5p-64 capacity. GPU parent a04 is starting after a real TensorStore cache read confirmed the credential fix. All four GPU recovery roots are submitted: 32 / 32 / 64 H100 for the LR sweep and 16 H100 for the GPU fork. New optimizer progress is not yet confirmed. R-precision results remain the completed October 21 snapshots below; no final TPU score is available.
+
 ## ProteinMPNN-only learning-rate sweep
 
 Experiment #364 asks whether the default 1.47B contacts-v1 model can train on redesigned sequences alone.
@@ -22,7 +30,7 @@ The 64-H100 smoke passed ten updates with finite losses. Native checkpoint and H
 
 All three production trials were launched on 32 H100s each, 96 total, using regional cached data. Saved W&B configurations match the default except for the requested changes.
 
-All trials are training; the two-epoch runs are not yet complete.
+The two-epoch runs are incomplete; see the October 26 recovery audit.
 
 ## Validation comparison — 2026-10-21
 
@@ -99,7 +107,7 @@ Completed full-data default: 0.69640 / 0.67497
 
 The small design set is a sanity check. All four snapshots precede cooldown, including the checkpoint labeled as the one-epoch fork. TPU weights are not part of this evaluation snapshot.
 
-## Training progress — October 22, 14:48 UTC
+## Historical training progress — October 22, 14:48 UTC
 
 All five production runs are active. Epochs / target and latest validation loss:
 

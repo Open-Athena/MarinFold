@@ -50,7 +50,26 @@ Production launched with 32 H100s per trial on `cw-us-east-02a` at batch priorit
 
 All three trials were registered as running in W&B on 2026-10-13 at 15:10 UTC. Their live saved configurations were checked against the actual default run: model fields and all optimizer values match except the requested learning rate; the exact two-source training subset, global batch 128, 373,769-step target, and augmentation duration were verified. Final results are pending.
 
-### Live training snapshot, 2026-10-22 14:46–14:48 UTC
+### Recovery audit, 2026-10-26
+
+All four GPU trajectories stopped on October 22 after CoreWeave rotated storage credentials. The three two-epoch jobs reported success despite stopping early; their expected final checkpoints do not exist. The independent GPU fork failed when replacement workers lacked the newly required CoreWeave credential variables. The October 22 calendar estimates are no longer valid.
+
+| Run | Last logged step | Epochs / target | Last validation step | Loss | Verified resume step |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 5e-4 GPU | 209984 | 1.124 / 2 | 209286 | 3.09058 | 209931 |
+| 1e-3 GPU | 230779 | 1.235 / 2 | 230426 | 3.11904 | 230507 |
+| 2e-3 GPU | 120182 | 0.643 / 2 | 118384 | 3.15627 | 120105 |
+| GPU one-epoch fork | 149800 | 0.802 / 1 | 147980 | 3.10000 | 149762 |
+
+The v5p-64 replica reached step 186884 at 2026-10-25 03:41 UTC, but its final validation and model parameters were NaN. Its last scheduled finite validation was **3.03731 at step 186032**; this is not a valid final-checkpoint result. A CPU reproduction traced the failure to a zero-denominator gradient in Haliax's weighted loss for fully masked padding examples. The final one-epoch batch contains 91 padding examples. `padding_safe_model.py` uses the existing model API to give empty examples a safe internal denominator and select constant zero loss. Real examples retain identical loss and gradients in tests on both pinned runtimes; the architecture, optimizer and data schedule remain unchanged.
+
+Step 186880 has finite inspected parameter arrays and full trainer counter 186881. The invalid final native/HF objects were copied and checksum-verified under the same-region `diagnostics/invalid-final-2026-10-25/` prefix before removing the invalid final paths. The recovery job `/bizon/exp364-tpu-cooldown-train-a02`, submitted at 17:08 UTC from commit `389a6477`, restores step 186880 and replays exactly four updates. `verify_final.py` checks every exported parameter for finiteness, tensor inventory, byte counts and co-located tokenizer before the driver accepts completion. The old invalid W&B endpoint is retained as diagnostic history until a verified repair is recorded.
+
+GPU launchers now forward the required credentials through both launch stages and require the exact final checkpoint before reporting success. Attempt `/bizon/exp364-lr5e-4-train-a02` failed that new completion guard; its workers exited prematurely. Replacement `/bizon/exp364-lr5e-4-train-a03` uses a normal Python worker entry point so exceptions remain unhandled, as Levanter's exit hook requires, and saves failure tracebacks in regional storage. That exposed a TensorStore 403: its AWS credential chain differed from the explicitly configured fsspec reader. An in-pod read of the real training offsets succeeded after aligning the credentials. Attempt a03 was stopped and verified terminal before `/bizon/exp364-lr5e-4-train-a04` was submitted on 32 H100s from commit `2204fcc5`. The TPU recovery is queued for eight co-scheduled v5p workers; it has not replayed its updates yet. Evidence: `data/recovery_2026-10-26.json` and `data/tpu_invalid_final_quarantine.json`.
+
+Recovery dispatches accepted on October 26 retain the original W&B and checkpoint identities: 5e-4 `/bizon/exp364-lr5e-4-train-a04` (32 H100), 1e-3 `/bizon/exp364-lr1e-3-train-a02` (32 H100), 2e-3 `/bizon/exp364-lr2e-3-train-a04` (64 H100), and the separate GPU fork `/bizon/exp364-lr5e-4-cooldown-a02` (16 H100). Starts were staggered against fresh regional capacity, within the 192-GPU experiment ceiling. New optimizer progress and revised finish estimates remain to be confirmed after initialization. This recovery extends beyond the original 14-day planning window; the requested epoch targets remain unchanged.
+
+### Historical training snapshot, 2026-10-22 14:46–14:48 UTC
 
 All five production runs are active with recent training metrics. The separate v5p-64 fork is past its cooldown boundary; the GPU fork is still before it. All eight TPU tasks are running, with four cumulative preemptions and zero failures. The original two-epoch 5e-4 parent remains independent.
 
@@ -150,4 +169,4 @@ Each trial writes to `s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_l
 
 ## Conclusion
 
-Training is in progress. The October 21 matched-step LM comparison favors the full-data run, with 5e-4 leading the redesign-only sweep. All four contact evaluations are complete and verified: the pre-cooldown redesign-only snapshots also trail the completed full-data references on both natural and designed proteins. By October 22, the independent TPU fork has passed the GPU fork and entered cooldown; the original two-epoch parent and GPU fork continue. Final checkpoints and post-cooldown measurements are still needed, and unequal training exposure and differing schedules limit attribution to the training subset alone.
+Training remains incomplete after the October 22 GPU interruption and an invalid TPU final update. Recovery is documented above; a reported successful job alone does not establish a valid checkpoint. The October 21 matched-step LM comparison favors the full-data run, with 5e-4 leading the redesign-only sweep. All four contact evaluations are complete and verified: the pre-cooldown redesign-only snapshots also trail the completed full-data references on both natural and designed proteins. The TPU reached its endpoint on October 25 but requires a four-update repair; the original two-epoch parent and GPU fork retain independent identities. Final checkpoints and post-cooldown measurements are still needed, and unequal training exposure and differing schedules limit attribution to the training subset alone.

@@ -18,6 +18,7 @@ marinfold_run:
   - /bizon/exp364-lr2e-3-train-a03
   - /bizon/exp364-lr2e-3-train-a03/exp364-train-2176995f
   - /bizon/exp364-lr2e-3-train-a03/exp364-train-54370502
+  - /bizon/exp364-lr2e-3-train-a04
 ---
 # 2026-10-13 · exp364_models_mpnn_only_lr_sweep · contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B
 
