@@ -415,6 +415,41 @@ The credential refresh required no training-code change. Both evaluation drivers
 are running; the October 21 R-precision values remain the latest completed
 measurements while the next 1B-token milestones are pending.
 
+### October 26 progress and evaluation dispatch repair
+
+At 15:52 UTC, both training roots are running on RNO2A. Contacts-v1 has reached
+step 36,179 / 5,634,100,907 additional tokens (5.63% of its 100B target), and
+prompted has reached step 58,021 / 2,603,830,394 tokens (2.60%). The latest full
+local checkpoints independently verified during this observation are steps
+36,150 / 5,631,346,541 tokens and 57,986 / 2,602,524,402 tokens, respectively.
+
+Both `a03` evaluation drivers failed when their first 1B request tried to submit
+GPU children. The regional driver already connects to the RNO2A controller, but
+`target_cluster="cw-rno2a"` on a child requests a further federation hop to that
+name. The local controller rejects it as an unconfigured peer. Removing that
+child directive keeps execution on the driver's local controller; the root
+launcher still pins RNO2A, and checkpoint/output region checks remain enforced.
+The first repaired workers exposed a second relocation bug: the worker's
+checkpoint guard still hard-coded the east bucket. Driver and worker now share
+`validate_eval_locality`, with an explicit cluster argument propagated by both
+launch paths. It requires weights in the compute-local bucket and outputs under
+this experiment's regional prefix. Same-region reference checkpoints remain
+supported. No inference, sampling, or metric implementation changed.
+
+Replacement evaluation drivers are contacts-v1 `a06` and prompted `a05`, each
+with four single-H100 children. Both submitted their first four workers, loaded
+their local 4B exports, and began producing per-protein scores by 16:05 UTC.
+Regional dispatch records were written successfully. The durable backlog is raw steps 8406,
+14189, 19807, 27323, and 32437 (1B through 5B tokens) and prompted steps 23470 and
+45370 (1B and 2B). Drivers process these requests in token order and then resume
+their usual polling. Training was not restarted. All 45 tests pass, including
+six regression cases for regional and reference paths. Ruff passes; Pyrefly
+passes for the shared helper, launchers, driver, and regression tests. The local
+environment lacks the worker's vLLM package, so its execution is checked in the
+pinned GPU image. The previous E8 reference gate remains applicable to the
+unchanged evaluation implementation.
+The October 21 scores remain the latest completed results while this backlog runs.
+
 ## Results
 
 As of **2026-10-05 13:25 UTC**, five production trials have finished their

@@ -22,6 +22,18 @@ def output_root(cluster: str) -> str:
     return OUTPUT_ROOTS[cluster]
 
 
+def validate_eval_locality(checkpoint: str, output: str, cluster: str) -> None:
+    """Require regional weights and experiment-local evaluation outputs."""
+    root = output_root(cluster)
+    bucket = root.split("/", 3)[2]
+    if not checkpoint.startswith(f"s3://{bucket}/") or not output.startswith(
+        root + "/"
+    ):
+        raise ValueError(
+            "Evaluation inputs and outputs must be local to its compute cluster"
+        )
+
+
 SOURCE = "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/data/afdb"
 MAX_LENGTH = 16384
 TOKEN_BUDGET = 1_000_000_000

@@ -29,6 +29,8 @@ marinfold_run:
   - /timodonnell/exp347-raw-step4620-eval-smoke-a01-s00
   - /timodonnell/exp347-4b-contacts-v1-corpus235m-eval-val-a02
   - /timodonnell/exp347-4b-contacts-v1-corpus235m-eval-val-a03
+  - /timodonnell/exp347-4b-contacts-v1-corpus235m-eval-val-a05
+  - /timodonnell/exp347-4b-contacts-v1-corpus235m-eval-val-a06
 ---
 # 2026-10-05 · exp347_models_qwen_base_contacts · exp347-4b-contacts-v1-corpus235m-eval-val
 
@@ -51,6 +53,16 @@ _(Why we ran this, what we expect to see, unusual parameters.)_
 _(Bullet list of differences from the last run of this kind.)_
 
 ## Notes
+
+October 26: a03 failed at its first 1B request because a child submitted through
+the RNO controller requested another federation hop to RNO. After removing that
+directive, a05 workers exposed an old east-only checkpoint guard and failed.
+Both are fixed; a06 loaded the local step-8406 export and began scoring proteins
+by 16:05 UTC. Five requests (1B through 5B) await complete aggregation. The metric
+contract is unchanged and all new outputs remain in marin-rno2a.
+
+October 26: attempted a04 submission was rejected by the Iris client date gate
+before a job was created (client October 8, required October 9).
 
 October 21 interim checkpoint: step 4620 / 498,970,942 additional tokens.
 All 97 eval-val proteins completed 100 rollouts each, with zero unfinished samples.

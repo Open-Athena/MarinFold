@@ -25,7 +25,7 @@ from iris.client.client import get_iris_ctx
 
 import wandb
 from aggregate_eval import aggregate, read_json, write_json
-from common import output_root
+from common import output_root, validate_eval_locality
 
 IMAGE = "vllm/vllm-openai@sha256:5f5e535216848d0c52159c8c13a0af04be5f6fe1a84e79914300610796f76d40"
 
@@ -37,12 +37,7 @@ def evaluate_request(request: dict, shards: int, reference_e8: bool) -> dict:
     output = request.get(
         "output", f"{outputs}/eval-val/{request['run_id']}/step-{request['step']}"
     )
-    if not output.startswith(outputs + "/") or not request["checkpoint"].startswith(
-        outputs + "/"
-    ):
-        raise ValueError(
-            "Evaluation inputs and outputs must be local to its compute cluster"
-        )
+    validate_eval_locality(request["checkpoint"], output, cluster)
     client = current_client()
     identity = hashlib.sha256((request["checkpoint"] + output).encode()).hexdigest()[
         :12
@@ -51,6 +46,8 @@ def evaluate_request(request: dict, shards: int, reference_e8: bool) -> dict:
     for shard in range(shards):
         command = [
             "bootstrap.sh",
+            "--cluster",
+            cluster,
             "--checkpoint",
             request["checkpoint"],
             "--format",
@@ -75,7 +72,10 @@ def evaluate_request(request: dict, shards: int, reference_e8: bool) -> dict:
                     ram="64Gi",
                     disk="128Gi",
                     image=IMAGE,
-                    target_cluster=cluster,
+                    # The root launcher pins the driver to its storage region.
+                    # current_client() submits children to that region's local
+                    # controller, where a target_cluster is interpreted as a
+                    # further federation hop, not the controller's own name.
                 ),
                 environment=create_environment(
                     docker_image=IMAGE,

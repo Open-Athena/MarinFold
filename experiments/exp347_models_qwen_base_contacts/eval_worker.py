@@ -25,7 +25,7 @@ import torch
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 
-from common import FORMATS
+from common import FORMATS, OUTPUT_ROOTS, validate_eval_locality
 from eval_contract import (
     N_ROLLOUTS,
     contact_votes,
@@ -44,11 +44,7 @@ def write_json(uri: str, value: dict | list) -> None:
 
 
 def stage_model(uri: str, destination: Path) -> dict:
-    """Stage a co-located export and record its complete file identity."""
-    if not uri.startswith("s3://marin-us-east-02a/"):
-        raise ValueError(
-            "Evaluation weights must be in the co-located CoreWeave bucket"
-        )
+    """Stage a locality-validated export and record its complete file identity."""
     fs, path = fsspec.core.url_to_fs(uri)
     destination.mkdir(parents=True, exist_ok=True)
     files = fs.find(path, detail=True)
@@ -103,6 +99,7 @@ def generate_continuations(
 
 def main() -> None:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--cluster", choices=OUTPUT_ROOTS, required=True)
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--format", choices=FORMATS, required=True)
     parser.add_argument("--targets", type=Path, required=True)
@@ -115,6 +112,7 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=347)
     parser.add_argument("--reference-e8", action="store_true")
     args = parser.parse_args()
+    validate_eval_locality(args.checkpoint, args.out, args.cluster)
     records = [json.loads(line) for line in args.targets.read_text().splitlines()]
     expected_count, expected_set = (
         (554, "legacy-e8-reference") if args.reference_e8 else (97, "eval-val")

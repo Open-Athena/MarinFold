@@ -133,6 +133,23 @@ At 14:52 UTC, both restored updates and new local checkpoint commits are verifie
 raw step7216 / +834.955M; prompted step15638 / +678.720M tokens, 20 objects each.
 The October 21 R-precision measurements remain the latest completed results.
 
+## Training progress and eval repair — October 26
+
+Both training roots remain running on RNO2A.
+Raw: step 36,179 / +5.634B tokens, 5.63% of the 100B target.
+Prompted: step 58,021 / +2.604B tokens, 2.60% of the 100B target.
+Latest full local checkpoints independently verified at 5.631B and 2.603B tokens.
+Periodic evaluations failed at child submission, before any GPU inference.
+The driver incorrectly asked its local RNO controller to federate to itself.
+Removed that child directive; fixed the worker's old east-only checkpoint guard.
+Driver and worker now share locality validation for the explicitly selected region.
+Replacement raw a06 and prompted a05 drivers each run four GPU workers.
+Both loaded local 4B exports and began scoring proteins by 16:05 UTC.
+Backlog: raw 1B through 5B; prompted 1B and 2B. Drivers process requests in order.
+All 45 tests and Ruff pass; helper/driver/launcher Pyrefly checks pass.
+Inference and metric semantics are unchanged.
+October 21 remains the latest completed R-precision measurement.
+
 ## Periodic R-precision contract
 
 Frozen 97-protein eval-val only; eval-test is untouched.

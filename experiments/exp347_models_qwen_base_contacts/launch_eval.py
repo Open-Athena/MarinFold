@@ -11,7 +11,7 @@ import tempfile
 import tomllib
 from pathlib import Path
 
-from common import FORMATS
+from common import FORMATS, OUTPUT_ROOTS, validate_eval_locality
 
 IMAGE = "vllm/vllm-openai@sha256:5f5e535216848d0c52159c8c13a0af04be5f6fe1a84e79914300610796f76d40"
 MARINFOLD_REVISION = "62de4334"
@@ -78,6 +78,7 @@ def build_bundle(destination: Path, targets: Path | None = None) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--cluster", choices=OUTPUT_ROOTS, default="cw-us-east-02a")
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--format", choices=FORMATS, required=True)
     parser.add_argument("--out", required=True)
@@ -88,6 +89,7 @@ def main() -> None:
     parser.add_argument("--targets", type=Path)
     parser.add_argument("--reference-e8", action="store_true")
     args = parser.parse_args()
+    validate_eval_locality(args.checkpoint, args.out, args.cluster)
     shards = 1 if args.smoke else args.shards
     args.record.parent.mkdir(parents=True, exist_ok=True)
     jobs = []
@@ -108,7 +110,7 @@ def main() -> None:
                 "job",
                 "run",
                 "--target-cluster",
-                "cw-us-east-02a",
+                args.cluster,
                 "--priority",
                 "batch",
                 "--user",
@@ -133,6 +135,8 @@ def main() -> None:
                 "--",
                 "bash",
                 "bootstrap.sh",
+                "--cluster",
+                args.cluster,
                 "--checkpoint",
                 args.checkpoint,
                 "--format",

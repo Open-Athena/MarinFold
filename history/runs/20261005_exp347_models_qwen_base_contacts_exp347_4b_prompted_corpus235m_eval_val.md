@@ -29,6 +29,8 @@ marinfold_run:
   - /timodonnell/exp347-prompt-step12051-eval-smoke-a01-s00
   - /timodonnell/exp347-4b-prompted-corpus235m-eval-val-a02
   - /timodonnell/exp347-4b-prompted-corpus235m-eval-val-a03
+  - /timodonnell/exp347-4b-prompted-corpus235m-eval-val-a04
+  - /timodonnell/exp347-4b-prompted-corpus235m-eval-val-a05
 ---
 # 2026-10-05 · exp347_models_qwen_base_contacts · exp347-4b-prompted-corpus235m-eval-val
 
@@ -51,6 +53,13 @@ _(Why we ran this, what we expect to see, unusual parameters.)_
 _(Bullet list of differences from the last run of this kind.)_
 
 ## Notes
+
+October 26: a03 failed at its first 1B request because a child submitted through
+the RNO controller requested another federation hop to RNO. After removing that
+directive, a04 workers exposed an old east-only checkpoint guard and failed.
+Both are fixed; a05 loaded the local step-23470 export and began scoring proteins
+by 16:05 UTC. Two requests (1B and 2B) await complete aggregation. The metric
+contract is unchanged and all new outputs remain in marin-rno2a.
 
 October 21 interim checkpoint: step 12051 / 450,586,475 additional tokens.
 All 97 eval-val proteins completed 100 rollouts each, with zero unfinished samples.
