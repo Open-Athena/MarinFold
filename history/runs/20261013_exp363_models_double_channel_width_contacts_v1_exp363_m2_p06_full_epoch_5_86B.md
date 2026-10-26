@@ -78,3 +78,16 @@ pre-restart high-water mark while earlier steps were replayed.
 
 At 10:54 EDT W&B also confirmed fresh progress beyond the old high-water mark:
 step 75,126, train loss 2.8462910652, LR 0.001.
+
+## October 26: running but diverged
+
+At 11:55 EDT the a04 driver and child remain running. W&B last reported
+step 117,186 (44.00%), LR 0.001, train loss 16.43802 at 11:51:56 EDT.
+Training loss first exceeds 4 at step 77,229 in the inspected 76,000–78,299
+window. Validation rises from 3.09974 at 76,104 to 11.88947 at 78,218;
+it peaks at 42.43565 at 80,332 and remains 17.96501 at 116,270.
+The lower-LR fork is stable. At shared step 114,156 the original/fork/default
+losses are 17.649031 / 3.066603 / 3.071639. Evidence is in experiment
+data/progress_20261026.json and data/original_loss_onset_20261026.csv.
+The original remains active per the user's instruction; stopping this
+divergent control is recommended. No schedule change or cancellation made.

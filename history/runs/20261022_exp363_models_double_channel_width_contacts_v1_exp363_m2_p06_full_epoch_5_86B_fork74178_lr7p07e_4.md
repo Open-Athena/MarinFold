@@ -4,8 +4,8 @@ marinfold_run:
   launched_at: '2026-10-22T21:08:34Z'
   experiment: exp363_models_double_channel_width
   kind: models
-  short_description: Full-state LR fork from step 74178; initial startup failed before
-    training
+  short_description: Full-state LR fork from step 74178 to 0.000707; stable and ahead
+    of the default at 19 matched evaluations
   wandb:
     url: https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4
     entity: open-athena
@@ -31,7 +31,8 @@ marinfold_run:
 
 ## Description
 
-Full-state LR fork from step 74178; initial startup failed before training
+Full-state LR fork from step 74178 to 0.000707; stable and ahead of the default
+at 19 matched evaluations as of October 26.
 
 ## Detailed plan
 
@@ -74,3 +75,16 @@ W&B reports step 74,190, LR 0.0009984754724 and 5.59 seconds/update. The first
 nine recorded LRs match the requested schedule within 1.14e-10 absolute error.
 The first loss exactly matches the original at step 74,179: 2.90014386177063.
 There is no new full-validation comparison yet.
+
+## October 26: stable at target LR
+
+At 11:55 EDT the a04 driver and child remain running. W&B last reported
+step 116,027 (43.56%), LR 0.000707, train loss 2.84628 at 11:54:33 EDT.
+The fork has lower full-validation loss than exp277 at all 19 exact-step
+post-fork evaluations. At the latest shared step 114,156: fork 3.066603,
+default 3.071639, original high-LR wide run 17.649031. The advantage over
+the default is 0.005036 nats/token, or 0.50% lower perplexity. The original
+has diverged; this fork remains stable. Same final cooldown at 213,076 and
+266,345-update horizon. This is an interim single-seed language-model result,
+with no wider-model contact evaluation yet. Evidence and figure inputs:
+experiment data/progress_20261026.json and data/lr_fork_validation_20261026.csv.

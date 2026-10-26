@@ -1,0 +1,745 @@
+{
+  "observed_at": "2026-10-26T15:55:10.854315+00:00",
+  "runs": [
+    {
+      "id": "contacts-v1-exp363-m2-p06-full-epoch-5.86B",
+      "name": "contacts-v1-exp363-m2-p06-full-epoch-5.86B",
+      "url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B",
+      "state": "running",
+      "summary": {
+        "_timestamp": 1793029916.8204193,
+        "eval/loss": 17.965011596679688,
+        "global_step": 117186,
+        "optim/learning_rate": 0.0010000000474974513,
+        "throughput/duration": 5.588562231976539,
+        "throughput/tokens_per_second": 187628.9386204337,
+        "train/loss": 16.438018798828125
+      },
+      "validation": [
+        {
+          "_step": 71876,
+          "global_step": 71876,
+          "eval/loss": 3.0997567176818848
+        },
+        {
+          "_step": 73990,
+          "global_step": 73990,
+          "eval/loss": 3.098256826400757
+        },
+        {
+          "_step": 76104,
+          "global_step": 76104,
+          "eval/loss": 3.099736452102661
+        },
+        {
+          "_step": 78218,
+          "global_step": 78218,
+          "eval/loss": 11.889474868774414
+        },
+        {
+          "_step": 80332,
+          "global_step": 80332,
+          "eval/loss": 42.43564987182617
+        },
+        {
+          "_step": 82446,
+          "global_step": 82446,
+          "eval/loss": 27.850820541381836
+        },
+        {
+          "_step": 84560,
+          "global_step": 84560,
+          "eval/loss": 17.387222290039062
+        },
+        {
+          "_step": 86674,
+          "global_step": 86674,
+          "eval/loss": 10.977312088012695
+        },
+        {
+          "_step": 88788,
+          "global_step": 88788,
+          "eval/loss": 23.999235153198242
+        },
+        {
+          "_step": 90902,
+          "global_step": 90902,
+          "eval/loss": 8.85955810546875
+        },
+        {
+          "global_step": 93016,
+          "eval/loss": 11.099296569824219,
+          "_step": 93016
+        },
+        {
+          "_step": 95130,
+          "global_step": 95130,
+          "eval/loss": 14.914783477783203
+        },
+        {
+          "global_step": 97244,
+          "eval/loss": 11.61123275756836,
+          "_step": 97244
+        },
+        {
+          "eval/loss": 20.98614501953125,
+          "_step": 99358,
+          "global_step": 99358
+        },
+        {
+          "eval/loss": 27.99563217163086,
+          "_step": 101472,
+          "global_step": 101472
+        },
+        {
+          "_step": 103586,
+          "global_step": 103586,
+          "eval/loss": 15.391793251037598
+        },
+        {
+          "_step": 105700,
+          "global_step": 105700,
+          "eval/loss": 18.482908248901367
+        },
+        {
+          "_step": 107814,
+          "global_step": 107814,
+          "eval/loss": 20.824817657470703
+        },
+        {
+          "global_step": 109928,
+          "eval/loss": 22.497785568237305,
+          "_step": 109928
+        },
+        {
+          "_step": 112042,
+          "global_step": 112042,
+          "eval/loss": 18.680316925048828
+        },
+        {
+          "_step": 114156,
+          "global_step": 114156,
+          "eval/loss": 17.649030685424805
+        },
+        {
+          "_step": 116270,
+          "global_step": 116270,
+          "eval/loss": 17.965011596679688
+        }
+      ]
+    },
+    {
+      "id": "contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4",
+      "name": "contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4",
+      "url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4",
+      "state": "running",
+      "summary": {
+        "_timestamp": 1793030073.3750875,
+        "eval/loss": 3.0666027069091797,
+        "global_step": 116027,
+        "optim/learning_rate": 0.0007070000283420086,
+        "throughput/duration": 5.624975076178089,
+        "throughput/tokens_per_second": 186414.33709470925,
+        "train/loss": 2.8462822437286377
+      },
+      "validation": [
+        {
+          "_step": 76104,
+          "global_step": 76104,
+          "eval/loss": 3.0799813270568848
+        },
+        {
+          "_step": 78218,
+          "global_step": 78218,
+          "eval/loss": 3.0757319927215576
+        },
+        {
+          "global_step": 80332,
+          "eval/loss": 3.0755534172058105,
+          "_step": 80332
+        },
+        {
+          "_step": 82446,
+          "global_step": 82446,
+          "eval/loss": 3.0755698680877686
+        },
+        {
+          "_step": 84560,
+          "global_step": 84560,
+          "eval/loss": 3.0754566192626953
+        },
+        {
+          "_step": 86674,
+          "global_step": 86674,
+          "eval/loss": 3.0748326778411865
+        },
+        {
+          "eval/loss": 3.074678421020508,
+          "_step": 88788,
+          "global_step": 88788
+        },
+        {
+          "global_step": 90902,
+          "eval/loss": 3.073894500732422,
+          "_step": 90902
+        },
+        {
+          "eval/loss": 3.0742976665496826,
+          "_step": 93016,
+          "global_step": 93016
+        },
+        {
+          "_step": 95130,
+          "global_step": 95130,
+          "eval/loss": 3.07369065284729
+        },
+        {
+          "_step": 97244,
+          "global_step": 97244,
+          "eval/loss": 3.072922945022583
+        },
+        {
+          "_step": 99358,
+          "global_step": 99358,
+          "eval/loss": 3.0711159706115723
+        },
+        {
+          "_step": 101472,
+          "global_step": 101472,
+          "eval/loss": 3.0701522827148438
+        },
+        {
+          "_step": 103586,
+          "global_step": 103586,
+          "eval/loss": 3.068809986114502
+        },
+        {
+          "_step": 105700,
+          "global_step": 105700,
+          "eval/loss": 3.0685746669769287
+        },
+        {
+          "_step": 107814,
+          "global_step": 107814,
+          "eval/loss": 3.067805767059326
+        },
+        {
+          "_step": 109928,
+          "global_step": 109928,
+          "eval/loss": 3.0685842037200928
+        },
+        {
+          "_step": 112042,
+          "global_step": 112042,
+          "eval/loss": 3.066927433013916
+        },
+        {
+          "_step": 114156,
+          "global_step": 114156,
+          "eval/loss": 3.0666027069091797
+        }
+      ]
+    },
+    {
+      "id": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+      "name": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+      "url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+      "state": "finished",
+      "summary": {
+        "_timestamp": 1789311107.3729897,
+        "eval/loss": 2.984407424926758,
+        "global_step": 266344,
+        "optim/learning_rate": 0.00010001695045502856,
+        "throughput/duration": 0.8639813214540482,
+        "throughput/tokens_per_second": 1213655.8672764893,
+        "train/loss": 3.1852176189422607
+      },
+      "validation": [
+        {
+          "eval/loss": 3.086214303970337,
+          "_step": 71876,
+          "global_step": 71876
+        },
+        {
+          "eval/loss": 3.085472345352173,
+          "_step": 73990,
+          "global_step": 73990
+        },
+        {
+          "eval/loss": 3.084493637084961,
+          "_step": 76104,
+          "global_step": 76104
+        },
+        {
+          "eval/loss": 3.0835459232330322,
+          "_step": 78218,
+          "global_step": 78218
+        },
+        {
+          "eval/loss": 3.0821306705474854,
+          "_step": 80332,
+          "global_step": 80332
+        },
+        {
+          "eval/loss": 3.08119797706604,
+          "_step": 82446,
+          "global_step": 82446
+        },
+        {
+          "eval/loss": 3.0801587104797363,
+          "_step": 84560,
+          "global_step": 84560
+        },
+        {
+          "eval/loss": 3.080103874206543,
+          "_step": 86674,
+          "global_step": 86674
+        },
+        {
+          "eval/loss": 3.0795161724090576,
+          "_step": 88788,
+          "global_step": 88788
+        },
+        {
+          "eval/loss": 3.0780446529388428,
+          "_step": 90902,
+          "global_step": 90902
+        },
+        {
+          "eval/loss": 3.0780766010284424,
+          "_step": 93016,
+          "global_step": 93016
+        },
+        {
+          "eval/loss": 3.0778372287750244,
+          "_step": 95130,
+          "global_step": 95130
+        },
+        {
+          "eval/loss": 3.076740264892578,
+          "_step": 97244,
+          "global_step": 97244
+        },
+        {
+          "eval/loss": 3.0746843814849854,
+          "_step": 99358,
+          "global_step": 99358
+        },
+        {
+          "eval/loss": 3.074190139770508,
+          "_step": 101472,
+          "global_step": 101472
+        },
+        {
+          "eval/loss": 3.0734293460845947,
+          "_step": 103586,
+          "global_step": 103586
+        },
+        {
+          "eval/loss": 3.072977066040039,
+          "_step": 105700,
+          "global_step": 105700
+        },
+        {
+          "eval/loss": 3.0733258724212646,
+          "_step": 107814,
+          "global_step": 107814
+        },
+        {
+          "eval/loss": 3.0730738639831543,
+          "_step": 109928,
+          "global_step": 109928
+        },
+        {
+          "eval/loss": 3.072272539138794,
+          "_step": 112042,
+          "global_step": 112042
+        },
+        {
+          "eval/loss": 3.071638584136963,
+          "_step": 114156,
+          "global_step": 114156
+        },
+        {
+          "eval/loss": 3.072031021118164,
+          "_step": 116270,
+          "global_step": 116270
+        },
+        {
+          "eval/loss": 3.071505069732666,
+          "_step": 118384,
+          "global_step": 118384
+        },
+        {
+          "eval/loss": 3.07030987739563,
+          "_step": 120498,
+          "global_step": 120498
+        },
+        {
+          "eval/loss": 3.0721287727355957,
+          "_step": 122612,
+          "global_step": 122612
+        },
+        {
+          "eval/loss": 3.0700714588165283,
+          "_step": 124726,
+          "global_step": 124726
+        },
+        {
+          "eval/loss": 3.0698049068450928,
+          "_step": 126840,
+          "global_step": 126840
+        },
+        {
+          "eval/loss": 3.06963849067688,
+          "_step": 128954,
+          "global_step": 128954
+        },
+        {
+          "eval/loss": 3.069138526916504,
+          "_step": 131068,
+          "global_step": 131068
+        },
+        {
+          "eval/loss": 3.068847179412842,
+          "_step": 133182,
+          "global_step": 133182
+        },
+        {
+          "eval/loss": 3.0677402019500732,
+          "_step": 135296,
+          "global_step": 135296
+        },
+        {
+          "eval/loss": 3.0665183067321777,
+          "_step": 137410,
+          "global_step": 137410
+        },
+        {
+          "eval/loss": 3.06630277633667,
+          "_step": 139524,
+          "global_step": 139524
+        },
+        {
+          "eval/loss": 3.066920280456543,
+          "_step": 141638,
+          "global_step": 141638
+        },
+        {
+          "eval/loss": 3.0668039321899414,
+          "_step": 143752,
+          "global_step": 143752
+        },
+        {
+          "eval/loss": 3.0668418407440186,
+          "_step": 145866,
+          "global_step": 145866
+        },
+        {
+          "eval/loss": 3.0662646293640137,
+          "_step": 147980,
+          "global_step": 147980
+        },
+        {
+          "eval/loss": 3.0652387142181396,
+          "_step": 150094,
+          "global_step": 150094
+        },
+        {
+          "eval/loss": 3.063694715499878,
+          "_step": 152208,
+          "global_step": 152208
+        },
+        {
+          "eval/loss": 3.065190315246582,
+          "_step": 154322,
+          "global_step": 154322
+        },
+        {
+          "eval/loss": 3.0651326179504395,
+          "_step": 156436,
+          "global_step": 156436
+        },
+        {
+          "eval/loss": 3.0659139156341553,
+          "_step": 158550,
+          "global_step": 158550
+        },
+        {
+          "eval/loss": 3.0630855560302734,
+          "_step": 160664,
+          "global_step": 160664
+        },
+        {
+          "eval/loss": 3.065701484680176,
+          "_step": 162778,
+          "global_step": 162778
+        },
+        {
+          "eval/loss": 3.06461763381958,
+          "_step": 164892,
+          "global_step": 164892
+        },
+        {
+          "eval/loss": 3.0637011528015137,
+          "_step": 167006,
+          "global_step": 167006
+        },
+        {
+          "eval/loss": 3.062138080596924,
+          "_step": 169120,
+          "global_step": 169120
+        },
+        {
+          "eval/loss": 3.062911033630371,
+          "_step": 171234,
+          "global_step": 171234
+        },
+        {
+          "eval/loss": 3.0629971027374268,
+          "_step": 173348,
+          "global_step": 173348
+        },
+        {
+          "eval/loss": 3.062269926071167,
+          "_step": 175462,
+          "global_step": 175462
+        },
+        {
+          "eval/loss": 3.063368082046509,
+          "_step": 177576,
+          "global_step": 177576
+        },
+        {
+          "eval/loss": 3.061262607574463,
+          "_step": 179690,
+          "global_step": 179690
+        },
+        {
+          "eval/loss": 3.0607376098632812,
+          "_step": 181804,
+          "global_step": 181804
+        },
+        {
+          "eval/loss": 3.0619137287139893,
+          "_step": 183918,
+          "global_step": 183918
+        },
+        {
+          "eval/loss": 3.0607640743255615,
+          "_step": 186032,
+          "global_step": 186032
+        },
+        {
+          "eval/loss": 3.059793472290039,
+          "_step": 188146,
+          "global_step": 188146
+        },
+        {
+          "eval/loss": 3.0609216690063477,
+          "_step": 190260,
+          "global_step": 190260
+        },
+        {
+          "eval/loss": 3.0602850914001465,
+          "_step": 192374,
+          "global_step": 192374
+        },
+        {
+          "eval/loss": 3.060488224029541,
+          "_step": 194488,
+          "global_step": 194488
+        },
+        {
+          "eval/loss": 3.0596437454223633,
+          "_step": 196602,
+          "global_step": 196602
+        },
+        {
+          "eval/loss": 3.0603280067443848,
+          "_step": 198716,
+          "global_step": 198716
+        },
+        {
+          "eval/loss": 3.0602128505706787,
+          "_step": 200830,
+          "global_step": 200830
+        },
+        {
+          "eval/loss": 3.0588974952697754,
+          "_step": 202944,
+          "global_step": 202944
+        },
+        {
+          "eval/loss": 3.0586001873016357,
+          "_step": 205058,
+          "global_step": 205058
+        },
+        {
+          "eval/loss": 3.057704448699951,
+          "_step": 207172,
+          "global_step": 207172
+        },
+        {
+          "eval/loss": 3.0579371452331543,
+          "_step": 209286,
+          "global_step": 209286
+        },
+        {
+          "eval/loss": 3.058870315551758,
+          "_step": 211400,
+          "global_step": 211400
+        },
+        {
+          "eval/loss": 3.0569770336151123,
+          "_step": 213514,
+          "global_step": 213514
+        },
+        {
+          "eval/loss": 3.0557074546813965,
+          "_step": 215628,
+          "global_step": 215628
+        },
+        {
+          "eval/loss": 3.0535309314727783,
+          "_step": 217742,
+          "global_step": 217742
+        },
+        {
+          "eval/loss": 3.050966739654541,
+          "_step": 219856,
+          "global_step": 219856
+        },
+        {
+          "eval/loss": 3.048055410385132,
+          "_step": 221970,
+          "global_step": 221970
+        },
+        {
+          "eval/loss": 3.047076940536499,
+          "_step": 224084,
+          "global_step": 224084
+        },
+        {
+          "eval/loss": 3.0446105003356934,
+          "_step": 226198,
+          "global_step": 226198
+        },
+        {
+          "eval/loss": 3.0424604415893555,
+          "_step": 228312,
+          "global_step": 228312
+        },
+        {
+          "eval/loss": 3.039170980453491,
+          "_step": 230426,
+          "global_step": 230426
+        },
+        {
+          "eval/loss": 3.0369207859039307,
+          "_step": 232540,
+          "global_step": 232540
+        },
+        {
+          "eval/loss": 3.0350396633148193,
+          "_step": 234654,
+          "global_step": 234654
+        },
+        {
+          "eval/loss": 3.0310957431793213,
+          "_step": 236768,
+          "global_step": 236768
+        },
+        {
+          "eval/loss": 3.02816104888916,
+          "_step": 238882,
+          "global_step": 238882
+        },
+        {
+          "eval/loss": 3.025646924972534,
+          "_step": 240996,
+          "global_step": 240996
+        },
+        {
+          "eval/loss": 3.0230658054351807,
+          "_step": 243110,
+          "global_step": 243110
+        },
+        {
+          "eval/loss": 3.019254446029663,
+          "_step": 245224,
+          "global_step": 245224
+        },
+        {
+          "eval/loss": 3.016737222671509,
+          "_step": 247338,
+          "global_step": 247338
+        },
+        {
+          "eval/loss": 3.0120344161987305,
+          "_step": 249452,
+          "global_step": 249452
+        },
+        {
+          "eval/loss": 3.0082004070281982,
+          "_step": 251566,
+          "global_step": 251566
+        },
+        {
+          "eval/loss": 3.0051915645599365,
+          "_step": 253680,
+          "global_step": 253680
+        },
+        {
+          "eval/loss": 3.0021891593933105,
+          "_step": 255794,
+          "global_step": 255794
+        },
+        {
+          "eval/loss": 2.9956541061401367,
+          "_step": 257908,
+          "global_step": 257908
+        },
+        {
+          "eval/loss": 2.992084503173828,
+          "_step": 260022,
+          "global_step": 260022
+        },
+        {
+          "eval/loss": 2.9866745471954346,
+          "_step": 262136,
+          "global_step": 262136
+        },
+        {
+          "eval/loss": 2.9827427864074707,
+          "_step": 264250,
+          "global_step": 264250
+        },
+        {
+          "eval/loss": 2.984407424926758,
+          "_step": 266344,
+          "global_step": 266344
+        }
+      ]
+    }
+  ],
+  "source": "W&B API summary plus scan_history(keys=[global_step, eval/loss], min_step=70000); null eval rows removed.",
+  "iris_check": {
+    "observed_on": "2026-10-26",
+    "original_driver": "/bizon/exp363-train-a04",
+    "original_child": "/bizon/exp363-train-a04/exp363-train-6d5c8a62",
+    "fork_driver": "/bizon/exp363-fork-train-a04",
+    "fork_child": "/bizon/exp363-fork-train-a04/exp363-train-3fc9d00b",
+    "all_job_states": "running"
+  },
+  "matched_comparison": {
+    "count": 19,
+    "fork_lower_than_default_count": 19,
+    "latest_step": 114156,
+    "original_loss": 17.649030685424805,
+    "fork_loss": 3.0666027069091797,
+    "default_loss": 3.071638584136963,
+    "fork_minus_default_nats": -0.005035877227783203,
+    "fork_perplexity_change_percent": -0.5023218456310641
+  }
+}

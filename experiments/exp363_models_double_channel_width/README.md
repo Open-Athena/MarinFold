@@ -10,7 +10,47 @@ marinfold_experiment:
 
 **Issue:** [#363](https://github.com/Open-Athena/MarinFold/issues/363) · **Kind:** `models` · **Branch:** `exp363/double-channel-width`
 
-## Both runs recovered (2026-10-23)
+## Current result: lower LR is stable; original diverged (2026-10-26)
+
+At **11:55 EDT**, both a04 drivers and accelerator jobs remain running on
+32 H100s each. The original reports step **117,186** (44.00% of 266,345 updates)
+at LR **0.001**; the fork reports **116,027** (43.56%) at **0.000707**.
+Their latest metric timestamps are 11:51:56 and 11:54:33 EDT, respectively.
+
+The original has diverged. In the inspected step-76,000–78,299 training history,
+the first loss above 4 occurs at **77,229** (5.54151). Full-validation loss rises
+from **3.09974 at 76,104** to **11.88947 at 78,218**, peaks at **42.43565 at
+80,332**, and remains **17.96501 at 116,270**. This is persistent training
+instability, despite the scheduler and W&B continuing to report running jobs.
+
+The fork is stable and has lower full-validation loss than the default exp277
+model at **all 19 exact-step comparisons** since the fork. The first comparison
+at 76,104 is near the end of the LR transition; subsequent comparisons are on
+the 0.000707 plateau. At the latest shared evaluation:
+
+| Run at step 114,156 | Full-validation loss |
+| --- | ---: |
+| Default 1.471B, exp277 | 3.071639 |
+| Wide 5.862B, original LR 0.001 | 17.649031 |
+| Wide 5.862B, fork LR 0.000707 | **3.066603** |
+
+The fork's advantage over the default is **0.005036 nats/token**, or **0.50%
+lower perplexity**. This supports reducing the LR for this width change; the
+gain over the smaller default remains modest and is from a single seed before
+final cooldown. It does not establish improved protein-contact accuracy.
+
+![Lower-LR fork and original divergence](plots/lr_fork_comparison.png)
+
+Both runs were left active under the request to keep the original going.
+Stopping the divergent 0.001 control is recommended; no cancellation or schedule
+change was made during this status check. The fork still begins final cooldown
+at **213,076** and finishes at **266,345 updates**. The W&B snapshot and exact
+comparison are in `data/progress_20261026.json`, the plotted observations in
+`data/lr_fork_validation_20261026.csv`, and training-loss onset evidence in
+`data/original_loss_onset_20261026.csv`. Run identities are linked below.
+`plot_lr_fork.py` regenerates this figure offline.
+
+## Both runs recovered (2026-10-23; historical)
 
 **Both jobs are training.** The original completed its first resumed update at
 **10:43:58 EDT** and is producing fresh losses. The fork completed its first
@@ -19,7 +59,7 @@ update at **10:51:32 EDT**; at 10:52 EDT W&B reports **step 74,190**, LR
 recorded fork LRs match the planned ramp (maximum absolute error 1.14e-10).
 At the shared first step, **74,179**, the fork and original both report loss
 **2.90014386177063**, corroborating the restored state and data position.
-There is no post-fork full-validation comparison yet.
+There was no post-fork full-validation comparison at that time.
 
 The refreshed CoreWeave key passed authenticated reads through both fsspec and
 TensorStore at 10:33 EDT. The original's complete checkpoint **75,031** restores
@@ -115,7 +155,7 @@ both driver and child submission. The launcher forwards these through the
 supported environment API. Attempt a01 was rejected before execution because
 it supplied only the existing `FSSPEC_S3` blob; a02 includes both forms.
 
-## Latest comparison update (2026-10-22)
+## Previous comparison update (2026-10-22)
 
 W&B reports step **73,740**, **27.69%** complete, with the run marked running.
 Latest full validation at step **71,876** is **3.09976**, versus **3.08621** for
@@ -289,11 +329,13 @@ The first GPU smoke `/bizon/exp363-train-smoke-a01` failed before model/W&B init
 
 ## Conclusion
 
-The requested architecture is implemented and its exact parameter count is verified.
-At the October 22 snapshot, full-validation loss decreases but is
-0.01354 nats/token worse than exp277 at matched step 71,876, after an early lead
-reversed. The gap has narrowed from its peak at step 61,306. The run is incomplete; final training-quality and contact-accuracy
-conclusions remain open.
+The requested architecture has **5,861,984,256 parameters**. Keeping the default
+LR of 0.001 led to persistent divergence, first apparent in full validation at
+step 78,218. The full-state fork with a reduction to **0.000707** remains stable
+and beats the smaller default at all 19 matched post-fork evaluations available
+on October 26. At step 114,156 its advantage is **0.005036 nats/token** (0.50%
+lower perplexity). This is a small, single-seed improvement before final
+cooldown; final training-quality and contact-accuracy conclusions remain open.
 
 ## TPU trial (2026-10-14)
 

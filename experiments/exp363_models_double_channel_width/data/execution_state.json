@@ -73,7 +73,7 @@
   ],
   "production_submitted_at": "2026-10-23T14:34:01.260Z",
   "production_wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B",
-  "production_observed_at": "2026-10-23T14:54:44.869235+00:00",
+  "production_observed_at": "2026-10-26T15:55:10.854315+00:00",
   "production_preemptions": 0,
   "tpu_trials": [
     {
@@ -188,10 +188,21 @@
       "finished_at": "2026-10-16T17:18:21.285000+00:00"
     }
   ],
-  "production_last_reported_step": 75126,
+  "production_last_reported_step": 117186,
   "production_last_complete_checkpoint_step": 75031,
   "production_child_job_id": "/bizon/exp363-train-a04/exp363-train-6d5c8a62",
   "preferred_tpu": "v5p-64",
   "production_decision": "Continue on 32 H100s; initial v5p trial is successful but slower per update. No production migration performed.",
-  "previous_production_failure_reason": "Iris child worker_failed: missing CW_KEY_ID and CW_KEY_SECRET after the new credential policy; terminal driver failed."
+  "previous_production_failure_reason": "Iris child worker_failed: missing CW_KEY_ID and CW_KEY_SECRET after the new credential policy; terminal driver failed.",
+  "production_training_health": "diverged",
+  "production_latest_metrics": {
+    "_timestamp": 1793029916.8204193,
+    "eval/loss": 17.965011596679688,
+    "global_step": 117186,
+    "optim/learning_rate": 0.0010000000474974513,
+    "throughput/duration": 5.588562231976539,
+    "throughput/tokens_per_second": 187628.9386204337,
+    "train/loss": 16.438018798828125
+  },
+  "production_divergence_evidence": "data/progress_20261026.json; data/original_loss_onset_20261026.csv"
 }
