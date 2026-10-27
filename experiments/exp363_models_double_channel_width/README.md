@@ -10,6 +10,26 @@ marinfold_experiment:
 
 **Issue:** [#363](https://github.com/Open-Athena/MarinFold/issues/363) · **Kind:** `models` · **Branch:** `exp363/double-channel-width`
 
+## Current progress (2026-10-27, 08:09 EDT)
+
+The lower-LR fork remains running on 32 H100s at **0.000707**. Latest W&B
+metrics, timestamped **08:03:49 EDT**, report step **125,476** (**47.11%** of
+266,345 updates), train loss **2.81725**, and **5.65 seconds/update**. It has
+advanced **8,977 updates** since yesterday's post-cancellation check. Both
+original jobs remain killed; the fork's driver and accelerator child are running.
+
+At the latest full-validation step **124,726**, the fork scores **3.063974**
+versus the default exp277's **3.070071** at that exact step: **0.006098 nats/token**
+lower loss, or **0.61% lower perplexity**. The fork now leads at all **24 matched
+post-fork evaluations**. The advantage remains modest but consistent, with no
+validation divergence observed. This is an interim single-seed language-model
+comparison; protein-contact accuracy has not been evaluated.
+
+Final cooldown remains at step **213,076**, with **266,345 total updates** and
+**140,868 remaining** at this snapshot. Evidence, new matched comparisons and
+scheduler states are recorded in `data/progress_20261027.json`. The October 26
+plot below is the previous snapshot.
+
 ## Original stopped; lower-LR fork continues (2026-10-26, 12:40 EDT)
 
 At the requester's direction, cancelled original driver
@@ -347,8 +367,8 @@ The first GPU smoke `/bizon/exp363-train-smoke-a01` failed before model/W&B init
 The requested architecture has **5,861,984,256 parameters**. Keeping the default
 LR of 0.001 led to persistent divergence, first apparent in full validation at
 step 78,218. The full-state fork with a reduction to **0.000707** remains stable
-and beats the smaller default at all 19 matched post-fork evaluations available
-on October 26. At step 114,156 its advantage is **0.005036 nats/token** (0.50%
+and beats the smaller default at all 24 matched post-fork evaluations available
+on October 27. At step 124,726 its advantage is **0.006098 nats/token** (0.61%
 lower perplexity). This is a small, single-seed improvement before final
 cooldown; final training-quality and contact-accuracy conclusions remain open.
 

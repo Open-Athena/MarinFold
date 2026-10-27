@@ -1,0 +1,118 @@
+{
+  "observed_at": "2026-10-27T12:09:13.509484+00:00",
+  "id": "contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4",
+  "url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4",
+  "state": "running",
+  "summary": {
+    "global_step": 125476,
+    "_timestamp": 1793102629.2536342,
+    "train/loss": 2.8172452449798584,
+    "optim/learning_rate": 0.0007070000283420086,
+    "eval/loss": 3.0639736652374268,
+    "throughput/duration": 5.65043425001204
+  },
+  "validation": [
+    {
+      "_step": 114156,
+      "global_step": 114156,
+      "eval/loss": 3.0666027069091797
+    },
+    {
+      "_step": 116270,
+      "global_step": 116270,
+      "eval/loss": 3.0670387744903564
+    },
+    {
+      "_step": 118384,
+      "global_step": 118384,
+      "eval/loss": 3.066218137741089
+    },
+    {
+      "_step": 120498,
+      "global_step": 120498,
+      "eval/loss": 3.0647807121276855
+    },
+    {
+      "_step": 122612,
+      "global_step": 122612,
+      "eval/loss": 3.0655462741851807
+    },
+    {
+      "_step": 124726,
+      "global_step": 124726,
+      "eval/loss": 3.0639736652374268
+    }
+  ],
+  "comparison": {
+    "baseline_run_id": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+    "baseline_source": "data/training_comparison_curves.csv (full validation export; checked against exp277 committed epoch-validation CSV)",
+    "matched_count": 24,
+    "fork_lower_count": 24,
+    "latest": {
+      "step": 124726,
+      "fork_validation_loss": 3.0639736652374268,
+      "default_validation_loss": 3.0700714588165283,
+      "fork_minus_default_nats": -0.0060977935791015625,
+      "perplexity_change_percent": -0.6079239767428554
+    },
+    "new_matches": [
+      {
+        "step": 116270,
+        "fork_validation_loss": 3.0670387744903564,
+        "default_validation_loss": 3.072031021118164,
+        "fork_minus_default_nats": -0.004992246627807617,
+        "perplexity_change_percent": -0.4979806075322885
+      },
+      {
+        "step": 118384,
+        "fork_validation_loss": 3.066218137741089,
+        "default_validation_loss": 3.071505069732666,
+        "fork_minus_default_nats": -0.0052869319915771484,
+        "perplexity_change_percent": -0.5272980763861144
+      },
+      {
+        "step": 120498,
+        "fork_validation_loss": 3.0647807121276855,
+        "default_validation_loss": 3.07030987739563,
+        "fork_minus_default_nats": -0.005529165267944336,
+        "perplexity_change_percent": -0.5513907567399116
+      },
+      {
+        "step": 122612,
+        "fork_validation_loss": 3.0655462741851807,
+        "default_validation_loss": 3.0721287727355957,
+        "fork_minus_default_nats": -0.006582498550415039,
+        "perplexity_change_percent": -0.6560881364537
+      },
+      {
+        "step": 124726,
+        "fork_validation_loss": 3.0639736652374268,
+        "default_validation_loss": 3.0700714588165283,
+        "fork_minus_default_nats": -0.0060977935791015625,
+        "perplexity_change_percent": -0.6079239767428554
+      }
+    ]
+  },
+  "progress_percent": 47.11070228463083,
+  "updates_since_stop_check": 8977,
+  "remaining_updates": 140868,
+  "latest_metric_time_edt": "2026-10-27T08:03:49.253634-04:00",
+  "iris": {
+    "fork_driver": {
+      "id": "/bizon/exp363-fork-train-a04",
+      "state": "running"
+    },
+    "fork_child": {
+      "id": "/bizon/exp363-fork-train-a04/exp363-train-3fc9d00b",
+      "state": "running"
+    },
+    "original_driver": {
+      "id": "/bizon/exp363-train-a04",
+      "state": "killed"
+    },
+    "original_child": {
+      "id": "/bizon/exp363-train-a04/exp363-train-6d5c8a62",
+      "state": "killed"
+    }
+  }
+}

@@ -50,7 +50,7 @@
   ],
   "recovery_command": "uv run --no-project python experiments/exp363_models_double_channel_width/launch.py fork-train --nodes 4 --attempt 5 --resume",
   "child_submitted_at": "2026-10-23T14:41:57.738Z",
-  "verified_at": "2026-10-26T16:41:27.542040+00:00",
+  "verified_at": "2026-10-27T12:09:13.509484+00:00",
   "parent_status": {
     "state": "killed",
     "job_id": "/bizon/exp363-train-a04/exp363-train-6d5c8a62",
@@ -94,11 +94,12 @@
   "driver_state": "JOB_STATE_RUNNING",
   "first_train_step_completed_at": "2026-10-23T14:51:32Z",
   "latest_metrics": {
-    "global_step": 116499,
-    "_timestamp": 1793032878.075644,
-    "train/loss": 2.8721396923065186,
+    "global_step": 125476,
+    "_timestamp": 1793102629.2536342,
+    "train/loss": 2.8172452449798584,
     "optim/learning_rate": 0.0007070000283420086,
-    "eval/loss": 3.0670387744903564
+    "eval/loss": 3.0639736652374268,
+    "throughput/duration": 5.65043425001204
   },
   "training_health": "stable"
 }

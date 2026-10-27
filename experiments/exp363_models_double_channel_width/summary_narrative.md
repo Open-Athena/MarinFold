@@ -14,11 +14,12 @@ Architecture, tokenizer, data and recovery checks passed.
 2.821 seconds/update; native and HF checkpoints saved with tokenizer.
 Compressed smoke schedule was spiky; this is an execution check.
 
-## Current status — October 26
-Original stopped at user request at 12:40 EDT; driver and child confirmed killed.
+## Current status — October 27, 08:09 EDT
+Original stopped at user request October 26 at 12:40 EDT; both jobs remain killed.
 Last observed original step: 117,691, LR 0.001; numerically diverged.
 Fork continues on four nodes / 32 H100s at batch priority.
-Fork at cancellation check: step 116,485, LR 0.000707, train loss 2.82176.
+Latest fork metrics at 08:03:49 EDT: step 125,476 (47.11%), LR 0.000707.
+Train loss 2.81725, 5.65 seconds/update; 8,977 updates since yesterday's check.
 Original first training loss above 4 in the inspected window: step 77,229.
 Original validation rose from 3.09974 at 76,104 to 11.88947 at 78,218.
 It peaked at 42.43565 and remains 17.96501 at step 116,270.
@@ -34,14 +35,15 @@ Short native-only smoke; throughput is preliminary, not cost-normalized.
 Production continues on GPUs. No bulk transfer or migration performed.
 
 ## Matched validation: lower LR gives a small advantage
-The fork beats the default at all 19 exact-step post-fork evaluations.
+The fork beats the default at all 24 exact-step post-fork evaluations.
 Same native + MPNN corpus, global batch, validation and absolute data position.
-At step 114,156: default 3.071639; fork 3.066603; original 17.649031.
-Fork minus default: -0.005036 nats/token, or 0.50% lower perplexity.
+At step 124,726: default 3.070071; fork 3.063974.
+Fork minus default: -0.006098 nats/token, or 0.61% lower perplexity.
 This reverses the original wide model's disadvantage before the fork.
 Reducing LR is supported by stability and loss for this particular run.
 Single seed, incomplete epoch; width and LR differ from the smaller default.
 No contact-accuracy evaluation for the wider model yet.
+The plot appendix shows the previous October 26 snapshot.
 
 ## Other architectures: context, not a common leaderboard
 exp108 depth-scaled 2.93B: all three LR trials unstable around 6.8k updates.

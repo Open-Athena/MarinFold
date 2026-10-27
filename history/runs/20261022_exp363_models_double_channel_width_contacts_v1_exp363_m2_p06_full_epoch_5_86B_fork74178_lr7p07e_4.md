@@ -5,7 +5,7 @@ marinfold_run:
   experiment: exp363_models_double_channel_width
   kind: models
   short_description: Full-state LR fork from step 74178 to 0.000707; stable and ahead
-    of the default at 19 matched evaluations
+    of the default at 24 matched evaluations
   wandb:
     url: https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4
     entity: open-athena
@@ -32,7 +32,7 @@ marinfold_run:
 ## Description
 
 Full-state LR fork from step 74178 to 0.000707; stable and ahead of the default
-at 19 matched evaluations as of October 26.
+at 24 matched evaluations as of October 27.
 
 ## Detailed plan
 
@@ -88,3 +88,14 @@ has diverged; this fork remains stable. Same final cooldown at 213,076 and
 266,345-update horizon. This is an interim single-seed language-model result,
 with no wider-model contact evaluation yet. Evidence and figure inputs:
 experiment data/progress_20261026.json and data/lr_fork_validation_20261026.csv.
+
+## October 27: continued stable progress
+
+Checked at 08:09 EDT: a04 driver and accelerator child remain running; the
+original remains intentionally killed. Latest W&B metrics at 08:03:49 EDT:
+step 125,476 (47.11%), LR 0.000707, train loss 2.81725, 5.65 seconds/update.
+Advanced 8,977 updates since the post-cancellation check. At full-validation
+step 124,726, fork loss 3.063974 versus default 3.070071: 0.006098 nats/token
+better, or 0.61% lower perplexity. The fork leads at all 24 matched post-fork
+evaluations. Final cooldown 213,076 and total horizon 266,345 unchanged.
+Evidence: experiment data/progress_20261027.json.
