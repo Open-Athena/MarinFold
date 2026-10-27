@@ -1,0 +1,94 @@
+{
+  "observed_at": "2026-10-27T12:12:58.100666+00:00",
+  "root": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5",
+  "source_resume_step": 186880,
+  "replayed_optimizer_steps": [
+    186881,
+    186882,
+    186883,
+    186884
+  ],
+  "native_metadata": {
+    "step": 186884,
+    "timestamp": "2026-10-26T17:39:06.774703",
+    "is_temporary": false
+  },
+  "scalar_counters": {
+    "step": 186885,
+    "opt_state/count": 186885,
+    "opt_state/hyperparams_states/learning_rate/count": 186885
+  },
+  "export_verification": {
+    "verified_at": "2026-10-26T17:43:07.359744+00:00",
+    "export": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/hf/step-186884",
+    "all_parameters_finite": true,
+    "parameter_bytes": 5885497344,
+    "files": {
+      "model-00001-of-00002.safetensors": {
+        "parameter_bytes": 4979460096,
+        "sha256": "9bcc598a1ffaf22b242e9026956f18a346e199c9f0b374c88c10afb3067c4dfb"
+      },
+      "model-00002-of-00002.safetensors": {
+        "parameter_bytes": 906037248,
+        "sha256": "0afefda9942b993f81f1f7bd7e7e0af4fb16e47185f5d972b79e92c37219de99"
+      }
+    }
+  },
+  "export_files": {
+    "model-00001-of-00002.safetensors": 4979485528,
+    "model-00002-of-00002.safetensors": 906042048,
+    "tokenizer.json": 64407,
+    "tokenizer_config.json": 296,
+    "config.json": 1726
+  },
+  "final_validation": {
+    "eval/bpb": 0.3782515227794647,
+    "eval/contacts-v1/bpb": 0.3782515227794647,
+    "eval/contacts-v1/loss": 3.0358169078826904,
+    "eval/input/bpb": 0.3782515227794647,
+    "eval/input/macro_bpb": 0.3782515227794647,
+    "eval/input/macro_loss": 3.0358169078826904,
+    "eval/input/micro_loss": 3.0358169078826904,
+    "eval/input/validation/bpb": 0.3782515227794647,
+    "eval/input/validation/loss": 3.0358169078826904,
+    "eval/loading_time": 0.18476655500103334,
+    "eval/loss": 3.0358169078826904,
+    "eval/macro_bpb": 0.3782515227794647,
+    "eval/macro_loss": 3.0358169078826904,
+    "eval/pretokenized/bpb": 0.3782515227794647,
+    "eval/pretokenized/loss": 3.0358169078826904,
+    "eval/protein/bpb": 0.3782515227794647,
+    "eval/protein/loss": 3.0358169078826904,
+    "eval/total_time": 61.47528360499996,
+    "step": 186884
+  },
+  "validation_source": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/eval_metrics.jsonl",
+  "invalid_prior_final_preserved": true,
+  "wandb_summary_reconciliation": {
+    "old_evaluation_summary": {
+      "eval/bpb": "NaN",
+      "eval/contacts-v1/bpb": "NaN",
+      "eval/contacts-v1/loss": "NaN",
+      "eval/input/bpb": "NaN",
+      "eval/input/macro_bpb": "NaN",
+      "eval/input/macro_loss": "NaN",
+      "eval/input/micro_loss": "NaN",
+      "eval/input/validation/bpb": "NaN",
+      "eval/input/validation/loss": "NaN",
+      "eval/loading_time": 0.2515974389971234,
+      "eval/loss": "NaN",
+      "eval/macro_bpb": "NaN",
+      "eval/macro_loss": "NaN",
+      "eval/pretokenized/bpb": "NaN",
+      "eval/pretokenized/loss": "NaN",
+      "eval/protein/bpb": "NaN",
+      "eval/protein/loss": "NaN",
+      "eval/total_time": 55.96680073099924
+    },
+    "replacement_source": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/checkpoints/eval_metrics.jsonl",
+    "historical_rows_modified": false,
+    "extra_optimizer_updates": 0
+  },
+  "iris_job": "/bizon/exp364-tpu-cooldown-train-a02",
+  "iris_finished_at": "2026-10-26T17:43:17.538Z"
+}

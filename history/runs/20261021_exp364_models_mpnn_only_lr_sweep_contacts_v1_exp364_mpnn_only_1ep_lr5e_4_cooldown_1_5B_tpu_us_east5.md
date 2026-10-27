@@ -41,3 +41,7 @@ TPU Splash attention and a separately locked TPU runtime replace the GPU executi
 ## Notes
 
 The approved 267.73 GB transfer was independently verified before the ten-update v5p-8 smoke. Production starts from the original frozen source, not the accelerated smoke endpoint. W&B initialized at 2026-10-21T16:51:58Z. At 17:50 UTC production had reached step 139702, with full validation loss 3.103912830352783 and 244184.40967320377 packed token slots/s. These are preliminary measurements before cooldown.
+
+### Verified completion, 2026-10-27
+
+Recovery a02 completed at 2026-10-26T17:43:17.538Z after replaying four updates from step 186880 with the padding-gradient fix. Final checkpoint step 186884 and all three checked counters equal the required 186885 total updates. Final full-validation loss is 3.0358169078826904; every exported parameter passed the in-region finite scan. See experiment `data/tpu_final_verification.json` for digests and provenance. W&B's summary is corrected from durable final evaluation metrics; its earlier invalid NaN history and the quarantined checkpoint remain preserved. The independent GPU fork and two-epoch parent continue.

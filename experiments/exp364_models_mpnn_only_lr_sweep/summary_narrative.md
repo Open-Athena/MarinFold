@@ -1,4 +1,14 @@
-## Recovery audit — October 26
+## Completed TPU fork — October 27 update
+
+The one-epoch v5p fork finished its four-update repair October 26 at 13:43 EDT. Final validation: 3.03582. Native step 186884 and all optimizer counters confirm exactly 186885 total updates; every exported parameter is finite. Tokenizer and model files are verified.
+
+Completed full-data first epoch: 2.98441; continuation: 2.98099. Different exposure and schedules remain comparison limits. W&B summary is reconciled from durable final metrics; the invalid historical endpoint is preserved.
+
+GPU epochs / target and latest loss: 5e-4 1.177 / 2, 3.08887; 1e-3 1.345 / 2, 3.11757; 2e-3 0.826 / 2, 3.57571; cooldown fork 0.866 / 1, 3.08435. All resumed and advanced.
+
+2e-3 has repeated loss spikes (peak 4.09309). Keep the requested LR. At active compute speed, the GPU fork needs about 37 hours and the two-epoch runs 93–119 hours; interruptions add time. The October 21 R-precision snapshot is unchanged; no final TPU R-precision is available.
+
+## Historical recovery audit — October 26
 
 GPU runs stopped October 22 following CoreWeave credential rotation. Reported success hid incomplete training. Last validation: 5e-4 3.09058; 1e-3 3.11904; 2e-3 3.15627; GPU fork 3.10000. Previous calendar ETAs are invalid.
 

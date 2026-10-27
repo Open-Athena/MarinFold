@@ -50,6 +50,25 @@ Production launched with 32 H100s per trial on `cw-us-east-02a` at batch priorit
 
 All three trials were registered as running in W&B on 2026-10-13 at 15:10 UTC. Their live saved configurations were checked against the actual default run: model fields and all optimizer values match except the requested learning rate; the exact two-source training subset, global batch 128, 373,769-step target, and augmentation duration were verified. Final results are pending.
 
+### Verified TPU completion and GPU progress, 2026-10-27
+
+The TPU one-epoch fork is now **complete and verified**. Recovery `/bizon/exp364-tpu-cooldown-train-a02` finished October 26 at 17:43:17 UTC (13:43 EDT). Native checkpoint 186884 has trainer, optimizer and LR counters of 186885, proving the endpoint remained exactly one redesign epoch after replaying only updates 186881–186884. Both exported weight shards passed a complete in-region finite-parameter scan; tokenizer and configuration files are present. Final full-validation loss is **3.03581691**, versus 2.98440742 for the completed full-data first epoch and 2.98098946 for its continuation. Different training exposures and schedules still limit causal interpretation of this gap.
+
+`data/tpu_final_verification.json` records the native counters, export SHA-256 digests, sizes, and final metrics from durable `checkpoints/eval_metrics.jsonl`. W&B rejected replayed history steps already present from the invalid attempt, leaving its old NaN endpoint in history. Its summary was explicitly corrected from the verified evaluation artifact; the invalid historical row and archived checkpoint remain preserved. No extra optimizer update or replacement historical row was introduced.
+
+All four GPU runs have resumed and made new optimizer progress since recovery. The 12:13 UTC snapshot is:
+
+| Run | Step | Epochs / target | Latest validation step | Validation loss | Remaining compute hours |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 5e-4 GPU | 219990 | 1.177 / 2 | 219856 | 3.08887 | 119 |
+| 1e-3 GPU | 251448 | 1.345 / 2 | 249452 | 3.11757 | 94 |
+| 2e-3 GPU | 154312 | 0.826 / 2 | 152208 | 3.57571 | 93 |
+| GPU one-epoch fork | 161889 | 0.866 / 1 | 160664 | 3.08435 | 37 |
+
+The 2e-3 trajectory shows repeated instability: loss rose from 3.15588 at step 126840 to 4.09309 at 128954, recovered to 3.23519 by 150094, then rose to 3.57571 at 152208. It had an earlier spike at 107814 before the latest recovery. Losses remain finite. Keep the requested LR and training endpoint; these observations do not isolate the cause of the spikes. The lower-LR trajectories are stable, and the GPU fork is improving during cooldown.
+
+Compute estimates use measured active-training throughput around 376k / 378k / 691k / 198k token slots per second, respectively. They exclude validation, checkpointing, queueing, and preemptions, which have materially slowed wall-clock progress. New GPU final checkpoints and final-checkpoint R-precision remain pending. The completed October 21 R-precision snapshot is unchanged and does not include the final TPU checkpoint.
+
 ### Recovery audit, 2026-10-26
 
 All four GPU trajectories stopped on October 22 after CoreWeave rotated storage credentials. The three two-epoch jobs reported success despite stopping early; their expected final checkpoints do not exist. The independent GPU fork failed when replacement workers lacked the newly required CoreWeave credential variables. The October 22 calendar estimates are no longer valid.
@@ -169,4 +188,4 @@ Each trial writes to `s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_l
 
 ## Conclusion
 
-Training remains incomplete after the October 22 GPU interruption and an invalid TPU final update. Recovery is documented above; a reported successful job alone does not establish a valid checkpoint. The October 21 matched-step LM comparison favors the full-data run, with 5e-4 leading the redesign-only sweep. All four contact evaluations are complete and verified: the pre-cooldown redesign-only snapshots also trail the completed full-data references on both natural and designed proteins. The TPU reached its endpoint on October 25 but requires a four-update repair; the original two-epoch parent and GPU fork retain independent identities. Final checkpoints and post-cooldown measurements are still needed, and unequal training exposure and differing schedules limit attribution to the training subset alone.
+The independent TPU one-epoch cooldown is complete with verified finite weights and final validation loss 3.03582. All four GPU trajectories have resumed; the GPU cooldown is at 0.866 epoch and the two-epoch trials are at 1.177, 1.345 and 0.826 epochs for increasing LR. The 2e-3 trial has repeated finite loss spikes; 5e-4 continues to lead the sweep. Completed full-data references retain lower final validation loss, and all four pre-cooldown October 21 contact evaluations trail the completed full-data reference on both natural and designed proteins. Final GPU checkpoints and contact evaluation of the completed TPU checkpoint are still unavailable; unequal exposure and differing schedules prevent attributing the full difference to removal of native sequences alone.

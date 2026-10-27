@@ -182,7 +182,13 @@ def plot() -> None:
         for row in csv.DictReader(source):
             curves[row["run"]][int(row["step"])] = float(row["validation_loss"])
     metadata = json.loads((DATA / "validation_comparison.json").read_text())
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5.8))
+    final = json.loads((DATA / "tpu_final_verification.json").read_text())
+    if not final["export_verification"]["all_parameters_finite"]:
+        raise ValueError("The TPU endpoint must have a verified finite export")
+    tpu_step = final["final_validation"]["step"]
+    if tpu_step != final["native_metadata"]["step"]:
+        raise ValueError("TPU validation and native checkpoint steps differ")
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6.2))
     for key, curve in curves.items():
         if not curve:
             continue
@@ -200,10 +206,28 @@ def plot() -> None:
             axis.scatter(
                 steps[-1] / 1000, curve[steps[-1]], color=color, s=22, zorder=3
             )
+    for axis in axes:
+        axis.scatter(
+            tpu_step / 1000,
+            final["final_validation"]["eval/loss"],
+            marker="*",
+            s=150,
+            color="#882255",
+            edgecolors="white",
+            linewidths=0.5,
+            zorder=5,
+            label="MPNN only: TPU one-epoch final (verified)",
+        )
     sweep_max_step = max(max(curves[key]) for key in ("lr5e-4", "lr1e-3", "lr2e-3"))
+    late_peak = max(
+        loss
+        for curve in curves.values()
+        for step, loss in curve.items()
+        if step >= 30000
+    )
     axes[0].set(
         xlim=(0, math.ceil(sweep_max_step / 25_000) * 25),
-        ylim=(3.04, 4.02),
+        ylim=(2.96, max(4.02, late_peak + 0.05)),
         title="Current sweep at matched optimizer steps",
     )
     axes[1].set(
@@ -247,11 +271,11 @@ def plot() -> None:
         ha="center",
         fontsize=9,
     )
-    fig.tight_layout(rect=(0, 0.10, 1, 0.84))
+    fig.tight_layout(rect=(0, 0.10, 1, 0.79))
     save_plot_with_meta(
         fig,
         HERE / "plots/validation_comparison.png",
-        caption="Exp364 validation against exp277 first epoch and its pre-cooldown continuation. Left: matched-step curves through the current sweep. Right: full training with a zoomed loss range; shading marks completed-run cooldowns. The one-epoch fork appears only once it has new validation measurements. Raw points are saved in data/validation_comparison.csv; no smoothing.",
+        caption="Exp364 validation against exp277 first epoch and its pre-cooldown continuation. Left: matched-step curves including the high-LR spikes. Right: full training with a zoomed loss range; spikes above the range are visible on the left. Shading marks completed-run cooldowns. The TPU star is the repaired, independently verified final checkpoint from data/tpu_final_verification.json. GPU curves use data/validation_comparison.csv; no smoothing. Schedules and TPU/GPU attention kernels differ.",
         script="compare_validation.py",
         args=[],
         dpi=170,
@@ -301,6 +325,7 @@ def publish() -> None:
         "data/tpu_input_verification.json",
         "data/tpu_smoke.csv",
         "data/tpu_smoke_verification.json",
+        "data/tpu_final_verification.json",
         "verify_tpu_smoke.py",
         "plots/validation_comparison.png",
         "plots/validation_comparison.pdf",
