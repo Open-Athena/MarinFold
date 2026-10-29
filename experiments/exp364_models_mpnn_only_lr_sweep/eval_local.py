@@ -153,7 +153,9 @@ def main() -> None:
     sync_results(outputs, remote)
     remote_fs = fsspec.filesystem("s3", use_listings_cache=False)
     with remote_fs.open(
-        f"{plan['root']}/manifests/{checkpoint['label']}.json"
+        checkpoint.get(
+            "export_manifest", f"{plan['root']}/manifests/{checkpoint['label']}.json"
+        )
     ) as handle:
         export = json.load(handle)
     if export["checkpoint"]["label"] != checkpoint["label"]:
@@ -259,6 +261,7 @@ def main() -> None:
         "model_egress_bytes": checkpoint.get("model_egress_bytes", 0),
         "artifact_root": remote,
         "runtime": "one regional H100; verified HF export in CoreWeave S3",
+        "evaluation_cluster": checkpoint.get("evaluation_cluster", plan["cluster"]),
     }
     (outputs / "manifest.json").write_text(json.dumps(result, indent=2))
     sync_results(outputs, remote)

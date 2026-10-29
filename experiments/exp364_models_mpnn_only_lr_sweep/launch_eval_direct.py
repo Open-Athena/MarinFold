@@ -27,6 +27,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--submit", action="store_true")
     parser.add_argument("--export-only", action="store_true")
+    parser.add_argument("--bf16-export", action="store_true")
+    parser.add_argument(
+        "--cluster", choices=("cw-us-east-02a", "cw-rno2a"), default="cw-us-east-02a"
+    )
     parser.add_argument("--attempt", type=int, default=3)
     parser.add_argument(
         "--eval-set", choices=("all", "eval-val", "eval-denovo"), default="all"
@@ -71,7 +75,9 @@ def main() -> None:
             {
                 "key": cw["aws_access_key_id"],
                 "secret": cw["aws_secret_access_key"],
-                "endpoint_url": "http://cwlota.com",
+                "endpoint_url": "https://cwobject.com"
+                if args.cluster == "cw-rno2a"
+                else "http://cwlota.com",
                 "config_kwargs": {"s3": {"addressing_style": "virtual"}},
             }
         ),
@@ -92,7 +98,7 @@ def main() -> None:
     )
     record = HERE / "data/contact_eval/launches.json"
     launches = json.loads(record.read_text()) if record.exists() else []
-    with open_iris_client(cluster_name="cw-us-east-02a", workspace=None) as iris:
+    with open_iris_client(cluster_name=args.cluster, workspace=None) as iris:
         client = FrayIrisClient.from_iris_client(iris)
         for checkpoint in plan["checkpoints"]:
             if args.trials and checkpoint["trial"] not in args.trials:
@@ -102,26 +108,32 @@ def main() -> None:
                     "set -euo pipefail",
                     "python3 -c " + shlex.quote(download),
                     "cd " + shlex.quote(workdir),
-                    local_entrypoint(
-                        checkpoint["trial"], args.eval_set, export_only=args.export_only
-                    )[-1],
+                    (
+                        "python3 -m pip install --quiet fsspec==2026.1.0 s3fs==2026.1.0 aiobotocore==2.26.0\nexec python3 -m experiments.exp364_models_mpnn_only_lr_sweep.export_eval_bf16"
+                        if args.bf16_export
+                        else local_entrypoint(
+                            checkpoint["trial"],
+                            args.eval_set,
+                            export_only=args.export_only,
+                        )[-1]
+                    ),
                 ]
             )
             image = (
                 "python:3.12-bookworm"
-                if args.export_only
+                if args.export_only and not args.bf16_export
                 else "vllm/vllm-openai:v0.9.2"
             )
             resources = (
                 ResourceConfig(cpu=8, ram="64Gi", disk="128Gi", image=image)
-                if args.export_only
+                if args.export_only or args.bf16_export
                 else ResourceConfig.with_gpu(
                     "H100", count=1, cpu=8, ram="64Gi", disk="128Gi", image=image
                 )
             )
             job = client.submit(
                 JobRequest(
-                    name=f"exp364-contact-{'export' if args.export_only else 'eval'}-{checkpoint['trial']}{'-' + args.eval_set if args.eval_set != 'all' else ''}-a{args.attempt:02d}",
+                    name=f"exp364-contact-{'bf16-export' if args.bf16_export else 'export' if args.export_only else 'eval'}-{checkpoint['trial']}{'-' + args.eval_set if args.eval_set != 'all' else ''}-a{args.attempt:02d}",
                     entrypoint=Entrypoint.from_binary("bash", ["-lc", shell]),
                     resources=resources,
                     environment=create_environment(
@@ -131,7 +143,7 @@ def main() -> None:
                     ),
                     priority=3,
                     max_retries_failure=0,
-                    max_retries_preemption=10,
+                    max_retries_preemption=0 if args.cluster == "cw-rno2a" else 10,
                 )
             )
             launches.append(
@@ -141,6 +153,8 @@ def main() -> None:
                     "step": checkpoint["step"],
                     "eval_set": args.eval_set,
                     "export_only": args.export_only,
+                    "bf16_export": args.bf16_export,
+                    "cluster": args.cluster,
                     "bundle_sha256": digest,
                     "bundle_uri": destination,
                     "git_commit": env["GIT_COMMIT"],

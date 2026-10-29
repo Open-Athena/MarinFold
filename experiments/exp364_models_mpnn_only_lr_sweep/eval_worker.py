@@ -103,6 +103,20 @@ def stage_model(
     if not source.startswith("s3://"):
         raise ValueError(f"expected an S3 model mirror, received {source!r}")
     destination.mkdir(parents=True, exist_ok=True)
+    # Smoke and full scoring use separate processes on the same worker. Verify
+    # and reuse their shared local model so a regional mirror happens only once.
+    cached = True
+    for obj in manifest["files"]:
+        path = destination / obj["name"]
+        if not path.exists() or path.stat().st_size != obj["size"]:
+            cached = False
+            break
+        with path.open("rb") as stream:
+            if hashlib.file_digest(stream, "sha256").hexdigest() != obj["sha256"]:
+                cached = False
+                break
+    if cached:
+        return destination, 0.0, 0
     start = time.monotonic()
     filesystem, root = fsspec.core.url_to_fs(source)
     expected_files = {entry["name"]: entry["size"] for entry in manifest["files"]}
