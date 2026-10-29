@@ -10,6 +10,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
+import iris
 from fray.iris_backend import FrayIrisClient
 from fray.types import Entrypoint, JobRequest, ResourceConfig, create_environment
 from iris.cli.connect import open_iris_client
@@ -115,8 +116,11 @@ def main() -> None:
     )
     record = HERE / "data/contact_eval/launches.json"
     launches = json.loads(record.read_text()) if record.exists() else []
-    with open_iris_client(cluster_name=args.cluster, workspace=None) as iris:
-        client = FrayIrisClient.from_iris_client(iris)
+    # Use the config shipped with this pinned client, avoiding incompatible
+    # workstation overrides written by a newer Iris release.
+    config_file = Path(iris.__file__).parent / "config" / f"{args.cluster}.yaml"
+    with open_iris_client(config_file=config_file, workspace=None) as iris_client:
+        client = FrayIrisClient.from_iris_client(iris_client)
         for checkpoint in plan["checkpoints"]:
             if args.trials and checkpoint["trial"] not in args.trials:
                 continue
