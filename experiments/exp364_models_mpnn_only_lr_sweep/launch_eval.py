@@ -30,6 +30,7 @@ def build_bundle() -> Path:
             "eval_worker.py",
             "eval_generation.py",
             "verify_final.py",
+            "stage_tpu_eval.py",
         )
     ]
     sources += [

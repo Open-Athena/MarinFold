@@ -97,10 +97,6 @@ def main() -> None:
         for checkpoint in plan["checkpoints"]:
             if args.trials and checkpoint["trial"] not in args.trials:
                 continue
-            if args.export_only and checkpoint.get("source_format") == "huggingface":
-                raise ValueError(
-                    "The TPU export must be staged by stage_tpu_eval first"
-                )
             shell = "\n".join(
                 [
                     "set -euo pipefail",

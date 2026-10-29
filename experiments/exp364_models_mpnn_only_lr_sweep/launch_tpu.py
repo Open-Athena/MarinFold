@@ -131,11 +131,12 @@ def main() -> None:
         destination = bundle / source.relative_to(root)
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source, destination)
-    print(
-        f"{args.phase}: us-east5-a, batch; training shape {args.tpu} "
-        f"({int(args.tpu.split('-')[1]) // 2} chips)",
-        flush=True,
+    shape = (
+        "4 CPUs"
+        if staging
+        else f"{args.tpu} ({int(args.tpu.split('-')[1]) // 2} chips)"
     )
+    print(f"{args.phase}: us-east5-a, batch; {shape}", flush=True)
     if args.dry_run:
         print(f"Bundle: {bundle}; entrypoint: {entry}; forwarded keys: {sorted(env)}")
         return

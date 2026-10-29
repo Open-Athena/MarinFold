@@ -19,6 +19,34 @@ TRIAL = "lr5e-4-cooldown-tpu"
 BLOCK_BYTES = 8 * 1024**2
 
 
+def receipt_uri(plan: dict, checkpoint: dict, obj: dict) -> str:
+    """Keep transfer receipts separate from immutable weight objects."""
+    return f"{plan['root']}/transfer_receipts/{checkpoint['label']}/{obj['name']}.json"
+
+
+def verify_partial_mirror(plan: dict) -> None:
+    """Recover uploaded objects by hashing them inside CoreWeave, without egress."""
+    checkpoint = next(c for c in plan["checkpoints"] if c["trial"] == TRIAL)
+    fs = fsspec.filesystem("s3", use_listings_cache=False)
+    for obj in checkpoint["source_files"]:
+        path = checkpoint["hf_export"] + "/" + obj["name"]
+        if not fs.exists(path):
+            continue
+        if fs.info(path)["size"] != obj["size"]:
+            raise ValueError(f"Incomplete existing object: {path}")
+        digest = hashlib.sha256()
+        with fs.open(path, "rb", block_size=BLOCK_BYTES) as stream:
+            while block := stream.read(BLOCK_BYTES):
+                digest.update(block)
+        if digest.hexdigest() != obj["sha256"]:
+            raise ValueError(
+                f"Existing object differs from verified TPU weights: {path}"
+            )
+        with fs.open(receipt_uri(plan, checkpoint, obj), "wt") as stream:
+            json.dump(obj, stream)
+        print("VERIFIED existing", obj["name"], flush=True)
+
+
 def prepare(plan: dict, verification: dict) -> dict:
     """Pin immutable GCS generations and the previously verified weight digests."""
     source = verification["export_verification"]["export"]
@@ -85,8 +113,12 @@ def copy_export(plan: dict) -> None:
             raise ValueError(f"GCS source generation changed: {source}")
         if destination_fs.exists(destination):
             info = destination_fs.info(destination)
-            metadata = destination_fs.getxattr(destination, "source_sha256")
-            if info["size"] == obj["size"] and metadata == obj["sha256"]:
+            receipt = receipt_uri(plan, checkpoint, obj)
+            if destination_fs.exists(receipt):
+                recorded = json.loads(destination_fs.cat_file(receipt))
+            else:
+                recorded = None
+            if info["size"] == obj["size"] and recorded == obj:
                 print("REUSED", obj["name"], flush=True)
                 continue
             raise ValueError(f"An unverified destination already exists: {destination}")
@@ -111,7 +143,8 @@ def copy_export(plan: dict) -> None:
             raise ValueError(f"GCS source changed during transfer: {source}")
         if destination_fs.info(destination)["size"] != size:
             raise ValueError(f"Incomplete destination: {destination}")
-        destination_fs.setxattr(destination, source_sha256=obj["sha256"])
+        with destination_fs.open(receipt_uri(plan, checkpoint, obj), "wt") as stream:
+            json.dump(obj, stream)
         print("COPIED", obj["name"], size, flush=True)
     manifest = {
         "checkpoint": checkpoint,

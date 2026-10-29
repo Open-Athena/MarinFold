@@ -14,6 +14,9 @@ from levanter.trainer import TrainerConfig
 
 from experiments.exp232_sweep_cv1_decontam.training_contract import MODEL_CONFIG
 from experiments.exp277_models_single_mpnn_pilot.config import TOKENIZER
+from experiments.exp364_models_mpnn_only_lr_sweep.stage_tpu_eval import (
+    verify_partial_mirror,
+)
 from experiments.exp364_models_mpnn_only_lr_sweep.verify_final import verify_export
 
 
@@ -97,6 +100,9 @@ def main() -> None:
     args = parser.parse_args()
     plan = json.loads(args.plan.read_text())
     checkpoint = next(c for c in plan["checkpoints"] if c["trial"] == args.trial)
+    if checkpoint.get("source_format") == "huggingface":
+        verify_partial_mirror(plan)
+        return
     fs = fsspec.filesystem("s3", use_listings_cache=False)
     if args.scratch:
         checkpoint = stage_native_local(fs, checkpoint, args.scratch)
