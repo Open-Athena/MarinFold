@@ -47,7 +47,24 @@ def main() -> None:
         ),
     )
     args = parser.parse_args()
+    if args.bf16_export and args.trials != ["lr5e-4-cooldown-tpu"]:
+        parser.error("--bf16-export requires only --trials lr5e-4-cooldown-tpu")
+    if args.cluster == "cw-rno2a" and (
+        args.trials != ["lr5e-4-cooldown-tpu"] or args.export_only or args.bf16_export
+    ):
+        parser.error("RNO placement is only for the bounded TPU evaluation mirror")
     plan = json.loads((HERE / "data/contact_eval/plan.json").read_text())
+    if args.cluster == "cw-rno2a":
+        checkpoint = next(
+            c for c in plan["checkpoints"] if c["trial"] == args.trials[0]
+        )
+        if (
+            checkpoint.get("evaluation_cluster") != args.cluster
+            or checkpoint["model_egress_bytes"] >= 10_000_000_000
+        ):
+            raise ValueError(
+                "The RNO mirror is not verified within its transfer budget"
+            )
     bundle = build_bundle()
     archive = Path(shutil.make_archive(str(bundle), "zip", bundle))
     digest = hashlib.sha256(archive.read_bytes()).hexdigest()

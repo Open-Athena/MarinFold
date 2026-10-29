@@ -1198,12 +1198,15 @@
         }
       ],
       "source_bytes": 5885614887,
-      "hf_export": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-29/latest-01/models/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/hf/step-186884",
+      "hf_export": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-29/latest-01/models/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/hf-bf16/step-186884",
       "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5",
       "latest_eval_loss": 3.0358169078826904,
-      "model_egress_bytes": 5885614887,
+      "model_egress_bytes": 8828482649,
       "source_region": "us-east5",
-      "evaluation_region": "cw-us-east-02a"
+      "evaluation_region": "RNO2A",
+      "export_manifest": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-29/latest-01/manifests/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5-step-186884.bf16.json",
+      "evaluation_cluster": "cw-rno2a",
+      "rno_mirror_bytes": 2942867762
     }
   ],
   "source_hashes": {

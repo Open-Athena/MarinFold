@@ -1,0 +1,96 @@
+{
+  "checkpoint": {
+    "trial": "lr5e-4-cooldown-tpu",
+    "run_id": "contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5",
+    "step": 186884,
+    "label": "contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5-step-186884",
+    "source_format": "huggingface",
+    "source": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/hf/step-186884",
+    "source_files": [
+      {
+        "name": "config.json",
+        "size": 1726,
+        "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd",
+        "generation": "1793036461693778"
+      },
+      {
+        "name": "model-00001-of-00002.safetensors",
+        "size": 4979485528,
+        "sha256": "9bcc598a1ffaf22b242e9026956f18a346e199c9f0b374c88c10afb3067c4dfb",
+        "generation": "1793036446431998"
+      },
+      {
+        "name": "model-00002-of-00002.safetensors",
+        "size": 906042048,
+        "sha256": "0afefda9942b993f81f1f7bd7e7e0af4fb16e47185f5d972b79e92c37219de99",
+        "generation": "1793036458901970"
+      },
+      {
+        "name": "model.safetensors.index.json",
+        "size": 20882,
+        "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587",
+        "generation": "1793036461705188"
+      },
+      {
+        "name": "tokenizer.json",
+        "size": 64407,
+        "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24",
+        "generation": "1793036461695652"
+      },
+      {
+        "name": "tokenizer_config.json",
+        "size": 296,
+        "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24",
+        "generation": "1793036461705322"
+      }
+    ],
+    "source_bytes": 5885614887,
+    "hf_export": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-29/latest-01/models/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/hf-bf16/step-186884",
+    "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5",
+    "latest_eval_loss": 3.0358169078826904,
+    "model_egress_bytes": 8828482649,
+    "source_region": "us-east5",
+    "evaluation_region": "RNO2A",
+    "export_manifest": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-29/latest-01/manifests/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5-step-186884.bf16.json",
+    "evaluation_cluster": "cw-rno2a",
+    "rno_mirror_bytes": 2942867762
+  },
+  "files": [
+    {
+      "name": "config.json",
+      "size": 2034,
+      "sha256": "1f1b248dd825b44dc2028db2f1ec0c5baed3563e29fb0f7dd2f94e1cb1657a5c"
+    },
+    {
+      "name": "model-00001-of-00002.safetensors",
+      "size": 2489755608,
+      "sha256": "e4b1e61faa3124a14e2e6f59f826ee83b47e4e78fe75fe7ee07be8e3aa4dfa1d"
+    },
+    {
+      "name": "model-00002-of-00002.safetensors",
+      "size": 453023448,
+      "sha256": "6e8872bb3799f24f7ee7374222ab01125808a97674a301cc2556dd36dd2ee558"
+    },
+    {
+      "name": "model.safetensors.index.json",
+      "size": 21969,
+      "sha256": "d14bc7880083a71ebffca0a39359de9660dfbbd80c0ca2910e12e8bd4acb819a"
+    },
+    {
+      "name": "tokenizer.json",
+      "size": 64407,
+      "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+    },
+    {
+      "name": "tokenizer_config.json",
+      "size": 296,
+      "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+    }
+  ],
+  "dtype": "bfloat16",
+  "inference_dtype": "bfloat16",
+  "source_manifest": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-29/latest-01/manifests/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5-step-186884.json",
+  "source_dtype": "float32",
+  "all_parameters_finite": true,
+  "conversion": "floating tensors cast to existing inference dtype; integer tensors preserved; round-trip equality checked"
+}
