@@ -10,7 +10,40 @@ marinfold_experiment:
 
 **Issue:** [#363](https://github.com/Open-Athena/MarinFold/issues/363) · **Kind:** `models` · **Branch:** `exp363/double-channel-width`
 
-## Current progress (2026-10-27, 08:09 EDT)
+## Current result: lower-LR fork also diverged (2026-10-29)
+
+The fork is still executing on 32 H100s, but has **diverged**. At the 10:51 EDT
+check, latest W&B metrics (10:50:16 EDT) report step **149,414** (**56.10%**),
+LR **0.000707**, train loss **17.63110**, and 5.59 seconds/update. The original
+remains intentionally stopped. All four fork workers are running on attempt 10.
+
+| Fork full-validation step | Fork loss | Default exp277 at same step |
+| ---: | ---: | ---: |
+| 128,954 | 3.063521 | 3.069638 |
+| 131,068 | 3.302913 | 3.069139 |
+| 133,182 | 6.803703 | 3.068847 |
+| 141,638 | 28.846085 | 3.066920 |
+| 147,980 | 8.698871 | 3.066265 |
+
+The earlier advantage held for 26 post-fork evaluations through step 128,954;
+all nine later evaluations are worse than the default. In the inspected
+128,900–133,299 training window, loss first exceeds 4 at **131,426** (6.26793)
+and first exceeds 10 at **131,912** (28.72058), both with the requested
+**0.000707** LR. These losses and repeated bad full-validation results confirm
+persistent instability rather than a single noisy training batch.
+
+The lower LR sustained stable training longer than the original 0.001 run, but
+did not sustain it through the full epoch. The numerical mechanism has not been
+diagnosed. **Stopping this fork is recommended.** It remains active: the user's
+previous stop instruction covered the original only. No cancellation, schedule
+change or replacement run was submitted during this check. The configured final
+cooldown at 213,076 has not begun.
+
+Evidence and exact-step comparisons: `data/progress_20261029.json`; training
+onset samples and worker attempt metadata: `data/fork_divergence_20261029.json`.
+The October 26 plot below predates this fork divergence.
+
+## Previous progress (2026-10-27, 08:09 EDT)
 
 The lower-LR fork remains running on 32 H100s at **0.000707**. Latest W&B
 metrics, timestamped **08:03:49 EDT**, report step **125,476** (**47.11%** of
@@ -366,11 +399,12 @@ The first GPU smoke `/bizon/exp363-train-smoke-a01` failed before model/W&B init
 
 The requested architecture has **5,861,984,256 parameters**. Keeping the default
 LR of 0.001 led to persistent divergence, first apparent in full validation at
-step 78,218. The full-state fork with a reduction to **0.000707** remains stable
-and beats the smaller default at all 24 matched post-fork evaluations available
-on October 27. At step 124,726 its advantage is **0.006098 nats/token** (0.61%
-lower perplexity). This is a small, single-seed improvement before final
-cooldown; final training-quality and contact-accuracy conclusions remain open.
+step 78,218. The full-state fork with a reduction to **0.000707** initially beat
+the smaller default through step 128,954, but also became unstable: full-validation
+loss reached 6.80370 at 133,182 and remains 8.69887 at 147,980. Neither tested LR
+has sustained this width-scaled architecture through the full training horizon.
+The original has been stopped, and stopping the fork is now recommended. The
+cause of instability and final contact accuracy remain unresolved.
 
 ## TPU trial (2026-10-14)
 

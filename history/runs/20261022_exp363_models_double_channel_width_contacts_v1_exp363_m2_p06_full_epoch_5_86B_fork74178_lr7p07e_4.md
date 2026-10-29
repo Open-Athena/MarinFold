@@ -4,8 +4,8 @@ marinfold_run:
   launched_at: '2026-10-22T21:08:34Z'
   experiment: exp363_models_double_channel_width
   kind: models
-  short_description: Full-state LR fork from step 74178 to 0.000707; stable and ahead
-    of the default at 24 matched evaluations
+  short_description: Full-state LR fork from step 74178 to 0.000707; diverged near
+    step 131k, still running as of October 29
   wandb:
     url: https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4
     entity: open-athena
@@ -31,8 +31,8 @@ marinfold_run:
 
 ## Description
 
-Full-state LR fork from step 74178 to 0.000707; stable and ahead of the default
-at 24 matched evaluations as of October 27.
+Full-state LR fork from step 74178 to 0.000707; initially ahead of the default,
+then diverged near step 131k. Still running as of October 29; stopping recommended.
 
 ## Detailed plan
 
@@ -99,3 +99,20 @@ step 124,726, fork loss 3.063974 versus default 3.070071: 0.006098 nats/token
 better, or 0.61% lower perplexity. The fork leads at all 24 matched post-fork
 evaluations. Final cooldown 213,076 and total horizon 266,345 unchanged.
 Evidence: experiment data/progress_20261027.json.
+
+## October 29: fork also diverged
+
+At 10:51 EDT the driver and all four accelerator tasks remain running (worker
+attempt 10), but the fork is numerically unstable. Latest W&B metrics at
+10:50:16 EDT: step 149,414 (56.10%), LR 0.000707, train loss 17.63110.
+Validation was 3.063521 at 128,954, rose to 3.302913 at 131,068 and 6.803703
+at 133,182, peaked at 28.846085 at 141,638, and remains 8.698871 at 147,980.
+The default at 147,980 is 3.066265. The fork's early advantage lasted for
+26 evaluations; all nine subsequent comparisons favor the default.
+
+In the inspected 128,900–133,299 training window, loss first exceeds 4 at
+131,426 (6.26793) and 10 at 131,912 (28.72058), with LR still 0.000707.
+Stopping this fork is recommended; it remains active because the previous
+stop instruction applied only to the original. No schedule change or new run
+was submitted. Evidence: data/progress_20261029.json and
+data/fork_divergence_20261029.json in the experiment directory.

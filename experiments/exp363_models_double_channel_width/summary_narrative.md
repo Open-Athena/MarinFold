@@ -14,17 +14,15 @@ Architecture, tokenizer, data and recovery checks passed.
 2.821 seconds/update; native and HF checkpoints saved with tokenizer.
 Compressed smoke schedule was spiky; this is an execution check.
 
-## Current status — October 27, 08:09 EDT
-Original stopped at user request October 26 at 12:40 EDT; both jobs remain killed.
-Last observed original step: 117,691, LR 0.001; numerically diverged.
-Fork continues on four nodes / 32 H100s at batch priority.
-Latest fork metrics at 08:03:49 EDT: step 125,476 (47.11%), LR 0.000707.
-Train loss 2.81725, 5.65 seconds/update; 8,977 updates since yesterday's check.
-Original first training loss above 4 in the inspected window: step 77,229.
-Original validation rose from 3.09974 at 76,104 to 11.88947 at 78,218.
-It peaked at 42.43565 and remains 17.96501 at step 116,270.
-Only the lower-LR fork remains active; original is intentionally stopped.
-Fork final cooldown still starts at 213,076; total horizon 266,345 updates.
+## Current status — October 29, 10:51 EDT
+The lower-LR fork has also diverged. Original remains intentionally stopped.
+Fork still running on four nodes / 32 H100s, batch; all four workers on attempt 10.
+Latest fork metrics at 10:50:16 EDT: step 149,414 (56.10%), LR 0.000707.
+Train loss 17.63110; 5.59 seconds/update. Final cooldown has not begun.
+Validation rose from 3.06352 at 128,954 to 6.80370 at 133,182.
+It peaked at 28.84608 and remains 8.69887 at step 147,980.
+Recommend stopping the fork. It remains active; no cancellation was requested.
+The numerical cause remains undiagnosed; no replacement run was launched.
 
 ## TPU trial succeeded
 Interactive v5p-64: 32 chips across 8 VMs; all 20 updates completed.
@@ -34,16 +32,16 @@ Median steps 5–19: 7.40 s/update, about 32% longer than GPU steps.
 Short native-only smoke; throughput is preliminary, not cost-normalized.
 Production continues on GPUs. No bulk transfer or migration performed.
 
-## Matched validation: lower LR gives a small advantage
-The fork beats the default at all 24 exact-step post-fork evaluations.
-Same native + MPNN corpus, global batch, validation and absolute data position.
-At step 124,726: default 3.070071; fork 3.063974.
-Fork minus default: -0.006098 nats/token, or 0.61% lower perplexity.
-This reverses the original wide model's disadvantage before the fork.
-Reducing LR is supported by stability and loss for this particular run.
-Single seed, incomplete epoch; width and LR differ from the smaller default.
-No contact-accuracy evaluation for the wider model yet.
-The plot appendix shows the previous October 26 snapshot.
+## Matched validation: early gain did not survive
+The fork beat the default at its first 26 evaluations, through step 128,954.
+At that step: default 3.069638; fork 3.063521.
+All nine later evaluations are worse than the default.
+At step 147,980: default 3.066265; fork 8.698871.
+First training loss above 4 in the inspected window: step 131,426, loss 6.26793.
+First above 10: step 131,912, loss 28.72058; LR stayed at 0.000707.
+Neither tested LR sustained the larger model through the full epoch.
+Single seed; protein-contact accuracy remains unevaluated.
+The plot appendix predates fork divergence: historical October 26 snapshot.
 
 ## Other architectures: context, not a common leaderboard
 exp108 depth-scaled 2.93B: all three LR trials unstable around 6.8k updates.

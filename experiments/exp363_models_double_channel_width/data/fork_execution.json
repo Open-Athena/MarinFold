@@ -50,7 +50,7 @@
   ],
   "recovery_command": "uv run --no-project python experiments/exp363_models_double_channel_width/launch.py fork-train --nodes 4 --attempt 5 --resume",
   "child_submitted_at": "2026-10-23T14:41:57.738Z",
-  "verified_at": "2026-10-27T12:09:13.509484+00:00",
+  "verified_at": "2026-10-29T14:51:39.791325+00:00",
   "parent_status": {
     "state": "killed",
     "job_id": "/bizon/exp363-train-a04/exp363-train-6d5c8a62",
@@ -72,34 +72,48 @@
     {
       "task_id": "/bizon/exp363-fork-train-a04/exp363-train-3fc9d00b/0",
       "state": "TASK_STATE_RUNNING",
-      "current_attempt_id": 0
+      "current_attempt_id": 10,
+      "started_at": {
+        "epoch_ms": "1793017580235"
+      }
     },
     {
       "task_id": "/bizon/exp363-fork-train-a04/exp363-train-3fc9d00b/1",
       "state": "TASK_STATE_RUNNING",
-      "current_attempt_id": 0
+      "current_attempt_id": 10,
+      "started_at": {
+        "epoch_ms": "1793017586114"
+      }
     },
     {
       "task_id": "/bizon/exp363-fork-train-a04/exp363-train-3fc9d00b/2",
       "state": "TASK_STATE_RUNNING",
-      "current_attempt_id": 0
+      "current_attempt_id": 10,
+      "started_at": {
+        "epoch_ms": "1793017580235"
+      }
     },
     {
       "task_id": "/bizon/exp363-fork-train-a04/exp363-train-3fc9d00b/3",
       "state": "TASK_STATE_RUNNING",
-      "current_attempt_id": 0
+      "current_attempt_id": 10,
+      "started_at": {
+        "epoch_ms": "1793017580235"
+      }
     }
   ],
   "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4",
   "driver_state": "JOB_STATE_RUNNING",
   "first_train_step_completed_at": "2026-10-23T14:51:32Z",
   "latest_metrics": {
-    "global_step": 125476,
-    "_timestamp": 1793102629.2536342,
-    "train/loss": 2.8172452449798584,
+    "global_step": 149414,
+    "_timestamp": 1793285416.0804062,
+    "train/loss": 17.631103515625,
     "optim/learning_rate": 0.0007070000283420086,
-    "eval/loss": 3.0639736652374268,
-    "throughput/duration": 5.65043425001204
+    "eval/loss": 8.698870658874512,
+    "throughput/duration": 5.594835041090846
   },
-  "training_health": "stable"
+  "training_health": "diverged",
+  "numerical_divergence_evidence": "data/progress_20261029.json",
+  "current_recommendation": "Recommend stopping this diverged fork; current user stop instruction covered only original. Do not automatically restart this fork after a stop."
 }
