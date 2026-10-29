@@ -4,8 +4,8 @@ marinfold_run:
   launched_at: '2026-10-22T21:08:34Z'
   experiment: exp363_models_double_channel_width
   kind: models
-  short_description: Full-state LR fork from step 74178 to 0.000707; diverged near
-    step 131k, still running as of October 29
+  short_description: Full-state LR fork to 0.000707; diverged near step 131k and
+    stopped by user October 29
   wandb:
     url: https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4
     entity: open-athena
@@ -32,7 +32,7 @@ marinfold_run:
 ## Description
 
 Full-state LR fork from step 74178 to 0.000707; initially ahead of the default,
-then diverged near step 131k. Still running as of October 29; stopping recommended.
+then diverged near step 131k. Intentionally stopped October 29 at user request.
 
 ## Detailed plan
 
@@ -116,3 +116,14 @@ Stopping this fork is recommended; it remains active because the previous
 stop instruction applied only to the original. No schedule change or new run
 was submitted. Evidence: data/progress_20261029.json and
 data/fork_divergence_20261029.json in the experiment directory.
+
+## October 29, 19:05 EDT: intentionally stopped
+
+User requested stopping this fork. Cancelled driver /bizon/exp363-fork-train-a04;
+Iris confirms it and accelerator child
+/bizon/exp363-fork-train-a04/exp363-train-3fc9d00b are killed. The original's
+driver and child also remain killed, so both production runs are stopped.
+Last observed W&B step 154,306, LR 0.000707, train loss 10.31961, latest
+validation loss 10.27882. W&B still reported running at the immediate check;
+the scheduler confirms termination. Do not restart without a new request.
+Evidence: experiment data/fork_stopped_20261029.json.

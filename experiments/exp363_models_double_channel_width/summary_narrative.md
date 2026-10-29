@@ -14,14 +14,14 @@ Architecture, tokenizer, data and recovery checks passed.
 2.821 seconds/update; native and HF checkpoints saved with tokenizer.
 Compressed smoke schedule was spiky; this is an execution check.
 
-## Current status — October 29, 10:51 EDT
-The lower-LR fork has also diverged. Original remains intentionally stopped.
-Fork still running on four nodes / 32 H100s, batch; all four workers on attempt 10.
-Latest fork metrics at 10:50:16 EDT: step 149,414 (56.10%), LR 0.000707.
-Train loss 17.63110; 5.59 seconds/update. Final cooldown has not begun.
+## Current status — both runs stopped October 29
+Fork cancelled at user request at 19:05 EDT; driver and accelerator child killed.
+Original remains intentionally stopped. No active production training remains.
+Last observed fork metrics: step 154,306, LR 0.000707, train loss 10.31961.
+Latest logged validation loss 10.27882. Final cooldown was never reached.
 Validation rose from 3.06352 at 128,954 to 6.80370 at 133,182.
-It peaked at 28.84608 and remains 8.69887 at step 147,980.
-Recommend stopping the fork. It remains active; no cancellation was requested.
+At the morning check, validation had peaked at 28.84608 and was 8.69887 at 147,980.
+Both stops are intentional; no restart without a new request.
 The numerical cause remains undiagnosed; no replacement run was launched.
 
 ## TPU trial succeeded
@@ -30,7 +30,7 @@ Finished October 16; no worker failures or preemptions.
 Native and HF step-19 checkpoints verified; tokenizer included.
 Median steps 5–19: 7.40 s/update, about 32% longer than GPU steps.
 Short native-only smoke; throughput is preliminary, not cost-normalized.
-Production continues on GPUs. No bulk transfer or migration performed.
+Production used GPUs; both runs are now stopped. No bulk migration performed.
 
 ## Matched validation: early gain did not survive
 The fork beat the default at its first 26 evaluations, through step 128,954.
@@ -62,5 +62,5 @@ Same 266,345-update horizon, separate W&B and checkpoint identities.
 Source copy and counters verified; 14 local configuration/restore/serialization tests passed.
 October 22 a02 failed before training; October 23 credentials refreshed.
 Retry a03 exposed CLI-class serialization; moved optimizer into an importable module.
-Corrected a04 is training; first nine LRs match the schedule within 1.14e-10.
+Corrected a04 trained successfully before divergence; first nine LRs matched within 1.14e-10.
 First loss at 74,179 exactly matches the original, confirming the starting comparison.

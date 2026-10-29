@@ -10,7 +10,22 @@ marinfold_experiment:
 
 **Issue:** [#363](https://github.com/Open-Athena/MarinFold/issues/363) · **Kind:** `models` · **Branch:** `exp363/double-channel-width`
 
-## Current result: lower-LR fork also diverged (2026-10-29)
+## Both runs intentionally stopped (2026-10-29, 19:05 EDT)
+
+At the requester's direction, cancelled lower-LR fork driver
+`/bizon/exp363-fork-train-a04`. Iris confirms both it and its accelerator child
+`/bizon/exp363-fork-train-a04/exp363-train-3fc9d00b` are **killed**. Both original
+jobs remain killed. There is no active production training for this experiment.
+
+The fork's last observed W&B step is **154,306**, LR **0.000707**, train loss
+**10.31961**, and latest logged validation loss **10.27882**. Its W&B running
+label had not caught up at the immediate check; scheduler termination is
+confirmed. This is an intentional stop, not an infrastructure failure to
+recover. The fork's recovery command was removed from the execution record;
+neither run should be restarted without a new request. Evidence:
+`data/fork_stopped_20261029.json`.
+
+## Lower-LR fork divergence (2026-10-29, 10:51 EDT; before cancellation)
 
 The fork is still executing on 32 H100s, but has **diverged**. At the 10:51 EDT
 check, latest W&B metrics (10:50:16 EDT) report step **149,414** (**56.10%**),
@@ -34,10 +49,9 @@ persistent instability rather than a single noisy training batch.
 
 The lower LR sustained stable training longer than the original 0.001 run, but
 did not sustain it through the full epoch. The numerical mechanism has not been
-diagnosed. **Stopping this fork is recommended.** It remains active: the user's
-previous stop instruction covered the original only. No cancellation, schedule
-change or replacement run was submitted during this check. The configured final
-cooldown at 213,076 has not begun.
+diagnosed. Stopping the fork was recommended during this check; the requester
+subsequently directed cancellation, recorded above. The configured final
+cooldown at 213,076 was never reached.
 
 Evidence and exact-step comparisons: `data/progress_20261029.json`; training
 onset samples and worker attempt metadata: `data/fork_divergence_20261029.json`.
@@ -403,7 +417,7 @@ step 78,218. The full-state fork with a reduction to **0.000707** initially beat
 the smaller default through step 128,954, but also became unstable: full-validation
 loss reached 6.80370 at 133,182 and remains 8.69887 at 147,980. Neither tested LR
 has sustained this width-scaled architecture through the full training horizon.
-The original has been stopped, and stopping the fork is now recommended. The
+Both runs have been intentionally stopped at the requester's direction. The
 cause of instability and final contact accuracy remain unresolved.
 
 ## TPU trial (2026-10-14)

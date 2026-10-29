@@ -192,7 +192,7 @@
   "production_last_complete_checkpoint_step": 75031,
   "production_child_job_id": "/bizon/exp363-train-a04/exp363-train-6d5c8a62",
   "preferred_tpu": "v5p-64",
-  "production_decision": "Original stopped at user request after divergence. Continue only the lower-LR fork on 32 H100s.",
+  "production_decision": "Original and lower-LR fork both intentionally stopped at user request after divergence. No active production training; do not restart without a new request.",
   "previous_production_failure_reason": "Iris child worker_failed: missing CW_KEY_ID and CW_KEY_SECRET after the new credential policy; terminal driver failed.",
   "production_training_health": "diverged",
   "production_latest_metrics": {

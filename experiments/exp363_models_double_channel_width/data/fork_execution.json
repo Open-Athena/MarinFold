@@ -16,7 +16,7 @@
   "gpu_count": 32,
   "nodes": 4,
   "priority": "batch",
-  "state": "running",
+  "state": "cancelled_by_user",
   "submission_client": {
     "git_sha": "fe4fbd383dd8ad37a0839b15fb09811b6a72f342",
     "iris_binary": "/home/bizon/.cache/MarinFold/exp363-iris-src/.venv/bin/iris",
@@ -48,9 +48,8 @@
       "job_id": "/bizon/exp363-fork-train-a03"
     }
   ],
-  "recovery_command": "uv run --no-project python experiments/exp363_models_double_channel_width/launch.py fork-train --nodes 4 --attempt 5 --resume",
   "child_submitted_at": "2026-10-23T14:41:57.738Z",
-  "verified_at": "2026-10-29T14:51:39.791325+00:00",
+  "verified_at": "2026-10-29T23:06:14.173645+00:00",
   "parent_status": {
     "state": "killed",
     "job_id": "/bizon/exp363-train-a04/exp363-train-6d5c8a62",
@@ -62,58 +61,47 @@
     "reason": "Stopped at user request after divergence; fork continues."
   },
   "task_state_counts": {
-    "running": 4
+    "TASK_STATE_KILLED": 4
   },
   "pending_reason": "",
   "training_started": true,
   "wandb_initialized": true,
-  "iris_job_state": "JOB_STATE_RUNNING",
+  "iris_job_state": "JOB_STATE_KILLED",
   "tasks": [
     {
       "task_id": "/bizon/exp363-fork-train-a04/exp363-train-3fc9d00b/0",
-      "state": "TASK_STATE_RUNNING",
-      "current_attempt_id": 10,
-      "started_at": {
-        "epoch_ms": "1793017580235"
-      }
+      "state": "TASK_STATE_KILLED",
+      "current_attempt_id": 10
     },
     {
       "task_id": "/bizon/exp363-fork-train-a04/exp363-train-3fc9d00b/1",
-      "state": "TASK_STATE_RUNNING",
-      "current_attempt_id": 10,
-      "started_at": {
-        "epoch_ms": "1793017586114"
-      }
+      "state": "TASK_STATE_KILLED",
+      "current_attempt_id": 10
     },
     {
       "task_id": "/bizon/exp363-fork-train-a04/exp363-train-3fc9d00b/2",
-      "state": "TASK_STATE_RUNNING",
-      "current_attempt_id": 10,
-      "started_at": {
-        "epoch_ms": "1793017580235"
-      }
+      "state": "TASK_STATE_KILLED",
+      "current_attempt_id": 10
     },
     {
       "task_id": "/bizon/exp363-fork-train-a04/exp363-train-3fc9d00b/3",
-      "state": "TASK_STATE_RUNNING",
-      "current_attempt_id": 10,
-      "started_at": {
-        "epoch_ms": "1793017580235"
-      }
+      "state": "TASK_STATE_KILLED",
+      "current_attempt_id": 10
     }
   ],
   "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4",
-  "driver_state": "JOB_STATE_RUNNING",
+  "driver_state": "JOB_STATE_KILLED",
   "first_train_step_completed_at": "2026-10-23T14:51:32Z",
   "latest_metrics": {
-    "global_step": 149414,
-    "_timestamp": 1793285416.0804062,
-    "train/loss": 17.631103515625,
+    "global_step": 154306,
+    "_timestamp": 1793315114.9381435,
+    "train/loss": 10.319613456726074,
     "optim/learning_rate": 0.0007070000283420086,
-    "eval/loss": 8.698870658874512,
-    "throughput/duration": 5.594835041090846
+    "eval/loss": 10.278820037841797
   },
   "training_health": "diverged",
   "numerical_divergence_evidence": "data/progress_20261029.json",
-  "current_recommendation": "Recommend stopping this diverged fork; current user stop instruction covered only original. Do not automatically restart this fork after a stop."
+  "current_recommendation": "Intentionally stopped at user request after divergence; do not restart without a new request.",
+  "resume_authorized": false,
+  "stop_evidence": "data/fork_stopped_20261029.json"
 }
