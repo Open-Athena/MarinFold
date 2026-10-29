@@ -20,6 +20,7 @@ def main() -> None:
     fs = fsspec.filesystem("s3", use_listings_cache=False)
     source_manifest = f"{plan['root']}/manifests/{checkpoint['label']}.json"
     source = json.loads(fs.cat_file(source_manifest))
+    checkpoint = source["checkpoint"]
     destination = checkpoint["hf_export"].replace("/hf/", "/hf-bf16/")
     scratch = Path("/tmp/exp364-bf16")
     scratch.mkdir(exist_ok=True)
@@ -37,7 +38,9 @@ def main() -> None:
             converted = {}
             for name, tensor in tensors.items():
                 value = (
-                    tensor.to(torch.bfloat16) if tensor.is_floating_point() else tensor
+                    tensor.to(torch.bfloat16)
+                    if tensor.is_floating_point()
+                    else tensor.clone()
                 )
                 if value.is_floating_point() and not torch.isfinite(value).all():
                     raise ValueError(f"Nonfinite converted parameter: {name}")

@@ -1,0 +1,61 @@
+trial,step,eval_set,subgroup,range,n,r_precision,status
+lr5e-4,282830,eval-denovo,viral,all,0,,outside requested sets
+lr5e-4,282830,eval-denovo,viral,long,0,,outside requested sets
+lr5e-4,282830,eval-denovo,nonviral,all,19,0.6248381023677648,scored
+lr5e-4,282830,eval-denovo,nonviral,long,19,0.5745313716266974,scored
+lr5e-4,282830,eval-denovo,low_msa,all,13,0.6198355623081222,scored
+lr5e-4,282830,eval-denovo,low_msa,long,13,0.5466332859403448,scored
+lr5e-4,282830,eval-val,viral,all,6,0.38492446017459403,scored
+lr5e-4,282830,eval-val,viral,long,6,0.3530190001477845,scored
+lr5e-4,282830,eval-val,nonviral,all,91,0.45171231133337275,scored
+lr5e-4,282830,eval-val,nonviral,long,91,0.4354844297038612,scored
+lr5e-4,282830,eval-val,low_msa,all,0,,outside requested sets
+lr5e-4,282830,eval-val,low_msa,long,0,,outside requested sets
+lr1e-3,314987,eval-denovo,viral,all,0,,outside requested sets
+lr1e-3,314987,eval-denovo,viral,long,0,,outside requested sets
+lr1e-3,314987,eval-denovo,nonviral,all,19,0.6008830442544237,scored
+lr1e-3,314987,eval-denovo,nonviral,long,19,0.5640574800699568,scored
+lr1e-3,314987,eval-denovo,low_msa,all,13,0.6041096269862323,scored
+lr1e-3,314987,eval-denovo,low_msa,long,13,0.5473856954512093,scored
+lr1e-3,314987,eval-val,viral,all,6,0.3508285726017845,scored
+lr1e-3,314987,eval-val,viral,long,6,0.3241793112911251,scored
+lr1e-3,314987,eval-val,nonviral,all,91,0.4080183818302538,scored
+lr1e-3,314987,eval-val,nonviral,long,91,0.3848051195850031,scored
+lr1e-3,314987,eval-val,low_msa,all,0,,outside requested sets
+lr1e-3,314987,eval-val,low_msa,long,0,,outside requested sets
+lr2e-3,207662,eval-denovo,viral,all,0,,outside requested sets
+lr2e-3,207662,eval-denovo,viral,long,0,,outside requested sets
+lr2e-3,207662,eval-denovo,nonviral,all,19,0.5456667583070459,scored
+lr2e-3,207662,eval-denovo,nonviral,long,19,0.507595869903217,scored
+lr2e-3,207662,eval-denovo,low_msa,all,13,0.5414444694720861,scored
+lr2e-3,207662,eval-denovo,low_msa,long,13,0.48859304924401525,scored
+lr2e-3,207662,eval-val,viral,all,6,0.1837727453659339,scored
+lr2e-3,207662,eval-val,viral,long,6,0.15085796530875464,scored
+lr2e-3,207662,eval-val,nonviral,all,91,0.2913226152322135,scored
+lr2e-3,207662,eval-val,nonviral,long,91,0.26161402708147435,scored
+lr2e-3,207662,eval-val,low_msa,all,0,,outside requested sets
+lr2e-3,207662,eval-val,low_msa,long,0,,outside requested sets
+lr5e-4-cooldown,186884,eval-denovo,viral,all,0,,outside requested sets
+lr5e-4-cooldown,186884,eval-denovo,viral,long,0,,outside requested sets
+lr5e-4-cooldown,186884,eval-denovo,nonviral,all,19,0.6651503673859489,scored
+lr5e-4-cooldown,186884,eval-denovo,nonviral,long,19,0.6268009490862614,scored
+lr5e-4-cooldown,186884,eval-denovo,low_msa,all,13,0.6631456983755739,scored
+lr5e-4-cooldown,186884,eval-denovo,low_msa,long,13,0.6092363683935514,scored
+lr5e-4-cooldown,186884,eval-val,viral,all,6,0.4094369120812716,scored
+lr5e-4-cooldown,186884,eval-val,viral,long,6,0.379791610346649,scored
+lr5e-4-cooldown,186884,eval-val,nonviral,all,91,0.46653886047200244,scored
+lr5e-4-cooldown,186884,eval-val,nonviral,long,91,0.4459275933778104,scored
+lr5e-4-cooldown,186884,eval-val,low_msa,all,0,,outside requested sets
+lr5e-4-cooldown,186884,eval-val,low_msa,long,0,,outside requested sets
+lr5e-4-cooldown-tpu,186884,eval-denovo,viral,all,0,,outside requested sets
+lr5e-4-cooldown-tpu,186884,eval-denovo,viral,long,0,,outside requested sets
+lr5e-4-cooldown-tpu,186884,eval-denovo,nonviral,all,19,0.669537225653257,scored
+lr5e-4-cooldown-tpu,186884,eval-denovo,nonviral,long,19,0.6429117541957275,scored
+lr5e-4-cooldown-tpu,186884,eval-denovo,low_msa,all,13,0.6633968524954985,scored
+lr5e-4-cooldown-tpu,186884,eval-denovo,low_msa,long,13,0.6243356760526646,scored
+lr5e-4-cooldown-tpu,186884,eval-val,viral,all,6,0.4195534251494863,scored
+lr5e-4-cooldown-tpu,186884,eval-val,viral,long,6,0.38956716354862037,scored
+lr5e-4-cooldown-tpu,186884,eval-val,nonviral,all,91,0.462855552371142,scored
+lr5e-4-cooldown-tpu,186884,eval-val,nonviral,long,91,0.4476796981348088,scored
+lr5e-4-cooldown-tpu,186884,eval-val,low_msa,all,0,,outside requested sets
+lr5e-4-cooldown-tpu,186884,eval-val,low_msa,long,0,,outside requested sets

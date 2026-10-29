@@ -1,4 +1,20 @@
-## Completed TPU fork — October 27 update
+## October 29 — both cooldown forks are complete
+
+GPU final validation: 3.03572; TPU final validation: 3.03582. Both have exact native counters of 186885 updates at checkpoint 186884 and verified finite exported weights.
+
+At 23:03 UTC, the 5e-4 / 1e-3 / 2e-3 parent runs are at 1.567 / 1.740 / 1.175 epochs of two. Latest validation losses: 3.07851 / 3.09601 / 3.34287. Active compute remaining: approximately 62 / 37 / 65 hours, plus interruptions and validation/checkpoint overhead.
+
+The high-LR run remains unstable. Its requested learning rate is preserved.
+
+## October 29 — new contact evaluation
+
+Checkpoint steps: 282830 (5e-4), 314987 (1e-3), 207662 (2e-3), and final 186884 for both cooldown forks.
+
+All-range R-precision, natural / designed: GPU cooldown 0.4630 / 0.6652; TPU cooldown 0.4602 / 0.6695; 5e-4 parent 0.4476 / 0.6248; 1e-3 0.4045 / 0.6009; 2e-3 0.2847 / 0.5457. The two cooldown forks are effectively tied on both all-range scores.
+
+Full-data first epoch: 0.5551 / 0.6964. The GPU cooldown improves over its earlier 0.3862 / 0.5983 snapshot, but still trails the full-data reference. Exposure and schedules differ; the design set is small. All five evaluations use the same CUDA scoring recipe and cover 58000 stopped rollouts across 97 natural and 19 designed proteins; none needed extensions.
+
+## Historical checkpoint — October 27 update
 
 The one-epoch v5p fork finished its four-update repair October 26 at 13:43 EDT. Final validation: 3.03582. Native step 186884 and all optimizer counters confirm exactly 186885 total updates; every exported parameter is finite. Tokenizer and model files are verified.
 

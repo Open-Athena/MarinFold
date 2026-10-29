@@ -326,6 +326,7 @@ def publish() -> None:
         "data/tpu_smoke.csv",
         "data/tpu_smoke_verification.json",
         "data/tpu_final_verification.json",
+        "data/gpu_cooldown_final_verification.json",
         "verify_tpu_smoke.py",
         "plots/validation_comparison.png",
         "plots/validation_comparison.pdf",

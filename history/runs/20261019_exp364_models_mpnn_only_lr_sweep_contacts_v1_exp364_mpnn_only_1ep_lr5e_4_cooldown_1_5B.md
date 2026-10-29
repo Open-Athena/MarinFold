@@ -58,3 +58,10 @@ Native checkpoints are under
 `s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B/checkpoints/`.
 Source copy provenance is recorded in the experiment's `data/cooldown_source.json`.
 The initial W&B progress includes the inherited prefix; it is not all new compute.
+
+Verified complete on October 29: final checkpoint 186884 was written at
+2026-10-29T02:19:20 UTC; trainer, optimizer and LR counters are all 186885.
+The recovery root succeeded at 02:21:29 UTC. Final full-validation loss is
+3.03571987. A complete finite-weight scan of the evaluation export passed.
+Native and export evidence is in
+`experiments/exp364_models_mpnn_only_lr_sweep/data/gpu_cooldown_final_verification.json`.

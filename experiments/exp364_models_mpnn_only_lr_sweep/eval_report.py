@@ -247,6 +247,13 @@ def publish(plan: dict, eval_set: str = "all") -> None:
         c["trial"] for c in plan["checkpoints"]
     }:
         raise ValueError("Cannot publish an incomplete aggregate report")
+    names += (
+        "plan.json",
+        "launches.json",
+        "freeze_verification_2026-10-29.json",
+        "export_verification_2026-10-29.json",
+        "tpu_bf16_export_verification.json",
+    )
     for name in names:
         subprocess.run(
             [
