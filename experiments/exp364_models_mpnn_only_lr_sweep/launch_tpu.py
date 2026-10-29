@@ -18,7 +18,7 @@ DEFAULT_IRIS = "/home/bizon/git/marin-freshiris/.venv/bin/iris"
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("phase", choices=("stage", "smoke", "train"))
+    parser.add_argument("phase", choices=("stage", "eval-stage", "smoke", "train"))
     parser.add_argument("--attempt", type=int, default=1)
     parser.add_argument("--tpu", choices=("v5p-8", "v5p-64"), default="v5p-64")
     parser.add_argument("--iris-bin", default=os.environ.get("IRIS_BIN", DEFAULT_IRIS))
@@ -48,7 +48,8 @@ def main() -> None:
     module = "experiments.exp364_models_mpnn_only_lr_sweep."
     if args.resume_step is not None:
         env["RESUME_STEP"] = str(args.resume_step)
-    if args.phase == "stage":
+    staging = args.phase in {"stage", "eval-stage"}
+    if staging:
         credentials = configparser.ConfigParser()
         credentials.read(Path.home() / ".aws/credentials")
         cw = credentials["cw"]
@@ -60,7 +61,13 @@ def main() -> None:
                 "config_kwargs": {"s3": {"addressing_style": "virtual"}},
             }
         )
-        entry = ["python", "-m", module + "stage_tpu_inputs", "--copy"]
+        entry = [
+            "python",
+            "-m",
+            module
+            + ("stage_tpu_eval" if args.phase == "eval-stage" else "stage_tpu_inputs"),
+            "--copy",
+        ]
     else:
         wandb = netrc.netrc().authenticators("api.wandb.ai")
         if wandb is None:
@@ -98,9 +105,9 @@ def main() -> None:
         "3" if args.phase == "train" else "0",
         "--enable-extra-resources",
         "--cpu",
-        "4" if args.phase == "stage" else "0.5",
+        "4" if staging else "0.5",
         "--memory",
-        "16GB" if args.phase == "stage" else "2GB",
+        "16GB" if staging else "2GB",
         "--disk",
         "32GB",
     ]
@@ -113,6 +120,7 @@ def main() -> None:
     sources = [p for p in project.glob("*.py") if not p.name.startswith("test_")]
     sources += [
         project / "data/tpu_transfer_plan.json",
+        project / "data/contact_eval/plan.json",
         root / "experiments/exp232_sweep_cv1_decontam/training_contract.py",
         *[
             root / "experiments/exp277_models_single_mpnn_pilot" / name

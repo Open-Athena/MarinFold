@@ -14,6 +14,7 @@ from levanter.trainer import TrainerConfig
 
 from experiments.exp232_sweep_cv1_decontam.training_contract import MODEL_CONFIG
 from experiments.exp277_models_single_mpnn_pilot.config import TOKENIZER
+from experiments.exp364_models_mpnn_only_lr_sweep.verify_final import verify_export
 
 
 def freeze_source(fs: fsspec.AbstractFileSystem, checkpoint: dict) -> None:
@@ -148,19 +149,21 @@ def main() -> None:
             use_cpu=True,
         )
     )
+    verification = verify_export(checkpoint["hf_export"])
     files = []
     for info in fs.ls(checkpoint["hf_export"], detail=True):
         if info["type"] != "file":
             continue
-        digest = hashlib.sha256()
-        with fs.open(info["name"], "rb") as handle:
-            while block := handle.read(8 * 1024**2):
-                digest.update(block)
+        name = Path(info["name"]).name
+        if name in verification["files"]:
+            digest = verification["files"][name]["sha256"]
+        else:
+            digest = hashlib.sha256(fs.cat_file(info["name"])).hexdigest()
         files.append(
             {
-                "name": Path(info["name"]).name,
+                "name": name,
                 "size": info["size"],
-                "sha256": digest.hexdigest(),
+                "sha256": digest,
             }
         )
     names = {entry["name"] for entry in files}
@@ -183,6 +186,7 @@ def main() -> None:
                 "files": files,
                 "dtype": "float32",
                 "inference_dtype": "bfloat16",
+                "verification": verification,
             },
             handle,
             indent=2,

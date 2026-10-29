@@ -255,9 +255,10 @@ def main() -> None:
         "unfinished_rollouts": 0,
         "extended_rollouts": int(timings.extended_rollouts.sum()),
         "sampling": plan["sampling"],
-        "model_egress": False,
+        "model_egress": checkpoint.get("model_egress_bytes", 0) > 0,
+        "model_egress_bytes": checkpoint.get("model_egress_bytes", 0),
         "artifact_root": remote,
-        "runtime": "one regional H100; frozen native checkpoint and reusable HF export in CoreWeave S3",
+        "runtime": "one regional H100; verified HF export in CoreWeave S3",
     }
     (outputs / "manifest.json").write_text(json.dumps(result, indent=2))
     sync_results(outputs, remote)

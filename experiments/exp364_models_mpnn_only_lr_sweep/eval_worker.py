@@ -13,6 +13,7 @@ The original experiment's worker remains unchanged.
 
 import argparse
 import base64
+import hashlib
 import json
 import os
 import platform
@@ -115,9 +116,18 @@ def stage_model(
             f"model file set does not match its verified HF identity: {actual_files} != {expected_files}"
         )
     for entry in files:
-        filesystem.get_file(
-            entry["name"], str(destination / os.path.basename(entry["name"]))
+        name = os.path.basename(entry["name"])
+        local_path = destination / name
+        filesystem.get_file(entry["name"], str(local_path))
+        expected = next(
+            obj["sha256"] for obj in manifest["files"] if obj["name"] == name
         )
+        with local_path.open("rb") as stream:
+            actual = hashlib.file_digest(stream, "sha256").hexdigest()
+        if actual != expected:
+            raise ValueError(
+                f"Downloaded model content differs from its manifest: {name}"
+            )
     size = sum(entry["size"] for entry in files)
     elapsed = time.monotonic() - start
     print(

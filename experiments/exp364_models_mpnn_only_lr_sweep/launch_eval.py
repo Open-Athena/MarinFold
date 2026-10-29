@@ -29,6 +29,7 @@ def build_bundle() -> Path:
             "eval_local.py",
             "eval_worker.py",
             "eval_generation.py",
+            "verify_final.py",
         )
     ]
     sources += [

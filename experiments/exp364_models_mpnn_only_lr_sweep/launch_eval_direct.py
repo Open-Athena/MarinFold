@@ -1,4 +1,4 @@
-"""Submit without an Iris workspace write while CoreWeave storage is suspended."""
+"""Submit independent regional evaluation jobs from a verified source bundle."""
 
 import argparse
 import configparser
@@ -32,7 +32,15 @@ def main() -> None:
         "--eval-set", choices=("all", "eval-val", "eval-denovo"), default="all"
     )
     parser.add_argument(
-        "--trials", nargs="+", choices=("lr5e-4", "lr1e-3", "lr2e-3", "lr5e-4-cooldown")
+        "--trials",
+        nargs="+",
+        choices=(
+            "lr5e-4",
+            "lr1e-3",
+            "lr2e-3",
+            "lr5e-4-cooldown",
+            "lr5e-4-cooldown-tpu",
+        ),
     )
     args = parser.parse_args()
     plan = json.loads((HERE / "data/contact_eval/plan.json").read_text())
@@ -55,6 +63,10 @@ def main() -> None:
     credentials.read(Path.home() / ".aws/credentials")
     cw = credentials["cw"]
     env = {
+        "CW_KEY_ID": cw["aws_access_key_id"],
+        "CW_KEY_SECRET": cw["aws_secret_access_key"],
+        "AWS_ACCESS_KEY_ID": cw["aws_access_key_id"],
+        "AWS_SECRET_ACCESS_KEY": cw["aws_secret_access_key"],
         "FSSPEC_S3": json.dumps(
             {
                 "key": cw["aws_access_key_id"],
@@ -85,6 +97,10 @@ def main() -> None:
         for checkpoint in plan["checkpoints"]:
             if args.trials and checkpoint["trial"] not in args.trials:
                 continue
+            if args.export_only and checkpoint.get("source_format") == "huggingface":
+                raise ValueError(
+                    "The TPU export must be staged by stage_tpu_eval first"
+                )
             shell = "\n".join(
                 [
                     "set -euo pipefail",
