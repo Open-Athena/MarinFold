@@ -15,6 +15,7 @@ def main() -> None:
         "data/scale_smoke_timings",
         "data/full_phase_initial_timings",
         "data/corpus235m",
+        "data/tpu_forks",
         "plots",
     ]:
         subprocess.run(

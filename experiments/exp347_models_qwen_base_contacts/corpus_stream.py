@@ -139,9 +139,10 @@ class CorpusStream:
     def _read_batches(
         self, source: str, shard: dict, skip: int
     ) -> Generator[list[dict], None, None]:
-        fs, path = fsspec.core.url_to_fs(shard["uri"])
+        uri, expected_metadata = self.shard_location(shard)
+        fs, path = fsspec.core.url_to_fs(uri)
         info = fs.info(path)
-        if info["size"] != shard["size"] or info.get("ETag") != shard["etag"]:
+        if any(info.get(key) != value for key, value in expected_metadata.items()):
             raise ValueError(f"Source changed after its audit: {shard['uri']}")
         with fs.open(path, "rb") as handle:
             parquet = pq.ParquetFile(handle)
@@ -157,6 +158,10 @@ class CorpusStream:
                     f"{SEED}:{self.state['epoch']}:{source}:{shard['uri']}:{index}"
                 ).shuffle(rows)
                 yield rows
+
+    def shard_location(self, shard: dict) -> tuple[str, dict[str, Any]]:
+        """Resolve physical storage without changing the logical shuffle identity."""
+        return shard["uri"], {"size": shard["size"], "ETag": shard["etag"]}
 
     def next_raw(self) -> tuple[str, dict]:
         """Read one original row; used also to test rank coverage and replay."""

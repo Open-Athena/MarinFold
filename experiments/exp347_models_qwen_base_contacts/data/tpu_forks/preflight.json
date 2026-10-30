@@ -1,0 +1,126 @@
+{
+  "created_utc": "2026-10-30T20:55:04.394157+00:00",
+  "status": "awaiting_transfer_approval_and_backend_validation",
+  "destination_region": "us-east5",
+  "destination_root": "gs://marin-us-east5/protein-structure/MarinFold/exp347_qwen_base_contacts",
+  "source_catalog_sha256": "861b8a507298d7405f74e1cf4ca9f74421d70fa4949fed384cea01f5a15149b8",
+  "sources": [
+    {
+      "name": "complex",
+      "source": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/documents/train",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp347_qwen_base_contacts/data/corpus235m-v1/complex",
+      "objects": 170,
+      "rows": 3400000,
+      "bytes": 19426762200
+    },
+    {
+      "name": "mpnn-afdb",
+      "source": "s3://marin-us-east-02a/MarinFold/exp266/documents",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp347_qwen_base_contacts/data/corpus235m-v1/mpnn-afdb",
+      "objects": 199,
+      "rows": 31702680,
+      "bytes": 64056136614
+    },
+    {
+      "name": "mpnn-esm",
+      "source": "s3://marin-us-east-02a/MarinFold/exp266/esm_documents",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp347_qwen_base_contacts/data/corpus235m-v1/mpnn-esm",
+      "objects": 3338,
+      "rows": 130872044,
+      "bytes": 255992375118
+    },
+    {
+      "name": "native-afdb",
+      "source": "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/data/afdb",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp347_qwen_base_contacts/data/corpus235m-v1/native-afdb",
+      "objects": 2067,
+      "rows": 3963003,
+      "bytes": 12128381115
+    },
+    {
+      "name": "native-esm",
+      "source": "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/data/esm",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp347_qwen_base_contacts/data/corpus235m-v1/native-esm",
+      "objects": 3338,
+      "rows": 65553178,
+      "bytes": 127243302560
+    }
+  ],
+  "parents": [
+    {
+      "format": "contacts_v1",
+      "parent_run": "exp347-qwen35-4b-contacts_v1-corpus235m-100bt",
+      "observed_checkpoint": {
+        "step": 44335,
+        "tokens": 6712328231,
+        "world": 8,
+        "uri": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-contacts_v1-corpus235m-100bt/step-44335",
+        "final": false,
+        "evaluation_export": false
+      },
+      "bytes": 50489547870,
+      "objects": 20,
+      "fork_run": "exp347-qwen35-4b-contacts_v1-corpus235m-tpu-east5",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-contacts_v1-corpus235m-tpu-east5",
+      "preserve": [
+        "fp32_weights",
+        "adam_first_and_second_moments",
+        "adam_step",
+        "native_tokenizer",
+        "data_cursor_for_eight_logical_ranks",
+        "absolute_token_counter",
+        "remaining_100B_schedule"
+      ],
+      "cuda_rng": "record as provenance; hardware RNG streams are not bitwise interchangeable"
+    },
+    {
+      "format": "prompted",
+      "parent_run": "exp347-qwen35-4b-prompted-corpus235m-100bt",
+      "observed_checkpoint": {
+        "step": 67970,
+        "tokens": 3163472520,
+        "world": 8,
+        "uri": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-100bt/step-67970",
+        "final": false,
+        "evaluation_export": false
+      },
+      "bytes": 50489547803,
+      "objects": 20,
+      "fork_run": "exp347-qwen35-4b-prompted-corpus235m-tpu-east5",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-tpu-east5",
+      "preserve": [
+        "fp32_weights",
+        "adam_first_and_second_moments",
+        "adam_step",
+        "native_tokenizer",
+        "data_cursor_for_eight_logical_ranks",
+        "absolute_token_counter",
+        "remaining_100B_schedule"
+      ],
+      "cuda_rng": "record as provenance; hardware RNG streams are not bitwise interchangeable"
+    }
+  ],
+  "maxtext_revision": "6bd0c6834aea8deebd892be9280ef1babc7a96c8",
+  "candidate_tpu_slices": [
+    {
+      "slice": "v6e-8",
+      "zone": "us-east5-b"
+    },
+    {
+      "slice": "v5p-8",
+      "zone": "us-east5-a"
+    }
+  ],
+  "concurrency": "one validation slice first; at most two eight-unit production slices after validation",
+  "parent_selection": "Snapshot one complete full-state checkpoint per arm at fork time; observed checkpoints below are size/configuration evidence, not durable frozen fork points.",
+  "validation": {
+    "source": "s3://marin-us-east-02a/MarinFold/exp347_qwen_base_contacts/data/v1/validation",
+    "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp347_qwen_base_contacts/data/validation",
+    "objects": 512,
+    "bytes": 38694226
+  },
+  "total_transfer_bytes": 579867066465,
+  "approval_ceiling_bytes": 590000000000,
+  "no_hot_path_cross_region_io": true,
+  "no_bulk_transfer_performed": true
+}

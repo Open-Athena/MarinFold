@@ -30,9 +30,25 @@ Existing exp232 m2-p06 remains higher at 0.51980 / 0.50173.
 An exact sequence-KNN null over the expanded corpus has not been computed.
 Both training jobs stopped October 27 because RNO storage writes were suspended.
 Verified local recovery points: raw 6.705B tokens, prompted 3.153B tokens.
-October 30 storage probes pass; raw a07 and prompted a08 are accepted, awaiting GPUs.
+October 30 raw a07 and prompted a08 resumed and saved complete local checkpoints.
+Preflight checkpoints: raw 6.712B tokens, prompted 3.163B tokens; both parents running.
 Recovery preserves optimizer state, identities, and local checkpoint outputs.
 Full metric/timing/provenance tables are committed; periodic eval drivers remain live.
+
+## TPU forks — preparation, not launched
+
+Requested: continue both 4B formats on TPUs while GPU parents keep training.
+Preserve FP32 weights, Adam moments/step, eight logical data cursors and token schedule.
+New W&B identities distinguish each fork and its exact parent checkpoint.
+Current trainer uses CUDA kernels; the candidate TPU route is MaxText's Qwen3.5 backend.
+Its supplied dense config is 9B; our 4B adapter and full-state converter remain to build.
+Require PyTorch/JAX logits, loss, gradient and update parity, then TPU save/restore validation.
+Regional mirrored data reader implemented: exact replay after source removal passes.
+All 54 local tests, Ruff and Pyrefly pass; these do not validate TPU training.
+Proposed placement: us-east5; one validation slice, then at most two eight-unit slices.
+One-time transfer inventory: 579.87 GB; proposed ceiling 590 GB requires user approval.
+All future corpus reads, checkpoints and evaluation outputs stay in the TPU region.
+No bulk transfer or TPU training launched. Keep the existing 1B-token eval-val cadence.
 
 ## Pilot execution
 

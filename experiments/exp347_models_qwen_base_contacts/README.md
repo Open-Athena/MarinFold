@@ -450,6 +450,66 @@ pinned GPU image. The previous E8 reference gate remains applicable to the
 unchanged evaluation implementation.
 The October 21 scores remain the latest completed results while this backlog runs.
 
+### October 30 TPU fork preparation
+
+The user requested TPU continuations alongside the existing GPU runs. The
+proposed forks retain both 4B formats and the remaining 100B-token schedule,
+using new run identities `exp347-qwen35-4b-contacts_v1-corpus235m-tpu-east5`
+and `exp347-qwen35-4b-prompted-corpus235m-tpu-east5`. The GPU parents continue
+independently. **No TPU training or bulk transfer has been launched.**
+
+The current PyTorch trainer depends on CUDA kernels; changing the Iris hardware
+request cannot make it run on TPUs. The candidate backend is
+[MaxText's Qwen3.5 implementation at revision 6bd0c68](https://github.com/AI-Hypercomputer/maxtext/blob/6bd0c6834aea8deebd892be9280ef1babc7a96c8/src/maxtext/models/qwen3_5.py).
+That revision has dense hybrid attention, but its supplied dense configuration
+is 9B. Our text-only 4B model requires hidden size 2560, MLP size 9216, tied
+embeddings, and a matching parameter conversion. The exact source configuration
+is saved in [`data/tpu_forks/source_model_config.json`](data/tpu_forks/source_model_config.json).
+The 4B adapter, optimizer converter, and TPU trainer integration are **not yet
+implemented or validated**.
+
+The proposed destination is `us-east5`, with all data, checkpoints, tokenizer,
+and evaluation outputs under
+`gs://marin-us-east5/protein-structure/MarinFold/exp347_qwen_base_contacts/`.
+The available GCS exp232 cache uses the older protein tokenizer; it cannot
+replace the raw documents needed by these native-Qwen runs. The audited
+[`transfer inventory`](data/tpu_forks/preflight.json) totals **579,867,066,465
+bytes (579.87 GB)**: 478.85 GB of source documents, two 50.49 GB full-state
+checkpoints, and small validation/catalog artifacts. The proposed approval
+ceiling is **590 GB**, copied once into the compute region. The root AGENTS.md
+requires explicit approval for a cross-region transfer over 10 GB; the earlier
+RNO migration approval did not specify this new CoreWeave-to-GCP transfer.
+No repeated cross-region training reads or checkpoint writes are planned.
+
+One prerequisite is implemented: [`mirrored_corpus.py`](mirrored_corpus.py)
+resolves a verified physical mirror while retaining original source URIs as
+shuffle identities and preserving the checkpoint's catalog hash and data cursor.
+It requires complete source coverage, destination object versions, and content
+checksums supplied by a verified staging process; it never falls back to remote
+sources. Replay tests cross an epoch boundary after deleting all original test
+files and reproduce both rows and final cursor state. All **54 tests**, Ruff,
+and Pyrefly pass. This validates the data-reader component, not TPU training.
+
+Before admitting production forks, the remaining gates are:
+
+- Implement and validate the 4B backend and full-state conversion. Preserve FP32
+  parameters, Adam moments/step, all eight logical data cursors, the absolute
+  token counter, and learning-rate schedule. Record CUDA RNG as provenance;
+  GPU and TPU RNG streams are not bitwise interchangeable.
+- After transfer approval, freeze a complete parent checkpoint per arm and
+  verify the regional corpus/model copies. The rolling checkpoints recorded in
+  the inventory are size/configuration evidence, not durable fork points.
+- Check logits, loss, gradients, and an Adam update against the PyTorch source,
+  including padding, tied embeddings, and token normalization. Validate the
+  original 32-document global batch without changing model or data semantics.
+- Run a bounded TPU save/restore and throughput test before production. Candidate
+  placements are `v6e-8` in `us-east5-b` and `v5p-8` in `us-east5-a`: one validation
+  slice first, then at most two eight-unit production slices after validation.
+  The observed east5 ready slices were occupied; placement is not guaranteed.
+- Wire eval-val at the existing 1B-token cadence to region-local inference and
+  preserve per-protein timings. Each fork gets its own W&B/history identity and
+  explicit parent step/token provenance.
+
 ## Results
 
 ### Full-corpus milestones — October 30
@@ -492,8 +552,11 @@ shards, and matching completion/resume markers were verified on October 30.
 RNO read/write and multipart-upload checks now pass. Recovery retains local
 checkpoints, the original run identities, 100B-token targets, and 1B eval cadence.
 Replacement roots raw `a07` and prompted `a08` were accepted at 20:16 and
-20:18 UTC on October 30. Both are waiting for Kueue GPU admission; no resumed
-optimizer update is claimed yet.
+20:18 UTC on October 30. Both subsequently resumed training. During TPU-fork
+preflight, complete new checkpoints were observed at raw step 44,335 /
+6,712,328,231 tokens and prompted step 67,970 / 3,163,472,520 tokens, each with
+20 objects totaling 50.49 GB in RNO2A. The TPU fork request leaves these GPU
+parents running.
 Both persistent evaluation drivers remain live with their current request queues
 fully scored. No model-training or evaluation semantics changed for this recovery.
 
