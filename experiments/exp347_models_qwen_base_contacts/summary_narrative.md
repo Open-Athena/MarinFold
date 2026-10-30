@@ -17,7 +17,24 @@ Exclude the same 5.11% of source rows when either complete document exceeds 16K.
 The pool has 4.493B raw tokens versus 1.290B prompted tokens.
 Equal token budgets imply different protein exposure.
 
-## Current execution
+## Latest results — October 30
+
+All nine periodic eval-val milestones completed: raw 1B–6B, prompted 1B–3B.
+Each uses 97 proteins × 100 terminated rollouts; no unfinished samples.
+Raw at +6B tokens: all R=0.24064, long R=0.19799.
+Prompted at +3B: all R=0.23440, long R=0.19767.
+At matched +3B, raw scores 0.20366 / 0.16031; prompted leads by 0.03074 / 0.03737.
+Native-token budgets imply different protein exposure; format causality is unresolved.
+Raw 5B and 6B are tied within 0.005; too early to conclude a plateau.
+Existing exp232 m2-p06 remains higher at 0.51980 / 0.50173.
+An exact sequence-KNN null over the expanded corpus has not been computed.
+Both training jobs stopped October 27 because RNO storage writes were suspended.
+Verified local recovery points: raw 6.705B tokens, prompted 3.153B tokens.
+October 30 storage probes pass; raw a07 and prompted a08 are accepted, awaiting GPUs.
+Recovery preserves optimizer state, identities, and local checkpoint outputs.
+Full metric/timing/provenance tables are committed; periodic eval drivers remain live.
+
+## Pilot execution
 
 At October 5, five of six production trials have finished their 1B-token budgets.
 All three contacts-v1 trials and the 0.8B/4B prompted trials completed.

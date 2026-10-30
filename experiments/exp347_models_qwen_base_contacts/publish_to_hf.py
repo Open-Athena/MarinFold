@@ -11,6 +11,7 @@ def main() -> None:
         "data/e8_reference",
         "data/eval_val_pilot",
         "data/eval_val_interim_20261021",
+        "data/eval_val_periodic",
         "data/scale_smoke_timings",
         "data/full_phase_initial_timings",
         "data/corpus235m",

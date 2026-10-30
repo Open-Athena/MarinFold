@@ -452,6 +452,53 @@ The October 21 scores remain the latest completed results while this backlog run
 
 ## Results
 
+### Full-corpus milestones — October 30
+
+All nine periodic requests through raw 6B and prompted 3B additional tokens have
+complete eval-val results: 97 proteins, 100 terminated rollouts each, and zero
+unfinished samples. The saved tables contain 873 timing rows and 17,460 metric
+rows; recomputed means match the committed aggregates and W&B values.
+
+| Additional tokens | contacts-v1 all / long R | Prompted all / long R |
+| ---: | ---: | ---: |
+| 1B | 0.15271 / 0.11146 | 0.14316 / 0.10781 |
+| 2B | 0.18186 / 0.13565 | 0.19661 / 0.15458 |
+| 3B | 0.20366 / 0.16031 | 0.23440 / 0.19767 |
+| 4B | 0.21607 / 0.17332 | — |
+| 5B | 0.24012 / 0.20120 | — |
+| 6B | 0.24064 / 0.19799 | — |
+
+Both improve substantially over their pilots. At 3B native tokens prompted leads
+by 0.03074 all-range and 0.03737 long-range R, although tokenization and protein
+exposure differ between formats. Raw 5B and 6B are tied within the approximately
+0.005 evaluation resolution; this is too early to establish a plateau. The latest
+scores remain below the existing exp232 m2-p06 result (0.51980 / 0.50173).
+The AFDB sequence-KNN result above is context only: it is not an exact null over
+the expanded 235M-document training corpus, which has not been computed here.
+
+At the latest checkpoints, all-range viral / nonviral R is 0.19308 / 0.24378
+for raw and 0.21119 / 0.23593 for prompted (six / 91 proteins). Long-range values
+are 0.15834 / 0.20061 and 0.18088 / 0.19878. The low-MSA-depth FoldBench cut
+belongs to eval-test and remains unread. Metrics, timings, four-worker provenance,
+dispatches, exact checkpoint identities, and viral splits are saved under
+[`data/eval_val_periodic`](data/eval_val_periodic).
+
+Both training roots stopped October 27 at 12:35–12:37 UTC when CoreWeave rejected
+checkpoint writes: `Account is write suspended for this availability zone`.
+Their final observed token counts were 6,709,343,269 and 3,154,711,265; the last
+complete recoverable checkpoints are steps 44,293 / 6,705,498,958 tokens and
+67,797 / 3,152,923,970 tokens. Each checkpoint's model, tokenizer, eight optimizer
+shards, and matching completion/resume markers were verified on October 30.
+RNO read/write and multipart-upload checks now pass. Recovery retains local
+checkpoints, the original run identities, 100B-token targets, and 1B eval cadence.
+Replacement roots raw `a07` and prompted `a08` were accepted at 20:16 and
+20:18 UTC on October 30. Both are waiting for Kueue GPU admission; no resumed
+optimizer update is claimed yet.
+Both persistent evaluation drivers remain live with their current request queues
+fully scored. No model-training or evaluation semantics changed for this recovery.
+
+### Pilot results
+
 As of **2026-10-05 13:25 UTC**, five production trials have finished their
 approximately 1B-token budgets. Both Iris and W&B report successful completion.
 Their final completion markers, eight optimizer shards, model/tokenizer files,
@@ -590,10 +637,11 @@ Measured per-input validation times are retained in [`data/timings.csv`](data/ti
 
 Five of six pilot training trials have completed. Larger models have lower
 validation contact-token NLL within each format. The two 4B pilots have similar,
-low pilot eval-val R-precision (0.14010 / 0.14350 overall). After approximately
-499M / 451M additional full-corpus tokens, overall R is 0.14481 / 0.15239 and
-long-range R is 0.10787 / 0.10738. Gains are modest and long-range performance is
-tied at the evaluator's resolution. Both 4B continuations retain their 100B-token
+low pilot eval-val R-precision (0.14010 / 0.14350 overall). At 6B / 3B additional
+full-corpus tokens, overall R reaches 0.24064 / 0.23440 and long-range R reaches
+0.19799 / 0.19767. Prompted leads at the matched 3B native-token point, but unequal
+protein exposure prevents isolating a causal format advantage. Both remain below
+the existing exp232 model. Both 4B continuations retain their 100B-token
 targets and periodic eval-val scoring. The matched-budget 2B prompted result
 remains outstanding.
 

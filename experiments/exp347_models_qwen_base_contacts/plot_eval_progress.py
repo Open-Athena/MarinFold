@@ -1,4 +1,4 @@
-"""Plot the measured 4B pilot and interim eval-val R-precision points."""
+"""Plot all committed 4B pilot and continuation eval-val measurements."""
 
 import json
 from pathlib import Path
@@ -26,10 +26,20 @@ def main() -> None:
                 / "summary.json"
             ).read_text()
         )
+        periodic = [
+            json.loads(path.read_text())
+            for path in (here / "data/eval_val_periodic" / document_format).glob(
+                "step-*/summary.json"
+            )
+        ]
+        continuation = sorted([interim, *periodic], key=lambda result: result["tokens"])
         for ax, contact_range in zip(axes, ["all", "long"], strict=True):
             ax.plot(
-                [0, interim["tokens"] / 1e9],
-                [pilot["r_precision"][contact_range], interim["r_precision"][contact_range]],
+                [0, *(result["tokens"] / 1e9 for result in continuation)],
+                [
+                    pilot["r_precision"][contact_range],
+                    *(result["r_precision"][contact_range] for result in continuation),
+                ],
                 marker="o",
                 color=color,
                 label=label,
@@ -37,7 +47,7 @@ def main() -> None:
             ax.set_title(f"{contact_range.capitalize()}-range contacts")
             ax.set_xlabel("Additional full-corpus tokens (billions)")
             ax.set_ylabel("Mean per-protein R-precision")
-            ax.set_ylim(bottom=0, top=0.18)
+            ax.set_ylim(bottom=0, top=0.28)
             ax.grid(alpha=0.2)
     axes[0].legend(frameon=False)
     fig.suptitle("Qwen3.5-4B: 97 eval-val proteins × 100 completed rollouts")
@@ -47,9 +57,9 @@ def main() -> None:
         here / "plots/eval_val_progress.png",
         caption=(
             "Measured checkpoints only; zero additional tokens is the corresponding "
-            "1B-token AFDB pilot. Interim checkpoints use unequal native-token budgets "
-            "and protein exposure. Long-range scores are tied within approximately "
-            "0.005 evaluation resolution. Neither continuation is near its 100B target."
+            "1B-token AFDB pilot. Native-token counts imply different protein exposure "
+            "between formats. Differences below approximately 0.005 are evaluator ties. "
+            "Neither continuation is near its 100B target."
         ),
         dpi=160,
     )

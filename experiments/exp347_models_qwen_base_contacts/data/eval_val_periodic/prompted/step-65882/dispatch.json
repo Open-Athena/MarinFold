@@ -1,0 +1,18 @@
+{
+  "request": {
+    "run_id": "exp347-qwen35-4b-prompted-corpus235m-100bt",
+    "step": 65882,
+    "tokens": 3000024329,
+    "format": "prompted",
+    "checkpoint": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-100bt/hf/step-65882",
+    "final": false
+  },
+  "jobs": [
+    "/timodonnell/exp347-4b-prompted-corpus235m-eval-val-a05/exp347-eval-0c0c21272f67-s00",
+    "/timodonnell/exp347-4b-prompted-corpus235m-eval-val-a05/exp347-eval-0c0c21272f67-s01",
+    "/timodonnell/exp347-4b-prompted-corpus235m-eval-val-a05/exp347-eval-0c0c21272f67-s02",
+    "/timodonnell/exp347-4b-prompted-corpus235m-eval-val-a05/exp347-eval-0c0c21272f67-s03"
+  ],
+  "shards": 4,
+  "image": "vllm/vllm-openai@sha256:5f5e535216848d0c52159c8c13a0af04be5f6fe1a84e79914300610796f76d40"
+}
