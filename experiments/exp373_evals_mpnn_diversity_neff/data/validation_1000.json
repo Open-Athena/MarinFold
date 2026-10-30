@@ -1,0 +1,26 @@
+{
+  "conditions": 232,
+  "new_samples": 162400,
+  "combined_fixed_samples": 232000,
+  "original_prefixes_unchanged": true,
+  "paired_prompts_and_seeds": true,
+  "checkpoint_files_match_original": true,
+  "raw_bytes": 441670973,
+  "inference_gpu_hours": 2.574038584147218,
+  "source_bundles": [
+    {
+      "bundle": "d60a8b612eef5f489b5ef9b1945e6263af2984cde970d87103faea34fb22e890",
+      "worker_sha256": "a278bd39395b6bbedea73d2d16bcc7821ff068993c9d97318fcd7de751313604"
+    }
+  ],
+  "totals": {
+    "n_rollouts": 162400,
+    "unfinished": 0,
+    "extended": 0,
+    "empty_contacts": 0,
+    "malformed_statements_samples": 126,
+    "invalid_positions_samples": 618,
+    "unexpected_text_samples": 138,
+    "retractions_samples": 0
+  }
+}

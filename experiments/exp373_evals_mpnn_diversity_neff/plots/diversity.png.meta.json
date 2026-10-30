@@ -1,0 +1,5 @@
+{
+  "script": "plot.py",
+  "args": [],
+  "caption": "97 natural proteins, T=1, 300 fixed-prompt samples. Points are proteins; \u0394 is MPNN-only minus default (paired 95% CI). Count control thins paired samples to equal contact counts."
+}
