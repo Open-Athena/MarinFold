@@ -122,6 +122,9 @@ def main() -> None:
         (HERE / "data/publication_launch.json").write_text(
             json.dumps(record, indent=2) + "\n"
         )
+        (HERE / f"data/publication_launch_a{args.attempt:02d}.json").write_text(
+            json.dumps(record, indent=2) + "\n"
+        )
         print("SUBMITTED", job.job_id, flush=True)
 
 

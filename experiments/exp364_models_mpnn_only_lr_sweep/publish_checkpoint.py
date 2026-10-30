@@ -42,8 +42,17 @@ def main() -> None:
         raise ValueError("Unexpected publication file inventory")
     fs = fsspec.filesystem("s3", use_listings_cache=False)
     hub = HfFileSystem(token=os.environ["HF_TOKEN"])
-    if hub.exists(DESTINATION):
-        raise ValueError("Destination already exists; inspect it before any retry")
+    public_hub = HfFileSystem(token=False)
+    existing = (
+        {
+            Path(item["name"]).name: item
+            for item in public_hub.ls(DESTINATION, refresh=True)
+        }
+        if public_hub.exists(DESTINATION, refresh=True)
+        else {}
+    )
+    if set(existing) - (required | {"README.md"}):
+        raise ValueError("Destination is complete or contains unexpected files")
     manifest = {
         "published_at_utc": datetime.now(UTC).isoformat(),
         "git_commit": os.environ["GIT_COMMIT"],
@@ -56,6 +65,7 @@ def main() -> None:
         "recommended_inference_dtype": "bfloat16",
         "all_source_files_byte_identical": True,
         "files": {},
+        "reused_public_files": [],
     }
     with tempfile.TemporaryDirectory(prefix="exp364-publish-") as temporary:
         directory = Path(temporary)
@@ -89,11 +99,28 @@ def main() -> None:
         (directory / "README.md").write_bytes(
             (HERE / "publication_model_card.md").read_bytes()
         )
+        identities = {
+            path.name: (sha256(path), hf_xet.hash_files([str(path)])[0].hash)
+            for path in sorted(directory.iterdir())
+        }
+        # Validate every partial object before uploading anything. A failed
+        # verification may leave a correct file public; never overwrite it or
+        # repeat its transfer, and never accept a different checkpoint's bytes.
+        for name, item in existing.items():
+            if (
+                item["size"] != (directory / name).stat().st_size
+                or item["xet_hash"] != identities[name][1]
+            ):
+                raise ValueError(f"Existing published content differs: {name}")
         for path in sorted(directory.iterdir()):
-            digest = sha256(path)
-            local_xet = hf_xet.hash_files([str(path)])[0].hash
-            hub.put_file(str(path), DESTINATION + "/" + path.name)
-            public = HfFileSystem(token=False).info(DESTINATION + "/" + path.name)
+            digest, local_xet = identities[path.name]
+            if path.name in existing:
+                manifest["reused_public_files"].append(path.name)
+            else:
+                hub.put_file(str(path), DESTINATION + "/" + path.name)
+            # fsspec reuses filesystem instances, so the anonymous listing from
+            # the previous file must be refreshed after each authenticated PUT.
+            public = public_hub.info(DESTINATION + "/" + path.name, refresh=True)
             if public["size"] != path.stat().st_size or public["xet_hash"] != local_xet:
                 raise ValueError(f"Published content differs: {path.name}")
             manifest["files"][path.name] = {
