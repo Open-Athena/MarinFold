@@ -1,0 +1,6 @@
+minimum_coverage,n_proteins,n_with_reported_surviving_match,median_best_identity,maximum_best_identity,n_identity_ge_0.3,n_identity_ge_0.9
+0.5,97,96,0.299,0.299,0,0
+0.4,97,97,0.506,1.0,97,2
+0.3,97,97,0.565,1.0,97,3
+0.2,97,97,0.618,1.0,97,4
+0.0,97,97,0.776,1.0,97,19

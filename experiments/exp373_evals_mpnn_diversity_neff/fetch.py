@@ -26,11 +26,12 @@ def main() -> None:
     tasks = []
     summary = []
     for marker in markers:
-        data = json.loads(fs.read_text(marker))
         relative = Path(marker.removeprefix(root + "/"))
         path = destination / relative
         path.parent.mkdir(exist_ok=True)
-        path.write_text(json.dumps(data, indent=2))
+        if not path.exists():
+            path.write_text(fs.read_text(marker))
+        data = json.loads(path.read_text())
         raw_uri = data["raw_uri"].removeprefix("hf://")
         assert raw_uri.startswith(root + "/")
         raw_path = destination / raw_uri.removeprefix(root + "/")

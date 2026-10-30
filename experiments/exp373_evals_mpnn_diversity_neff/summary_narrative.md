@@ -16,4 +16,4 @@ Neff analysis uses 100 randomized prompts. Fixed tiers contain 4, 10, 28 and 55 
 
 Plan and inputs frozen before inference. The canonical parser passes five tests of offset/orientation invariance, duplicates, ordered retraction, malformed outputs and deterministic seeds.
 
-Two checkpoint-local H100 smoke jobs are being validated before the full 12-worker run. Final results pending.
+Both checkpoint-local smokes passed: 200/200 completed samples, matching prompts and tokenizer hashes. Twelve H100 production shards are active. Upload rate-limit failures were recovered with a direct bucket API and bounded retries; completed conditions are reused. Final results pending.

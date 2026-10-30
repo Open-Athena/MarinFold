@@ -341,44 +341,46 @@ def main() -> None:
     )
     panel = read("panel_contacts.csv.gz")
     order = read("panel_order.csv").stem.tolist()
-    fig, axes = plt.subplots(len(order), 4, figsize=(12, 3 * len(order)))
-    for row, stem in enumerate(order):
-        part = panel[panel.stem.eq(stem)]
-        length = int(meta.loc[stem, "L"])
-        for col, (field, title) in enumerate(
-            [
-                ("truth", "Ground truth"),
-                ("default", "Default frequency"),
-                ("mpnn", "MPNN-only frequency"),
-                ("difference", "MPNN − default"),
-            ]
-        ):
-            ax = axes[row, col]
-            matrix = np.zeros((length, length))
-            matrix[part.i, part.j] = part[field]
-            matrix += matrix.T
-            ax.imshow(
-                matrix,
-                origin="lower",
-                vmin=-1 if field == "difference" else 0,
-                vmax=1,
-                cmap="RdBu_r" if field == "difference" else "magma",
-                interpolation="nearest",
-                rasterized=True,
-            )
-            ax.set_title(title if row == 0 else "", fontsize=10)
-            ax.set_xticks([])
-            ax.set_yticks([])
-            if col == 0:
-                ax.set_ylabel(
-                    f"{stem}\nL={length}, Neff={meta.loc[stem, 'msa_neff']:.1f}",
-                    fontsize=9,
+    for group_index in range(4):
+        group = order[group_index * 2 : (group_index + 1) * 2]
+        fig, axes = plt.subplots(2, 4, figsize=(12, 6))
+        for row, stem in enumerate(group):
+            part = panel[panel.stem.eq(stem)]
+            length = int(meta.loc[stem, "L"])
+            for col, (field, title) in enumerate(
+                [
+                    ("truth", "Ground truth"),
+                    ("default", "Default frequency"),
+                    ("mpnn", "MPNN-only frequency"),
+                    ("difference", "MPNN − default"),
+                ]
+            ):
+                ax = axes[row, col]
+                matrix = np.zeros((length, length))
+                matrix[part.i, part.j] = part[field]
+                matrix += matrix.T
+                ax.imshow(
+                    matrix,
+                    origin="lower",
+                    vmin=-1 if field == "difference" else 0,
+                    vmax=1,
+                    cmap="RdBu_r" if field == "difference" else "magma",
+                    interpolation="nearest",
+                    rasterized=True,
                 )
-    save(
-        fig,
-        "representative_contact_maps",
-        "Panel selected before inference by evenly spaced Neff ranks. Symmetric resolved-pair maps show truth and inclusion frequencies from 300 fixed-prompt samples at temperature 1. White/bright pixels denote frequent contacts; signed differences use a fixed −1 to +1 scale. No panel member was selected for its result.",
-    )
+                ax.set_title(title if row == 0 else "", fontsize=10)
+                ax.set_xticks([])
+                ax.set_yticks([])
+                if col == 0:
+                    ax.set_ylabel(
+                        f"{stem}\nL={length}, Neff={meta.loc[stem, 'msa_neff']:.1f}",
+                        fontsize=9,
+                    )
+        save(
+            fig,
+            f"representative_contact_maps_{group_index + 1}",
+            "Panel selected before inference by evenly spaced Neff ranks. Symmetric resolved-pair maps show truth and inclusion frequencies from 300 fixed-prompt samples at temperature 1. Bright pixels denote frequent contacts; signed differences use a fixed -1 to +1 scale. No panel member was selected for its result.",
+        )
     selected = all_metrics[
         all_metrics.stem.isin(natural)
         & all_metrics.temperature.eq(1)
