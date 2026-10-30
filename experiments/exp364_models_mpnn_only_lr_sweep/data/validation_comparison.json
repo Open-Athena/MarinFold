@@ -1,5 +1,5 @@
 {
-  "observed_at_utc": "2026-10-29T23:03:52.129521+00:00",
+  "observed_at_utc": "2026-10-30T15:30:49.736839+00:00",
   "metric": "eval/loss",
   "runs": {
     "full_epoch1": {
@@ -85,8 +85,8 @@
       "run_id": "contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
       "url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
       "state": "running",
-      "observed_step": 292861,
-      "run_progress": 0.7835374255221809,
+      "observed_step": 311306,
+      "run_progress": 0.832886087396226,
       "num_train_steps": 373769,
       "optimizer": {
         "haps": null,
@@ -115,15 +115,15 @@
       "augmentation_num_train_steps": 373769,
       "per_device_eval_parallelism": 4,
       "curve_source": "W&B full sparse eval/loss history; cadence coverage checked",
-      "latest_eval_step": 291732,
-      "latest_eval_loss": 3.078505039215088
+      "latest_eval_step": 310758,
+      "latest_eval_loss": 3.0720443725585938
     },
     "lr1e-3": {
       "run_id": "contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B",
       "url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B",
       "state": "running",
-      "observed_step": 325214,
-      "run_progress": 0.8700962359104153,
+      "observed_step": 344155,
+      "run_progress": 0.9207719206247708,
       "num_train_steps": 373769,
       "optimizer": {
         "haps": null,
@@ -152,15 +152,15 @@
       "augmentation_num_train_steps": 373769,
       "per_device_eval_parallelism": 4,
       "curve_source": "W&B full sparse eval/loss history; cadence coverage checked",
-      "latest_eval_step": 323442,
-      "latest_eval_loss": 3.096012830734253
+      "latest_eval_step": 342468,
+      "latest_eval_loss": 3.082773447036743
     },
     "lr2e-3": {
       "run_id": "contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B",
       "url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B",
       "state": "running",
-      "observed_step": 219598,
-      "run_progress": 0.5875259853010817,
+      "observed_step": 255272,
+      "run_progress": 0.6829699627309916,
       "num_train_steps": 373769,
       "optimizer": {
         "haps": null,
@@ -189,8 +189,8 @@
       "augmentation_num_train_steps": 373769,
       "per_device_eval_parallelism": 2,
       "curve_source": "W&B full sparse eval/loss history; cadence coverage checked",
-      "latest_eval_step": 217742,
-      "latest_eval_loss": 3.3428680896759033
+      "latest_eval_step": 253680,
+      "latest_eval_loss": 3.675628423690796
     },
     "lr5e-4-cooldown": {
       "run_id": "contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B",

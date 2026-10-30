@@ -1,3 +1,13 @@
+## October 30 — lower learning rates are cooling down
+
+At 15:30 UTC (11:30 EDT), all three two-epoch runs are advancing on 128 H100s. Epochs completed for 5e-4 / 1e-3 / 2e-3: 1.666 / 1.842 / 1.366. Latest validation: 3.07204 / 3.08277 / 3.67563.
+
+Both lower-LR runs are in cooldown and improving. The 2e-3 run remains unstable: a new validation spike reached 4.21406, followed by partial recovery and another rise. Its requested LR is preserved.
+
+Recent elapsed-time pace suggests 1e-3 finishes October 31 afternoon and the other two November 1 evening, Eastern. This includes observed overhead; future preemptions can delay completion. Active compute remaining is approximately 48 / 23 / 50 hours.
+
+Both one-epoch forks remain complete. The five-checkpoint October 29 R-precision snapshot is unchanged; these are not scores for today's later parent checkpoints. No training dispatch or configuration was changed.
+
 ## October 29 — both cooldown forks are complete
 
 GPU final validation: 3.03572; TPU final validation: 3.03582. Both have exact native counters of 186885 updates at checkpoint 186884 and verified finite exported weights.

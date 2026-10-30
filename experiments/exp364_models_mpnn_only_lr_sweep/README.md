@@ -50,6 +50,22 @@ Production launched with 32 H100s per trial on `cw-us-east-02a` at batch priorit
 
 All three trials were registered as running in W&B on 2026-10-13 at 15:10 UTC. Their live saved configurations were checked against the actual default run: model fields and all optimizer values match except the requested learning rate; the exact two-source training subset, global batch 128, 373,769-step target, and augmentation duration were verified. Final results are pending.
 
+### Training update, 2026-10-30
+
+At 15:30 UTC (11:30 EDT), all three remaining roots are running and W&B confirms new optimizer progress. They retain 32 / 32 / 64 H100s for increasing LR, with no pending experiment dispatches. The local US-EAST-02A pool reports 56 free of 256 H100s. No stop, restart, resize or configuration change was made; all three dispatches have recent progress. Both one-epoch forks remain complete and verified.
+
+| Peak LR | Training step | Epochs / target | Latest validation step | Validation loss | Active compute remaining | Estimated finish at recent elapsed-time pace |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| 5e-4 | 311306 | 1.666 / 2 | 310758 | 3.07204 | 48 hours | November 1 evening, Eastern |
+| 1e-3 | 344155 | 1.842 / 2 | 342468 | 3.08277 | 23 hours | October 31 afternoon, Eastern |
+| 2e-3 | 255272 | 1.366 / 2 | 253680 | 3.67563 | 50 hours | November 1 evening, Eastern |
+
+Both lower-LR runs are in cooldown and have improved since the October 29 update (3.07851 → 3.07204 and 3.09601 → 3.08277). Their current learning rates are approximately 4.26e-4 and 4.56e-4. The 2e-3 run is still before cooldown and remains unstable: validation spiked to **4.21406 at step 238882**, partially recovered, and rose again to 3.67563. Its requested learning rate is preserved.
+
+Active compute estimates use median throughput over 151 recent updates: 378k / 378k / 689k token slots per second. Calendar estimates instead extrapolate progress over the last 16.45 elapsed hours, including observed overhead, giving approximately 56 / 26 / 55 hours remaining. They assume that pace continues; future preemptions can delay completion. Dynamic dispatch observations and estimates are recorded in the sweep SQLite database, and refreshed validation curves remain under `data/validation_comparison.*` and `plots/validation_comparison.*`.
+
+The complete October 29 contact-evaluation snapshot below is unchanged. This update does not rerun R-precision or present the older contact scores as measurements of today's later training steps.
+
 ### Both one-epoch forks complete; five-checkpoint evaluation, 2026-10-29
 
 The GPU one-epoch fork finished at 02:21:29 UTC on October 29 (22:21 EDT October 28), with final checkpoint 186884 and full-validation loss **3.03571987**. Native trainer, optimizer and LR counters all equal 186885, and the independently generated evaluation export contains only finite parameters. `data/gpu_cooldown_final_verification.json` records the evidence. The verified TPU fork's loss is **3.03581691**, a difference of only 0.00009704. Both forks retain the requested exact one-epoch endpoint.
@@ -216,4 +232,4 @@ Each trial writes to `s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_l
 
 ## Conclusion
 
-Both one-epoch cooldown forks are complete, with verified finite weights and nearly identical final validation losses (GPU 3.03572; TPU 3.03582). All five October 29 contact evaluations are complete. The cooldown forks lead the redesign-only variants and are effectively tied on all-range R-precision: GPU 0.46301 / 0.66515 and TPU 0.46018 / 0.66954 on natural / designed proteins. The completed full-data first epoch remains higher at 0.55510 / 0.69640 and has lower LM validation loss. Unequal exposure and differing schedules prevent attributing the whole gap to removal of native sequences. The three two-epoch runs remain active at 1.567, 1.740 and 1.175 epochs for increasing LR; the 2e-3 run is unstable and has regressed in contact accuracy. Their requested configurations and epoch targets are preserved.
+Both one-epoch cooldown forks are complete, with verified finite weights and nearly identical final validation losses (GPU 3.03572; TPU 3.03582). All five October 29 contact evaluations are complete. The cooldown forks lead the redesign-only variants and are effectively tied on all-range R-precision: GPU 0.46301 / 0.66515 and TPU 0.46018 / 0.66954 on natural / designed proteins. The completed full-data first epoch remains higher at 0.55510 / 0.69640 and has lower LM validation loss. Unequal exposure and differing schedules prevent attributing the whole gap to removal of native sequences. As of October 30, the three two-epoch runs remain active at 1.666, 1.842 and 1.366 epochs for increasing LR. The lower-LR runs are improving during cooldown; the 2e-3 run is unstable and has regressed in contact accuracy. Their requested configurations and epoch targets are preserved.
