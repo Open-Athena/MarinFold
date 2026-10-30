@@ -1,0 +1,178 @@
+[
+  {
+    "job_id": "/bizon/exp373-mpnn-smoke-a01",
+    "model": "mpnn",
+    "shard": 0,
+    "shards": 6,
+    "smoke": true,
+    "source_sha256": "d5184e6b02f452d17c25ef3fe91a5b40307dec26ede2ab5ecadbf353ced71a4c",
+    "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v1/source/d5184e6b02f452d17c25ef3fe91a5b40307dec26ede2ab5ecadbf353ced71a4c.zip",
+    "cluster": "cw-us-east-02a",
+    "attempt": 1
+  },
+  {
+    "job_id": "/bizon/exp373-default-smoke-a01",
+    "model": "default",
+    "shard": 0,
+    "shards": 6,
+    "smoke": true,
+    "source_sha256": "d5184e6b02f452d17c25ef3fe91a5b40307dec26ede2ab5ecadbf353ced71a4c",
+    "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v1/source/d5184e6b02f452d17c25ef3fe91a5b40307dec26ede2ab5ecadbf353ced71a4c.zip",
+    "cluster": "cw-us-east-02a",
+    "attempt": 1
+  },
+  {
+    "job_id": "/bizon/exp373-mpnn-smoke-a02",
+    "model": "mpnn",
+    "shard": 0,
+    "shards": 6,
+    "smoke": true,
+    "source_sha256": "a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88",
+    "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v1/source/a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88.zip",
+    "cluster": "cw-us-east-02a",
+    "attempt": 2
+  },
+  {
+    "job_id": "/bizon/exp373-default-smoke-a02",
+    "model": "default",
+    "shard": 0,
+    "shards": 6,
+    "smoke": true,
+    "source_sha256": "a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88",
+    "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v1/source/a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88.zip",
+    "cluster": "cw-us-east-02a",
+    "attempt": 2
+  },
+  {
+    "job_id": "/bizon/exp373-mpnn-s00-a01",
+    "model": "mpnn",
+    "shard": 0,
+    "shards": 6,
+    "smoke": false,
+    "source_sha256": "a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88",
+    "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v1/source/a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88.zip",
+    "cluster": "cw-us-east-02a",
+    "attempt": 1
+  },
+  {
+    "job_id": "/bizon/exp373-mpnn-s01-a01",
+    "model": "mpnn",
+    "shard": 1,
+    "shards": 6,
+    "smoke": false,
+    "source_sha256": "a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88",
+    "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v1/source/a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88.zip",
+    "cluster": "cw-us-east-02a",
+    "attempt": 1
+  },
+  {
+    "job_id": "/bizon/exp373-mpnn-s02-a01",
+    "model": "mpnn",
+    "shard": 2,
+    "shards": 6,
+    "smoke": false,
+    "source_sha256": "a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88",
+    "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v1/source/a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88.zip",
+    "cluster": "cw-us-east-02a",
+    "attempt": 1
+  },
+  {
+    "job_id": "/bizon/exp373-mpnn-s03-a01",
+    "model": "mpnn",
+    "shard": 3,
+    "shards": 6,
+    "smoke": false,
+    "source_sha256": "a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88",
+    "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v1/source/a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88.zip",
+    "cluster": "cw-us-east-02a",
+    "attempt": 1
+  },
+  {
+    "job_id": "/bizon/exp373-mpnn-s04-a01",
+    "model": "mpnn",
+    "shard": 4,
+    "shards": 6,
+    "smoke": false,
+    "source_sha256": "a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88",
+    "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v1/source/a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88.zip",
+    "cluster": "cw-us-east-02a",
+    "attempt": 1
+  },
+  {
+    "job_id": "/bizon/exp373-mpnn-s05-a01",
+    "model": "mpnn",
+    "shard": 5,
+    "shards": 6,
+    "smoke": false,
+    "source_sha256": "a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88",
+    "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v1/source/a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88.zip",
+    "cluster": "cw-us-east-02a",
+    "attempt": 1
+  },
+  {
+    "job_id": "/bizon/exp373-default-s00-a01",
+    "model": "default",
+    "shard": 0,
+    "shards": 6,
+    "smoke": false,
+    "source_sha256": "a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88",
+    "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v1/source/a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88.zip",
+    "cluster": "cw-us-east-02a",
+    "attempt": 1
+  },
+  {
+    "job_id": "/bizon/exp373-default-s01-a01",
+    "model": "default",
+    "shard": 1,
+    "shards": 6,
+    "smoke": false,
+    "source_sha256": "a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88",
+    "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v1/source/a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88.zip",
+    "cluster": "cw-us-east-02a",
+    "attempt": 1
+  },
+  {
+    "job_id": "/bizon/exp373-default-s02-a01",
+    "model": "default",
+    "shard": 2,
+    "shards": 6,
+    "smoke": false,
+    "source_sha256": "a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88",
+    "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v1/source/a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88.zip",
+    "cluster": "cw-us-east-02a",
+    "attempt": 1
+  },
+  {
+    "job_id": "/bizon/exp373-default-s03-a01",
+    "model": "default",
+    "shard": 3,
+    "shards": 6,
+    "smoke": false,
+    "source_sha256": "a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88",
+    "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v1/source/a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88.zip",
+    "cluster": "cw-us-east-02a",
+    "attempt": 1
+  },
+  {
+    "job_id": "/bizon/exp373-default-s04-a01",
+    "model": "default",
+    "shard": 4,
+    "shards": 6,
+    "smoke": false,
+    "source_sha256": "a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88",
+    "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v1/source/a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88.zip",
+    "cluster": "cw-us-east-02a",
+    "attempt": 1
+  },
+  {
+    "job_id": "/bizon/exp373-default-s05-a01",
+    "model": "default",
+    "shard": 5,
+    "shards": 6,
+    "smoke": false,
+    "source_sha256": "a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88",
+    "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v1/source/a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88.zip",
+    "cluster": "cw-us-east-02a",
+    "attempt": 1
+  }
+]
