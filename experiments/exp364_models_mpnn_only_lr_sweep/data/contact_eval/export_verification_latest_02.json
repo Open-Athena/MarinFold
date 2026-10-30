@@ -1,0 +1,150 @@
+[
+  {
+    "trial": "lr5e-4",
+    "step": 184314,
+    "manifest": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-02/manifests/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B-step-184314.json",
+    "files": [
+      {
+        "name": "config.json",
+        "size": 1726,
+        "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd"
+      },
+      {
+        "name": "model-00001-of-00002.safetensors",
+        "size": 4979485528,
+        "sha256": "152ce39bb5015f730bc03ec00d805c74ff790c746821c58872a9a60d8992be2e"
+      },
+      {
+        "name": "model-00002-of-00002.safetensors",
+        "size": 906042048,
+        "sha256": "2a74408e81ffb934a944ac2b7d2bfa3a4c10878bcf41ca5837dff7a6bd8e0823"
+      },
+      {
+        "name": "model.safetensors.index.json",
+        "size": 20882,
+        "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587"
+      },
+      {
+        "name": "tokenizer.json",
+        "size": 64407,
+        "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+      },
+      {
+        "name": "tokenizer_config.json",
+        "size": 296,
+        "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+      }
+    ]
+  },
+  {
+    "trial": "lr1e-3",
+    "step": 207865,
+    "manifest": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-02/manifests/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B-step-207865.json",
+    "files": [
+      {
+        "name": "config.json",
+        "size": 1726,
+        "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd"
+      },
+      {
+        "name": "model-00001-of-00002.safetensors",
+        "size": 4979485528,
+        "sha256": "afafbf21c08fade07894c17d2cfed54514e3dd300555f78f14e3d78d3d50bf73"
+      },
+      {
+        "name": "model-00002-of-00002.safetensors",
+        "size": 906042048,
+        "sha256": "3be1dd645d211842b4af7cf830d982c337307bba5a0eb0ca248c973a4ddc1d2e"
+      },
+      {
+        "name": "model.safetensors.index.json",
+        "size": 20882,
+        "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587"
+      },
+      {
+        "name": "tokenizer.json",
+        "size": 64407,
+        "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+      },
+      {
+        "name": "tokenizer_config.json",
+        "size": 296,
+        "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+      }
+    ]
+  },
+  {
+    "trial": "lr2e-3",
+    "step": 105722,
+    "manifest": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-02/manifests/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B-step-105722.json",
+    "files": [
+      {
+        "name": "config.json",
+        "size": 1726,
+        "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd"
+      },
+      {
+        "name": "model-00001-of-00002.safetensors",
+        "size": 4979485528,
+        "sha256": "1f5afa32c4b47698202198579e8b3bdd38b563b41212814aec9f52b8639ea982"
+      },
+      {
+        "name": "model-00002-of-00002.safetensors",
+        "size": 906042048,
+        "sha256": "9290879ea107772b6c6d352ec057b5fe84ca8b6581de09d6a185fcfbe253dee0"
+      },
+      {
+        "name": "model.safetensors.index.json",
+        "size": 20882,
+        "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587"
+      },
+      {
+        "name": "tokenizer.json",
+        "size": 64407,
+        "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+      },
+      {
+        "name": "tokenizer_config.json",
+        "size": 296,
+        "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+      }
+    ]
+  },
+  {
+    "trial": "lr5e-4-cooldown",
+    "step": 146264,
+    "manifest": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-02/manifests/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-step-146264.json",
+    "files": [
+      {
+        "name": "config.json",
+        "size": 1726,
+        "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd"
+      },
+      {
+        "name": "model-00001-of-00002.safetensors",
+        "size": 4979485528,
+        "sha256": "8cc7a41f4fb9060e71ef70358777b55bc1e158998bed48b5127dd853164b46fc"
+      },
+      {
+        "name": "model-00002-of-00002.safetensors",
+        "size": 906042048,
+        "sha256": "87edf88b5da803bbdeb714fd70c82539a2db88862b0d6fddd00c117b7a410ab4"
+      },
+      {
+        "name": "model.safetensors.index.json",
+        "size": 20882,
+        "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587"
+      },
+      {
+        "name": "tokenizer.json",
+        "size": 64407,
+        "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+      },
+      {
+        "name": "tokenizer_config.json",
+        "size": 296,
+        "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+      }
+    ]
+  }
+]

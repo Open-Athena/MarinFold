@@ -1,0 +1,8 @@
+{
+  "job_id": "/bizon/exp364-publish-gpu-cooldown-step186884-a01",
+  "git_commit": "acca95674324449686ae756af913ddb9e101b42d",
+  "cluster": "cw-us-east-02a",
+  "bundle_uri": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/publication/source/daacbc626f8eb4b215dd2235a36193bcdb60e9872f15319b0a421c1535eb450c.zip",
+  "bundle_sha256": "daacbc626f8eb4b215dd2235a36193bcdb60e9872f15319b0a421c1535eb450c",
+  "source_bytes": 5885614887
+}

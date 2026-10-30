@@ -1,0 +1,55 @@
+{
+  "completed_checkpoints": 5,
+  "requested_checkpoints": 5,
+  "results": [
+    {
+      "trial": "lr5e-4",
+      "files": {
+        "manifest.json": "0b5d69bae5980467e1d5ab478c45aa2e60b91cae241956fe9b75bf385596869d",
+        "contact_precision_all.csv": "054d6e1afa870183f68ed565542745c56e4dbeda83761deb24f4bba2cc3258e3",
+        "timings.csv": "07ce8275426bf6213e193f210bec122ecd07aa01ce040eed33f1618a56003e82"
+      }
+    },
+    {
+      "trial": "lr1e-3",
+      "files": {
+        "manifest.json": "3d8f819c1e67f00bc75feabc877bd34518bba0792a854fa06fb7b94d9e09c2a7",
+        "contact_precision_all.csv": "29be02343551158b3498c13cccd6089dc2435e2683820ed20c8ebc20b23257ab",
+        "timings.csv": "6a58be243aca336ff9ab8b9bf7a3f298be3ec82889d0cba96cc403222d13e986"
+      }
+    },
+    {
+      "trial": "lr2e-3",
+      "files": {
+        "manifest.json": "50a48a6344e4d960eef8a19047ac4626acef1e42d7002ae773da701c5445dcdb",
+        "contact_precision_all.csv": "977ce1a302dbf7156394492e1ef875c54d7fd3853fd175accc93dd38a458d8ab",
+        "timings.csv": "d4b18eaa413ebc6718e9146a24edbc3877ae03e284b959fc9c1699dcd167fcb0"
+      }
+    },
+    {
+      "trial": "lr5e-4-cooldown",
+      "files": {
+        "manifest.json": "a1a768ba52e380c6b3e27c7e3398eedada908805e7f13e6dbd87cc97ea8fa829",
+        "contact_precision_all.csv": "fc925003cd3e7a5b0d3526633c96468394c07c603c7adc714ea57bc17a751a11",
+        "timings.csv": "cffcc5aab10254881c00537324bacb6866c7907c5266d25eee4e08284d26c809"
+      }
+    },
+    {
+      "trial": "lr5e-4-cooldown-tpu",
+      "files": {
+        "manifest.json": "0afda1ca43f893ec0503e4f32d0058fe6881ea293c2cafce3afb2a1b7e07f23b",
+        "contact_precision_all.csv": "67b14d50dd78dd041a4e5113c16b0142919b2fe2dcb24b45245831ba9afe5d57",
+        "timings.csv": "8b0f8db3338ee2dfe2bc323aaa7e1cda66a714c7c5a5acd48d056249f33be26a"
+      }
+    }
+  ],
+  "bootstrap": {
+    "replicates": 10000,
+    "seed": 20261021,
+    "unit": "protein"
+  },
+  "low_msa_membership_sha256": "32b7083af03ccd874d796732c8297e10aafe52de3c92f12be2c247442da3b45f",
+  "scope": "eval-val and eval-denovo only; no eval-test or legacy read",
+  "eval_set": "all",
+  "matched_sequence_knn_null": null
+}

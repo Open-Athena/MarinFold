@@ -1,0 +1,5 @@
+{
+  "script": "compare_validation.py",
+  "args": [],
+  "caption": "Exp364 validation against exp277 first epoch and its pre-cooldown continuation. Left: matched-step curves including the high-LR spikes. Right: full training with a zoomed loss range; spikes above the range are visible on the left. Shading marks completed-run cooldowns. The TPU star is the repaired, independently verified final checkpoint from data/tpu_final_verification.json. GPU curves use data/validation_comparison.csv; no smoothing. Schedules and TPU/GPU attention kernels differ."
+}

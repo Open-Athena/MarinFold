@@ -1,0 +1,253 @@
+---
+marinfold_experiment:
+  issue: 364
+  title: 'exp: ProteinMPNN-only training for two epochs with a learning-rate sweep'
+  kind: models
+  branch: exp364/mpnn-only-training
+---
+
+# exp: ProteinMPNN-only training for two epochs with a learning-rate sweep
+
+**Issue:** [#364](https://github.com/Open-Athena/MarinFold/issues/364) · **Kind:** `models` · **Branch:** `exp364/mpnn-only-training`
+
+## Question
+
+How does the current default 1.47B contacts-v1 model train when its training data contains only ProteinMPNN redesigns, with no native-sequence training documents?
+
+## Hypothesis
+
+Training exclusively on inverse-folded sequences may retain structural learning while changing generalization to natural versus designed proteins. A three-point learning-rate sweep tests optimization sensitivity without changing the default architecture or other training settings.
+
+## Background
+
+The current default is #277's scratch-trained `contacts-v1-exp277-m2-p06-full-epoch-1.5B` (final checkpoint step 266344), as recorded in LATEST_RESULTS.md. Its #266 redesign subset contains exactly 162,574,724 documents (31,702,680 AFDB plus 130,872,044 ESM-Atlas), approximately the requested 166 million. Existing audited token caches reside on CoreWeave and contain 174,107,898,831 raw tokens. Native documents are excluded from training; the default validation set remains unchanged.
+
+## Approach
+
+Train three models from scratch for two complete epochs of the redesign subset, with peak learning rates 0.0005, 0.001, and 0.002. Preserve exp277's 24-layer Qwen3 (hidden 2048, MLP 8192, 32 attention / 8 KV heads, QK norm and RoPE), tokenizer, sequence length 8192, global batch 128, AdamW weight decay 0.2 and other optimizer parameters, WSD warmup 10% / cooldown 20% / minimum ratio 0.1, model/data/augmentation seeds, document packing and clipping, blocked cross-document attention, validation, and scheduled amino-acid statement-order augmentation. Scale the schedule over the requested two-epoch duration. Traverse the complete concatenated redesign corpus once per epoch with a fresh deterministic shuffle, without equal-source reweighting, oversampling, or native training documents.
+
+Audit the packed-example counts before launch, enforce exact finite two-epoch coverage, and retain stable per-trial W&B/checkpoint identities for recovery. Use existing CoreWeave inputs and available batch-priority GPUs; TRC remains permitted if complete regional data already exists. The separately requested TPU copy has explicit approval for the pinned us-east5 input transfer described below; other cross-region transfers are not authorized. Keep W&B routing at open-athena/MarinFold. Launch separate smoke identities before production.
+
+## Success criteria
+
+All three trials complete two full redesign epochs with verified final native checkpoints. Preserve per-trial run history, learning curves, provenance, and final HF exports with co-located tokenizers. Report validation losses at matched exposure and any operational failures. Contact benchmark evaluation is a follow-up rather than a prerequisite for launching these requested runs.
+
+On October 30 the user ended the unstable 2e-3 trial early. The two-epoch completion target now applies only to 5e-4 and 1e-3; retain the cancelled trial's results and do not restart it without explicit authorization.
+
+## Results
+
+The 2026-10-13 in-region audit (`/bizon/exp364-lr1e-3-audit-a01`) succeeded and independently reproduced the source counts in `data/epoch_corpus_counts.csv`: 23,921,189 packed examples per epoch. Two epochs expose exactly 47,842,378 examples; 373,769 updates at batch 128 leave 74 real examples and 54 padding examples in the last batch. The first epoch boundary is crossed without padding or repeating examples. The inherited 8192-token clipping policy removes one trailing token from each of 772 documents per pass; no document is dropped.
+
+Six CPU tests pass. They compare the resolved recipe directly against exp277, enforce redesign-only training with unchanged validation, exercise complete traversal and deterministic resume across the epoch boundary through Levanter's actual loader, and check that resizing a gang does not change production identity. The default run's recorded W&B model and optimizer settings were also checked; `data/default_recipe.json` preserves that reference.
+
+The isolated [64-H100 smoke](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B-smoke-a01) completed all ten updates with finite losses. Native step-9 metadata and HF weights plus `tokenizer.json` / `tokenizer_config.json` were verified in S3. Metrics are in `data/smoke.csv`; its short-run losses are only a pipeline check.
+
+Production launched with 32 H100s per trial on `cw-us-east-02a` at batch priority (96 GPUs total). The four-sequence microbatch is below exp199/exp232's measured limit of eight sequences per H100; global batch remains 128. The 64-H100 smoke validated the complete two-epoch data path, training, validation and checkpoint/export behavior. Gang size is independent of run identity, so capacity changes resume the same trial.
+
+| Peak LR | Production W&B | Initial Iris root |
+| --- | --- | --- |
+| 0.0005 | [lr5e-4](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B) | `/bizon/exp364-lr5e-4-train-a01` |
+| 0.001 | [lr1e-3](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B) | `/bizon/exp364-lr1e-3-train-a01` |
+| 0.002 | [lr2e-3](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B) | `/bizon/exp364-lr2e-3-train-a01` |
+
+All three trials were registered as running in W&B on 2026-10-13 at 15:10 UTC. Their live saved configurations were checked against the actual default run: model fields and all optimizer values match except the requested learning rate; the exact two-source training subset, global batch 128, 373,769-step target, and augmentation duration were verified. Final results are pending.
+
+### Selected checkpoint published without changing the default, 2026-10-30
+
+For the proposed eval-val diversity comparison, select the completed GPU one-epoch fork, `contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-step-186884`. Its eval-val all-range R-precision is **0.46301**, compared with the TPU fork's **0.46018**, and its final LM validation loss is 3.03571987 versus 3.03581691. The contact-score difference is below the 0.005 practical tie threshold: this is selection by the relevant point estimate, not evidence that GPU training is superior. The TPU fork has the higher eval-denovo score.
+
+The [published checkpoint and tokenizer](https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B/hf/step-186884) contain all six model/tokenizer files from the evaluated export, byte-identical, totaling 5,885,614,887 bytes. Weights remain float32 on disk; evaluated inference uses bfloat16. The model card and `publication_manifest.json` record metrics, source identity, SHA-256 digests and public Xet hashes. A batch CPU job on `cw-us-east-02a` published directly from the regional S3 export; no training job was interrupted. Independent anonymous verification at 16:13 UTC checked all public object sizes and Xet hashes and read back the small config/tokenizer files for SHA-256 verification. Transformers loaded the config and tokenizer with the expected trained RoPE and 2845-token vocabulary.
+
+`publish_checkpoint.py` and `launch_publish.py` reproduce publication with complete source verification before upload, hash checks on existing partial files, and fresh anonymous verification after each write. The first attempt stopped because fsspec reused a stale anonymous directory listing after publishing only README/config files. The corrected attempt `/bizon/exp364-publish-gpu-cooldown-step186884-a02` verified and reused those two files without retransmitting them, then completed publication. `data/publication_source.json`, `publication_launch_a*.json`, `publication_manifest.json` and `publication_verification.json` preserve the evidence.
+
+`marinfold/marinfold/MODELS.yaml` now registers the optional nickname `contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B`. The default remains `contacts-v1-exp277-m2-p06-full-epoch-1.5B`; all 14 registry tests pass. The user requested reviewing a separate experiment issue about qualitative differences and rollout diversity before it is filed. That study has not been filed or launched. Redesign-only training does not establish the absence of sequence similarity or memorized structural information, and diverse contact lists do not alone establish different physical conformations.
+
+### User-requested stop of 2e-3, 2026-10-30
+
+The user requested stopping the diverged 2e-3 run while keeping the other runs going. `/bizon/exp364-lr2e-3-train-a04` was cancelled at **15:44:10 UTC (11:44 EDT)**. The root, both historical child jobs, and all eight tasks in the most recent GPU gang `/bizon/exp364-lr2e-3-train-a04/exp364-train-c84a0ccf` are verified killed. The stop released **64 H100s**. The last logged optimizer step is 255772, approximately 1.369 redesign epochs; its latest validation loss is 3.67563. This is an early cancellation, not a completed two-epoch run or a newly scored checkpoint.
+
+The 5e-4 and 1e-3 roots were not changed and both made new optimizer progress after the cancellation, reaching steps 311537 and 344447 at the 15:44:57 UTC observation. They continue on 32 H100s each toward the existing two-epoch targets. Both one-epoch forks remain complete. Existing checkpoint and evaluation artifacts are retained. The sweep database marks 2e-3 cancelled with no active dispatch, and the operations policy excludes it from automatic recovery unless the user explicitly reauthorizes a restart.
+
+### Training update before cancellation, 2026-10-30
+
+At 15:30 UTC (11:30 EDT), all three remaining roots are running and W&B confirms new optimizer progress. They retain 32 / 32 / 64 H100s for increasing LR, with no pending experiment dispatches. The local US-EAST-02A pool reports 56 free of 256 H100s. No stop, restart, resize or configuration change was made; all three dispatches have recent progress. Both one-epoch forks remain complete and verified.
+
+| Peak LR | Training step | Epochs / target | Latest validation step | Validation loss | Active compute remaining | Estimated finish at recent elapsed-time pace |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| 5e-4 | 311306 | 1.666 / 2 | 310758 | 3.07204 | 48 hours | November 1 evening, Eastern |
+| 1e-3 | 344155 | 1.842 / 2 | 342468 | 3.08277 | 23 hours | October 31 afternoon, Eastern |
+| 2e-3 | 255272 | 1.366 / 2 | 253680 | 3.67563 | 50 hours | November 1 evening, Eastern |
+
+Both lower-LR runs are in cooldown and have improved since the October 29 update (3.07851 → 3.07204 and 3.09601 → 3.08277). Their current learning rates are approximately 4.26e-4 and 4.56e-4. The 2e-3 run is still before cooldown and remains unstable: validation spiked to **4.21406 at step 238882**, partially recovered, and rose again to 3.67563. Its requested learning rate is preserved.
+
+Active compute estimates use median throughput over 151 recent updates: 378k / 378k / 689k token slots per second. Calendar estimates instead extrapolate progress over the last 16.45 elapsed hours, including observed overhead, giving approximately 56 / 26 / 55 hours remaining. They assume that pace continues; future preemptions can delay completion. Dynamic dispatch observations and estimates are recorded in the sweep SQLite database, and refreshed validation curves remain under `data/validation_comparison.*` and `plots/validation_comparison.*`.
+
+The complete October 29 contact-evaluation snapshot below is unchanged. This update does not rerun R-precision or present the older contact scores as measurements of today's later training steps.
+
+### Both one-epoch forks complete; five-checkpoint evaluation, 2026-10-29
+
+The GPU one-epoch fork finished at 02:21:29 UTC on October 29 (22:21 EDT October 28), with final checkpoint 186884 and full-validation loss **3.03571987**. Native trainer, optimizer and LR counters all equal 186885, and the independently generated evaluation export contains only finite parameters. `data/gpu_cooldown_final_verification.json` records the evidence. The verified TPU fork's loss is **3.03581691**, a difference of only 0.00009704. Both forks retain the requested exact one-epoch endpoint.
+
+At 23:03 UTC, the 5e-4, 1e-3 and 2e-3 parent runs had reached 1.567, 1.740 and 1.175 epochs of two, with latest validation losses 3.07851, 3.09601 and 3.34287. The 2e-3 run continues to have loss spikes and trails the lower learning rates. Median throughput over the latest 151 logged updates implies approximately 62, 37 and 65 hours of active compute remaining, respectively, excluding checkpointing, validation and preemption delays.
+
+The new contact-evaluation plan pins steps 282830, 314987 and 207662 from those parents, plus final step 186884 from each fork. Four native snapshots and float32 exports remain on CoreWeave; the 5,885,614,887-byte TPU export is mirrored once from us-east5 to CoreWeave for the same CUDA/vLLM evaluator. A stalled S3 metadata rewrite is recovered by verifying the already-uploaded first shard in-region and recording a separate transfer receipt. The first mirror moved no optimizer state and did not resend the first weight shard. The east-coast H100 pool subsequently remained full, while RNO2A had 120 free H100s. The unstarted east-coast TPU eval was cancelled and verified killed. A same-region CPU job cast the weights to the evaluator's existing bfloat16 inference dtype, verified finite parameters and exact saved-tensor equality, and produced a 2,942,867,762-byte export. Its one-time RNO worker staging brings total cross-region model bytes to 8,828,482,649, below 10 GB. The smoke and full rollout processes reuse the checksum-verified local cache, and RNO preemption retries are disabled to keep transfer accounting bounded. Every scoring worker verifies weight SHA-256 digests after staging.
+
+All five current R-precision evaluations are complete and independently validated: **58,000 rollouts**, zero unfinished samples and zero extensions. Each uses the same 97 natural and 19 designed proteins, 100 rollouts, sampling parameters, contact-voting recipe and exp89 metrics as the previous snapshot. The previously approved capped-sample continuation policy remains in force but was not needed. Four H100 evaluations finished around 15:13–15:15 UTC; the TPU-trained checkpoint's H100 evaluation finished around 23:34 UTC, with no worker failures or preemptions. No training job was interrupted for scoring. The parent checkpoints were frozen at the start of this request; their training has since advanced.
+
+| Model | Checkpoint | eval-val all | eval-val long | eval-denovo all | eval-denovo long |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 5e-4, two-epoch parent | 282830 | 0.44758 | 0.43038 | 0.62484 | 0.57453 |
+| 1e-3, two-epoch parent | 314987 | 0.40448 | 0.38106 | 0.60088 | 0.56406 |
+| 2e-3, two-epoch parent | 207662 | 0.28467 | 0.25476 | 0.54567 | 0.50760 |
+| 5e-4, GPU one-epoch final | 186884 | **0.46301** | 0.44184 | 0.66515 | 0.62680 |
+| 5e-4, TPU one-epoch final | 186884 | 0.46018 | **0.44409** | **0.66954** | **0.64291** |
+| Completed full-data first epoch (exp277) | 266344 | 0.55510 | 0.53706 | 0.69640 | 0.67497 |
+| Completed full-data continuation (exp277) | 479417 | 0.55750 | 0.53935 | 0.68600 | 0.64095 |
+
+The two cooldown forks are effectively tied on all-range R-precision (GPU minus TPU: +0.00283 natural, -0.00439 designed). The GPU fork improved from 0.38624 / 0.59834 in the October 21 snapshot to 0.46301 / 0.66515. The 5e-4 parent also improved; the 2e-3 parent's natural-protein score fell from 0.38884 to 0.28467 alongside its training instability. Differences below about 0.005 are treated as ties; this single evaluation seed does not establish a hardware advantage.
+
+Both completed full-data references still lead on natural proteins. The first-epoch reference also leads on designs, although the design set has only 19 proteins and wide protein-bootstrap intervals. The continuation had eight capped rollouts on `5sbj_A`, so its designed-protein comparison is imperfect. Training exposure and schedules differ, and no matched redesign-corpus sequence-KNN null is available; the results do not isolate the effect of removing native sequences.
+
+![Current contact R-precision and earlier snapshots](plots/contact_r_precision.png)
+
+October 21 results are preserved under `data/contact_eval/2026-10-21/`. Current [aggregate scores](data/contact_eval/r_precision.csv), [subgroups](data/contact_eval/r_precision_subgroups.csv), [paired snapshot changes](data/contact_eval/snapshot_changes.csv), per-protein metrics, timing CSVs and validated completion manifests are committed under `data/contact_eval/`. They are also [publicly available with the figure and source](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-10-29/latest-01). All scoring used the same CUDA/vLLM recipe, including the TPU-trained checkpoint.
+
+### Verified TPU completion and GPU progress, 2026-10-27
+
+The TPU one-epoch fork is now **complete and verified**. Recovery `/bizon/exp364-tpu-cooldown-train-a02` finished October 26 at 17:43:17 UTC (13:43 EDT). Native checkpoint 186884 has trainer, optimizer and LR counters of 186885, proving the endpoint remained exactly one redesign epoch after replaying only updates 186881–186884. Both exported weight shards passed a complete in-region finite-parameter scan; tokenizer and configuration files are present. Final full-validation loss is **3.03581691**, versus 2.98440742 for the completed full-data first epoch and 2.98098946 for its continuation. Different training exposures and schedules still limit causal interpretation of this gap.
+
+`data/tpu_final_verification.json` records the native counters, export SHA-256 digests, sizes, and final metrics from durable `checkpoints/eval_metrics.jsonl`. W&B rejected replayed history steps already present from the invalid attempt, leaving its old NaN endpoint in history. Its summary was explicitly corrected from the verified evaluation artifact; the invalid historical row and archived checkpoint remain preserved. No extra optimizer update or replacement historical row was introduced.
+
+All four GPU runs have resumed and made new optimizer progress since recovery. The 12:13 UTC snapshot is:
+
+| Run | Step | Epochs / target | Latest validation step | Validation loss | Remaining compute hours |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 5e-4 GPU | 219990 | 1.177 / 2 | 219856 | 3.08887 | 119 |
+| 1e-3 GPU | 251448 | 1.345 / 2 | 249452 | 3.11757 | 94 |
+| 2e-3 GPU | 154312 | 0.826 / 2 | 152208 | 3.57571 | 93 |
+| GPU one-epoch fork | 161889 | 0.866 / 1 | 160664 | 3.08435 | 37 |
+
+The 2e-3 trajectory shows repeated instability: loss rose from 3.15588 at step 126840 to 4.09309 at 128954, recovered to 3.23519 by 150094, then rose to 3.57571 at 152208. It had an earlier spike at 107814 before the latest recovery. Losses remain finite. Keep the requested LR and training endpoint; these observations do not isolate the cause of the spikes. The lower-LR trajectories are stable, and the GPU fork is improving during cooldown.
+
+Compute estimates use measured active-training throughput around 376k / 378k / 691k / 198k token slots per second, respectively. They exclude validation, checkpointing, queueing, and preemptions, which have materially slowed wall-clock progress. New GPU final checkpoints and final-checkpoint R-precision remain pending. The completed October 21 R-precision snapshot is unchanged and does not include the final TPU checkpoint.
+
+### Recovery audit, 2026-10-26
+
+All four GPU trajectories stopped on October 22 after CoreWeave rotated storage credentials. The three two-epoch jobs reported success despite stopping early; their expected final checkpoints do not exist. The independent GPU fork failed when replacement workers lacked the newly required CoreWeave credential variables. The October 22 calendar estimates are no longer valid.
+
+| Run | Last logged step | Epochs / target | Last validation step | Loss | Verified resume step |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 5e-4 GPU | 209984 | 1.124 / 2 | 209286 | 3.09058 | 209931 |
+| 1e-3 GPU | 230779 | 1.235 / 2 | 230426 | 3.11904 | 230507 |
+| 2e-3 GPU | 120182 | 0.643 / 2 | 118384 | 3.15627 | 120105 |
+| GPU one-epoch fork | 149800 | 0.802 / 1 | 147980 | 3.10000 | 149762 |
+
+The v5p-64 replica reached step 186884 at 2026-10-25 03:41 UTC, but its final validation and model parameters were NaN. Its last scheduled finite validation was **3.03731 at step 186032**; this is not a valid final-checkpoint result. A CPU reproduction traced the failure to a zero-denominator gradient in Haliax's weighted loss for fully masked padding examples. The final one-epoch batch contains 91 padding examples. `padding_safe_model.py` uses the existing model API to give empty examples a safe internal denominator and select constant zero loss. Real examples retain identical loss and gradients in tests on both pinned runtimes; the architecture, optimizer and data schedule remain unchanged.
+
+Step 186880 has finite inspected parameter arrays and full trainer counter 186881. The invalid final native/HF objects were copied and checksum-verified under the same-region `diagnostics/invalid-final-2026-10-25/` prefix before removing the invalid final paths. The recovery job `/bizon/exp364-tpu-cooldown-train-a02`, submitted at 17:08 UTC from commit `389a6477`, restores step 186880 and replays exactly four updates. `verify_final.py` checks every exported parameter for finiteness, tensor inventory, byte counts and co-located tokenizer before the driver accepts completion. The old invalid W&B endpoint is retained as diagnostic history until a verified repair is recorded.
+
+GPU launchers now forward the required credentials through both launch stages and require the exact final checkpoint before reporting success. Attempt `/bizon/exp364-lr5e-4-train-a02` failed that new completion guard; its workers exited prematurely. Replacement `/bizon/exp364-lr5e-4-train-a03` uses a normal Python worker entry point so exceptions remain unhandled, as Levanter's exit hook requires, and saves failure tracebacks in regional storage. That exposed a TensorStore 403: its AWS credential chain differed from the explicitly configured fsspec reader. An in-pod read of the real training offsets succeeded after aligning the credentials. Attempt a03 was stopped and verified terminal before `/bizon/exp364-lr5e-4-train-a04` was submitted on 32 H100s from commit `2204fcc5`. The TPU recovery is queued for eight co-scheduled v5p workers; it has not replayed its updates yet. Evidence: `data/recovery_2026-10-26.json` and `data/tpu_invalid_final_quarantine.json`.
+
+Recovery dispatches accepted on October 26 retain the original W&B and checkpoint identities: 5e-4 `/bizon/exp364-lr5e-4-train-a04` (32 H100), 1e-3 `/bizon/exp364-lr1e-3-train-a02` (32 H100), 2e-3 `/bizon/exp364-lr2e-3-train-a04` (64 H100), and the separate GPU fork `/bizon/exp364-lr5e-4-cooldown-a02` (16 H100). Starts were staggered against fresh regional capacity, within the 192-GPU experiment ceiling. New optimizer progress and revised finish estimates remain to be confirmed after initialization. This recovery extends beyond the original 14-day planning window; the requested epoch targets remain unchanged.
+
+### Historical training snapshot, 2026-10-22 14:46–14:48 UTC
+
+All five production runs are active with recent training metrics. The separate v5p-64 fork is past its cooldown boundary; the GPU fork is still before it. All eight TPU tasks are running, with four cumulative preemptions and zero failures. The original two-epoch 5e-4 parent remains independent.
+
+| Run | Training step | Epochs / target | Latest validation step | Validation loss | Compute hours remaining |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 5e-4 GPU | 200,412 | 1.072 / 2 | 198,716 | 3.08945 | 134 |
+| 1e-3 GPU | 221,581 | 1.186 / 2 | 219,856 | 3.11922 | 117 |
+| 2e-3 GPU | 115,531 | 0.618 / 2 | 114,156 | 3.16114 | 381 |
+| 5e-4 GPU fork | 147,751 | 0.791 / 1 | 145,866 | 3.10318 | 114 |
+| 5e-4 v5p-64 fork | 151,147 | 0.809 / 1 | 150,094 | 3.10050 | 43 |
+
+[Snapshot evidence](data/status_2026-10-22.json) records run URLs, last-update times, validation timestamps and throughput. Remaining time uses current packed-token-slot throughput and excludes validation, checkpointing, queueing and preemptions. The TPU's earliest finish at that rate is October 24; interruptions can move it later. These are neither reserved-capacity nor calendar-time guarantees. The GPU fork's latest validation is from October 21 because its next scheduled validation has not yet been reached.
+
+### Validation comparison, 2026-10-21
+
+The current curves remain above the completed native-plus-ProteinMPNN exp277 run at matched optimizer steps. All six saved W&B configurations, including the one-epoch cooldown fork, agree on the model, tokenizer, validation component and cache, context length, precision, blocked document attention, and full (uncapped) validation. Global training batch is 128 throughout. Equal steps therefore match packed token slots, although padding and corpus composition mean they do not match the number of real tokens or proteins.
+
+| exp364 peak LR | Latest validation step | Redesign-only loss | exp277 loss at the same step | Gap (nats/token) |
+| --- | ---: | ---: | ---: | ---: |
+| 0.0005 | 181,804 | 3.09300 | 3.06074 | +0.03226 |
+| 0.001 | 205,058 | 3.12220 | 3.05860 | +0.06360 |
+| 0.002 | 101,472 | 3.15598 | 3.07419 | +0.08179 |
+| 0.0005, one-epoch fork | 143,752 | 3.10221 | 3.06680 | +0.03541 |
+
+At the common step 101,472, redesign-only losses are 3.11629, 3.13460, and 3.15598 in ascending LR order, against exp277's 3.07419. The smallest LR continues to lead this sweep; none has reached its cooldown. The one-epoch 5e-4 fork has advanced to step 145,821 in this 13:49 UTC snapshot, still before its cooldown boundary at 149,508. Its latest loss is 3.10221 versus its parent's 3.10134 at the same step 143,752. These measurements do not yet test the effect of cooldown. Only new fork validation measurements are plotted; the inherited parent history is not presented as new fork measurements.
+
+The completed [exp277 first epoch](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B) ended at loss **2.98441**, step 266,344 (best 2.98274 at 264,250). Its [additional full-corpus epoch](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp277-m2-p06-full-epoch2-from213072-1.5B) ended at **2.98099**, absolute step 479,417. The latter restores the first run's pre-cooldown checkpoint at 213,072 and adds a fresh full-corpus pass; these are two completed trajectories, not independent seeds. The first run was already at about 3.059 before cooldown, so cooldown alone does not explain the current matched-step gap.
+
+Schedule timing remains a confound: the two-epoch redesign-only schedule warms up over 37,376 updates, versus 26,634 for the first full-data run, and its amino-acid augmentation ramps over 373,769 rather than 266,345 updates. These are preliminary LM-validation results, not measurements of contact accuracy or a final causal estimate of removing native sequences.
+
+![Validation curves against completed full-data runs](plots/validation_comparison.png)
+
+`compare_validation.py` reproduces the figure from `data/validation_comparison.csv`; `--refresh` retrieves current W&B histories, checks every expected validation step, and verifies the saved validation configurations against the full-data run. Completed curves come from exp277's audited committed CSVs, including the continuation's deduplicated resume history. `data/validation_comparison.json` records source hashes, W&B links, observed progress, schedules, and the comparison contract.
+
+The [public comparison artifacts](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp364-models-mpnn-only-lr-sweep/validation/2026-10-21) include the source CSV, provenance, PNG, PDF, generating scripts, and summary slides. From the repository root, reproduce with `uv run --project experiments/exp364_models_mpnn_only_lr_sweep --frozen --with matplotlib python experiments/exp364_models_mpnn_only_lr_sweep/compare_validation.py`; append `--publish` to upload the saved snapshot with the HF CLI.
+
+### One-epoch cooldown fork, 2026-10-19
+
+The user requested an independent cooldown of the 5e-4 trajectory while preserving its existing two-epoch run. `cooldown_train.py` restores the full trainer state from parent checkpoint **139,053**; the next optimizer/data step is **139,054**. The checkpoint was frozen with a same-region server-side copy under `fork-sources/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/checkpoints/step-139053`. `data/cooldown_source.json` records all 105 objects (17.66 GB), source/destination paths, byte-size and boundary-byte checks, and scalar counters read back through TensorStore. The copied optimizer and learning-rate counters all equal 139,054, with LR 0.0005.
+
+The fork retains the original first-epoch data permutation, absolute data offset, augmentation ramp over 373,769 updates, and historical 37,376-update warmup. LR stays at 0.0005 through update 149,508, then follows the default linear cooldown over the last 37,377 updates (20% of one epoch) toward 0.00005. Training stops after **186,885 total updates**, with final checkpoint **186,884**. Its final batch contains 37 real packed examples and 91 masked padding examples, so exactly 23,921,189 packed examples have been consumed across the inherited prefix and fork. This is 47,831 additional updates after the source checkpoint, not another full epoch.
+
+The independent run identity is `contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B`. The parent keeps its existing identity, two-epoch target, and schedule; no parent configuration or dispatch is changed. Ten CPU tests now pass, including actual loader resume, equality of augmented first-epoch examples, final padding masks, LR boundary checks, and independent checkpoint identities. The existing full-state continuation pattern and validated H100 microbatch profile are reused; this fork has not had a separate GPU smoke.
+
+Submitted from commit `1e5136a2` at 2026-10-19 13:32 UTC as [Iris root `/bizon/exp364-lr5e-4-cooldown-a01`](https://iris.oa.dev/#/job/%2Fbizon%2Fexp364-lr5e-4-cooldown-a01). Its child `/bizon/exp364-lr5e-4-cooldown-a01/exp364-train-4f1ab581` uses one 8-H100 node at batch priority. After initial queue admission, [the fork registered in W&B](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B) at 13:45 UTC. At 14:28 UTC it had advanced to step 139,261 with finite training loss and approximately 100,430 token slots/s; the parent continued through step 140,314. The fork's live saved source, stopping target, cooldown and augmentation settings were verified, and its run history is recorded under `history/runs/`.
+
+### Independent v5p copy, 2026-10-21
+
+The requested additional TPU copy is launched as `contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5`. It restores the same frozen step-139053 source as the GPU cooldown and ends at step 186884. Both the GPU cooldown and its two-epoch parent continue independently. `tpu_cooldown.py` reuses the existing scientific configuration, switches to TPU Splash attention, and supports v5p-8 or v5p-64 in us-east5-a (4 or 32 physical chips), microbatch one, global batch 128, and batch priority on both driver and child. The TPU runtime has its own lock under `tpu/`; the GPU lock is unchanged.
+
+**Transfer completed and independently verified:** the complete redesign caches and source state were absent from the inspected TPU-region prefixes. The user approved the pinned transfer and subsequent v5p smoke and production launch; input staging was submitted as `/bizon/exp364-tpu-cooldown-stage-a01` at 15:43 UTC from commit `f238a3cf`. `data/tpu_transfer_plan.json` pins the source and destination paths, counts, byte totals, and inventory SHA-256 hashes. Required ingress is **267,730,453,188 bytes**: AFDB cache 60,773,906,131; ESM cache 189,299,410,660; full-state checkpoint 17,657,136,397. The existing exp232 validation cache in us-east5 exactly matches all 17 source paths and sizes (66,618,514 bytes), with the same 41,954 documents / 47,821,958 tokens. No validation transfer is needed. Staging finished successfully at 15:59 UTC without failures or preemptions. At 16:00 UTC, `verify_tpu_inputs.py` independently matched all 21,936 destination paths, sizes, source ETags and verified GCS MD5 values to the pinned inventories. TensorStore readback confirmed step and optimizer counters of 139,054 and LR 0.0005; `data/tpu_input_verification.json` records the evidence. The original v5p-64 smoke (`/bizon/exp364-tpu-cooldown-smoke-a01`, commit `008ddb22`) remained unallocated while the pool entered provisioning backoff; it was cancelled before registering in W&B. The smaller v5p-8 smoke was submitted as `/bizon/exp364-tpu-cooldown-smoke-a02` at 16:12:49 UTC from commit `ea6239b8` and registered in W&B at 16:15 UTC on four physical chips. The replacement smoke completed successfully at 16:32 UTC with zero failures or preemptions.
+
+`stage_tpu_inputs.py` checks the pinned source inventories before any copy, streams to regional GCS with bounded memory, verifies each destination's MD5, supports verified-object reuse on retries, and writes a completion marker only after all inventories match. The training entry point requires that marker and checks regional cache counts and source metadata. The previous thirteen local tests pass, with an additional passing TPU placement test covering the unchanged GPU configuration, finite traversal/resume, exact optimizer and data equivalence across backends, separate run paths, and transfer inventory rejection when an object changes or disappears. The full-state TPU smoke passed all ten updates (139054–139063), with finite train losses 2.7705–2.8203 and the exact accelerated LR sequence from 5e-4 to 9.5e-5. Steady update time was 27.09 seconds on four chips. Its two-batch validation loss of 3.21906 is a pipeline check, not comparable to full validation. At 16:33 UTC, `verify_tpu_smoke.py` independently checked the ten metric rows, native final counters of 139064, both indexed HF weight shards and tokenizer files. Evidence is in `data/tpu_smoke.csv` and `data/tpu_smoke_verification.json`. Reproduce with `uv run --project experiments/exp364_models_mpnn_only_lr_sweep/tpu --frozen python -m experiments.exp364_models_mpnn_only_lr_sweep.verify_tpu_smoke --attempt 2`.
+
+The launch commands, run from the repository root with `uv run --project scripts python experiments/exp364_models_mpnn_only_lr_sweep/launch_tpu.py`, are `stage --attempt 1` (only after transfer approval), `smoke --attempt 2 --tpu v5p-8`, then `train --attempt 1 --tpu <v5p-8|v5p-64>` after verifying the smoke checkpoint and metrics. Append `--dry-run` to inspect a source bundle without submission. Production was submitted as [Iris root `/bizon/exp364-tpu-cooldown-train-a01`](https://iris.oa.dev/#/job/%2Fbizon%2Fexp364-tpu-cooldown-train-a01) at 16:33 UTC from commit `33cc077f`, requesting v5p-64 (32 chips / eight VMs) at batch priority. The source remains the original frozen checkpoint 139053, not the accelerated smoke endpoint. The regional v5p-64 pool initially had provisioning backoff. Its child `/bizon/exp364-tpu-cooldown-train-a01/exp364-tpu-cooldown-5e68abef` registered in W&B at 16:51:58 UTC and is training. At 17:50 UTC it had reached step 139702, with full validation loss 3.10391 and approximately 244,184 packed token slots/s (4.29 seconds/update). That rate implies about 56 compute hours remaining, excluding validation, checkpointing and interruptions. The production history is recorded under `history/runs/`. All TPU outputs remain under `gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/`; the TPU run cannot write the GPU paths.
+
+### Contact evaluation, completed 2026-10-21; verified 2026-10-22
+
+All four snapshot checkpoints completed **eval-val (97 natural proteins) and eval-denovo (19 designs)** between 22:40 and 22:47 UTC on October 21. Independent reporting validation on October 22 confirms 116 proteins and 11,600 completed rollouts per checkpoint: 46,400 total, with zero unfinished samples and zero extensions needed. Eval-test is excluded. All-range and long-range R-precision are separate macro averages over proteins.
+
+| Checkpoint | Step | eval-val all / long | eval-denovo all / long |
+| --- | ---: | ---: | ---: |
+| 5e-4 | 184,314 | 0.39711 / 0.37791 | 0.59671 / 0.54092 |
+| 1e-3 | 207,865 | 0.39562 / 0.37381 | 0.59087 / 0.53839 |
+| 2e-3 | 105,722 | 0.38884 / 0.36465 | 0.59242 / 0.53713 |
+| 5e-4 one-epoch GPU fork | 146,264 | 0.38624 / 0.36627 | 0.59834 / 0.55408 |
+| Completed full-data first epoch (#277) | 266,344 | 0.55510 / 0.53706 | 0.69640 / 0.67497 |
+| Completed full-data continuation (#277) | 479,417 | 0.55750 / 0.53935 | 0.68600 / 0.64095 |
+
+The redesign-only snapshots trail the completed full-data default by about 0.158–0.169 on natural all-range R-precision and 0.098–0.106 on designs. The 5e-4 and 1e-3 natural all-range scores differ by only 0.00148 and are treated as tied. These are pre-cooldown, unequal-exposure snapshots, so they do not establish the final outcome of the training-data change or a learning-rate ranking. The design set contains only 19 proteins. [Macro means and 95% protein-bootstrap intervals](data/contact_eval/2026-10-21/r_precision.csv), [viral/nonviral and available low-MSA cuts](data/contact_eval/2026-10-21/r_precision_subgroups.csv), and [report provenance](data/contact_eval/2026-10-21/report_manifest.json) are committed alongside all four per-protein score tables, timing CSVs and completion manifests under `data/contact_eval/2026-10-21/results/`.
+
+The user approved local CoreWeave scoring and subsequently approved extending the token limit for capped samples. The refreshed `latest-02` snapshot pins steps **184314 (5e-4), 207865 (1e-3), 105722 (2e-3), and 146264 (one-epoch 5e-4 fork)**. These are unequal training exposures; the fork remains before cooldown at 149508. The TPU copy is not included. `data/contact_eval/2026-10-21/plan.json` records source object sizes/ETags, model identities, evaluation inputs, approvals and sampling policy.
+
+CoreWeave storage writes recovered after the earlier account suspension. All four native sources are now frozen in the same CoreWeave bucket under `s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-02/sources/`. An independent inventory matched every file and byte count and read back the expected steps; `freeze_verification_latest_02.json` records 124 files totaling 70.63 GB. Four batch CPU jobs `/bizon/exp364-contact-export-<trial>-a05` were accepted from commit `fd1e25f3` and completed successfully. All four reusable HF-format exports, including tokenizer files and two weight shards each, passed independent manifest and size verification (`export_verification_latest_02.json`). Four one-H100 batch jobs `/bizon/exp364-contact-eval-<trial>-a05`, submitted from commit `dd87fca4`, succeeded with zero failures or preemptions. Summed per-protein inference times were 70.6–81.4 minutes; these overlap within batches and are not job wall-clock durations. Model bytes stayed on CoreWeave; only small evaluation artifacts were published publicly.
+
+The extended worker is a narrowly changed copy of the validated exp277 rollout worker (original SHA-256 `dd2f76dd5d34d1549e0be1197d9053d6e3aa0ef909f062ff5355d65f31cd571c`). Initial sampling, prompt realizations, target order, vote parsing and exp89 metrics are unchanged: 100 rollouts, temperature 1, top-p 0.95, top-k disabled, seed 0 and initial budget 6L+128. Only length-capped samples continue. Their original prompt and generated token IDs are retained exactly, and the suffix is sampled within the remaining 8192-token context using a deterministic SHA-256-derived independent seed. Completed samples are untouched. A sample that exhausts the model context remains incomplete and cannot enter a complete score.
+
+Per-part extension records retain the original budget and seed, preserved-prefix digest, continuation seed, added budget/tokens, final length and stop reason. Timing records include extension counts and generated tokens; inference timing includes any continuation. The result manifest records both worker revisions and the policy. Reporting independently checks all 116 targets, twenty metric rows per protein, checkpoint labels, timing coverage, zero unfinished samples and consistent extension counts before calculating macro means and protein-bootstrap intervals. Viral/nonviral and frozen low-MSA subgroup tables remain separate. The natural low-MSA targets are outside the requested sets; the evaluator does not read eval-test to fill them. The report's duplicate viral-column merge was corrected, and viral labels are now checked against the pinned targets before subgroup aggregation. Thirty-seven CPU checks pass, including actual local-filesystem reconstruction, held-out exclusion, incorrect-result rejection, prefix preservation, completed-sample preservation and context exhaustion.
+
+The previous `latest-01` attempt is preserved in `plan_latest_01.json` and the public artifact prefix. Three two-epoch smokes passed; the fork capped 2/100 samples on the 30-residue design `5sbj_A`. Repeated preemptions delayed full scoring, and temporary source objects disappeared before later retries could read them. No full-evaluation protein group completed. The three terminal failed jobs are preserved; the remaining outdated 1e-3 job was cancelled before refreshing the snapshot. The new frozen sources prevent that retention failure. `data/contact_eval/launches.json` retains every accepted attempt.
+
+Launch from the repository root with `uv run --project experiments/exp364_models_mpnn_only_lr_sweep/eval_client --frozen python -m experiments.exp364_models_mpnn_only_lr_sweep.launch_eval_direct --submit --attempt <N> --export-only --trials lr5e-4 lr1e-3 lr2e-3 lr5e-4-cooldown` for native-checkpoint CPU exports; omit `--export-only` after all four export manifests verify to launch their one-H100 evaluations. The additional TPU export uses `stage_tpu_eval.py` and `launch_tpu.py eval-stage`; the optional RNO path uses `--bf16-export --trials lr5e-4-cooldown-tpu` on CoreWeave CPU, then `--cluster cw-rno2a --trials lr5e-4-cooldown-tpu` after recording the verified converted manifest in the plan. Omit `--submit` for a dry run. The isolated client lock is compatible with the October 21 Iris controller; neither training lock is changed. Do not submit duplicate writers. `eval_prepare --snapshot <dated-unique-name>` creates a new inventory and must not overwrite a running snapshot.
+
+Fetch completed results with `uv run --project experiments/exp364_models_mpnn_only_lr_sweep --frozen python -m experiments.exp364_models_mpnn_only_lr_sweep.eval_report --fetch`; append `--publish` to upload the aggregate tables and report provenance under `reports/`. [Public artifacts](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-10-21/latest-02) retain score parts, per-protein timings, extension diagnostics, source bundles and provenance. The original failed smoke diagnostics remain at `data/contact_eval/fork_smoke_failure.json`.
+
+Completed full-data reference measurements are in exp277's `data/eval_rollout_v2_epochs/epoch_comparison.csv`. The continuation had eight capped samples on `5sbj_A`; its design scores retain that limitation. None of the four new full evaluations used the approved extension, so their samples all completed within the original budget. The existing native-corpus sequence-KNN null is not matched to redesign-only training, so these results cannot support a redesign-corpus homology claim.
+
+## Reproduction
+
+`launch.py audit` verifies the regional token caches and recomputes packed-example counts. `launch.py train-smoke --trial lr1e-3 --nodes 8 --attempt 1` launches the isolated ten-update gate. `launch.py train --trial <lr5e-4|lr1e-3|lr2e-3> --nodes 4 --attempt 1` launches one production trial. Run launch commands with `uv run --project scripts python experiments/exp364_models_mpnn_only_lr_sweep/launch.py` from the repository root. The launcher uses the experiment's committed lock and source bundle on workers.
+
+`observe.py` reads the experiment's W&B group and optionally persists observations in the sweep SQLite database; it makes no placement or recovery decisions. `utilization.py` reads current Iris v3 fleet availability (free/held accounting is unchanged from v2; v3 changes priority-band ordering). Launch and recovery decisions remain agent-owned.
+
+`launch.py cooldown --trial lr5e-4 --nodes 1 --attempt 1` submits the independent one-epoch fork. Its final native checkpoint is `runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B/checkpoints/step-186884` beneath the same experiment prefix. Optional `cooldown-smoke` uses an isolated identity and ten additional updates with an accelerated ten-update decay; it does not consume the production identity.
+
+Each trial writes to `s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/<run-id>/`, with native final checkpoint `checkpoints/step-373768` and the default trainer's HF export. Preserve the tokenizer with published exports. The run IDs are generated by `config.py` and stay fixed across attempts and gang sizes.
+
+## Conclusion
+
+Both one-epoch cooldown forks are complete, with verified finite weights and nearly identical final validation losses (GPU 3.03572; TPU 3.03582). All five October 29 contact evaluations are complete. The cooldown forks lead the redesign-only variants and are effectively tied on all-range R-precision: GPU 0.46301 / 0.66515 and TPU 0.46018 / 0.66954 on natural / designed proteins. The completed full-data first epoch remains higher at 0.55510 / 0.69640 and has lower LM validation loss. Unequal exposure and differing schedules prevent attributing the whole gap to removal of native sequences. The user stopped the unstable 2e-3 trial on October 30 at approximately 1.369 epochs after its contact accuracy regressed. The 5e-4 and 1e-3 parents remain active at approximately 1.667 and 1.843 epochs, improving during cooldown with their original two-epoch targets intact. Do not restart the cancelled 2e-3 trial without explicit user authorization.

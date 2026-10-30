@@ -1,0 +1,84 @@
+{
+  "completed_at_utc": "2026-10-29T23:33:59.226097+00:00",
+  "checkpoint": {
+    "trial": "lr5e-4-cooldown-tpu",
+    "run_id": "contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5",
+    "step": 186884,
+    "label": "contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5-step-186884",
+    "source_format": "huggingface",
+    "source": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/hf/step-186884",
+    "source_files": [
+      {
+        "name": "config.json",
+        "size": 1726,
+        "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd",
+        "generation": "1793036461693778"
+      },
+      {
+        "name": "model-00001-of-00002.safetensors",
+        "size": 4979485528,
+        "sha256": "9bcc598a1ffaf22b242e9026956f18a346e199c9f0b374c88c10afb3067c4dfb",
+        "generation": "1793036446431998"
+      },
+      {
+        "name": "model-00002-of-00002.safetensors",
+        "size": 906042048,
+        "sha256": "0afefda9942b993f81f1f7bd7e7e0af4fb16e47185f5d972b79e92c37219de99",
+        "generation": "1793036458901970"
+      },
+      {
+        "name": "model.safetensors.index.json",
+        "size": 20882,
+        "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587",
+        "generation": "1793036461705188"
+      },
+      {
+        "name": "tokenizer.json",
+        "size": 64407,
+        "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24",
+        "generation": "1793036461695652"
+      },
+      {
+        "name": "tokenizer_config.json",
+        "size": 296,
+        "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24",
+        "generation": "1793036461705322"
+      }
+    ],
+    "source_bytes": 5885614887,
+    "hf_export": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-29/latest-01/models/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5/hf-bf16/step-186884",
+    "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5",
+    "latest_eval_loss": 3.0358169078826904,
+    "model_egress_bytes": 8828482649,
+    "source_region": "us-east5",
+    "evaluation_region": "RNO2A",
+    "export_manifest": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-29/latest-01/manifests/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5-step-186884.bf16.json",
+    "evaluation_cluster": "cw-rno2a",
+    "rno_mirror_bytes": 2942867762
+  },
+  "git_commit": "5b7c8e1dfa2c1fbe88716e320b09909b7a2a4715",
+  "worker_sha256": "67bd8738a5e553cf9cfb7f9a5ed96a2380bfdba8699747205a22e9a36329ff6c",
+  "base_worker_sha256": "dd2f76dd5d34d1549e0be1197d9053d6e3aa0ef909f062ff5355d65f31cd571c",
+  "extension_sha256": "6fc4bd158ede76ab6daef74f5d508c62f16eeffb594cc04a0e665ed1e69c454d",
+  "metric_sha256": "6cbaa1c555763df07cb94ee81accebef25a5565590d47a32470ade78e36d824a",
+  "marinfold_revision": "d1bea417a64cc042ad931422200c3edeb873f2e0",
+  "eval_set": "all",
+  "units": 116,
+  "rollouts": 11600,
+  "unfinished_rollouts": 0,
+  "extended_rollouts": 0,
+  "sampling": {
+    "rollouts": 100,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "top_k": -1,
+    "token_budget": "6L+128",
+    "seed": 0,
+    "capped_sample_policy": "continue exact prompt and generated prefix to the remaining 8192-token context; independent SHA256-derived continuation seed"
+  },
+  "model_egress": true,
+  "model_egress_bytes": 8828482649,
+  "artifact_root": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-10-29/latest-01/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5-step-186884",
+  "runtime": "one regional H100; verified HF export in CoreWeave S3",
+  "evaluation_cluster": "cw-rno2a"
+}

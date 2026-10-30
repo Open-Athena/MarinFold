@@ -1,0 +1,34 @@
+{
+  "observed_at": "2026-10-29T14:58:42.095514+00:00",
+  "run_id": "contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B",
+  "source": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B/checkpoints/step-186884",
+  "native_metadata": {
+    "step": 186884,
+    "timestamp": "2026-10-29T02:19:20.244572",
+    "is_temporary": false
+  },
+  "scalar_counters": {
+    "step": 186885,
+    "opt_state/count": 186885,
+    "opt_state/hyperparams_states/learning_rate/count": 186885
+  },
+  "final_validation_loss": 3.035719871520996,
+  "export_verification": {
+    "verified_at": "2026-10-29T14:58:07.777803+00:00",
+    "export": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-29/latest-01/models/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B/hf/step-186884",
+    "all_parameters_finite": true,
+    "parameter_bytes": 5885497344,
+    "files": {
+      "model-00001-of-00002.safetensors": {
+        "parameter_bytes": 4979460096,
+        "sha256": "13a4f9155c3512709cb7a1d974c9188668b38c8d3b93b7f85a338b4f1a146abb"
+      },
+      "model-00002-of-00002.safetensors": {
+        "parameter_bytes": 906037248,
+        "sha256": "d80f7365ce2bb9571dc18f4016c2e795f14f87f3db84f6a065f382a42f0e5830"
+      }
+    }
+  },
+  "iris_job": "/bizon/exp364-lr5e-4-cooldown-a02",
+  "iris_finished_at": "2026-10-29T02:21:29.146Z"
+}
