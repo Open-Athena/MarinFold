@@ -1,5 +1,5 @@
 {
   "script": "plot.py",
   "args": [],
-  "caption": "Natural proteins, T=1, fixed prompts. True-contact coverage is shown alongside false discovery and ensemble accuracy. Error bars: 95% protein-bootstrap intervals."
+  "caption": "T=1, fixed prompts, extended to 1,000 samples. Dotted line: original 300-sample limit. Error bars: pointwise 95% protein-bootstrap intervals; cohorts remain separate."
 }

@@ -49,6 +49,109 @@ def errorbar(ax: plt.Axes, x: np.ndarray, frame: pd.DataFrame, model: str) -> No
     )
 
 
+def extended_curves() -> None:
+    """Show 1,000-sample discovery and oracle F1, keeping cohorts separate."""
+    curves = read("curve_summary_1000.csv")
+    oracle = read("oracle_summary_1000.csv")
+    for cohort, suffix, title in [
+        ("eval-val", "", "97 natural proteins"),
+        ("eval-denovo", "_designs", "19 designed proteins · secondary"),
+    ]:
+        fig, axes = plt.subplots(2, 3, figsize=(14, 8))
+        fig.suptitle(title, fontsize=14)
+        for row, region in enumerate(["all", "long"]):
+            for col, (endpoint, label) in enumerate(
+                [
+                    ("r_precision", "Ensemble R-precision"),
+                    ("true_coverage", "True-contact discovery / truth"),
+                    ("false_discovered", "Distinct false contacts discovered"),
+                ]
+            ):
+                ax = axes[row, col]
+                for model in COLORS:
+                    selected = curves[
+                        curves.eval_set.eq(cohort)
+                        & curves["range"].eq(region)
+                        & curves.endpoint.eq(endpoint)
+                        & curves.model.eq(model)
+                    ].sort_values("k")
+                    errorbar(ax, selected.k.to_numpy(), selected, model)
+                ax.axvline(300, color=".65", lw=0.8, ls=":")
+                ax.set(
+                    xscale="log",
+                    xlabel="Rollouts (k)",
+                    ylabel=label,
+                    title=f"{region.capitalize()} range",
+                    xlim=(0.9, 1200),
+                )
+                ax.set_xticks([1, 10, 100, 300, 1000], [1, 10, 100, 300, 1000])
+                if col == 0:
+                    ax.legend(fontsize=9)
+        save(
+            fig,
+            "ensemble_discovery" + suffix,
+            "T=1, fixed prompts, extended to 1,000 samples. Dotted line: original 300-sample limit. Error bars: pointwise 95% protein-bootstrap intervals; cohorts remain separate.",
+        )
+        fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+        fig.suptitle(
+            title + " · oracle selection versus individual-rollout mean", fontsize=13
+        )
+        for ax, region in zip(axes, ["all", "long"], strict=True):
+            for model in COLORS:
+                selected = oracle[
+                    oracle.eval_set.eq(cohort)
+                    & oracle["range"].eq(region)
+                    & oracle.model.eq(model)
+                ]
+                best = selected[selected.endpoint.eq("oracle_f1")].sort_values("k")
+                baseline = selected[selected.endpoint.eq("mean_f1")].iloc[0]
+                ax.plot(
+                    best.k,
+                    best["mean"],
+                    color=COLORS[model],
+                    lw=2,
+                    label=LABELS[model] + " · oracle best@k",
+                )
+                ax.fill_between(
+                    best.k,
+                    best.ci_low,
+                    best.ci_high,
+                    color=COLORS[model],
+                    alpha=0.14,
+                    lw=0,
+                )
+                ax.axhline(
+                    baseline["mean"],
+                    color=COLORS[model],
+                    ls="--",
+                    lw=1.6,
+                    label=LABELS[model] + " · mean individual F1",
+                )
+                ax.axhspan(
+                    baseline.ci_low,
+                    baseline.ci_high,
+                    color=COLORS[model],
+                    alpha=0.06,
+                    lw=0,
+                )
+            ax.axvline(300, color=".65", lw=0.8, ls=":")
+            ax.set(
+                xscale="log",
+                xlim=(1, 1000),
+                ylim=(0, 1),
+                xlabel="Number of rollouts (k)",
+                ylabel="F1 (mean over proteins)",
+                title=f"{region.capitalize()} range",
+            )
+            ax.set_xticks([1, 10, 100, 300, 1000], [1, 10, 100, 300, 1000])
+            ax.legend(fontsize=8, loc="lower right")
+        save(
+            fig,
+            "oracle_f1" + suffix,
+            "Oracle: best ground-truth F1 among the first k samples. Dashed: mean individual F1 over all 1,000. Bands: pointwise 95% protein CIs. Oracle selection needs truth and is not an inference-time selector.",
+        )
+
+
 def main() -> None:
     """Regenerate figures without inference or bootstrap recomputation."""
     plt.rcParams.update(
@@ -106,41 +209,7 @@ def main() -> None:
         "diversity",
         "97 natural proteins, T=1, 300 fixed-prompt samples. Points are proteins; Δ is MPNN-only minus default (paired 95% CI). Count control thins paired samples to equal contact counts.",
     )
-    curves = read("curve_summary.csv")
-    fig, axes = plt.subplots(2, 3, figsize=(14, 8))
-    for row, region in enumerate(["all", "long"]):
-        for col, (endpoint, title) in enumerate(
-            [
-                ("r_precision", "Ensemble R-precision"),
-                ("true_coverage", "True-contact discovery / truth"),
-                ("false_discovered", "Distinct false contacts discovered"),
-            ]
-        ):
-            ax = axes[row, col]
-            for model in COLORS:
-                selected = curves[
-                    curves.eval_set.eq("eval-val")
-                    & curves.temperature.eq(1)
-                    & curves["mode"].eq("fixed")
-                    & curves["range"].eq(region)
-                    & curves.endpoint.eq(endpoint)
-                    & curves.model.eq(model)
-                ].sort_values("k")
-                errorbar(ax, selected.k.to_numpy(), selected, model)
-            ax.set(
-                xscale="log",
-                xlabel="Rollouts",
-                ylabel=title,
-                title=f"{region.capitalize()} range",
-            )
-            ax.set_xticks([1, 10, 50, 100, 300], [1, 10, 50, 100, 300])
-            if col == 0:
-                ax.legend(fontsize=9)
-    save(
-        fig,
-        "ensemble_discovery",
-        "Natural proteins, T=1, fixed prompts. True-contact coverage is shown alongside false discovery and ensemble accuracy. Error bars: 95% protein-bootstrap intervals.",
-    )
+    extended_curves()
     singles = read("single_rollout_summary.csv")
     metrics = read("accuracy_summary.csv")
     fig, axes = plt.subplots(1, 3, figsize=(14, 4.5))

@@ -24,6 +24,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--submit", action="store_true")
     parser.add_argument("--smoke", action="store_true")
+    parser.add_argument("--extend", action="store_true")
     parser.add_argument("--models", nargs="+", default=["mpnn", "default"])
     parser.add_argument("--shards", type=int, default=6)
     parser.add_argument("--only-shards", nargs="+", type=int)
@@ -31,8 +32,16 @@ def main() -> None:
     args = parser.parse_args()
     assert len(args.models) * args.shards <= 12
     plan = json.loads((HERE / "data/plan.json").read_text())
+    extension = (
+        json.loads((HERE / "data/extension_plan.json").read_text())
+        if args.extend
+        else None
+    )
     if not args.smoke:
-        validation = json.loads((HERE / "data/smoke_validation.json").read_text())
+        validation_name = (
+            "smoke_validation_1000.json" if args.extend else "smoke_validation.json"
+        )
+        validation = json.loads((HERE / "data" / validation_name).read_text())
         assert set(validation) == {"default", "mpnn"}
         assert all(
             v["unfinished"] == 0 and v["n_rollouts"] == 100 for v in validation.values()
@@ -48,6 +57,11 @@ def main() -> None:
             "inputs/targets.json",
         ]
     ]
+    if args.extend:
+        sources += [
+            HERE / "data/extension_plan.json",
+            HERE / "data/extension_prefix_inventory.csv",
+        ]
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as bundle:
         for path in sources:
             bundle.write(path, path.relative_to(HERE))
@@ -56,7 +70,7 @@ def main() -> None:
     local = HERE / "scratch" / f"{digest}.zip"
     local.parent.mkdir(exist_ok=True)
     local.write_bytes(data)
-    remote = plan["artifact_root"] + "/source/" + local.name
+    remote = (extension or plan)["artifact_root"] + "/source/" + local.name
     url = remote.replace("hf://buckets/", "https://huggingface.co/buckets/").replace(
         "/MarinFold/", "/MarinFold/resolve/", 1
     )
@@ -96,7 +110,9 @@ def main() -> None:
         + plan["marinfold_revision"]
         + "#subdirectory=marinfold"
     )
-    record_path = HERE / "data/launches.json"
+    record_path = (
+        HERE / "data" / ("launches_1000.json" if args.extend else "launches.json")
+    )
     records = json.loads(record_path.read_text()) if record_path.exists() else []
     config = Path(iris.__file__).parent / "config/cw-us-east-02a.yaml"
     with open_iris_client(config_file=config, workspace=None) as connection:
@@ -117,11 +133,13 @@ def main() -> None:
                         + shlex.quote(package),
                         "export VLLM_PORT=$(python3 -c 'import socket; s=socket.socket(); s.bind((\"\",0)); print(s.getsockname()[1]); s.close()')",
                         f"exec python3 worker.py --model {model} --shard {shard} --shards {args.shards}"
-                        + (" --smoke" if args.smoke else ""),
+                        + (" --smoke" if args.smoke else "")
+                        + (" --extend" if args.extend else ""),
                     ]
                 )
                 name = (
                     f"exp373-{model}-"
+                    + ("1000-" if args.extend else "")
                     + ("smoke" if args.smoke else f"s{shard:02d}")
                     + f"-a{args.attempt:02d}"
                 )
@@ -147,6 +165,7 @@ def main() -> None:
                         "shard": shard,
                         "shards": args.shards,
                         "smoke": args.smoke,
+                        "extension": args.extend,
                         "source_sha256": digest,
                         "source_uri": remote,
                         "cluster": "cw-us-east-02a",

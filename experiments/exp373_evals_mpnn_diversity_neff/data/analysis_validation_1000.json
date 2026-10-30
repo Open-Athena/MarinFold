@@ -1,0 +1,9 @@
+{
+  "original_curve_rows_reproduced": 3248,
+  "protein_curve_rows": 6032,
+  "individual_f1_scores": 464000,
+  "oracle_summary_rows": 16008,
+  "zero_truth_conditions": 0,
+  "all_original_prefix_endpoints_equal_atol": 1e-12,
+  "oracle_monotonic_and_dominates_running_mean": true
+}

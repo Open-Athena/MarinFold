@@ -14,13 +14,15 @@ def main() -> None:
     """Download complete per-protein records with anonymous public access."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--smoke", action="store_true")
+    parser.add_argument("--extend", action="store_true")
     parser.add_argument("--metadata-only", action="store_true")
     args = parser.parse_args()
-    plan = json.loads((HERE / "data/plan.json").read_text())
+    plan_name = "extension_plan.json" if args.extend else "plan.json"
+    plan = json.loads((HERE / "data" / plan_name).read_text())
     phase = "smoke" if args.smoke else "raw"
     root = plan["artifact_root"].removeprefix("hf://") + "/" + phase
     fs = HfFileSystem(token=False)
-    destination = HERE / "scratch" / phase
+    destination = HERE / "scratch" / (phase + ("_1000" if args.extend else ""))
     destination.mkdir(exist_ok=True, parents=True)
     markers = fs.glob(root + "/*/*.complete.json")
     tasks = []

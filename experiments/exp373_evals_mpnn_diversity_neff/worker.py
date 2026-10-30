@@ -3,6 +3,7 @@
 import argparse
 import gzip
 import hashlib
+import importlib.metadata
 import json
 import os
 import platform
@@ -142,8 +143,23 @@ def main() -> None:
     parser.add_argument("--shard", type=int, default=0)
     parser.add_argument("--shards", type=int, default=6)
     parser.add_argument("--smoke", action="store_true")
+    parser.add_argument("--extend", action="store_true")
     args = parser.parse_args()
     plan = json.loads((HERE / "data/plan.json").read_text())
+    extension = (
+        json.loads((HERE / "data/extension_plan.json").read_text())
+        if args.extend
+        else None
+    )
+    if extension:
+        for relative, key in [
+            ("data/plan.json", "original_plan_sha256"),
+            ("inputs/targets.json", "targets_sha256"),
+        ]:
+            assert (
+                hashlib.sha256((HERE / relative).read_bytes()).hexdigest()
+                == extension[key]
+            )
     spec = plan["models"][args.model]
     targets = json.loads((HERE / "inputs/targets.json").read_text())
     targets.sort(key=lambda r: (r["L"], r["stem"]))
@@ -157,7 +173,10 @@ def main() -> None:
     else:
         targets = [r for k, r in enumerate(targets) if k % args.shards == args.shard]
     root = (
-        plan["artifact_root"] + ("/smoke" if args.smoke else "/raw") + "/" + args.model
+        (extension or plan)["artifact_root"]
+        + ("/smoke" if args.smoke else "/raw")
+        + "/"
+        + args.model
     )
     worker_start = time.monotonic()
     model_dir = Path("/tmp/exp373-model")
@@ -205,13 +224,23 @@ def main() -> None:
             "verified_files": verified,
             "hardware": hardware,
             "effective_config": config,
+            "runtime_versions": {
+                name: importlib.metadata.version(name)
+                for name in ["vllm", "torch", "transformers", "tokenizers", "marinfold"]
+            },
         },
         f"{root}/worker-{args.shard:02d}.json",
     )
     for target in targets:
         residues = residues_from_sequence(target["input_seq"])
-        for temperature in [1.0] if args.smoke else plan["temperatures"]:
-            for mode in ["randomized"] if args.smoke else ["fixed", "randomized"]:
+        temperatures = [1.0] if args.smoke or args.extend else plan["temperatures"]
+        modes = (
+            ["fixed"]
+            if args.extend
+            else (["randomized"] if args.smoke else ["fixed", "randomized"])
+        )
+        for temperature in temperatures:
+            for mode in modes:
                 key = f"{target['stem']}-t{temperature:.1f}-{mode}"
                 marker_uri = f"{root}/{key}.complete.json"
                 status = subprocess.run(
@@ -229,10 +258,18 @@ def main() -> None:
                     print("RESUME", key, flush=True)
                     continue
                 total_start = time.monotonic()
-                count = 300 if mode == "fixed" else 100
+                start_index = extension["rollout_start"] if extension else 0
+                end_index = (
+                    extension["rollout_stop"]
+                    if extension
+                    else (300 if mode == "fixed" else 100)
+                )
+                if args.smoke:
+                    end_index = start_index + 100
+                indices = list(range(start_index, end_index))
+                count = len(indices)
                 prompt_ids = [
-                    f"{target['stem']}:r{0 if mode == 'fixed' else k}"
-                    for k in range(count)
+                    f"{target['stem']}:r{0 if mode == 'fixed' else k}" for k in indices
                 ]
                 documents = {
                     identifier: build_document(
@@ -260,17 +297,19 @@ def main() -> None:
                         skip_special_tokens=False,
                         seed=sample_seed(target["stem"], mode, k // 100, k % 100),
                     )
-                    for k, n in enumerate(token_lengths)
+                    for k, n in zip(indices, token_lengths, strict=True)
                 ]
                 inference_start = time.monotonic()
                 records = generate(model, tokenizer, prompts, params)
                 elapsed = time.monotonic() - inference_start
-                for k, record in enumerate(records):
-                    document = documents[prompt_ids[k]]
+                for position, (k, record) in enumerate(
+                    zip(indices, records, strict=True)
+                ):
+                    document = documents[prompt_ids[position]]
                     record.update(
                         rollout=k,
                         block=k // 100,
-                        prompt_id=prompt_ids[k],
+                        prompt_id=prompt_ids[position],
                         offset=document.n_term_index,
                         **parse_contacts(
                             record["text"], document.n_term_index, target["L"]
@@ -285,6 +324,8 @@ def main() -> None:
                     "temperature": temperature,
                     "elapsed_seconds": elapsed,
                     "n_rollouts": count,
+                    "rollout_start": start_index,
+                    "rollout_stop": end_index,
                     "timestamp_utc": datetime.now(UTC).isoformat(),
                 }
                 payload = {
