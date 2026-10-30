@@ -309,7 +309,7 @@ def _availability(
     held: list[tuple[str, int]],
 ) -> dict[str, object]:
     return {
-        "version": "2",
+        "version": "3",
         "observation_epoch_ms": str(observed_ms),
         "amounts": {gpu: str(free)},
         "total_amounts": {gpu: str(total)},

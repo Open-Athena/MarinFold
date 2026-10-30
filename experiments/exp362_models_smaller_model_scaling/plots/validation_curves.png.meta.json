@@ -1,0 +1,7 @@
+{
+  "script": "plot_training.py",
+  "args": [
+    "--require-complete"
+  ],
+  "caption": "Full validation curves at identical data exposure. Incomplete curves are not final results."
+}
