@@ -32,6 +32,8 @@ Audit the packed-example counts before launch, enforce exact finite two-epoch co
 
 All three trials complete two full redesign epochs with verified final native checkpoints. Preserve per-trial run history, learning curves, provenance, and final HF exports with co-located tokenizers. Report validation losses at matched exposure and any operational failures. Contact benchmark evaluation is a follow-up rather than a prerequisite for launching these requested runs.
 
+On October 30 the user ended the unstable 2e-3 trial early. The two-epoch completion target now applies only to 5e-4 and 1e-3; retain the cancelled trial's results and do not restart it without explicit authorization.
+
 ## Results
 
 The 2026-10-13 in-region audit (`/bizon/exp364-lr1e-3-audit-a01`) succeeded and independently reproduced the source counts in `data/epoch_corpus_counts.csv`: 23,921,189 packed examples per epoch. Two epochs expose exactly 47,842,378 examples; 373,769 updates at batch 128 leave 74 real examples and 54 padding examples in the last batch. The first epoch boundary is crossed without padding or repeating examples. The inherited 8192-token clipping policy removes one trailing token from each of 772 documents per pass; no document is dropped.
@@ -50,7 +52,13 @@ Production launched with 32 H100s per trial on `cw-us-east-02a` at batch priorit
 
 All three trials were registered as running in W&B on 2026-10-13 at 15:10 UTC. Their live saved configurations were checked against the actual default run: model fields and all optimizer values match except the requested learning rate; the exact two-source training subset, global batch 128, 373,769-step target, and augmentation duration were verified. Final results are pending.
 
-### Training update, 2026-10-30
+### User-requested stop of 2e-3, 2026-10-30
+
+The user requested stopping the diverged 2e-3 run while keeping the other runs going. `/bizon/exp364-lr2e-3-train-a04` was cancelled at **15:44:10 UTC (11:44 EDT)**. The root, both historical child jobs, and all eight tasks in the most recent GPU gang `/bizon/exp364-lr2e-3-train-a04/exp364-train-c84a0ccf` are verified killed. The stop released **64 H100s**. The last logged optimizer step is 255772, approximately 1.369 redesign epochs; its latest validation loss is 3.67563. This is an early cancellation, not a completed two-epoch run or a newly scored checkpoint.
+
+The 5e-4 and 1e-3 roots were not changed and both made new optimizer progress after the cancellation, reaching steps 311537 and 344447 at the 15:44:57 UTC observation. They continue on 32 H100s each toward the existing two-epoch targets. Both one-epoch forks remain complete. Existing checkpoint and evaluation artifacts are retained. The sweep database marks 2e-3 cancelled with no active dispatch, and the operations policy excludes it from automatic recovery unless the user explicitly reauthorizes a restart.
+
+### Training update before cancellation, 2026-10-30
 
 At 15:30 UTC (11:30 EDT), all three remaining roots are running and W&B confirms new optimizer progress. They retain 32 / 32 / 64 H100s for increasing LR, with no pending experiment dispatches. The local US-EAST-02A pool reports 56 free of 256 H100s. No stop, restart, resize or configuration change was made; all three dispatches have recent progress. Both one-epoch forks remain complete and verified.
 
@@ -232,4 +240,4 @@ Each trial writes to `s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_l
 
 ## Conclusion
 
-Both one-epoch cooldown forks are complete, with verified finite weights and nearly identical final validation losses (GPU 3.03572; TPU 3.03582). All five October 29 contact evaluations are complete. The cooldown forks lead the redesign-only variants and are effectively tied on all-range R-precision: GPU 0.46301 / 0.66515 and TPU 0.46018 / 0.66954 on natural / designed proteins. The completed full-data first epoch remains higher at 0.55510 / 0.69640 and has lower LM validation loss. Unequal exposure and differing schedules prevent attributing the whole gap to removal of native sequences. As of October 30, the three two-epoch runs remain active at 1.666, 1.842 and 1.366 epochs for increasing LR. The lower-LR runs are improving during cooldown; the 2e-3 run is unstable and has regressed in contact accuracy. Their requested configurations and epoch targets are preserved.
+Both one-epoch cooldown forks are complete, with verified finite weights and nearly identical final validation losses (GPU 3.03572; TPU 3.03582). All five October 29 contact evaluations are complete. The cooldown forks lead the redesign-only variants and are effectively tied on all-range R-precision: GPU 0.46301 / 0.66515 and TPU 0.46018 / 0.66954 on natural / designed proteins. The completed full-data first epoch remains higher at 0.55510 / 0.69640 and has lower LM validation loss. Unequal exposure and differing schedules prevent attributing the whole gap to removal of native sequences. The user stopped the unstable 2e-3 trial on October 30 at approximately 1.369 epochs after its contact accuracy regressed. The 5e-4 and 1e-3 parents remain active at approximately 1.667 and 1.843 epochs, improving during cooldown with their original two-epoch targets intact. Do not restart the cancelled 2e-3 trial without explicit user authorization.

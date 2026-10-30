@@ -1,4 +1,12 @@
-## October 30 — lower learning rates are cooling down
+## October 30 — 2e-3 stopped at the user's request
+
+The unstable 2e-3 trial was cancelled at 15:44:10 UTC (11:44 EDT). The root and all eight GPU worker tasks are verified killed, releasing 64 H100s. Last logged step: 255772, approximately 1.369 epochs; latest validation loss: 3.67563.
+
+The 5e-4 and 1e-3 parents continue unchanged on 32 H100s each and both made new optimizer progress after the stop. Their existing two-epoch targets remain in force. Both one-epoch forks are complete.
+
+Keep the cancelled trial's checkpoints, metrics and October 29 evaluation artifacts. It is excluded from future recovery unless explicitly reauthorized; it did not complete two epochs. Contact scores are unchanged.
+
+## Earlier October 30 — lower learning rates are cooling down
 
 At 15:30 UTC (11:30 EDT), all three two-epoch runs are advancing on 128 H100s. Epochs completed for 5e-4 / 1e-3 / 2e-3: 1.666 / 1.842 / 1.366. Latest validation: 3.07204 / 3.08277 / 3.67563.
 

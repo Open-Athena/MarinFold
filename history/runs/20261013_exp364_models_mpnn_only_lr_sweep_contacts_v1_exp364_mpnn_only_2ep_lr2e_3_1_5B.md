@@ -42,4 +42,10 @@ _(Bullet list of differences from the last run of this kind.)_
 
 ## Notes
 
-_(Anything else worth remembering — preemptions, midway tweaks, etc.)_
+Stopped early at the user's request on 2026-10-30T15:44:10.039Z because of
+training instability. Iris root `/bizon/exp364-lr2e-3-train-a04` and all eight
+tasks in its latest child `exp364-train-c84a0ccf` are verified killed, releasing
+64 H100s. Last logged step: 255772 (approximately 1.369 redesign epochs);
+latest validation loss: 3.67563. This trial did not complete two epochs.
+Checkpoints and evaluation artifacts are retained. Do not restart without
+explicit user authorization. The independent 5e-4 and 1e-3 runs continue.
