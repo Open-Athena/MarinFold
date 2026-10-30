@@ -9,6 +9,7 @@ import zipfile
 
 import numpy as np
 import pandas as pd
+from huggingface_hub import HfFileSystem
 
 from analyze import load
 from contacts import sample_seed
@@ -122,6 +123,13 @@ def main() -> None:
     source_hashes = []
     for digest in sorted({x["source_sha256"] for x in launches if not x["smoke"]}):
         archive = HERE / "scratch" / f"{digest}.zip"
+        if not archive.exists():
+            uri = next(
+                x["source_uri"] for x in launches if x["source_sha256"] == digest
+            )
+            content = HfFileSystem(token=False).read_bytes(uri.removeprefix("hf://"))
+            assert hashlib.sha256(content).hexdigest() == digest
+            archive.write_bytes(content)
         assert hashlib.sha256(archive.read_bytes()).hexdigest() == digest
         with zipfile.ZipFile(archive) as bundle:
             worker = ast.dump(

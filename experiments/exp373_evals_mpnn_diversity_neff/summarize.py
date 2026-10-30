@@ -292,6 +292,35 @@ def main() -> None:
         ["eval_set", "model", "stem", "temperature", "mode"], as_index=False
     ).mean(numeric_only=True)
     per_protein.to_csv(DATA / "single_rollout_summary.csv", index=False)
+    single_summary = []
+    for keys, group in per_protein.groupby(["eval_set", "temperature", "mode"]):
+        base = dict(zip(["eval_set", "temperature", "mode"], keys, strict=True))
+        for variable in [
+            "precision",
+            "recall",
+            "long_precision",
+            "long_recall",
+            "contacts",
+            "long_contacts",
+            "contact_density",
+            "long_contact_fraction",
+        ]:
+            pair = paired(group, variable)
+            for model in ["default", "mpnn", "mpnn-default"]:
+                values = (
+                    pair.mpnn - pair.default if model == "mpnn-default" else pair[model]
+                )
+                single_summary.append(
+                    {
+                        **base,
+                        "endpoint": variable,
+                        "model": model,
+                        **estimate(values.to_numpy()),
+                    }
+                )
+    pd.DataFrame(single_summary).to_csv(
+        DATA / "single_rollout_contrasts.csv", index=False
+    )
     samples = diagnostic.groupby(
         ["eval_set", "model", "temperature", "mode"], as_index=False
     ).agg(

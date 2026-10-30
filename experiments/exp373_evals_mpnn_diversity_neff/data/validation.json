@@ -1,0 +1,41 @@
+{
+  "conditions": 1392,
+  "samples": 278400,
+  "raw_bytes": 921178713,
+  "metric_rows": 27840,
+  "checkpoint_files_identical_across_shards": true,
+  "source_programs": [
+    {
+      "bundle_sha256": "a15fe550d4e4b91fdf603f2705e40dc2614332646f8986edb973f38b8f482e88",
+      "worker_ast_sha256": "70af2f37103c5f66470e007988cd9be75ec86ec190c8d84ecf24682f876947dc",
+      "contacts_ast_sha256": "489cceb08257912e7cbb355c9b49e748b96ddaac8ef36a3d6052ee5406d17805",
+      "plan_sha256": "5cb0b37311cd3ed2515b55846b7012827813b98048baae87502623e2ba594811"
+    },
+    {
+      "bundle_sha256": "a5a8a3c2ba038d72adf67bd304bac161b73ed89afae82069451d96934712b5b8",
+      "worker_ast_sha256": "70af2f37103c5f66470e007988cd9be75ec86ec190c8d84ecf24682f876947dc",
+      "contacts_ast_sha256": "489cceb08257912e7cbb355c9b49e748b96ddaac8ef36a3d6052ee5406d17805",
+      "plan_sha256": "5cb0b37311cd3ed2515b55846b7012827813b98048baae87502623e2ba594811"
+    },
+    {
+      "bundle_sha256": "e25a3ec459ecdbabdd8bfeffda65719fdd065f56749cb1f00e82b74982db8dd7",
+      "worker_ast_sha256": "70af2f37103c5f66470e007988cd9be75ec86ec190c8d84ecf24682f876947dc",
+      "contacts_ast_sha256": "489cceb08257912e7cbb355c9b49e748b96ddaac8ef36a3d6052ee5406d17805",
+      "plan_sha256": "5cb0b37311cd3ed2515b55846b7012827813b98048baae87502623e2ba594811"
+    }
+  ],
+  "checkpoints": {
+    "default/config.json": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd",
+    "default/model-00001-of-00002.safetensors": "90ef7d19fe258bfa273059b102eb263974895b426cd233d12f4f24552492635b",
+    "default/model-00002-of-00002.safetensors": "6c5e340a11e19ddcef3ca10866b90a72d81f3b1c7febb9d4e80403f625f7dbd0",
+    "default/model.safetensors.index.json": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587",
+    "default/tokenizer.json": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24",
+    "default/tokenizer_config.json": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24",
+    "mpnn/config.json": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd",
+    "mpnn/model-00001-of-00002.safetensors": "13a4f9155c3512709cb7a1d974c9188668b38c8d3b93b7f85a338b4f1a146abb",
+    "mpnn/model-00002-of-00002.safetensors": "d80f7365ce2bb9571dc18f4016c2e795f14f87f3db84f6a065f382a42f0e5830",
+    "mpnn/model.safetensors.index.json": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587",
+    "mpnn/tokenizer.json": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24",
+    "mpnn/tokenizer_config.json": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+  }
+}

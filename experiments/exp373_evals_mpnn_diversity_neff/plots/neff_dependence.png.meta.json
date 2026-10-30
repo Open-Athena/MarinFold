@@ -1,0 +1,5 @@
+{
+  "script": "plot.py",
+  "args": [],
+  "caption": "Primary comparison: 97 natural proteins, T=1, 100 randomized prompts. Top: fixed tiers and bootstrap 95% CIs. Bottom: paired differences and unadjusted OLS."
+}

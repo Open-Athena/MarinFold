@@ -6,12 +6,14 @@ import json
 from pathlib import Path
 
 from huggingface_hub import HfFileSystem
+from huggingface_hub.utils import disable_progress_bars
 
 HERE = Path(__file__).resolve().parent
 
 
 def main() -> None:
     """Upload closed artifacts and verify anonymous readback by SHA-256."""
+    disable_progress_bars()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--inputs-only", action="store_true")
     args = parser.parse_args()
@@ -26,7 +28,7 @@ def main() -> None:
     fs = HfFileSystem()
     records = []
     for path in sorted(files):
-        if not path.is_file():
+        if not path.is_file() or path.name == "publication_manifest.json":
             continue
         relative = str(path.relative_to(HERE))
         destination = root + "/" + relative
@@ -44,6 +46,10 @@ def main() -> None:
         json.dumps({"root": "hf://" + root, "files": records}, indent=2) + "\n"
     )
     fs.put_file(str(manifest), root + "/data/publication_manifest.json")
+    assert HfFileSystem(token=False, skip_instance_cache=True).read_bytes(
+        root + "/data/publication_manifest.json"
+    ) == manifest.read_bytes()
+    print("VERIFIED public manifest", len(records), "files", flush=True)
 
 
 if __name__ == "__main__":

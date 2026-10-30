@@ -1,0 +1,9 @@
+mode,range,depth_variable,mean,ci_low,ci_high,n_low,n_high
+fixed,all,msa_neff,-0.08936651761494181,-0.1413654182701561,-0.04172683716018024,4,55
+fixed,all,msa_depth,,,,0,68
+fixed,long,msa_neff,-0.0970574513070097,-0.15196136737693666,-0.042050692419780385,4,55
+fixed,long,msa_depth,,,,0,68
+randomized,all,msa_neff,-0.07053757196502466,-0.10257886472193373,-0.040085515865036565,4,55
+randomized,all,msa_depth,,,,0,68
+randomized,long,msa_neff,-0.057097005459181296,-0.08403903606667637,-0.032815033736616706,4,55
+randomized,long,msa_depth,,,,0,68

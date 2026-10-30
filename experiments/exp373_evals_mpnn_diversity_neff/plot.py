@@ -26,7 +26,9 @@ def read(name: str) -> pd.DataFrame:
 
 def save(fig: plt.Figure, name: str, caption: str) -> None:
     """Save a standalone figure and the summary PDF's generation sidecar."""
-    fig.tight_layout()
+    fig.canvas.draw()
+    fig.tight_layout(pad=1.5)
+    fig.canvas.draw()
     save_plot_with_meta(fig, PLOTS / (name + ".png"), caption=caption)
     plt.close(fig)
 
@@ -102,7 +104,7 @@ def main() -> None:
     save(
         fig,
         "diversity",
-        "97 natural eval-val proteins; fixed prompts, 300 rollouts, temperature 1. Each point is one protein. Δ is MPNN-only minus default with paired protein-bootstrap 95% CI. Count control thins each paired rollout to the same contact count.",
+        "97 natural proteins, T=1, 300 fixed-prompt samples. Points are proteins; Δ is MPNN-only minus default (paired 95% CI). Count control thins paired samples to equal contact counts.",
     )
     curves = read("curve_summary.csv")
     fig, axes = plt.subplots(2, 3, figsize=(14, 8))
@@ -137,7 +139,7 @@ def main() -> None:
     save(
         fig,
         "ensemble_discovery",
-        "Fixed-prompt sample accumulation at temperature 1 on 97 natural proteins. More true-contact coverage is interpreted alongside false-contact discovery and ensemble accuracy. Error bars: 95% protein-bootstrap intervals.",
+        "Natural proteins, T=1, fixed prompts. True-contact coverage is shown alongside false discovery and ensemble accuracy. Error bars: 95% protein-bootstrap intervals.",
     )
     singles = read("single_rollout_summary.csv")
     metrics = read("accuracy_summary.csv")
@@ -194,7 +196,7 @@ def main() -> None:
     save(
         fig,
         "temperature_tradeoff",
-        "Temperature sweep on all 97 natural proteins, fixed prompts. Protein means at temperatures 0.7, 1.0 and 1.3 show how diversity trades off with precision, ensemble accuracy and output size; this is a descriptive quality comparison, not a tuned temperature selection.",
+        "Natural proteins, fixed prompts. Means at temperatures 0.7, 1.0 and 1.3 show the tradeoff between diversity, precision, ensemble accuracy and output size. Descriptive comparison; no temperature was selected.",
     )
     tiers = read("tier_accuracy.csv")
     all_metrics = read("metrics.csv")
@@ -261,7 +263,7 @@ def main() -> None:
     save(
         fig,
         "neff_dependence",
-        "Primary Neff comparison: natural eval-val, temperature 1, 100 matched randomized prompts. Top: absolute accuracy and fixed tier counts with 95% protein-bootstrap intervals. Bottom: paired per-protein differences; the line is unadjusted OLS. A flatter relation does not imply better low-Neff accuracy.",
+        "Primary comparison: 97 natural proteins, T=1, 100 randomized prompts. Top: fixed tiers and bootstrap 95% CIs. Bottom: paired differences and unadjusted OLS.",
     )
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.5))
     for ax, region in zip(axes, ["all", "long"], strict=True):
@@ -290,7 +292,7 @@ def main() -> None:
     save(
         fig,
         "raw_depth_sensitivity",
-        "Raw MSA sequence count is a separate sensitivity analysis; it is not Neff. Empty tiers are shown explicitly and cannot support a high-minus-low contrast. All scores use the same 97 natural proteins and primary randomized-prompt condition.",
+        "Raw sequence-count sensitivity on the same 97 proteins and primary condition. Empty tiers are explicit; raw depth is distinct from Neff.",
     )
     shuffles = read("shuffle_controls.csv")
     means = shuffles.groupby(["eval_set", "model", "stem"], as_index=False).mean(
@@ -337,7 +339,7 @@ def main() -> None:
     save(
         fig,
         "coordination_control",
-        "Fixed prompts at temperature 1. Curveball randomization preserves every rollout size and every contact frequency exactly. Ten independently seeded null replicates test overlap heterogeneity beyond these margins. Half/full trade-chain comparison diagnoses sensitivity to mixing; contact coordination does not establish physical conformations.",
+        "Fixed prompts, T=1. Curveball shuffles preserve every sample size and contact frequency. Ten null replicates; independent half/full chains assess mixing sensitivity. Coordination does not establish conformations.",
     )
     panel = read("panel_contacts.csv.gz")
     order = read("panel_order.csv").stem.tolist()
@@ -376,10 +378,12 @@ def main() -> None:
                         f"{stem}\nL={length}, Neff={meta.loc[stem, 'msa_neff']:.1f}",
                         fontsize=9,
                     )
+        axes[1, 1].set_xlabel("Frequency: black 0 → yellow 1", fontsize=9)
+        axes[1, 3].set_xlabel("Difference: blue −1 → white 0 → red +1", fontsize=9)
         save(
             fig,
             f"representative_contact_maps_{group_index + 1}",
-            "Panel selected before inference by evenly spaced Neff ranks. Symmetric resolved-pair maps show truth and inclusion frequencies from 300 fixed-prompt samples at temperature 1. Bright pixels denote frequent contacts; signed differences use a fixed -1 to +1 scale. No panel member was selected for its result.",
+            "Eight proteins preselected by Neff rank; two shown per page. Resolved-pair truth and frequencies from 300 fixed-prompt samples, T=1. Frequencies use 0–1 and signed differences −1 to +1.",
         )
     selected = all_metrics[
         all_metrics.stem.isin(natural)
@@ -410,7 +414,7 @@ def main() -> None:
     save(
         fig,
         "native_similarity_audit",
-        "Exploratory association with existing exp245 searches against the surviving native AFDB/ESM-Atlas corpus. The 50% coverage filter imposes a restricted identity range; 40% exposes local matches that survived it. These are not searches against the actual ProteinMPNN sequences, so they cannot demonstrate or exclude redesign retrieval.",
+        "Exploratory exp245 native AFDB/ESM-Atlas alignment evidence. The 50% coverage filter restricts identity; 40% exposes local matches. Redesign sequences were not searched.",
     )
 
 

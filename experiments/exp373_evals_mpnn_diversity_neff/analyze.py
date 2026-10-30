@@ -86,7 +86,9 @@ def analyze_one(
             **diversity(unrestricted, length * length),
         }
     )
+    long_true = {pair for pair in true if pair % length - pair // length >= 24}
     for sample, s in zip(record["samples"], sets, strict=True):
+        long_contacts = {pair for pair in s if pair % length - pair // length >= 24}
         diagnostics.append(
             {
                 **base,
@@ -96,6 +98,15 @@ def analyze_one(
                 "valid_contacts_unrestricted": len(sample["contacts"]),
                 "precision": len(s & true) / len(s) if s else 0.0,
                 "recall": len(s & true) / len(true) if true else float("nan"),
+                "long_contacts": len(long_contacts),
+                "long_precision": len(long_contacts & long_true) / len(long_contacts)
+                if long_contacts
+                else 0.0,
+                "long_recall": len(long_contacts & long_true) / len(long_true)
+                if long_true
+                else float("nan"),
+                "contact_density": len(s) / length,
+                "long_contact_fraction": len(long_contacts) / len(s) if s else 0.0,
                 "generated_tokens": len(sample["token_ids"]),
                 "initial_tokens": sample["initial_tokens"],
                 "unfinished": sample["finish_reason"] != "stop",
