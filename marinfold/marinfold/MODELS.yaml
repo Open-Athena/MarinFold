@@ -24,6 +24,21 @@
   document_structures:
     - contacts-v1
 
+# Optional redesign-only model: exp364's completed 5e-4 GPU one-epoch fork,
+# 162,574,724 ProteinMPNN documents; 186,885 total optimizer updates.
+# Final checkpoint 186884, LM validation loss 3.03572. Eval-val all / long
+# R-precision 0.46301 / 0.44184; eval-denovo 0.66515 / 0.62680.
+# Selected over the TPU fork by eval-val's point estimate, a practical tie
+# (0.46301 vs 0.46018). The default remains exp277 above. All six model and
+# tokenizer files are byte-identical to the evaluated export; publication
+# provenance includes source SHA-256 and public Xet hashes. Float32 storage,
+# bfloat16 inference, trained RoPE stated for Transformers 4.x and 5.x.
+- nickname: contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B
+  url: https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B/hf/step-186884
+  wandb_url: https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B
+  document_structures:
+    - contacts-v1
+
 # Previous default: the native-only DECONTAMINATED model — exp232 (issue #232) m2-p06
 # trained on past the sweep. #232's TRC continuation restored the sweep run's
 # full Levanter state at step 333,960 — model, optimizer, RNG, data position —

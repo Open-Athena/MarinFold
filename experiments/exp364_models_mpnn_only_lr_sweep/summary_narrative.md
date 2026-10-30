@@ -1,3 +1,11 @@
+## October 30 — one-epoch GPU checkpoint published
+
+Selected contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B, step 186884, for a proposed eval-val diversity study. Eval-val R-precision: GPU 0.46301 versus TPU 0.46018. This is a practical tie; selection uses the relevant point estimate, not a claim of GPU superiority.
+
+All six evaluated model/tokenizer files (5.89 GB) are published unchanged in the public HF bucket. A regional CoreWeave CPU job performed the transfer. Anonymous object sizes and Xet hashes match; small files passed SHA-256 readback and config/tokenizer loading checks. Publication source, launch and verification manifests are committed.
+
+MODELS.yaml registers the checkpoint as optional. Exp277 remains the default; 14 registry tests pass. A separate diversity issue is awaiting the user's review before filing. No diversity analysis has run. Existing training jobs continue independently.
+
 ## October 30 — 2e-3 stopped at the user's request
 
 The unstable 2e-3 trial was cancelled at 15:44:10 UTC (11:44 EDT). The root and all eight GPU worker tasks are verified killed, releasing 64 H100s. Last logged step: 255772, approximately 1.369 epochs; latest validation loss: 3.67563.
