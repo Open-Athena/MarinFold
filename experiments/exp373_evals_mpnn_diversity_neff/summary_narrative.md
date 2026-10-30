@@ -1,18 +1,19 @@
-# Summary slides — exp: ProteinMPNN-only prediction diversity and Neff dependence on eval-val
+# ProteinMPNN-only diversity and Neff dependence
 
-<!-- Feeds plots/summary.pdf via build_summary.py.
-     One `## ` heading per slide; body text becomes the slide.
-     Keep this current as the experiment progresses. -->
+## Question and design
 
-## What we're doing
+Does redesign-only training broaden contact predictions, and does it reduce dependence on available evolutionary information?
 
-Does the completed ProteinMPNN-only checkpoint produce qualitatively different predictions from the current default, particularly greater rollout diversity on eval-val and less degradation in contact accuracy at low effective MSA depth (Neff)? If it is more diverse, does that diversity capture useful alternatives or mainly additional errors?
+Two pinned 1.5B checkpoints; 97 natural eval-val proteins and 19 designs reported separately. Three temperatures, one fixed prompt plus a matched randomized prompt bank. 278,400 individual samples planned. Eval-test excluded.
 
-## Why
+## Frozen primary comparisons
 
-1. **Rollout diversity.** Training without native-sequence documents produces a broader distribution of predicted contact patterns on natural proteins, potentially through reduced reliance on close native-sequence matches. This could improve discovery of correct contacts across repeated samples even when individual predictions are less accurate.
-2. **Neff dependence.** The ProteinMPNN-only checkpoint has a flatter performance curve across Neff tiers on eval-val: its accuracy drops less from high-Neff to low-Neff proteins than the current default's accuracy does. This is a hypothesis about relative sensitivity to MSA depth; whether it also achieves higher absolute accuracy on low-Neff proteins is a separate question to report explicitly.
+Paired fixed-prompt Jaccard diversity at temperature 1, controlled for contact count. True versus false discovery and ensemble accuracy distinguish useful alternatives from additional errors.
 
-## Results so far
+Neff analysis uses 100 randomized prompts. Fixed tiers contain 4, 10, 28 and 55 natural proteins. Compare high-minus-low accuracy drops and the slope of paired accuracy differences against log10(Neff).
 
-_(Fill in as results come in.)_
+## Current state
+
+Plan and inputs frozen before inference. The canonical parser passes five tests of offset/orientation invariance, duplicates, ordered retraction, malformed outputs and deterministic seeds.
+
+Two checkpoint-local H100 smoke jobs are being validated before the full 12-worker run. Final results pending.

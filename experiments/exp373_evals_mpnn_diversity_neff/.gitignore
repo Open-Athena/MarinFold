@@ -3,3 +3,5 @@ __pycache__/
 .pytest_cache/
 scratch/
 inputs/
+
+data/rollout_diagnostics.csv.gz
