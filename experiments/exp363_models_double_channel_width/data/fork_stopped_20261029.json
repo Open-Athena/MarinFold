@@ -1,0 +1,59 @@
+{
+  "observed_at": "2026-10-29T23:05:31.391557+00:00",
+  "run_id": "contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4",
+  "wandb_state": "running",
+  "url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4",
+  "summary": {
+    "global_step": 154306,
+    "_timestamp": 1793315114.9381435,
+    "train/loss": 10.319613456726074,
+    "optim/learning_rate": 0.0007070000283420086,
+    "eval/loss": 10.278820037841797
+  },
+  "action": "User requested stopping the diverged lower-LR fork.",
+  "cancel_command": "/home/bizon/.cache/MarinFold/exp363-iris-src/.venv/bin/iris --cluster marin job cancel /bizon/exp363-fork-train-a04",
+  "verified_at": "2026-10-29T23:06:14.173645+00:00",
+  "jobs": [
+    {
+      "job_id": "/bizon/exp363-fork-train-a04",
+      "state": "killed",
+      "reason": "Terminated by user"
+    },
+    {
+      "job_id": "/bizon/exp363-fork-train-a04/exp363-train-3fc9d00b",
+      "state": "killed",
+      "reason": "Parent job terminated"
+    },
+    {
+      "job_id": "/bizon/exp363-train-a04",
+      "state": "killed"
+    },
+    {
+      "job_id": "/bizon/exp363-train-a04/exp363-train-6d5c8a62",
+      "state": "killed"
+    }
+  ],
+  "tasks": [
+    {
+      "task_id": "/bizon/exp363-fork-train-a04/exp363-train-3fc9d00b/0",
+      "state": "TASK_STATE_KILLED",
+      "current_attempt_id": 10
+    },
+    {
+      "task_id": "/bizon/exp363-fork-train-a04/exp363-train-3fc9d00b/1",
+      "state": "TASK_STATE_KILLED",
+      "current_attempt_id": 10
+    },
+    {
+      "task_id": "/bizon/exp363-fork-train-a04/exp363-train-3fc9d00b/2",
+      "state": "TASK_STATE_KILLED",
+      "current_attempt_id": 10
+    },
+    {
+      "task_id": "/bizon/exp363-fork-train-a04/exp363-train-3fc9d00b/3",
+      "state": "TASK_STATE_KILLED",
+      "current_attempt_id": 10
+    }
+  ],
+  "note": "Scheduler confirms termination. Immediate W&B running state lags cancellation; no replacement submitted."
+}

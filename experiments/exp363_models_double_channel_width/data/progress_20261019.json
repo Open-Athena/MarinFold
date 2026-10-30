@@ -1,0 +1,172 @@
+{
+  "observed_at": "2026-10-19T13:18:55.232098+00:00",
+  "runs": {
+    "gpu": {
+      "run_id": "contacts-v1-exp363-m2-p06-full-epoch-5.86B",
+      "name": "contacts-v1-exp363-m2-p06-full-epoch-5.86B",
+      "state": "running",
+      "url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B",
+      "created_at": "2026-10-13T15:15:36Z",
+      "summary": {
+        "global_step": 48451,
+        "train/loss": 2.8928847312927246,
+        "eval/loss": 3.123337507247925,
+        "throughput/duration": 5.61242231586948,
+        "throughput/tokens_per_second": 186831.2719509871,
+        "parameter_count": 5861984256,
+        "_timestamp": 1792415858.4731026
+      }
+    },
+    "tpu": {
+      "run_id": "contacts-v1-exp363-m2-p06-full-epoch-5.86B-tpu-smoke-v5p-64-a03",
+      "name": "contacts-v1-exp363-m2-p06-full-epoch-5.86B-tpu-smoke-v5p-64-a03",
+      "state": "finished",
+      "url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B-tpu-smoke-v5p-64-a03",
+      "created_at": "2026-10-16T17:05:41Z",
+      "summary": {
+        "global_step": 19,
+        "train/loss": 6.646604537963867,
+        "eval/loss": 6.561253070831299,
+        "throughput/duration": 7.412405580000041,
+        "throughput/tokens_per_second": 141462.30784095792,
+        "parameter_count": 5861984256,
+        "_timestamp": 1792170824.9807858
+      },
+      "throughput_history": [
+        {
+          "_step": 2,
+          "global_step": 2,
+          "throughput/duration": 7.388405173000024,
+          "throughput/tokens_per_second": 141921.8323098855
+        },
+        {
+          "_step": 3,
+          "global_step": 3,
+          "throughput/duration": 7.400000151999961,
+          "throughput/tokens_per_second": 141699.45654887677
+        },
+        {
+          "_step": 4,
+          "global_step": 4,
+          "throughput/duration": 7.395524341000055,
+          "throughput/tokens_per_second": 141785.21382003956
+        },
+        {
+          "global_step": 5,
+          "throughput/duration": 7.395865005000019,
+          "throughput/tokens_per_second": 141778.68299260517,
+          "_step": 5
+        },
+        {
+          "throughput/duration": 7.4032724630000075,
+          "throughput/tokens_per_second": 141636.8241531784,
+          "_step": 6,
+          "global_step": 6
+        },
+        {
+          "_step": 7,
+          "global_step": 7,
+          "throughput/duration": 7.388979923999955,
+          "throughput/tokens_per_second": 141910.79293559148
+        },
+        {
+          "global_step": 8,
+          "throughput/duration": 7.3960094049999725,
+          "throughput/tokens_per_second": 141775.91489961118,
+          "_step": 8
+        },
+        {
+          "_step": 9,
+          "global_step": 9,
+          "throughput/duration": 7.393560997999998,
+          "throughput/tokens_per_second": 141822.864555205
+        },
+        {
+          "_step": 10,
+          "global_step": 10,
+          "throughput/duration": 7.400389293999979,
+          "throughput/tokens_per_second": 141692.00542600578
+        },
+        {
+          "global_step": 11,
+          "throughput/duration": 7.401363009999955,
+          "throughput/tokens_per_second": 141673.36456586074,
+          "_step": 11
+        },
+        {
+          "_step": 12,
+          "global_step": 12,
+          "throughput/duration": 7.397774335000008,
+          "throughput/tokens_per_second": 141742.09059595474
+        },
+        {
+          "_step": 13,
+          "global_step": 13,
+          "throughput/duration": 7.401447784000084,
+          "throughput/tokens_per_second": 141671.74188092444
+        },
+        {
+          "throughput/duration": 7.402652446999923,
+          "throughput/tokens_per_second": 141648.68707634072,
+          "_step": 14,
+          "global_step": 14
+        },
+        {
+          "_step": 15,
+          "global_step": 15,
+          "throughput/duration": 7.397236356999997,
+          "throughput/tokens_per_second": 141752.399057485
+        },
+        {
+          "throughput/tokens_per_second": 141713.07247465185,
+          "_step": 16,
+          "global_step": 16,
+          "throughput/duration": 7.399289153000041
+        },
+        {
+          "_step": 17,
+          "global_step": 17,
+          "throughput/duration": 7.402186766,
+          "throughput/tokens_per_second": 141657.59837570682
+        },
+        {
+          "_step": 18,
+          "global_step": 18,
+          "throughput/duration": 7.394173289999912,
+          "throughput/tokens_per_second": 141811.12057762072
+        },
+        {
+          "_step": 19,
+          "global_step": 19,
+          "throughput/duration": 7.412405580000041,
+          "throughput/tokens_per_second": 141462.30784095792
+        }
+      ],
+      "steady_steps_5_to_19_median_seconds": 7.399289153000041
+    }
+  },
+  "iris_jobs": {
+    "gpu": {
+      "job_id": "/bizon/exp363-train-a03/exp363-train-0cdc9fb5",
+      "state": "JOB_STATE_RUNNING",
+      "failure_count": 0,
+      "preemption_count": 2,
+      "task_count": 4,
+      "completed_count": 0,
+      "priority": "PRIORITY_BAND_BATCH",
+      "started_at_ms": 1792165374201,
+      "finished_at_ms": 0
+    },
+    "tpu": {
+      "job_id": "/bizon/exp363-tpu-smoke-v5p-64-a03/exp363-train-3f5081a0",
+      "state": "JOB_STATE_SUCCEEDED",
+      "failure_count": 0,
+      "preemption_count": 0,
+      "task_count": 8,
+      "completed_count": 8,
+      "priority": "PRIORITY_BAND_INTERACTIVE",
+      "started_at_ms": 1792170249358,
+      "finished_at_ms": 1792171101285
+    }
+  }
+}

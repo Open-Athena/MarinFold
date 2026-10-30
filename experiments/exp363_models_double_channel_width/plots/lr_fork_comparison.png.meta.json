@@ -1,0 +1,5 @@
+{
+  "script": "plot_lr_fork.py",
+  "args": [],
+  "caption": "W&B snapshot 2026-10-26T15:55:10.854315+00:00. Original high-LR divergence is shown on a log scale at left; right compares fork/default at exact matching steps. No smoothing or interpolation. LR reaches 0.000707 at step 76,293. The small validation advantage does not establish contact accuracy."
+}

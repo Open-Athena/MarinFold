@@ -1,0 +1,15 @@
+{
+  "observed_at": "2026-10-22T20:26:35.868000+00:00",
+  "cluster": "cw-us-east-02a",
+  "availability_version": 3,
+  "free_h100": 0,
+  "total_h100": 256,
+  "held_by_band": {
+    "PRIORITY_BAND_INTERACTIVE": 56,
+    "PRIORITY_BAND_BATCH": 200
+  },
+  "pending_tasks": 1,
+  "requested_h100": 32,
+  "priority": "batch",
+  "placement": "same region as all training inputs and the preserved source checkpoint"
+}

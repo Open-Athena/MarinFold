@@ -1,0 +1,129 @@
+---
+marinfold_run:
+  user: bizon
+  launched_at: '2026-10-22T21:08:34Z'
+  experiment: exp363_models_double_channel_width
+  kind: models
+  short_description: Full-state LR fork to 0.000707; diverged near step 131k and
+    stopped by user October 29
+  wandb:
+    url: https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4
+    entity: open-athena
+    project: MarinFold
+    run_id: contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4
+    run_name: contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4
+  git_sha: 9d0d088e18f9cd7393293e9ac490a4f44b6beeae
+  iris_job_ids:
+  - /bizon/exp363-fork-train-a02
+  - /bizon/exp363-fork-train-a02/exp363-train-755515df
+  - /bizon/exp363-fork-train-a03
+  - /bizon/exp363-fork-train-a03/exp363-train-fb907ed2
+  - /bizon/exp363-fork-train-a04
+  - /bizon/exp363-fork-train-a04/exp363-train-3fc9d00b
+---
+# 2026-10-22 · exp363_models_double_channel_width · contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4
+
+**Launched:** 2026-10-22T21:08:34Z by bizon  
+**Kind:** models  
+**Experiment:** exp363_models_double_channel_width  
+**W&B:** [contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4](https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4)  
+**Git:** `9d0d088e`  
+
+## Description
+
+Full-state LR fork from step 74178 to 0.000707; initially ahead of the default,
+then diverged near step 131k. Intentionally stopped October 29 at user request.
+
+## Detailed plan
+
+Restore complete training state from checkpoint 74,178 and lower the 0.001 LR
+linearly to 0.000707 over 2,114 updates. Retain the original final cooldown at
+step 213,076 and 266,345-update horizon, alongside the original control run.
+
+## Changes from previous runs
+
+Independent W&B/checkpoint paths; full Adam state, RNG and data cursor retained.
+Only the plateau LR changes; final cooldown retains its original timing and
+10% floor ratio.
+
+## Notes
+
+October 23 inspection: startup failed before any training metrics. TensorStore's
+default AWS credential chain could not source credentials, and the first data
+cache metadata read failed with 403 AccessDenied. The child exited zero and
+W&B says finished, but the driver's final-checkpoint guard correctly failed.
+
+Runtime now explicitly passes AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY from the
+CoreWeave credentials. All 13 local tests pass. Recovery awaits refreshed local
+credentials: the configured cw key is rejected with InvalidAccessKeyId by the
+public CoreWeave endpoint. No retry has been submitted with the rejected key.
+
+## October 23 credentials refreshed and serialization fixed
+
+The refreshed key passed fsspec and TensorStore reads. The preserved source
+checkpoint 74,178 still has trainer/Adam/scheduler count 74,179 and LR 0.001.
+Attempt a03 passed authentication but could not serialize the optimizer class
+loaded through the CLI as __main__.ForkAdamConfig. It was cancelled before
+training. The registered class now lives in importable fork_optimizer.py; all
+14 tests pass, including subprocess serialization and choice-registry decoding.
+
+Attempt a04 was submitted at 10:41 EDT from commit d923758f with unchanged
+optimizer calculations, full-state checkpoint structure, data and schedule.
+
+Recovery verified: first update 74,179 completed at 10:51:32 EDT. At 10:52 EDT,
+W&B reports step 74,190, LR 0.0009984754724 and 5.59 seconds/update. The first
+nine recorded LRs match the requested schedule within 1.14e-10 absolute error.
+The first loss exactly matches the original at step 74,179: 2.90014386177063.
+There is no new full-validation comparison yet.
+
+## October 26: stable at target LR
+
+At 11:55 EDT the a04 driver and child remain running. W&B last reported
+step 116,027 (43.56%), LR 0.000707, train loss 2.84628 at 11:54:33 EDT.
+The fork has lower full-validation loss than exp277 at all 19 exact-step
+post-fork evaluations. At the latest shared step 114,156: fork 3.066603,
+default 3.071639, original high-LR wide run 17.649031. The advantage over
+the default is 0.005036 nats/token, or 0.50% lower perplexity. The original
+has diverged; this fork remains stable. Same final cooldown at 213,076 and
+266,345-update horizon. This is an interim single-seed language-model result,
+with no wider-model contact evaluation yet. Evidence and figure inputs:
+experiment data/progress_20261026.json and data/lr_fork_validation_20261026.csv.
+
+## October 27: continued stable progress
+
+Checked at 08:09 EDT: a04 driver and accelerator child remain running; the
+original remains intentionally killed. Latest W&B metrics at 08:03:49 EDT:
+step 125,476 (47.11%), LR 0.000707, train loss 2.81725, 5.65 seconds/update.
+Advanced 8,977 updates since the post-cancellation check. At full-validation
+step 124,726, fork loss 3.063974 versus default 3.070071: 0.006098 nats/token
+better, or 0.61% lower perplexity. The fork leads at all 24 matched post-fork
+evaluations. Final cooldown 213,076 and total horizon 266,345 unchanged.
+Evidence: experiment data/progress_20261027.json.
+
+## October 29: fork also diverged
+
+At 10:51 EDT the driver and all four accelerator tasks remain running (worker
+attempt 10), but the fork is numerically unstable. Latest W&B metrics at
+10:50:16 EDT: step 149,414 (56.10%), LR 0.000707, train loss 17.63110.
+Validation was 3.063521 at 128,954, rose to 3.302913 at 131,068 and 6.803703
+at 133,182, peaked at 28.846085 at 141,638, and remains 8.698871 at 147,980.
+The default at 147,980 is 3.066265. The fork's early advantage lasted for
+26 evaluations; all nine subsequent comparisons favor the default.
+
+In the inspected 128,900–133,299 training window, loss first exceeds 4 at
+131,426 (6.26793) and 10 at 131,912 (28.72058), with LR still 0.000707.
+Stopping this fork is recommended; it remains active because the previous
+stop instruction applied only to the original. No schedule change or new run
+was submitted. Evidence: data/progress_20261029.json and
+data/fork_divergence_20261029.json in the experiment directory.
+
+## October 29, 19:05 EDT: intentionally stopped
+
+User requested stopping this fork. Cancelled driver /bizon/exp363-fork-train-a04;
+Iris confirms it and accelerator child
+/bizon/exp363-fork-train-a04/exp363-train-3fc9d00b are killed. The original's
+driver and child also remain killed, so both production runs are stopped.
+Last observed W&B step 154,306, LR 0.000707, train loss 10.31961, latest
+validation loss 10.27882. W&B still reported running at the immediate check;
+the scheduler confirms termination. Do not restart without a new request.
+Evidence: experiment data/fork_stopped_20261029.json.

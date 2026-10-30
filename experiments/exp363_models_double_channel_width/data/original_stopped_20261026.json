@@ -1,0 +1,64 @@
+{
+  "observed_at": "2026-10-26T16:40:11.133836+00:00",
+  "runs": [
+    {
+      "id": "contacts-v1-exp363-m2-p06-full-epoch-5.86B",
+      "wandb_state": "running",
+      "url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B",
+      "summary": {
+        "global_step": 117691,
+        "_timestamp": 1793032796.0212126,
+        "train/loss": 15.337176322937012,
+        "optim/learning_rate": 0.0010000000474974513,
+        "eval/loss": 17.965011596679688
+      }
+    },
+    {
+      "id": "contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4",
+      "wandb_state": "running",
+      "url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4",
+      "summary": {
+        "global_step": 116485,
+        "_timestamp": 1793032799.0466108,
+        "train/loss": 2.821760654449463,
+        "optim/learning_rate": 0.0007070000283420086,
+        "eval/loss": 3.0670387744903564
+      }
+    }
+  ],
+  "action": "User requested stopping only the diverged original run.",
+  "cancel_command": "/home/bizon/.cache/MarinFold/exp363-iris-src/.venv/bin/iris --cluster marin job cancel /bizon/exp363-train-a04",
+  "verified_at": "2026-10-26T16:41:13.548932+00:00",
+  "jobs": [
+    {
+      "job_id": "/bizon/exp363-train-a04",
+      "state": "killed",
+      "reason": "Terminated by user"
+    },
+    {
+      "job_id": "/bizon/exp363-train-a04/exp363-train-6d5c8a62",
+      "state": "killed",
+      "reason": "Parent job terminated"
+    },
+    {
+      "job_id": "/bizon/exp363-fork-train-a04",
+      "state": "running"
+    },
+    {
+      "job_id": "/bizon/exp363-fork-train-a04/exp363-train-3fc9d00b",
+      "state": "running"
+    }
+  ],
+  "note": "Iris confirms both original jobs killed; original W&B running label has not yet caught up. Fork was not cancelled.",
+  "fork_after_stop": {
+    "observed_at": "2026-10-26T16:41:27.541541+00:00",
+    "state": "running",
+    "summary": {
+      "global_step": 116499,
+      "_timestamp": 1793032878.075644,
+      "train/loss": 2.8721396923065186,
+      "optim/learning_rate": 0.0007070000283420086,
+      "eval/loss": 3.0670387744903564
+    }
+  }
+}

@@ -1,0 +1,759 @@
+{
+  "observed_at": "2026-10-22T19:37:41.682714+00:00",
+  "runs": [
+    {
+      "id": "contacts-v1-exp363-m2-p06-full-epoch-5.86B",
+      "url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B",
+      "state": "running",
+      "observed_at": "2026-10-22T19:37:41.682714+00:00",
+      "step": 73740,
+      "parameters": 5861984256,
+      "model": {
+        "rope": {
+          "theta": 500000,
+          "factor": 8,
+          "low_freq_factor": 1,
+          "high_freq_factor": 4,
+          "original_max_position_embeddings": 8192
+        },
+        "head_dim": null,
+        "use_bias": false,
+        "num_heads": 32,
+        "tokenizer": null,
+        "hidden_dim": 4096,
+        "num_layers": 24,
+        "hybrid_norm": false,
+        "max_seq_len": 8192,
+        "scan_layers": true,
+        "upcast_attn": false,
+        "use_qk_norm": true,
+        "attn_backend": "JAX_FLASH",
+        "num_kv_heads": 8,
+        "sliding_window": 4096,
+        "intermediate_dim": 16384,
+        "initializer_range": 0.02,
+        "layer_norm_epsilon": 1e-05,
+        "use_sliding_window": false,
+        "activation_function": "silu",
+        "tie_word_embeddings": false,
+        "input_embedding_norm": false,
+        "reference_checkpoint": "Qwen/Qwen3-0.6B",
+        "use_layer_norm_weight": true,
+        "gradient_checkpointing": true,
+        "flash_attention_block_size": null
+      },
+      "optimizer": {
+        "haps": null,
+        "beta1": 0.9,
+        "beta2": 0.95,
+        "decay": 0.2,
+        "cycles": null,
+        "warmup": 0.1,
+        "epsilon": 1e-08,
+        "cooldown": null,
+        "nesterov": false,
+        "rewarmup": 0,
+        "lr_schedule": "linear",
+        "cycle_length": null,
+        "min_lr_ratio": 0.1,
+        "weight_decay": 0.2,
+        "learning_rate": 0.001,
+        "max_grad_norm": 1,
+        "skip_bad_steps": false,
+        "clip_update_norm": null,
+        "adamc_weight_decay": false,
+        "update_rms_clipping": null,
+        "weight_decay_modules": null,
+        "default_weight_decay_mask": null
+      },
+      "data": {
+        "shuffle": {
+          "perm_type": "feistel",
+          "io_block_size": 256,
+          "window_blocks": 512
+        },
+        "cache_dir": null,
+        "tokenizer": "/app/experiments/exp363_models_double_channel_width/tokenizer/contacts-v1@80f4e411b957641e8c350b07bbe1e2c832697518",
+        "components": {
+          "input/validation": {
+            "pack": true,
+            "tags": [
+              "protein",
+              "contacts-v1",
+              "pretokenized"
+            ],
+            "split": "validation",
+            "format": {
+              "text_key": "document"
+            },
+            "source": {
+              "tags": [
+                "protein",
+                "contacts-v1",
+                "pretokenized"
+              ],
+              "format": {
+                "text_key": "document"
+              },
+              "cache_dir": "s3://marin-us-east-02a/MarinFold/exp154_qwen_contacts_v1/tokenized/contacts-v1-val/2026.07.25",
+              "train_urls": [],
+              "validation_urls": []
+            },
+            "cache_dir": "s3://marin-us-east-02a/MarinFold/exp154_qwen_contacts_v1/tokenized/contacts-v1-val/2026.07.25",
+            "flat_cache": false
+          },
+          "input/full-corpus": {
+            "tags": null,
+            "children": {
+              "input/full-epoch/mpnn-esm": {
+                "pack": true,
+                "tags": [
+                  "protein",
+                  "contacts-v1",
+                  "pretokenized"
+                ],
+                "split": "validation",
+                "format": {
+                  "text_key": "document"
+                },
+                "source": {
+                  "tags": [
+                    "protein",
+                    "contacts-v1",
+                    "pretokenized"
+                  ],
+                  "format": {
+                    "text_key": "document"
+                  },
+                  "cache_dir": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/tokenized/mpnn-esm/2026.09.09.1",
+                  "train_urls": [],
+                  "validation_urls": []
+                },
+                "cache_dir": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/tokenized/mpnn-esm/2026.09.09.1",
+                "flat_cache": false
+              },
+              "input/full-epoch/mpnn-afdb": {
+                "pack": true,
+                "tags": [
+                  "protein",
+                  "contacts-v1",
+                  "pretokenized"
+                ],
+                "split": "validation",
+                "format": {
+                  "text_key": "document"
+                },
+                "source": {
+                  "tags": [
+                    "protein",
+                    "contacts-v1",
+                    "pretokenized"
+                  ],
+                  "format": {
+                    "text_key": "document"
+                  },
+                  "cache_dir": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/tokenized/mpnn-afdb/2026.09.09.1",
+                  "train_urls": [],
+                  "validation_urls": []
+                },
+                "cache_dir": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/tokenized/mpnn-afdb/2026.09.09.1",
+                "flat_cache": false
+              },
+              "input/full-epoch/native-esm": {
+                "pack": true,
+                "tags": [
+                  "protein",
+                  "contacts-v1",
+                  "pretokenized"
+                ],
+                "split": "validation",
+                "format": {
+                  "text_key": "document"
+                },
+                "source": {
+                  "tags": [
+                    "protein",
+                    "contacts-v1",
+                    "pretokenized"
+                  ],
+                  "format": {
+                    "text_key": "document"
+                  },
+                  "cache_dir": "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/tokenized/contacts_v1/esm/2026.08.14",
+                  "train_urls": [],
+                  "validation_urls": []
+                },
+                "cache_dir": "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/tokenized/contacts_v1/esm/2026.08.14",
+                "flat_cache": false
+              },
+              "input/full-epoch/native-afdb": {
+                "pack": true,
+                "tags": [
+                  "protein",
+                  "contacts-v1",
+                  "pretokenized"
+                ],
+                "split": "validation",
+                "format": {
+                  "text_key": "document"
+                },
+                "source": {
+                  "tags": [
+                    "protein",
+                    "contacts-v1",
+                    "pretokenized"
+                  ],
+                  "format": {
+                    "text_key": "document"
+                  },
+                  "cache_dir": "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/tokenized/contacts_v1/afdb/2026.08.14",
+                  "train_urls": [],
+                  "validation_urls": []
+                },
+                "cache_dir": "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/tokenized/contacts_v1/afdb/2026.08.14",
+                "flat_cache": false
+              }
+            }
+          }
+        },
+        "vocab_size": null,
+        "enforce_eos": true,
+        "cache_options": {
+          "batch_size": 128
+        },
+        "chat_template": null,
+        "stop_strategy": "restart",
+        "target_budget": null,
+        "train_weights": {
+          "input/validation": 0,
+          "input/full-corpus": 1
+        },
+        "permutation_type": "feistel",
+        "augmentation_seed": 166,
+        "auto_build_caches": false,
+        "experiment_budget": null,
+        "max_train_batches": null,
+        "mixture_block_size": 2048,
+        "expected_packed_examples": 34092146,
+        "num_validation_sequences": null,
+        "augmentation_num_train_steps": 266345,
+        "shuffle_before_trainval_split": true,
+        "block_cross_document_attention": true
+      },
+      "trainer": {
+        "num_train_steps": 266345,
+        "train_batch_size": 128,
+        "per_device_parallelism": 1,
+        "steps_per_eval": 2114,
+        "max_eval_batches": null,
+        "seed": 0
+      }
+    },
+    {
+      "id": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+      "url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+      "state": "finished",
+      "observed_at": "2026-10-19T13:29:51.160708+00:00",
+      "step": 266344,
+      "parameters": 1471374336,
+      "model": {
+        "rope": {
+          "theta": 500000,
+          "factor": 8,
+          "low_freq_factor": 1,
+          "high_freq_factor": 4,
+          "original_max_position_embeddings": 8192
+        },
+        "head_dim": null,
+        "use_bias": false,
+        "num_heads": 32,
+        "tokenizer": null,
+        "hidden_dim": 2048,
+        "num_layers": 24,
+        "hybrid_norm": false,
+        "max_seq_len": 8192,
+        "scan_layers": true,
+        "upcast_attn": false,
+        "use_qk_norm": true,
+        "attn_backend": "JAX_FLASH",
+        "num_kv_heads": 8,
+        "sliding_window": 4096,
+        "intermediate_dim": 8192,
+        "initializer_range": 0.02,
+        "layer_norm_epsilon": 1e-05,
+        "use_sliding_window": false,
+        "activation_function": "silu",
+        "tie_word_embeddings": false,
+        "input_embedding_norm": false,
+        "reference_checkpoint": "Qwen/Qwen3-0.6B",
+        "use_layer_norm_weight": true,
+        "gradient_checkpointing": true,
+        "flash_attention_block_size": null
+      },
+      "optimizer": {
+        "haps": null,
+        "beta1": 0.9,
+        "beta2": 0.95,
+        "decay": 0.2,
+        "cycles": null,
+        "warmup": 0.1,
+        "epsilon": 1e-08,
+        "cooldown": null,
+        "nesterov": false,
+        "rewarmup": 0,
+        "lr_schedule": "linear",
+        "cycle_length": null,
+        "min_lr_ratio": 0.1,
+        "weight_decay": 0.2,
+        "learning_rate": 0.001,
+        "max_grad_norm": 1,
+        "skip_bad_steps": false,
+        "clip_update_norm": null,
+        "adamc_weight_decay": false,
+        "update_rms_clipping": null,
+        "weight_decay_modules": null,
+        "default_weight_decay_mask": null
+      },
+      "data": {
+        "shuffle": {
+          "perm_type": "feistel",
+          "io_block_size": 256,
+          "window_blocks": 512
+        },
+        "cache_dir": null,
+        "tokenizer": "eczech/contacts-v1-tokenizer-5d68a24a899f",
+        "components": {
+          "input/validation": {
+            "pack": true,
+            "tags": [
+              "protein",
+              "contacts-v1",
+              "pretokenized"
+            ],
+            "split": "validation",
+            "format": {
+              "text_key": "document"
+            },
+            "source": {
+              "tags": [
+                "protein",
+                "contacts-v1",
+                "pretokenized"
+              ],
+              "format": {
+                "text_key": "document"
+              },
+              "cache_dir": "s3://marin-us-east-02a/MarinFold/exp154_qwen_contacts_v1/tokenized/contacts-v1-val/2026.07.25",
+              "train_urls": [],
+              "validation_urls": []
+            },
+            "cache_dir": "s3://marin-us-east-02a/MarinFold/exp154_qwen_contacts_v1/tokenized/contacts-v1-val/2026.07.25",
+            "flat_cache": false
+          },
+          "input/full-corpus": {
+            "tags": null,
+            "children": {
+              "input/full-epoch/mpnn-esm": {
+                "pack": true,
+                "tags": [
+                  "protein",
+                  "contacts-v1",
+                  "pretokenized"
+                ],
+                "split": "validation",
+                "format": {
+                  "text_key": "document"
+                },
+                "source": {
+                  "tags": [
+                    "protein",
+                    "contacts-v1",
+                    "pretokenized"
+                  ],
+                  "format": {
+                    "text_key": "document"
+                  },
+                  "cache_dir": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/tokenized/mpnn-esm/2026.09.09.1",
+                  "train_urls": [],
+                  "validation_urls": []
+                },
+                "cache_dir": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/tokenized/mpnn-esm/2026.09.09.1",
+                "flat_cache": false
+              },
+              "input/full-epoch/mpnn-afdb": {
+                "pack": true,
+                "tags": [
+                  "protein",
+                  "contacts-v1",
+                  "pretokenized"
+                ],
+                "split": "validation",
+                "format": {
+                  "text_key": "document"
+                },
+                "source": {
+                  "tags": [
+                    "protein",
+                    "contacts-v1",
+                    "pretokenized"
+                  ],
+                  "format": {
+                    "text_key": "document"
+                  },
+                  "cache_dir": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/tokenized/mpnn-afdb/2026.09.09.1",
+                  "train_urls": [],
+                  "validation_urls": []
+                },
+                "cache_dir": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/tokenized/mpnn-afdb/2026.09.09.1",
+                "flat_cache": false
+              },
+              "input/full-epoch/native-esm": {
+                "pack": true,
+                "tags": [
+                  "protein",
+                  "contacts-v1",
+                  "pretokenized"
+                ],
+                "split": "validation",
+                "format": {
+                  "text_key": "document"
+                },
+                "source": {
+                  "tags": [
+                    "protein",
+                    "contacts-v1",
+                    "pretokenized"
+                  ],
+                  "format": {
+                    "text_key": "document"
+                  },
+                  "cache_dir": "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/tokenized/contacts_v1/esm/2026.08.14",
+                  "train_urls": [],
+                  "validation_urls": []
+                },
+                "cache_dir": "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/tokenized/contacts_v1/esm/2026.08.14",
+                "flat_cache": false
+              },
+              "input/full-epoch/native-afdb": {
+                "pack": true,
+                "tags": [
+                  "protein",
+                  "contacts-v1",
+                  "pretokenized"
+                ],
+                "split": "validation",
+                "format": {
+                  "text_key": "document"
+                },
+                "source": {
+                  "tags": [
+                    "protein",
+                    "contacts-v1",
+                    "pretokenized"
+                  ],
+                  "format": {
+                    "text_key": "document"
+                  },
+                  "cache_dir": "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/tokenized/contacts_v1/afdb/2026.08.14",
+                  "train_urls": [],
+                  "validation_urls": []
+                },
+                "cache_dir": "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/tokenized/contacts_v1/afdb/2026.08.14",
+                "flat_cache": false
+              }
+            }
+          }
+        },
+        "vocab_size": null,
+        "enforce_eos": true,
+        "cache_options": {
+          "batch_size": 128
+        },
+        "chat_template": null,
+        "stop_strategy": "restart",
+        "target_budget": null,
+        "train_weights": {
+          "input/validation": 0,
+          "input/full-corpus": 1
+        },
+        "permutation_type": "feistel",
+        "augmentation_seed": 166,
+        "auto_build_caches": false,
+        "experiment_budget": null,
+        "max_train_batches": null,
+        "mixture_block_size": 2048,
+        "expected_packed_examples": 34092146,
+        "num_validation_sequences": null,
+        "augmentation_num_train_steps": 266345,
+        "shuffle_before_trainval_split": true,
+        "block_cross_document_attention": true
+      },
+      "trainer": {
+        "num_train_steps": 266345,
+        "train_batch_size": 128,
+        "per_device_parallelism": 1,
+        "steps_per_eval": 2114,
+        "max_eval_batches": null,
+        "seed": 0
+      }
+    }
+  ],
+  "export_method": "wandb.Api().run(path).scan_history(keys=[global_step, eval/loss]); omit null observations; preserve every exact validation step",
+  "notes": [
+    "Data configs match except tokenizer location: exp363 bundles the verified pinned tokenizer snapshot.",
+    "Optimizer configs are identical; model configs differ only in hidden_dim and intermediate_dim.",
+    "Global batch and sequence length match; hardware allocation and gradient accumulation differ.",
+    "Single seed; exp363 is incomplete. Other architectures are context, not a matched validation leaderboard."
+  ],
+  "historical_architectures": [
+    {
+      "id": "plm-exp108-cv1-3b-e16-lr5e-4-wd0p2-v2",
+      "name": "plm-exp108-cv1-3b-e16-lr5e-4-wd0p2-v2",
+      "state": "crashed",
+      "url": "https://wandb.ai/open-athena/MarinFold/runs/plm-exp108-cv1-3b-e16-lr5e-4-wd0p2-v2",
+      "layers": 48,
+      "width": 2048,
+      "mlp": 8192,
+      "heads": 32,
+      "kv_heads": 8,
+      "qk_norm": false,
+      "parameters": 2931093504,
+      "step": 6926,
+      "losses": {
+        "eval/contacts-v1-val/loss": 3.1094937324523926,
+        "eval/loss": 3.1094934940338135
+      },
+      "max_eval_batches": null,
+      "batch": 128,
+      "seq": 8192
+    },
+    {
+      "id": "plm-exp108-cv1-3b-e16-lr1e-3-wd0p2-v2",
+      "name": "plm-exp108-cv1-3b-e16-lr1e-3-wd0p2-v2",
+      "state": "crashed",
+      "url": "https://wandb.ai/open-athena/MarinFold/runs/plm-exp108-cv1-3b-e16-lr1e-3-wd0p2-v2",
+      "layers": 48,
+      "width": 2048,
+      "mlp": 8192,
+      "heads": 32,
+      "kv_heads": 8,
+      "qk_norm": false,
+      "parameters": 2931093504,
+      "step": 6863,
+      "losses": {
+        "eval/contacts-v1-val/loss": 3.551147222518921,
+        "eval/loss": 3.551147222518921
+      },
+      "max_eval_batches": null,
+      "batch": 128,
+      "seq": 8192
+    },
+    {
+      "id": "plm-exp108-cv1-3b-e16-lr2e-3-wd0p2-v2",
+      "name": "plm-exp108-cv1-3b-e16-lr2e-3-wd0p2-v2",
+      "state": "crashed",
+      "url": "https://wandb.ai/open-athena/MarinFold/runs/plm-exp108-cv1-3b-e16-lr2e-3-wd0p2-v2",
+      "layers": 48,
+      "width": 2048,
+      "mlp": 8192,
+      "heads": 32,
+      "kv_heads": 8,
+      "qk_norm": false,
+      "parameters": 2931093504,
+      "step": 6850,
+      "losses": {
+        "eval/contacts-v1-val/loss": 3.406226634979248,
+        "eval/loss": 3.406226634979248
+      },
+      "max_eval_batches": null,
+      "batch": 128,
+      "seq": 8192
+    },
+    {
+      "id": "plm-exp108-cv1-3b-e16-lr5e-4-wd0p2-v3",
+      "name": "plm-exp108-cv1-3b-e16-lr5e-4-wd0p2-v3",
+      "state": "finished",
+      "url": "https://wandb.ai/open-athena/MarinFold/runs/plm-exp108-cv1-3b-e16-lr5e-4-wd0p2-v3",
+      "layers": 24,
+      "width": 2816,
+      "mlp": 11264,
+      "heads": 44,
+      "kv_heads": 11,
+      "qk_norm": true,
+      "parameters": 2775753984,
+      "step": 71311,
+      "losses": {
+        "eval/contacts-v1-val/loss": 3.008559226989746,
+        "eval/loss": 3.008559465408325
+      },
+      "max_eval_batches": null,
+      "batch": 128,
+      "seq": 8192
+    },
+    {
+      "id": "plm-exp108-cv1-3b-e16-lr1e-3-wd0p2-v3",
+      "name": "plm-exp108-cv1-3b-e16-lr1e-3-wd0p2-v3",
+      "state": "finished",
+      "url": "https://wandb.ai/open-athena/MarinFold/runs/plm-exp108-cv1-3b-e16-lr1e-3-wd0p2-v3",
+      "layers": 24,
+      "width": 2816,
+      "mlp": 11264,
+      "heads": 44,
+      "kv_heads": 11,
+      "qk_norm": true,
+      "parameters": 2775753984,
+      "step": 71311,
+      "losses": {
+        "eval/contacts-v1-val/loss": 2.764562606811523,
+        "eval/loss": 2.764562606811523
+      },
+      "max_eval_batches": null,
+      "batch": 128,
+      "seq": 8192
+    },
+    {
+      "id": "plm-exp108-cv1-3b-e16-lr2e-3-wd0p2-v3",
+      "name": "plm-exp108-cv1-3b-e16-lr2e-3-wd0p2-v3",
+      "state": "finished",
+      "url": "https://wandb.ai/open-athena/MarinFold/runs/plm-exp108-cv1-3b-e16-lr2e-3-wd0p2-v3",
+      "layers": 24,
+      "width": 2816,
+      "mlp": 11264,
+      "heads": 44,
+      "kv_heads": 11,
+      "qk_norm": true,
+      "parameters": 2775753984,
+      "step": 71311,
+      "losses": {
+        "eval/contacts-v1-val/loss": 2.741849660873413,
+        "eval/loss": 2.741849660873413
+      },
+      "max_eval_batches": null,
+      "batch": 128,
+      "seq": 8192
+    },
+    {
+      "id": "prot-exp232-cw-cv1-decontam-s02-m2-p06-aug",
+      "name": "prot-exp232-cw-cv1-decontam-s02-m2-p06-aug",
+      "state": "finished",
+      "url": "https://wandb.ai/open-athena/MarinFold/runs/prot-exp232-cw-cv1-decontam-s02-m2-p06-aug",
+      "layers": 24,
+      "width": 2048,
+      "mlp": 8192,
+      "heads": 32,
+      "kv_heads": 8,
+      "qk_norm": true,
+      "parameters": 1471374336,
+      "step": 145199,
+      "losses": {
+        "eval/contacts-v1/loss": 2.9918437004089355,
+        "eval/loss": 2.9918434619903564,
+        "eval/pretokenized/loss": 2.9918437004089355,
+        "eval/protein/loss": 2.9918437004089355,
+        "eval/tokenized/contacts_v1/validation/loss": 2.9918437004089355
+      },
+      "max_eval_batches": null,
+      "batch": 128,
+      "seq": 8192
+    },
+    {
+      "id": "exp157-cv1-1_5b-e16-lr3em3-wd0p2-bs128-qwen3-rope_delta-position-controlmatch-r2-east08-gb200x4n8",
+      "name": "exp157-cv1-1_5b-e16-lr3em3-wd0p2-bs128-qwen3-rope_delta-position-controlmatch-r2-east08-gb200x4n8",
+      "state": "finished",
+      "url": "https://wandb.ai/open-athena/MarinFold/runs/exp157-cv1-1_5b-e16-lr3em3-wd0p2-bs128-qwen3-rope_delta-position-controlmatch-r2-east08-gb200x4n8",
+      "layers": 24,
+      "width": 2048,
+      "mlp": 8192,
+      "heads": 32,
+      "kv_heads": 8,
+      "qk_norm": false,
+      "parameters": 1471374336,
+      "step": 71359,
+      "losses": {
+        "eval/contacts-v1-val/loss": 3.065421342849731,
+        "eval/loss": 3.065421342849731
+      },
+      "max_eval_batches": null,
+      "batch": 128,
+      "seq": 8192
+    },
+    {
+      "id": "prot-exp262-cw-cv1-arch-full-nope-smear-p06",
+      "name": "prot-exp262-cw-cv1-arch-full-nope-smear-p06",
+      "state": "finished",
+      "url": "https://wandb.ai/open-athena/MarinFold/runs/prot-exp262-cw-cv1-arch-full-nope-smear-p06",
+      "layers": 24,
+      "width": 2048,
+      "mlp": 8192,
+      "heads": 32,
+      "kv_heads": 8,
+      "qk_norm": true,
+      "parameters": 1471378466,
+      "step": 145199,
+      "losses": {
+        "eval/contacts-v1/loss": 3.002065420150757,
+        "eval/loss": 3.002065420150757,
+        "eval/pretokenized/loss": 3.002065420150757,
+        "eval/protein/loss": 3.002065420150757,
+        "eval/tokenized/contacts_v1/validation/loss": 3.002065420150757
+      },
+      "max_eval_batches": null,
+      "batch": 128,
+      "seq": 8192
+    },
+    {
+      "id": "prot-exp262-cw-cv1-arch-full-control-p06",
+      "name": "prot-exp262-cw-cv1-arch-full-control-p06",
+      "state": "finished",
+      "url": "https://wandb.ai/open-athena/MarinFold/runs/prot-exp262-cw-cv1-arch-full-control-p06",
+      "layers": 24,
+      "width": 2048,
+      "mlp": 8192,
+      "heads": 32,
+      "kv_heads": 8,
+      "qk_norm": true,
+      "parameters": 1471374336,
+      "step": 145199,
+      "losses": {
+        "eval/contacts-v1/loss": 2.974543571472168,
+        "eval/loss": 2.974543809890747,
+        "eval/pretokenized/loss": 2.974543571472168,
+        "eval/protein/loss": 2.974543571472168,
+        "eval/tokenized/contacts_v1/validation/loss": 2.974543571472168
+      },
+      "max_eval_batches": null,
+      "batch": 128,
+      "seq": 8192
+    },
+    {
+      "id": "contacts-v1-exp343-m2-p06-complex-1.5B",
+      "name": "contacts-v1-exp343-m2-p06-complex-1.5B",
+      "state": "finished",
+      "url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp343-m2-p06-complex-1.5B",
+      "layers": 24,
+      "width": 2048,
+      "mlp": 8192,
+      "heads": 32,
+      "kv_heads": 8,
+      "qk_norm": true,
+      "parameters": 1471374336,
+      "step": 280154,
+      "losses": {
+        "eval/contacts-v1/loss": 3.0115692615509033,
+        "eval/input/validation-complex/loss": 3.036574125289917,
+        "eval/input/validation/loss": 2.9933910369873047,
+        "eval/loss": 3.0115692615509033,
+        "eval/pretokenized/loss": 3.0115692615509033,
+        "eval/protein/loss": 3.0115692615509033
+      },
+      "max_eval_batches": null,
+      "batch": 128,
+      "seq": 8192
+    }
+  ],
+  "latest_refresh": {
+    "method": "Incremental W&B scan_history of global_step and eval/loss; existing finished baseline export retained.",
+    "min_step": 46509,
+    "new_validation_points": 12
+  }
+}

@@ -1,0 +1,184 @@
+{
+  "observed_at": "2026-10-29T14:51:39.791325+00:00",
+  "id": "contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4",
+  "url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp363-m2-p06-full-epoch-5.86B-fork74178-lr7p07e-4",
+  "state": "running",
+  "summary": {
+    "global_step": 149414,
+    "_timestamp": 1793285416.0804062,
+    "train/loss": 17.631103515625,
+    "optim/learning_rate": 0.0007070000283420086,
+    "eval/loss": 8.698870658874512,
+    "throughput/duration": 5.594835041090846
+  },
+  "validation": [
+    {
+      "eval/loss": 3.0639736652374268,
+      "global_step": 124726,
+      "_step": 124726
+    },
+    {
+      "_step": 126840,
+      "global_step": 126840,
+      "eval/loss": 3.063952922821045
+    },
+    {
+      "global_step": 128954,
+      "eval/loss": 3.063520908355713,
+      "_step": 128954
+    },
+    {
+      "_step": 131068,
+      "global_step": 131068,
+      "eval/loss": 3.302912712097168
+    },
+    {
+      "_step": 133182,
+      "global_step": 133182,
+      "eval/loss": 6.803703308105469
+    },
+    {
+      "_step": 135296,
+      "global_step": 135296,
+      "eval/loss": 5.128549098968506
+    },
+    {
+      "_step": 137410,
+      "global_step": 137410,
+      "eval/loss": 4.502957820892334
+    },
+    {
+      "_step": 139524,
+      "global_step": 139524,
+      "eval/loss": 6.775428295135498
+    },
+    {
+      "global_step": 141638,
+      "eval/loss": 28.846084594726562,
+      "_step": 141638
+    },
+    {
+      "eval/loss": 9.114078521728516,
+      "_step": 143752,
+      "global_step": 143752
+    },
+    {
+      "_step": 145866,
+      "global_step": 145866,
+      "eval/loss": 6.69606351852417
+    },
+    {
+      "_step": 147980,
+      "global_step": 147980,
+      "eval/loss": 8.698870658874512
+    }
+  ],
+  "comparison": {
+    "baseline_run_id": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+    "baseline_source": "data/training_comparison_curves.csv",
+    "matched_count": 35,
+    "fork_lower_count": 26,
+    "latest": {
+      "step": 147980,
+      "fork_validation_loss": 8.698870658874512,
+      "default_validation_loss": 3.0662646293640137,
+      "fork_minus_default_nats": 5.632606029510498
+    },
+    "last_low_loss": {
+      "step": 128954,
+      "fork_validation_loss": 3.063520908355713,
+      "default_validation_loss": 3.06963849067688,
+      "fork_minus_default_nats": -0.006117582321166992
+    },
+    "new_matches": [
+      {
+        "step": 126840,
+        "fork_validation_loss": 3.063952922821045,
+        "default_validation_loss": 3.0698049068450928,
+        "fork_minus_default_nats": -0.0058519840240478516
+      },
+      {
+        "step": 128954,
+        "fork_validation_loss": 3.063520908355713,
+        "default_validation_loss": 3.06963849067688,
+        "fork_minus_default_nats": -0.006117582321166992
+      },
+      {
+        "step": 131068,
+        "fork_validation_loss": 3.302912712097168,
+        "default_validation_loss": 3.069138526916504,
+        "fork_minus_default_nats": 0.23377418518066406
+      },
+      {
+        "step": 133182,
+        "fork_validation_loss": 6.803703308105469,
+        "default_validation_loss": 3.068847179412842,
+        "fork_minus_default_nats": 3.734856128692627
+      },
+      {
+        "step": 135296,
+        "fork_validation_loss": 5.128549098968506,
+        "default_validation_loss": 3.0677402019500732,
+        "fork_minus_default_nats": 2.0608088970184326
+      },
+      {
+        "step": 137410,
+        "fork_validation_loss": 4.502957820892334,
+        "default_validation_loss": 3.0665183067321777,
+        "fork_minus_default_nats": 1.4364395141601562
+      },
+      {
+        "step": 139524,
+        "fork_validation_loss": 6.775428295135498,
+        "default_validation_loss": 3.06630277633667,
+        "fork_minus_default_nats": 3.709125518798828
+      },
+      {
+        "step": 141638,
+        "fork_validation_loss": 28.846084594726562,
+        "default_validation_loss": 3.066920280456543,
+        "fork_minus_default_nats": 25.77916431427002
+      },
+      {
+        "step": 143752,
+        "fork_validation_loss": 9.114078521728516,
+        "default_validation_loss": 3.0668039321899414,
+        "fork_minus_default_nats": 6.047274589538574
+      },
+      {
+        "step": 145866,
+        "fork_validation_loss": 6.69606351852417,
+        "default_validation_loss": 3.0668418407440186,
+        "fork_minus_default_nats": 3.6292216777801514
+      },
+      {
+        "step": 147980,
+        "fork_validation_loss": 8.698870658874512,
+        "default_validation_loss": 3.0662646293640137,
+        "fork_minus_default_nats": 5.632606029510498
+      }
+    ]
+  },
+  "progress_percent": 56.09829356661473,
+  "updates_since_previous_check": 23938,
+  "latest_metric_time_edt": "2026-10-29T10:50:16.080406-04:00",
+  "training_health": "diverged",
+  "iris": {
+    "fork_driver": {
+      "id": "/bizon/exp363-fork-train-a04",
+      "state": "running"
+    },
+    "fork_child": {
+      "id": "/bizon/exp363-fork-train-a04/exp363-train-3fc9d00b",
+      "state": "running"
+    },
+    "original_driver": {
+      "id": "/bizon/exp363-train-a04",
+      "state": "killed"
+    },
+    "original_child": {
+      "id": "/bizon/exp363-train-a04/exp363-train-6d5c8a62",
+      "state": "killed"
+    }
+  }
+}
