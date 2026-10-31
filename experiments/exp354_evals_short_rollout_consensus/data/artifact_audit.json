@@ -1,0 +1,15 @@
+{
+  "proteins": 97,
+  "short_rollouts": 97000,
+  "full_rollouts": 9700,
+  "full_unfinished": 0,
+  "vote_matrices_verified": 1067,
+  "out_of_ring_tokens": {},
+  "tokenizer_sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24",
+  "worker_checkpoint_runtime": [
+    "f8ec9103aaa4d1d1f31bc17e41f9d9e4dc325262c34b0d75c8d1f948e7215de5",
+    "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B/hf/step-266344",
+    "0.11.0",
+    "4.57.0"
+  ]
+}
