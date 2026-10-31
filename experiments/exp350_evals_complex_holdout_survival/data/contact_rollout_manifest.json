@@ -1,0 +1,119 @@
+{
+  "derived": {
+    "contact_r_precision.csv": "312585b4eff41fe5979add31ca396e32529df332a289f27c868b6a65503750f7",
+    "contact_r_precision_summary.csv": "316663633e2e7c0025982fecb4c682057601df019e639b4172f13036cccbf997",
+    "timings.csv": "05065bbfa4f85590494875d933d5b1e59aea85089ef14edde8861aec73e25707"
+  },
+  "files": [
+    {
+      "bytes": 57946,
+      "path": "scores/shard-000-of-006-part-0000.parquet",
+      "sha256": "5dd6102d6208612a45cb9069e90e36af3a4d65319cfd1d06590a8a8bfc744f14"
+    },
+    {
+      "bytes": 107999,
+      "path": "scores/shard-001-of-006-part-0000.parquet",
+      "sha256": "e9ee13e0bc238b8f9a58e28b0447d2473c9bbcc580f9ab90b6feab39336505e3"
+    },
+    {
+      "bytes": 69506,
+      "path": "scores/shard-002-of-006-part-0000.parquet",
+      "sha256": "3f7fc00aae21e27460779c250adbb7074ed2b13e8f9ae1f336bc9b1b6214a50c"
+    },
+    {
+      "bytes": 59120,
+      "path": "scores/shard-003-of-006-part-0000.parquet",
+      "sha256": "09a38978a16317478977823329f10a9775130465357ccd914ccd02d0e8ddfc0b"
+    },
+    {
+      "bytes": 79005,
+      "path": "scores/shard-004-of-006-part-0000.parquet",
+      "sha256": "c58992eb64f28527d5e211815a36389ee5eb08b383347e4e08eca6229b91a708"
+    },
+    {
+      "bytes": 54158,
+      "path": "scores/shard-005-of-006-part-0000.parquet",
+      "sha256": "78abfc282db2fd6e67e9e3ebaeeddd82ebf770ac159532b995a0cf45845638e3"
+    },
+    {
+      "bytes": 10733,
+      "path": "timings/shard-000-of-006-part-0000.parquet",
+      "sha256": "fa14f8719cb1b1c031f99e1d6f075e902740aa04c2961a09dcc92a88191af979"
+    },
+    {
+      "bytes": 10740,
+      "path": "timings/shard-001-of-006-part-0000.parquet",
+      "sha256": "2986e096f151e0702b88f117dd07ab89ad1885fd92e8865725c2891275226bf1"
+    },
+    {
+      "bytes": 10726,
+      "path": "timings/shard-002-of-006-part-0000.parquet",
+      "sha256": "dc6397773ddcb3ec837af823246b5307c405b10effea674a51ee38bf9f254c7b"
+    },
+    {
+      "bytes": 10735,
+      "path": "timings/shard-003-of-006-part-0000.parquet",
+      "sha256": "00c7ecc6c56ae489113675c82553eeff5f33443a4fccdf7f66d5701bef09051f"
+    },
+    {
+      "bytes": 10739,
+      "path": "timings/shard-004-of-006-part-0000.parquet",
+      "sha256": "8cc75341520e3e0251599cf3868e8048df07201979a5a8a5543e3e9fbc2a47e8"
+    },
+    {
+      "bytes": 10694,
+      "path": "timings/shard-005-of-006-part-0000.parquet",
+      "sha256": "6a6d70075229a11e2269725bea522db7f68b5ae7b4b953ae68614abc39b642b9"
+    },
+    {
+      "bytes": 1443,
+      "path": "complete/shard-000-of-006-part-0000.json",
+      "sha256": "13901d4ba7519847e72b66036de7f080905b8a2101440d7842df3cc4a43fcc2f"
+    },
+    {
+      "bytes": 1443,
+      "path": "complete/shard-001-of-006-part-0000.json",
+      "sha256": "47cfdeeb3f497a36133e6b633627f50392bfb9a844363417be2ae629f11716ed"
+    },
+    {
+      "bytes": 1443,
+      "path": "complete/shard-002-of-006-part-0000.json",
+      "sha256": "e4bfb70c0e685d6ca8d40609a2f8fdd90c3ddd794081ccf70aa80671788bf44b"
+    },
+    {
+      "bytes": 1443,
+      "path": "complete/shard-003-of-006-part-0000.json",
+      "sha256": "d0f91a0b0cd2d37fe6e86378e299c003de0a8abf80c35f93cbd4fc60d0c75f63"
+    },
+    {
+      "bytes": 1443,
+      "path": "complete/shard-004-of-006-part-0000.json",
+      "sha256": "3473542c2f1298ac72fa310a77032d233b9cfa385a9f5e3a1f73dfc2e60b3163"
+    },
+    {
+      "bytes": 1242,
+      "path": "complete/shard-005-of-006-part-0000.json",
+      "sha256": "3a3e6371d7f2c2e820ee4bf24b8f43ac25c2352184ce3cc10bb9c7d8d0b6aba8"
+    }
+  ],
+  "jobs": [
+    "/bizon/exp350-foldbench-complex-s0of6-final23",
+    "/bizon/exp350-foldbench-complex-s1of6-final23",
+    "/bizon/exp350-foldbench-complex-s2of6-final23",
+    "/bizon/exp350-foldbench-complex-s3of6-final23",
+    "/bizon/exp350-foldbench-complex-s4of6-final23",
+    "/bizon/exp350-foldbench-complex-s5of6-final23"
+  ],
+  "model_label": "contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+  "public_prefix": "hf://buckets/open-athena/MarinFold/data/evals/exp350_foldbench_pair_holdout/contact_eval_v1/rollout_v1",
+  "s3_prefix": "s3://marin-us-east-02a/MarinFold/exp350_evals_complex_holdout_survival/foldbench-pair-holdout-v1/rollout-final-context-complete",
+  "selection": {
+    "rollouts_per_target": 100,
+    "score_rows": 261553,
+    "targets": 23,
+    "total_rollouts": 2300,
+    "unfinished_rollouts": 0,
+    "usable_rollouts": 2300
+  },
+  "targets_sha256": "544cf757921f4e798aef5a8d1866b7324a296dfdf8aef07ba01bf655e18901e0"
+}

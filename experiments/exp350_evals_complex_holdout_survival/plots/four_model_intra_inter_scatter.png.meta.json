@@ -1,0 +1,5 @@
+{
+  "script": "plot_four_model_eval.py",
+  "args": [],
+  "caption": "Paired within-chain and inter-chain accuracy for each full-complex prediction; common axes across all models."
+}

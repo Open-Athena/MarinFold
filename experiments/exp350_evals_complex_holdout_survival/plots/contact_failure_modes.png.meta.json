@@ -1,0 +1,5 @@
+{
+  "script": "build_contact_atlas.py",
+  "args": [],
+  "caption": "All 17 test complexes, categorized by raw inter-chain emissions, resolved scoring and experimental overlap."
+}

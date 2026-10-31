@@ -1,0 +1,42 @@
+{
+  "context_exclusions": {
+    "8axi-assembly1": 12,
+    "8b3w-assembly1": 7,
+    "8btj-assembly1": 65,
+    "8ok4-assembly1": 48,
+    "8tn8-assembly1": 2,
+    "8z4f-assembly1": 12,
+    "9gsq-assembly1": 1
+  },
+  "dataset": "foldbench_complex_pair_holdout_contact_eval_v1",
+  "diagnostic_jobs": [
+    "/bizon/exp350-foldbench-complex-s0of6-diagfull",
+    "/bizon/exp350-foldbench-complex-s1of6-diagfull",
+    "/bizon/exp350-foldbench-complex-s2of6-diagfull",
+    "/bizon/exp350-foldbench-complex-s3of6-diagfull",
+    "/bizon/exp350-foldbench-complex-s4of6-diagfull",
+    "/bizon/exp350-foldbench-complex-s5of6-diagfull"
+  ],
+  "diagnostic_prefix": "s3://marin-us-east-02a/MarinFold/exp350_evals_complex_holdout_survival/foldbench-pair-holdout-v1/rollout-diagnostic-full-context",
+  "eligibility_rule": "100/100 rollouts must stop before the checkpoint's full remaining 8192-token context",
+  "files": {
+    "foldbench_complex_contact_context.csv": "4a1533cbdb4376245b316afe78f586f0967d145261660311f578123bd1c96ffe",
+    "foldbench_complex_contact_eval.csv": "40c1c630563796f4d5c82fcbdbfc5a1a9b3d73d51c8128466772c40bd2c27654",
+    "foldbench_complex_contact_eval_targets.parquet": "544cf757921f4e798aef5a8d1866b7324a296dfdf8aef07ba01bf655e18901e0",
+    "foldbench_complex_eval_targets.parquet": "d4524963b57abdbd9d4df88d2c94b159c3f74b5171eb702e989e5073bfd78dc2"
+  },
+  "model_label": "contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+  "public_prefix": "hf://buckets/open-athena/MarinFold/data/evals/exp350_foldbench_pair_holdout/contact_eval_v1",
+  "selection": {
+    "contact_eligible": 23,
+    "context_excluded": 7,
+    "dev": 6,
+    "evaluated_rollouts": 3000,
+    "heterodimer": 17,
+    "homodimer": 6,
+    "homology_groups": 19,
+    "structural_targets": 30,
+    "test": 17,
+    "unfinished_rollouts": 147
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "source": "/data/exp213_overlap/targetDB",
+  "droplist": "/data/exp225_decontam/droplist_final.parquet",
+  "counts": {
+    "afdb": 3963003,
+    "esm_atlas": 65553178
+  },
+  "rejected": {
+    "afdb": 166679,
+    "esm_atlas": 1206744
+  },
+  "droplist_sha256": "7a06e9a5f5cec8790300c8c9c3cd07af31b3f66b7f552e49153c726ef00ae3a6"
+}

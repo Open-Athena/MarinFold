@@ -1,0 +1,103 @@
+{
+  "searches": [
+    {
+      "coverage": "query",
+      "coverage_mode": 2,
+      "command": [
+        "/home/bizon/.cache/marinfold/mmseqs/mmseqs/bin/mmseqs",
+        "search",
+        "/data/exp350/complex_queryDB_v3_83b026fa68aa",
+        "/data/exp350/complexDB",
+        "/data/exp350/complex_query_alnDB_v3_83b026fa68aa",
+        "/data/exp350/complex_query_tmp_v3_83b026fa68aa",
+        "-s",
+        "7.5",
+        "-e",
+        "1000",
+        "--max-seqs",
+        "100000",
+        "--min-seq-id",
+        "0.30",
+        "--alignment-mode",
+        "3",
+        "--seq-id-mode",
+        "0",
+        "-a",
+        "1",
+        "-c",
+        "0.50",
+        "--cov-mode",
+        "2",
+        "--threads",
+        "48",
+        "--split-memory-limit",
+        "80G"
+      ],
+      "log": "/data/exp350/complex_query_search.log",
+      "overflow_counts": [
+        2681
+      ],
+      "median_result_list_lengths": [
+        100000
+      ],
+      "max_seqs": 100000,
+      "prefilter_median_at_cap": true,
+      "output": "/data/exp350/complex_query_alignments.tsv"
+    },
+    {
+      "coverage": "target",
+      "coverage_mode": 1,
+      "command": [
+        "/home/bizon/.cache/marinfold/mmseqs/mmseqs/bin/mmseqs",
+        "search",
+        "/data/exp350/complex_queryDB_v3_83b026fa68aa",
+        "/data/exp350/complexDB",
+        "/data/exp350/complex_target_alnDB_v3_83b026fa68aa",
+        "/data/exp350/complex_target_tmp_v3_83b026fa68aa",
+        "-s",
+        "7.5",
+        "-e",
+        "1000",
+        "--max-seqs",
+        "100000",
+        "--min-seq-id",
+        "0.30",
+        "--alignment-mode",
+        "3",
+        "--seq-id-mode",
+        "0",
+        "-a",
+        "1",
+        "-c",
+        "0.50",
+        "--cov-mode",
+        "1",
+        "--threads",
+        "48",
+        "--split-memory-limit",
+        "80G"
+      ],
+      "log": "/data/exp350/complex_target_search.log",
+      "overflow_counts": [
+        2681
+      ],
+      "median_result_list_lengths": [
+        100000
+      ],
+      "max_seqs": 100000,
+      "prefilter_median_at_cap": true,
+      "output": "/data/exp350/complex_target_alignments.tsv"
+    }
+  ],
+  "format": "query,target,fident,alnlen,qcov,tcov,evalue,bits,nident,qlen,tlen,qstart,qend,tstart,tend",
+  "elapsed_seconds": 435.0618630917743,
+  "version": "4fe20e6bb0aa219a35f6190322a91ab19cb6898d",
+  "queries_sha256": "83b026fa68aac90b22801d94bc93a869f81d9713b620da974a1c27832450ae7a",
+  "queries": "/home/bizon/.codex/worktrees/4ee2/MarinFold/experiments/exp350_evals_complex_holdout_survival/data/queries.fasta",
+  "target": "/data/exp350/complexDB",
+  "rule": "identity >=0.30 over >=0.50 coverage of shorter sequence; max(qcov,tcov)",
+  "search_evalue_ceiling": 1000,
+  "coverage_filtered_at_search_time": true,
+  "coverage_union": "query coverage >=0.50 OR target coverage >=0.50",
+  "exact_identity_counts": "nident stored by MMseqs with -a 1 backtraces"
+}

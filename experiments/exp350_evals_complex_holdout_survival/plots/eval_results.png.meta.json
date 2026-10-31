@@ -1,0 +1,5 @@
+{
+  "script": "plot_eval_results.py",
+  "args": [],
+  "caption": "The contact model beats the resolved-pair random baseline on the 17-target test split. Helico contact budgets are selected only on the six-target development split; the test bars use confidence-selected samples and exact pair-specific, symmetry-aware DockQ. Error bars are 95% homology-group bootstrap intervals."
+}

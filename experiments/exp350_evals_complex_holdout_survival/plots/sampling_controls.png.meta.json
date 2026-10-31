@@ -1,0 +1,5 @@
+{
+  "script": "plot_sampling_controls.py",
+  "args": [],
+  "caption": "Same 17 frozen test targets and 1000 attempted maps per target. All curves use ground-truth oracle selection; F1 and R-precision are maximized separately. The AA control exactly preserves each chain-A/chain-B residue-type pair count. The degree control preserves every residue degree using a uniform-stationary bipartite switch chain (100 proposals per edge burn-in, 20 between draws; 1000 null pools). The latter is approximate and checked against longer chains, as recorded in the result tables. Ten unfinished attempts retain zero credit. Degree conditioning also preserves any genuine interface-residue localization, so it specifically tests residue-pairing information."
+}
