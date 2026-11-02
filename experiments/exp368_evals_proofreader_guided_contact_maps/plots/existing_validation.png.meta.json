@@ -1,0 +1,5 @@
+{
+  "script": "plot_existing.py",
+  "args": [],
+  "caption": "Validation-only reanalysis. Bands resample homology groups (95% intervals). Oracle coverage uses labels only to bound achievable recall. The small number of structures with fewer than eight usable rollouts retains all available samples. Long-range means separation \u226524."
+}

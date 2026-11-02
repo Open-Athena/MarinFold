@@ -1,0 +1,61 @@
+{
+  "split": "validation",
+  "entries": [
+    "6dsl_A",
+    "6z0m_A"
+  ],
+  "rollouts": 1,
+  "contact_budgets_L": [
+    1,
+    2
+  ],
+  "samplers": [
+    {
+      "name": "control"
+    },
+    {
+      "name": "top10-k16",
+      "candidates": 16,
+      "fraction": 0.1
+    }
+  ],
+  "policies": [
+    {
+      "name": "control-fixed1L"
+    },
+    {
+      "name": "control-fixed2L"
+    },
+    {
+      "name": "top10-k16-fixed1L"
+    },
+    {
+      "name": "top10-k16-fixed2L"
+    }
+  ],
+  "selection": "Same frozen 32-protein pilot. Exploratory length ablation added before the original pilot completed; no test scores used. L and 2L maps are nested prefixes of the same continuation, with EOS disabled.",
+  "adaptive_rationale": {
+    "observed_at": "2026-10-21T16:53:26Z",
+    "complete_common_entries": [
+      "1ilo_A",
+      "1k3h_A",
+      "2jov_A",
+      "6dsl_A",
+      "6z0m_A"
+    ],
+    "scope": "Five short proteins only; this is a hypothesis-generating diagnostic, not a policy selection or a claim about the complete pilot.",
+    "control": {
+      "mean_contacts": 40.85,
+      "precision": 0.586218,
+      "recall": 0.580294,
+      "finished_fraction": 1.0
+    },
+    "top10-k16": {
+      "mean_contacts": 26.1,
+      "precision": 0.695646,
+      "recall": 0.519308,
+      "finished_fraction": 1.0
+    },
+    "hypothesis": "Filtering may improve contact choice while increasing early termination; fixed-length controls separate selection quality from stopping."
+  }
+}

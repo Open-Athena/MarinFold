@@ -1,0 +1,4 @@
+_cache/
+wandb/
+# Full per-rollout prediction ledgers are published with release artifacts.
+data/*_per_rollout.csv.gz

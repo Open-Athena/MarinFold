@@ -148,6 +148,9 @@ Helico closely follows the [AlphaFold3](https://doi.org/10.1038/s41586-024-07487
 
 [Protenix v2](https://doi.org/10.64898/2026.04.10.717613) (protenix 2.0.0) was run in both single-sequence and MSA modes on H100 GPUs with 10 trunk recycles, 5 random seeds, and 8 diffusion samples per protein. We scored the top-1 sample selected by Protenix's ranking score. MSAs were pre-computed with Protenix's [ColabFold](https://doi.org/10.1038/s41592-022-01488-1) backend. [ESMFold](https://doi.org/10.1126/science.ade2574) was run with 4 recycles, giving one deterministic prediction per protein. ESMFold2 was run with num_loops = 20 and best-of-5 diffusion draws at distinct seeds, keeping the top-1 by the model's own confidence. Helico was run MSA-free with 6 trunk recycles and 3 diffusion samples, keeping the best of the three by its own confidence head. To score contact prediction for the structure-based predictors we took the single highest-confidence predicted structure and rank residue pairs by ConFind contact degree, using the same parameters as for the ground truth.
 
+## Acknowledgements
+We thank Lambda Labs for a gift of GPU compute credits.
+
 ## More details
 
 See [DOCS.md](DOCS.md).

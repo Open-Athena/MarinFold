@@ -1,0 +1,18 @@
+{
+  "observed_at": "2026-10-21T15:23:10.523157+00:00",
+  "job_id": "/bizon/exp368-shared-rno-v1",
+  "state": "canceled",
+  "preemptions_reported": 4,
+  "failure_retries": 0,
+  "preemption_retries_default": 1000,
+  "staging_attempts_observed": [
+    "2026-10-21T14:33:04Z",
+    "2026-10-21T15:10:21Z",
+    "2026-10-21T15:13:44Z",
+    "2026-10-21T15:17:00Z"
+  ],
+  "input_bytes_per_completed_staging": 6014167823,
+  "note": "At least four staging starts observed. Per-process transfer ceiling reset on preemption; aggregate cross-region transfer exceeded intended 9.5 GB campaign ceiling. Stopped immediately on detection. No further cross-region compute launches permitted. Exact billing bytes were not measured.",
+  "recovery": "Frozen original source snapshots resumed directly against S3 on colocated cw-us-east-02a H100 jobs. All preemptions preserve committed trajectories.",
+  "scoring_failure": "On server restart, scoring tasks ran before their lost local pool inputs had been regenerated. Completed standalone East pool scoring was unaffected."
+}

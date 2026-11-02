@@ -1,0 +1,11 @@
+{
+  "selection": "First, middle and last length-ranked structures of the frozen pilot; no accuracy used.",
+  "selection_file": "experiments/exp368_evals_proofreader_guided_contact_maps/backend_check_plan.json",
+  "source_pool_sha256": {
+    "6dsl_A": "8aa23d0cf539ddbb15f83197702e5b4b849fc59194f3f5119343cf9814fe85a9",
+    "5gp9_A": "53729d6df0429933c5b00d65a7e29e43fbb835bad92e8ee6c996009f0136f01f",
+    "1q2l_A": "b4bb33d5e82649a6e13b2ec6125c6d0036181e2d75b0275e29b5ec823707dc76"
+  },
+  "prediction_budget": "L unique eligible pairs",
+  "cohort": "Three prespecified numerical-check proteins from the complete validation pilot"
+}

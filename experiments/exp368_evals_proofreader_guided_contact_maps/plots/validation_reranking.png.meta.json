@@ -1,0 +1,16 @@
+{
+  "script": "analyze_reranking.py",
+  "args": [
+    "--plan",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/validation_pool.json",
+    "--targets",
+    "experiments/exp356_models_pdb_rollout_proofreader/_cache/prepared-v2/targets.parquet",
+    "--root",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/_cache/validation-pool-scored-native-v1",
+    "--out",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/data/validation_pool",
+    "--plot",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/plots/validation_reranking.png"
+  ],
+  "caption": "Both rankings use exactly the same sampled candidate union and deterministic label-independent tie breaks. Bars count true contacts entering and leaving the top R; their sum equals the observed R-precision change, verified for every input. Proteins are weighted equally; intervals resample homology groups. R uses native contact count only for retrospective evaluation. This is an adaptive diagnostic, not a new policy."
+}

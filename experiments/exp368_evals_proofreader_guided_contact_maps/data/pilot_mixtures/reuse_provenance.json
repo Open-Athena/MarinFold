@@ -1,0 +1,7 @@
+{
+  "source": "experiments/exp368_evals_proofreader_guided_contact_maps/_cache/pilot-guided-native-v1",
+  "plan": "experiments/exp368_evals_proofreader_guided_contact_maps/pilot_mixtures.json",
+  "new_gpu_inference": false,
+  "rotation_handling": "Average metrics and included-trajectory costs within each protein; never treat rotations as independent proteins or select the best rotation.",
+  "timing_scope": "Reused measured inference cost of each included trajectory; CPU aggregation excluded."
+}

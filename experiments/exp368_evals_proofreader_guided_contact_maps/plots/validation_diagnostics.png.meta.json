@@ -1,0 +1,15 @@
+{
+  "script": "plot_diagnostics.py",
+  "args": [
+    "--data",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/data/validation_diagnostics",
+    "--spec",
+    "ordinary-direct:8:sumq",
+    "ordinary-direct:128:f1_weighted_frequency",
+    "--out",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/plots/validation_diagnostics.png",
+    "--title",
+    "H100: contact-map diagnostics on 1,375 validation structures"
+  ],
+  "caption": "Curves average over the same structures at budgets 0.1, 0.25, 0.5, 1, 2, 4, 8 and 16 times sequence length. Unfilled slots count as misses; curves do not use native contact counts to choose the prediction budget. Calibration pools first occurrences within each rollout and is contact-weighted. Diversity and coverage are structure means; at most 128 deterministically sampled trajectory pairs measure overlap. Numbers in the coverage panel follow legend order; multiple aggregators of the same pool share calibration and diversity."
+}

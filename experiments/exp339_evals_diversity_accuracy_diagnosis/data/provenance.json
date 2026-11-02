@@ -1,0 +1,24 @@
+{
+  "checkpoint": "contacts-v1-exp277-m2-p06-full-epoch-1.5B-step-266344",
+  "public_raw_prefix": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1",
+  "analysis": "exploratory reuse of 97 eval-val; no new eval-test scoring",
+  "targets_sha256": "f53b8173df66178022f2127d6cbb93347dde01ab265ee061eb1af4883358e31a",
+  "truth_sha256": "f30c23e3d2fbab245755fc01548388b41730ddfa45da87325539698cadb153e5",
+  "source_scorer_sha256": "e104edd7446f947d15e97b2306395f8a98cd92e63ae58c11e43fca0b91762ca6",
+  "checks": {
+    "consensus_published": {
+      "n": 324,
+      "max_absolute_error": 8.326672684688674e-17
+    },
+    "best_emission_fixed_r": {
+      "n": 324,
+      "max_absolute_error": 8.326672684688674e-17
+    }
+  },
+  "raw_files": 194,
+  "raw_bytes": 35945487,
+  "rollouts_read": 29100,
+  "new_predictor_runs": 0,
+  "cpu_analysis_wall_seconds": 75.27767765009776,
+  "python": "3.14.2"
+}

@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "job": "kueue://cw-rno2a/iris/exp368-native-length-smoke-v2",
+  "prefix_maps": 8,
+  "verifications": [
+    {
+      "max_probability_error": 8.344650268554688e-07,
+      "mean_probability_error": 2.942979335784912e-07,
+      "max_recall_error": 1.1920928955078125e-07,
+      "fp32_vs_released_bf16_max_difference": 0.00449526309967041
+    },
+    {
+      "max_probability_error": 8.344650268554688e-07,
+      "mean_probability_error": 2.942979335784912e-07,
+      "max_recall_error": 1.1920928955078125e-07,
+      "fp32_vs_released_bf16_max_difference": 0.00449526309967041
+    },
+    {
+      "max_probability_error": 8.940696716308594e-07,
+      "mean_probability_error": 3.1944364309310913e-07,
+      "max_recall_error": 2.682209014892578e-07,
+      "fp32_vs_released_bf16_max_difference": 0.012085258960723877
+    },
+    {
+      "max_probability_error": 8.940696716308594e-07,
+      "mean_probability_error": 3.1944364309310913e-07,
+      "max_recall_error": 2.682209014892578e-07,
+      "fp32_vs_released_bf16_max_difference": 0.012085258960723877
+    }
+  ],
+  "max_cache_error": 8.940696716308594e-07,
+  "admission": "Existing cw-rno2a-lq / iris-cq; iris-accelerator-batch workload priority and iris-batch pod priority."
+}

@@ -1,0 +1,29 @@
+{
+  "status_checked_utc": "2026-10-30T19:01:43Z",
+  "status_source": "iris --cluster cw-us-east-02a job list --prefix /bizon/exp373 --state succeeded --limit 20",
+  "successful_production_jobs": [
+    "/bizon/exp373-mpnn-s00-a02",
+    "/bizon/exp373-mpnn-s01-a02",
+    "/bizon/exp373-mpnn-s02-a02",
+    "/bizon/exp373-mpnn-s03-a02",
+    "/bizon/exp373-mpnn-s04-a02",
+    "/bizon/exp373-mpnn-s05-a01",
+    "/bizon/exp373-default-s00-a01",
+    "/bizon/exp373-default-s01-a01",
+    "/bizon/exp373-default-s02-a01",
+    "/bizon/exp373-default-s03-a02",
+    "/bizon/exp373-default-s04-a02",
+    "/bizon/exp373-default-s05-a02"
+  ],
+  "conditions": 1392,
+  "samples": 278400,
+  "retained_unfinished": 17,
+  "extended_samples": 1501,
+  "measured_inference_gpu_hours": 5.197307917476865,
+  "inference_hours_scope": "Sum of pure inference for retained complete conditions; excludes setup, artifact publication and discarded failed-attempt work.",
+  "first_output_timestamp": "2026-10-30T18:18:55.041643+00:00",
+  "last_output_timestamp": "2026-10-30T18:59:55.087627+00:00",
+  "smoke_samples": 200,
+  "production_upload_failures_recovered": 8,
+  "recovery": "Completed conditions reused; bounded direct bucket API publisher retries replaced filesystem-discovery uploads. Scientific worker/parser AST and frozen plan unchanged."
+}

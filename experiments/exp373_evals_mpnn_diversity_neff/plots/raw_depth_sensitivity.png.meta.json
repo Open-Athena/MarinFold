@@ -1,0 +1,5 @@
+{
+  "script": "plot.py",
+  "args": [],
+  "caption": "Raw sequence-count sensitivity on the same 97 proteins and primary condition. Empty tiers are explicit; raw depth is distinct from Neff."
+}

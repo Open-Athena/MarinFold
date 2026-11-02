@@ -1,0 +1,39 @@
+{
+  "frozen_at": "2026-10-22T14:51:08.853461+00:00",
+  "promotion_rule_source": "data/validation_weight_power_decision.json",
+  "evidence": {
+    "h100": {
+      "r_precision": {
+        "difference": 0.0023920725867588,
+        "low": 0.0002211038710196,
+        "high": 0.0050840678877358
+      },
+      "long_r_precision": {
+        "difference": 0.0030522941516815,
+        "low": 0.0006350762781316,
+        "high": 0.0061471162663356
+      }
+    },
+    "gb200": {
+      "r_precision": {
+        "difference": 0.0027904649578841,
+        "low": 0.0007608253888756,
+        "high": 0.0052313111557506
+      },
+      "long_r_precision": {
+        "difference": 0.0036870844579377,
+        "low": 0.0007700323109675,
+        "high": 0.0070276374294609
+      }
+    }
+  },
+  "power2_promoted": true,
+  "selected_candidate": "ordinary-direct:128:f1_power2",
+  "baseline": "ordinary-direct:128:frequency",
+  "final_test_plan_sha256": "35a563b7c067b8eaf98b63e140d79f8bb7be58d2023989b01a6cd2beaa31a9e8",
+  "test_cohort_size": 1473,
+  "test_related_groups": 295,
+  "test_inference_launched_before_freeze": false,
+  "test_metrics_read_before_freeze": false,
+  "no_guided_policy_promoted": "All original guided configurations are dominated by ordinary sampling on the measured H100 pilot quality/cost frontier."
+}

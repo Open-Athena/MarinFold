@@ -1,0 +1,16 @@
+{
+  "script": "plot_trajectory_quality.py",
+  "args": [
+    "--data",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/data/pilot_guided",
+    "--plan",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/pilot.json",
+    "--out",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/plots/pilot_guided_quality.png",
+    "--table",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/data/pilot_guided/quality_summary.csv",
+    "--title",
+    "Complete guided pilot: trajectory quality and reader predictions"
+  ],
+  "caption": "32 proteins, equally weighted after averaging trajectories within each protein. Blue intervals resample homology groups. Orange crosses show mean critic predictions."
+}

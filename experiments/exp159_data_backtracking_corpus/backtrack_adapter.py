@@ -22,8 +22,8 @@ back with ``read.live_contacts`` recovers exactly the engine's final live set.
   model never saw one). Sample a few tokens, take the first valid contact,
   map to a seq pair. ``<end>`` first (or nothing valid) → ``None``.
 - **Scorer.** Prompt = the fixed prefix + the *committed* contacts; one
-  ``inference._fwd_matrix`` pass yields ``s(c)`` for every pair at once
-  (``_pcontact_from_fwd``); return the requested targets' entries.
+  ``inference.fwd_matrix`` pass yields ``s(c)`` for every pair at once
+  (``pcontact_from_fwd``); return the requested targets' entries.
 
 Efficiency note: each call re-prefills the growing prompt (no KV reuse) — fine
 for the pilot (whose point is to *measure* per-document wall-clock); a caching
@@ -62,7 +62,7 @@ class ModelAdapter:
         top_k: int = 50,
         propose_tokens: int = 12,
     ):
-        built = inf._prefix_and_positions(structure, entry_id=entry_id)
+        built = inf.prefix_and_positions(structure, entry_id=entry_id)
         if built is None:
             raise ValueError(f"cannot serialize {entry_id}")
         self.prefix, self.seq_positions, self.L = built
@@ -127,9 +127,9 @@ class ModelAdapter:
     ) -> dict[Pair, float]:
         """``s(c)`` for each target pair, conditioned on the committed set.
 
-        Mathematically identical to ``_pcontact_from_fwd(_fwd_matrix(...))``
+        Mathematically identical to ``pcontact_from_fwd(fwd_matrix(...))``
         read at the target entries, but computed with **only the tails the
-        targets need**. ``_fwd_matrix`` runs one tail per residue (L of them)
+        targets need**. ``fwd_matrix`` runs one tail per residue (L of them)
         to fill the whole [L, L] map; we only ever read a handful of entries,
         so we run tails just for the residues appearing in ``targets``. With a
         queue of ~10 pairs on an L~100 protein that is ~20 tails instead of

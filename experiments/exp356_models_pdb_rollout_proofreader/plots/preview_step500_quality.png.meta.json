@@ -1,0 +1,9 @@
+{
+  "script": "analyze.py",
+  "args": [
+    "--label",
+    "preview_step500",
+    "--replot-only"
+  ],
+  "caption": "preview_step500, exp356-exp277-bidir-pdb50k-v1/step-500. Protein means; calibration bins pool contacts. Confidence intervals in metrics JSON resample related groups."
+}

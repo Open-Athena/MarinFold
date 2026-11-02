@@ -1,0 +1,28 @@
+{
+  "verified_at": "2026-10-30T18:33:56.832717+00:00",
+  "versions": {
+    "default": {
+      "vllm": "0.9.2",
+      "torch": "2.7.0+cu128",
+      "transformers": "4.53.1",
+      "tokenizers": "0.21.2",
+      "huggingface-hub": "0.33.2",
+      "marinfold": "0.1.0"
+    },
+    "mpnn": {
+      "vllm": "0.9.2",
+      "torch": "2.7.0+cu128",
+      "transformers": "4.53.1",
+      "tokenizers": "0.21.2",
+      "huggingface-hub": "0.33.2",
+      "marinfold": "0.1.0"
+    }
+  },
+  "read_only_probe_jobs": {
+    "default": "/bizon/exp373-default-s03-a02/0",
+    "mpnn": "/bizon/exp373-mpnn-s00-a02/0"
+  },
+  "marinfold_revision": "d1bea417a64cc042ad931422200c3edeb873f2e0",
+  "dtype": "bfloat16",
+  "image": "vllm/vllm-openai:v0.9.2"
+}

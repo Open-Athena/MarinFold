@@ -1,0 +1,9 @@
+{
+  "script": "analyze.py",
+  "args": [
+    "--label",
+    "validation_step2000",
+    "--replot-only"
+  ],
+  "caption": "validation_step2000, exp356-exp277-bidir-pdb50k-v1/step-2000. Protein means; calibration bins pool contacts. Confidence intervals in metrics JSON resample related groups."
+}

@@ -1,0 +1,41 @@
+{
+  "at": "2026-10-21T17:59:29.089531+00:00",
+  "cluster": "cw-us-east-02a",
+  "nodes_with_unrequested_gpu": [
+    {
+      "node": "g83a1bc",
+      "free_gpu": 8.0,
+      "free_cpu": 123.915,
+      "free_memory_gib": 1999.4318008422852,
+      "unschedulable": false,
+      "ready": true
+    },
+    {
+      "node": "g83f90a",
+      "free_gpu": 7.0,
+      "free_cpu": 115.81500000000001,
+      "free_memory_gib": 1935.3068008422852,
+      "unschedulable": false,
+      "ready": true
+    },
+    {
+      "node": "g8498e8",
+      "free_gpu": 8.0,
+      "free_cpu": 123.915,
+      "free_memory_gib": 1999.4318161010742,
+      "unschedulable": false,
+      "ready": true
+    }
+  ],
+  "admission_check": {
+    "at": "2026-10-21T18:02:35.928607+00:00",
+    "pod": "iris-bizon-exp368-length-probe-east-d95b350d-1-be59c689730785f1",
+    "condition": "SchedulingGated",
+    "gates": [
+      "kueue.x-k8s.io/admission",
+      "kueue.x-k8s.io/topology"
+    ],
+    "scoring_workload_message": "couldn't assign flavors to pod set main: insufficient unused quota for nvidia.com/gpu in flavor cw-tas, 1 more needed, insufficient unused quota for rdma/ib in flavor cw-tas, 1 more needed",
+    "action": "Wait for queue admission; do not change shared quotas or lower CPU requests without a resource need"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "script": "plot_pool_scaling.py",
+  "args": [
+    "--input",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/data/validation_frequency/per_protein.csv.gz",
+    "--plan",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/validation_pool.json",
+    "--data-out",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/data/validation_frequency",
+    "--out",
+    "experiments/exp368_evals_proofreader_guided_contact_maps/plots/validation_pool_scaling.png"
+  ],
+  "caption": "Each latency point is one (protein, pool-size) inference, excluding model load and artifact writes. Length strata use fixed boundaries at 32, 128, 256, 512 and 1001 residues. Intervals resample related groups within each stratum and describe paired differences. Strata are descriptive; they do not select proteins or tune a test policy."
+}
