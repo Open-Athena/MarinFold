@@ -1,0 +1,31 @@
+{
+  "completed_checkpoints": 2,
+  "requested_checkpoints": 2,
+  "results": [
+    {
+      "trial": "lr5e-4",
+      "files": {
+        "manifest.json": "efa748f903e3735ad5e120e132192e99a21e1431ba3900b0372592c5a8629f3a",
+        "contact_precision_all.csv": "8d4344d74a11724122d2ca9a1fd850f88e09cee06346ec94d68569c9af7d92c5",
+        "timings.csv": "d07fbda472357cc47501d3a9c4ebf39db2567e023c5f0f6fe6b4712643d027bb"
+      }
+    },
+    {
+      "trial": "lr1e-3",
+      "files": {
+        "manifest.json": "47594bc5020f0c66cf09b46596a97bc94fdd676ecb3ad8ea2f59c36f38f3399c",
+        "contact_precision_all.csv": "0478c8ce05101fe5ff97e31cd84a3a4aceec9c2df965f30e26c0048da2bdaf99",
+        "timings.csv": "970f68210774e43e830a284783d18ee26ac09ce5dcf392287b01136821c74b33"
+      }
+    }
+  ],
+  "bootstrap": {
+    "replicates": 10000,
+    "seed": 20261021,
+    "unit": "protein"
+  },
+  "low_msa_membership_sha256": "32b7083af03ccd874d796732c8297e10aafe52de3c92f12be2c247442da3b45f",
+  "scope": "eval-val and eval-denovo only; no eval-test or legacy read",
+  "eval_set": "all",
+  "matched_sequence_knn_null": null
+}

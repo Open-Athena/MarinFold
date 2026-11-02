@@ -1,10 +1,12 @@
-## November 2 — final checkpoint evaluation
+## November 2 — final contact scores complete
 
-Score both completed two-epoch parents at step 373768: 97 eval-val proteins and 19 eval-denovo designs, 100 rollouts per protein. Reuse the established CUDA/vLLM recipe and approved continuation policy.
+Both jobs succeeded around 14:08 EST. Each scored 97 eval-val proteins and 19 eval-denovo designs with 100 rollouts per protein. All 23,200 rollouts finished; zero extensions, failures or preemptions. No experiment training or evaluation jobs remain active.
 
-The verified trainer exports stay in CoreWeave US-EAST-02A. Two independent batch H100 jobs use one-protein smoke gates before the complete evaluations. Accepted jobs: /bizon/exp364-contact-eval-lr5e-4-a08 and /bizon/exp364-contact-eval-lr1e-3-a08. Final R-precision is pending.
+All-range R-precision, natural / designed: two-epoch 5e-4 0.52470 / 0.67385; two-epoch 1e-3 0.47779 / 0.66229; one-epoch GPU 0.46301 / 0.66515; one-epoch TPU 0.46018 / 0.66954; full-data default 0.55510 / 0.69640.
 
-October 21 and October 29 results are preserved under dated paths. The one-epoch diversity/Neff study remains separate in issue 373.
+The final 5e-4 model gains 0.06170 on eval-val over its one-epoch fork, remaining 0.03040 below the default. Training exposure and schedules differ. Designs number only 19; matched sequence-KNN null is unavailable.
+
+Per-protein metrics, timings, bootstrap intervals, provenance and comparisons are committed and public. October 29 results remain archived. The default and the separate issue 373 model selection are unchanged.
 
 ## November 2 — two-epoch training complete
 
@@ -16,7 +18,7 @@ The two-epoch 5e-4 model leads the redesign-only runs, improving by 0.02243 over
 
 Regional CPU verification read every exported parameter: all are finite. Native trainer, optimizer, LR-schedule and inner-optimizer counters agree; both tokenizers are co-located. Verification manifests and complete validation curves are saved.
 
-Final two-epoch R-precision is not yet measured. October 29 parent contact scores describe earlier checkpoints. The optional published one-epoch model and exp277 default remain unchanged; the separate diversity/Neff study is issue 373.
+Final two-epoch R-precision is complete and shown in the preceding slide. October 29 parent contact scores describe earlier checkpoints. The optional published one-epoch model and exp277 default remain unchanged; the separate diversity/Neff study is issue 373.
 
 ## October 30 — one-epoch GPU checkpoint published
 

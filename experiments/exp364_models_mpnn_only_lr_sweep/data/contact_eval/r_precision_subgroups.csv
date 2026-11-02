@@ -1,0 +1,25 @@
+trial,step,eval_set,subgroup,range,n,r_precision,status
+lr5e-4,373768,eval-denovo,viral,all,0,,outside requested sets
+lr5e-4,373768,eval-denovo,viral,long,0,,outside requested sets
+lr5e-4,373768,eval-denovo,nonviral,all,19,0.6738499506537637,scored
+lr5e-4,373768,eval-denovo,nonviral,long,19,0.6370860970698199,scored
+lr5e-4,373768,eval-denovo,low_msa,all,13,0.6626161544073644,scored
+lr5e-4,373768,eval-denovo,low_msa,long,13,0.6090873848318877,scored
+lr5e-4,373768,eval-val,viral,all,6,0.4678734824646262,scored
+lr5e-4,373768,eval-val,viral,long,6,0.44523335728096947,scored
+lr5e-4,373768,eval-val,nonviral,all,91,0.5284502830537618,scored
+lr5e-4,373768,eval-val,nonviral,long,91,0.5122749150930884,scored
+lr5e-4,373768,eval-val,low_msa,all,0,,outside requested sets
+lr5e-4,373768,eval-val,low_msa,long,0,,outside requested sets
+lr1e-3,373768,eval-denovo,viral,all,0,,outside requested sets
+lr1e-3,373768,eval-denovo,viral,long,0,,outside requested sets
+lr1e-3,373768,eval-denovo,nonviral,all,19,0.6622890299290628,scored
+lr1e-3,373768,eval-denovo,nonviral,long,19,0.6141537810669956,scored
+lr1e-3,373768,eval-denovo,low_msa,all,13,0.6539097748490026,scored
+lr1e-3,373768,eval-denovo,low_msa,long,13,0.5871086577974393,scored
+lr1e-3,373768,eval-val,viral,all,6,0.4137023213931778,scored
+lr1e-3,373768,eval-val,viral,long,6,0.38157496755097514,scored
+lr1e-3,373768,eval-val,nonviral,all,91,0.4820110612885492,scored
+lr1e-3,373768,eval-val,nonviral,long,91,0.4633863402109706,scored
+lr1e-3,373768,eval-val,low_msa,all,0,,outside requested sets
+lr1e-3,373768,eval-val,low_msa,long,0,,outside requested sets

@@ -1,0 +1,5 @@
+{
+  "script": "plot_final_contact_results.py",
+  "args": [],
+  "caption": "Final two-epoch step 373768 evaluations versus completed one-epoch forks and the exp277 full-data default. Macro all-range R-precision and 95% protein-bootstrap intervals; eval-val and eval-denovo are separate. The default uses its prior published evaluation."
+}
