@@ -1,0 +1,26 @@
+{
+  "job_id": "/bizon/exp364-verify-two-epoch-finals-a01",
+  "cluster": "cw-us-east-02a",
+  "output_uri": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/verification/two-epoch-finals-2026-11-02-a01.json",
+  "git_commit": "cbfda2af153b6f5c306fe029ecc241c6030aa6a2",
+  "source_bundle_sha256": "5b38eec8fb951b04b1e1f409046f71708f1868a712ca38cab920b3ca477e94e1",
+  "source_files": {
+    "verify_completed.py": "75505ca06743cbd8f0f2b0c7884300aaebb5e17c788cbc51e2d453fc62d486c8",
+    "verify_final.py": "389e79887c2518da7ba51e4492de3aaca56da0e56c9651bf0534a29a5001c243"
+  },
+  "resources": {
+    "cpu": 4,
+    "ram": "8Gi",
+    "disk": "8Gi",
+    "gpus": 0
+  },
+  "dependencies": {
+    "numpy": "2.5.2",
+    "tensorstore": "0.1.84",
+    "fsspec": "2026.2.0",
+    "s3fs": "2026.2.0"
+  },
+  "initial_submission_rejection": "Controller requires CW_KEY_ID and CW_KEY_SECRET in addition to AWS/FSSPEC credentials; forwarded both before accepted submission.",
+  "state": "succeeded",
+  "finished_at": "2026-11-02T18:40:49.959000+00:00"
+}

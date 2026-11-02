@@ -52,6 +52,24 @@ Production launched with 32 H100s per trial on `cw-us-east-02a` at batch priorit
 
 All three trials were registered as running in W&B on 2026-10-13 at 15:10 UTC. Their live saved configurations were checked against the actual default run: model fields and all optimizer values match except the requested learning rate; the exact two-source training subset, global batch 128, 373,769-step target, and augmentation duration were verified. Final results are pending.
 
+### Both two-epoch parents complete and verified, 2026-11-02
+
+The remaining production runs completed successfully at final checkpoint **373768**, with **373769 optimizer updates** covering the requested two redesign epochs. The 1e-3 root finished on October 31 at 17:24:59 UTC (13:24 EDT), and the 5e-4 root finished on November 1 at 20:33:09 UTC (15:33 EST). No training jobs remain active; the 2e-3 trial remains cancelled at the user's request.
+
+| Completed run | Epochs | Final checkpoint | Final full LM validation loss |
+| --- | ---: | ---: | ---: |
+| 5e-4 parent | 2 | 373768 | **3.01328707** |
+| 1e-3 parent | 2 | 373768 | 3.04156637 |
+| 5e-4 GPU cooldown fork | 1 | 186884 | 3.03571987 |
+| 5e-4 TPU cooldown fork | 1 | 186884 | 3.03581691 |
+| Full-data default, exp277 | 1 full-data epoch | 266344 | 2.98440742 |
+
+The 5e-4 parent is the best completed redesign-only run by LM validation loss: 0.02243 below its one-epoch GPU fork and 0.02828 below the 1e-3 parent. It remains 0.02888 above the full-data default. These use the same full LM validation task; different training exposures and schedules prevent attributing the entire difference to exclusion of native sequences.
+
+A regional batch CPU job, `/bizon/exp364-verify-two-epoch-finals-a01`, read every parameter of both saved HF exports, verified that all weights are finite, and checked the weight indices and co-located tokenizer/config files. Native trainer, optimizer, LR-schedule and inner-optimizer counters all equal 373769; final checkpoint metadata is non-temporary. `data/two_epoch_final_verification.json` records counters and weight SHA-256 digests, and `data/two_epoch_final_verification_launch.json` pins the verification source and runtime. Reproduce with `verify_completed.py --output-uri <regional-report-uri>` on a CoreWeave CPU with the existing regional S3 and TensorStore credentials. The three finite-export regression tests pass.
+
+The refreshed validation CSV and plot include the complete trajectories. **R-precision at these final two-epoch checkpoints has not been measured**: the October 29 parent scores still refer to steps 282830 and 314987. The already-published one-epoch model and the current default remain unchanged. The separately requested diversity/Neff study was filed as [#373](https://github.com/Open-Athena/MarinFold/issues/373) for another agent, with its original one-epoch checkpoint selection intact.
+
 ### Selected checkpoint published without changing the default, 2026-10-30
 
 For the proposed eval-val diversity comparison, select the completed GPU one-epoch fork, `contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-step-186884`. Its eval-val all-range R-precision is **0.46301**, compared with the TPU fork's **0.46018**, and its final LM validation loss is 3.03571987 versus 3.03581691. The contact-score difference is below the 0.005 practical tie threshold: this is selection by the relevant point estimate, not evidence that GPU training is superior. The TPU fork has the higher eval-denovo score.
@@ -250,4 +268,6 @@ Each trial writes to `s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_l
 
 ## Conclusion
 
-Both one-epoch cooldown forks are complete, with verified finite weights and nearly identical final validation losses (GPU 3.03572; TPU 3.03582). All five October 29 contact evaluations are complete. The cooldown forks lead the redesign-only variants and are effectively tied on all-range R-precision: GPU 0.46301 / 0.66515 and TPU 0.46018 / 0.66954 on natural / designed proteins. The completed full-data first epoch remains higher at 0.55510 / 0.69640 and has lower LM validation loss. Unequal exposure and differing schedules prevent attributing the whole gap to removal of native sequences. The user stopped the unstable 2e-3 trial on October 30 at approximately 1.369 epochs after its contact accuracy regressed. The 5e-4 and 1e-3 parents remain active at approximately 1.667 and 1.843 epochs, improving during cooldown with their original two-epoch targets intact. Do not restart the cancelled 2e-3 trial without explicit user authorization.
+The 5e-4 and 1e-3 parents completed exactly two epochs at checkpoint 373768 with verified finite exports and matching native counters. Their final full LM validation losses are 3.01329 and 3.04157. The 5e-4 parent leads the completed redesign-only models, improving by 0.02243 over the one-epoch GPU cooldown fork, but remains 0.02888 above the full-data default's 2.98441. Both one-epoch forks remain complete (GPU 3.03572; TPU 3.03582). The user cancelled the unstable 2e-3 trial on October 30 at approximately 1.369 epochs; do not restart it without explicit authorization. No training jobs remain active.
+
+All five October 29 contact evaluations are complete, but the two new final parent checkpoints have not been scored. Within the October 29 snapshot, the cooldown forks lead and are effectively tied on all-range R-precision: GPU 0.46301 / 0.66515 and TPU 0.46018 / 0.66954 on natural / designed proteins. The full-data first epoch remains higher at 0.55510 / 0.69640. Unequal exposure and differing schedules prevent attributing the whole gap to removal of native sequences. The optional published one-epoch model and current default remain unchanged; the separate qualitative/diversity/Neff investigation is tracked in #373.

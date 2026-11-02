@@ -43,4 +43,4 @@ _(Bullet list of differences from the last run of this kind.)_
 
 ## Notes
 
-_(Anything else worth remembering — preemptions, midway tweaks, etc.)_
+Completed at 2026-11-01T20:33:09.701000+00:00 on `/bizon/exp364-lr5e-4-train-a04`, final checkpoint 373768 after 373769 updates (exactly two epochs). Final full LM validation loss: 3.01328707. On November 2, regional CPU verification confirmed all exported parameters are finite and all four native counters agree; tokenizer files are co-located. See the experiment's `data/two_epoch_final_verification.json`. Final-checkpoint R-precision has not yet been measured.

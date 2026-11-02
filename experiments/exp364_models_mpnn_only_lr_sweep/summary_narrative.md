@@ -1,3 +1,15 @@
+## November 2 — two-epoch training complete
+
+The 1e-3 parent finished October 31 at 13:25 EDT; 5e-4 finished November 1 at 15:33 EST. Both stopped at checkpoint 373768 after exactly 373769 optimizer updates. No training jobs remain active; 2e-3 remains cancelled.
+
+Final full LM validation loss: 5e-4 two epochs 3.01329; 1e-3 two epochs 3.04157. Completed one-epoch forks: GPU 3.03572, TPU 3.03582. Full-data default: 2.98441.
+
+The two-epoch 5e-4 model leads the redesign-only runs, improving by 0.02243 over its one-epoch fork, but remains 0.02888 above the full-data default. Different exposures and schedules limit causal interpretation.
+
+Regional CPU verification read every exported parameter: all are finite. Native trainer, optimizer, LR-schedule and inner-optimizer counters agree; both tokenizers are co-located. Verification manifests and complete validation curves are saved.
+
+Final two-epoch R-precision is not yet measured. October 29 parent contact scores describe earlier checkpoints. The optional published one-epoch model and exp277 default remain unchanged; the separate diversity/Neff study is issue 373.
+
 ## October 30 — one-epoch GPU checkpoint published
 
 Selected contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B, step 186884, for a proposed eval-val diversity study. Eval-val R-precision: GPU 0.46301 versus TPU 0.46018. This is a practical tie; selection uses the relevant point estimate, not a claim of GPU superiority.
