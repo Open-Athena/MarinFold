@@ -2,7 +2,7 @@
 
 Score both completed two-epoch parents at step 373768: 97 eval-val proteins and 19 eval-denovo designs, 100 rollouts per protein. Reuse the established CUDA/vLLM recipe and approved continuation policy.
 
-The verified trainer exports stay in CoreWeave US-EAST-02A. Two independent batch H100 jobs use one-protein smoke gates before the complete evaluations. Final R-precision is pending.
+The verified trainer exports stay in CoreWeave US-EAST-02A. Two independent batch H100 jobs use one-protein smoke gates before the complete evaluations. Accepted jobs: /bizon/exp364-contact-eval-lr5e-4-a08 and /bizon/exp364-contact-eval-lr1e-3-a08. Final R-precision is pending.
 
 October 21 and October 29 results are preserved under dated paths. The one-epoch diversity/Neff study remains separate in issue 373.
 

@@ -321,5 +321,29 @@
     "failures": 0,
     "preemptions": 0,
     "task_duration_seconds": 743.07
+  },
+  {
+    "job_id": "/bizon/exp364-contact-eval-lr5e-4-a08",
+    "trial": "lr5e-4",
+    "step": 373768,
+    "eval_set": "all",
+    "export_only": false,
+    "bf16_export": false,
+    "cluster": "cw-us-east-02a",
+    "bundle_sha256": "a728262b416e23e5068285ca25e6d66c7c84cb7438048be7b5dfc0c1a8654375",
+    "bundle_uri": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-11-02/final-01/source/a728262b416e23e5068285ca25e6d66c7c84cb7438048be7b5dfc0c1a8654375.zip",
+    "git_commit": "9505c1d8884378112a7634c2eb16990ce5379050"
+  },
+  {
+    "job_id": "/bizon/exp364-contact-eval-lr1e-3-a08",
+    "trial": "lr1e-3",
+    "step": 373768,
+    "eval_set": "all",
+    "export_only": false,
+    "bf16_export": false,
+    "cluster": "cw-us-east-02a",
+    "bundle_sha256": "a728262b416e23e5068285ca25e6d66c7c84cb7438048be7b5dfc0c1a8654375",
+    "bundle_uri": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-11-02/final-01/source/a728262b416e23e5068285ca25e6d66c7c84cb7438048be7b5dfc0c1a8654375.zip",
+    "git_commit": "9505c1d8884378112a7634c2eb16990ce5379050"
   }
 ]
