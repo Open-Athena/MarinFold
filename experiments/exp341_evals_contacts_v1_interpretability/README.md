@@ -3,12 +3,12 @@ marinfold_experiment:
   issue: 341
   title: 'exp: Interpretability of contacts-v1: chain reconstruction, contact heads, and memorization vs coevolution'
   kind: evals
-  branch: exp/341-contacts-v1-interpretability
+  branch: main
 ---
 
 # exp: Interpretability of contacts-v1: chain reconstruction, contact heads, and memorization vs coevolution
 
-**Issue:** [#341](https://github.com/Open-Athena/MarinFold/issues/341) · **Kind:** `evals` · **Branch:** `exp/341-contacts-v1-interpretability`
+**Issue:** [#341](https://github.com/Open-Athena/MarinFold/issues/341) · **Kind:** `evals` · **Branch:** `main`
 
 ## Question
 

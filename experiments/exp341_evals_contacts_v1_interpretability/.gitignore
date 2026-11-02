@@ -1,0 +1,5 @@
+# Run outputs from launch_aws.sh jobs (logs, code bundles, intermediate arrays);
+# results worth keeping are summarized into data/ and plots/.
+out/
+# Short-lived AWS STS credentials.
+*.env
