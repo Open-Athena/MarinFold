@@ -1,0 +1,2 @@
+n_candidates,frac_novel_fold,frac_same_fold,frac_redundant,median_nearest_train_tm,frac_tm_lt_0.5
+2000,0.148,0.7335,0.1185,0.6807,0.148

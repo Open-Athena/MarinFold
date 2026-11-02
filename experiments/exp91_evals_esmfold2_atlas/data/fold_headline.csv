@@ -1,0 +1,2 @@
+n_meta_sample,n_struct_sample,frac_plddt_gt_0.7,frac_plddt_gt_0.7_paper,median_seq_len,median_mean_plddt,median_ptm,monomer_fraction,max_n_chains
+100000,2000,0.36442,0.3820173436786855,143.0,0.613400936126709,0.4017415940761566,1.0,1

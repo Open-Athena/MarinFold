@@ -1,0 +1,10 @@
+stage,enabled,passing_alone,cumulative_kept,cumulative_frac,est_full_atlas_millions
+length,True,2000,2000,1.0,1095.53088
+plddt,True,808,808,0.404,442.59447552000006
+ptm,True,916,736,0.368,403.15536383999995
+globularity,False,0,736,0.368,403.15536383999995
+plddt_uniform,False,0,736,0.368,403.15536383999995
+afdb_seq_novel,True,1890,643,0.3215,352.21317792
+afdb_struct_novel,False,2000,643,0.3215,352.21317792
+afdb_dedup,False,2000,643,0.3215,352.21317792
+eval_leakage,False,2000,643,0.3215,352.21317792

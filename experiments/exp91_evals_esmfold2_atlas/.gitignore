@@ -1,0 +1,34 @@
+# Large / derived artifacts — keep the small CSVs + plots in git, not these.
+.venv/
+__pycache__/
+*.pyc
+
+# Synced afdb-24M Foldseek DB (~2.7 GB; re-fetch with `hf buckets sync`).
+db_full/
+# Foldseek prebuilt PDB DB (~4.3 GB; re-fetch with `foldseek databases PDB`).
+pdb_db/
+tmp_fs/
+*.m8
+
+# Decoded structure sample (CIFs) and the raw 100k metadata sample (24 MB).
+# Reproduce with `uv run python sample_atlas.py`. Summary CSVs are committed.
+data/struct_sample/
+data/atlas_sample.parquet
+
+# The source paper (28 MB) and its extracted text — large; fetchable from the
+# bioRxiv DOI linked in the README. Not committed per the "small artifacts in
+# git" rule.
+2026.06.03.729735v1.full.pdf
+paper.txt
+
+# Scratch / smoke outputs.
+data/_*
+_localsmoke/
+
+# Local, untracked launcher wrappers (carry config/secrets; run, don't commit).
+*.local.sh
+
+# AWS credentials — NEVER commit. Exported from CloudShell, short-lived.
+aws_keys.env
+*.env
+*_keys*

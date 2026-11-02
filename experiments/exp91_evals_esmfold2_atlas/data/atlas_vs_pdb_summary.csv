@@ -1,0 +1,2 @@
+n_candidates,n_with_pdb_hit,frac_pdb_fold_match_tm_ge_0.5,frac_pdb_near_identical_tm_ge_0.9,median_best_pdb_tm,median_best_pdb_fident
+2000,1997,0.645,0.0635,0.5582,0.045

@@ -1,0 +1,2 @@
+n_clusters_ge50,frac_no_uniprot_match,frac_uniref_id_ge_30,frac_uniref_id_ge_50,frac_uniref_id_ge_70,frac_uniref_id_ge_90,frac_uniref_id_ge_95,median_uniref_id_where_matched
+7723579,0.1620484493005121,0.8048988687757321,0.633838017323316,0.3969741230069635,0.19255554970046918,0.11195237337508945,68.0
