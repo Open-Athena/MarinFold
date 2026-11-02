@@ -1,0 +1,18 @@
+{
+  "observed_at_utc": "2026-11-02T18:52:10.898070+00:00",
+  "cluster": "cw-us-east-02a",
+  "jobs": [
+    {
+      "job_id": "/bizon/exp364-contact-eval-lr5e-4-a08",
+      "trial": "lr5e-4",
+      "step": 373768,
+      "state": "running"
+    },
+    {
+      "job_id": "/bizon/exp364-contact-eval-lr1e-3-a08",
+      "trial": "lr1e-3",
+      "step": 373768,
+      "state": "running"
+    }
+  ]
+}
