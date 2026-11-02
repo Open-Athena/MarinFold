@@ -10,12 +10,51 @@ import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 
+from fsspec import AbstractFileSystem
 from huggingface_hub import HfFileSystem
 
 from runtime import load_release
 
 HERE = Path(__file__).resolve().parent
 DESTINATION = 'hf://buckets/open-athena/MarinFold/data/exp368/reports'
+
+
+def restore_native_source(bootstrap: dict, cache_dir: Path, public_fs: AbstractFileSystem) -> Path:
+    """Restore the executed native source archive and verify its size and hash.
+
+    Args:
+        bootstrap: Recorded config-map name, bundle byte count and SHA256.
+        cache_dir: Local directory for the verified archive.
+        public_fs: Filesystem serving the immutable published source bundle.
+
+    Returns:
+        Path to the verified archive, downloaded if absent from the cache.
+    """
+    expected_size = bootstrap['bundle_bytes']
+    sha = bootstrap['bundle_sha256']
+    if not 0 < expected_size <= 700_000:
+        raise ValueError('Native bootstrap source exceeds its small-artifact ceiling')
+    destination = cache_dir / (bootstrap['config_map'] + '.tar.gz')
+    if not destination.exists():
+        source = DESTINATION.removeprefix('hf://') + '/source_bundles/' + sha + '.tar.gz'
+        if public_fs.info(source)['size'] != expected_size:
+            raise ValueError('Published native bootstrap source has the wrong size')
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        partial = destination.with_suffix('.partial')
+        try:
+            public_fs.get_file(source, str(partial))
+            if partial.stat().st_size != expected_size:
+                raise ValueError('Downloaded native bootstrap source has the wrong size')
+            if hashlib.sha256(partial.read_bytes()).hexdigest() != sha:
+                raise ValueError('Native bootstrap source hash mismatch')
+            partial.replace(destination)
+        finally:
+            partial.unlink(missing_ok=True)
+    if destination.stat().st_size != expected_size:
+        raise ValueError('Cached native bootstrap source has the wrong size')
+    if hashlib.sha256(destination.read_bytes()).hexdigest() != sha:
+        raise ValueError('Native bootstrap source hash mismatch')
+    return destination
 
 
 def frozen_sources() -> dict[str, Path]:
@@ -45,9 +84,7 @@ def frozen_sources() -> dict[str, Path]:
     native = HERE / 'data/native_bootstrap.json'
     if native.exists():
         bootstrap = json.loads(native.read_text())
-        path = HERE / '_cache' / (bootstrap['config_map'] + '.tar.gz')
-        if hashlib.sha256(path.read_bytes()).hexdigest() != bootstrap['bundle_sha256']:
-            raise ValueError('Native bootstrap source hash mismatch')
+        path = restore_native_source(bootstrap, HERE / '_cache', HfFileSystem(token=False))
         result['source_bundles/' + bootstrap['bundle_sha256'] + '.tar.gz'] = path
     return result
 
