@@ -31,6 +31,7 @@ import sys
 import time
 import zlib
 from collections import Counter
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
@@ -115,7 +116,11 @@ def fetch_member(url: str, lho: int, csize: int, usize: int) -> str:
     return raw.decode("utf-8", "replace")
 
 
-def _one(row: dict[str, Any]) -> tuple[dict | None, dict]:
+def _one(
+    row: dict[str, Any], *,
+    fetch: Callable[..., str] = fetch_member,
+    load_generator: Callable[[], tuple[Any, Any, Any]] = _generator,
+) -> tuple[dict | None, dict]:
     """Fetch, parse and generate one PINDER system.
 
     A *transport* failure propagates, so the batch defers and is retried. A
@@ -125,8 +130,8 @@ def _one(row: dict[str, Any]) -> tuple[dict | None, dict]:
     that before this distinction existed. A bad structure therefore becomes a
     named ledger row, like every other designed-in rejection.
     """
-    gemmi, _zstd, generate = _generator()
-    text = fetch_member(
+    gemmi, _zstd, generate = load_generator()
+    text = fetch(
         row["zip_url"], row["local_header_offset"],
         row["compressed_bytes"], row["uncompressed_bytes"],
     )

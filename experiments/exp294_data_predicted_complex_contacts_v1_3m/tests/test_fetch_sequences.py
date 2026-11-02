@@ -17,6 +17,7 @@ import pytest
 HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
 
+import fetch_sequences
 from fetch_sequences import (
     _RangeReader,
     _scan_range,
@@ -227,27 +228,21 @@ def test_reader_resumes_after_a_dropped_connection(fasta_server) -> None:
         reader.close()
 
 
-def test_truncated_transfer_is_fatal(fasta_server, tmp_path: Path, monkeypatch) -> None:
+def test_truncated_transfer_is_fatal(fasta_server, tmp_path: Path) -> None:
     """A server that closes early reads as a clean EOF; that must not pass.
 
     Without an explicit end-of-source check, an interrupted transfer is
     indistinguishable from the end of the file, and the run would quietly ship
     a short sequence set -- which under-decontaminates the corpus.
     """
-    import fetch_sequences
 
     url, _ = fasta_server
     # Claim the source is larger than it is, so the real EOF looks truncated.
     real_length = fetch_sequences.content_length(url)
-    monkeypatch.setattr(
-        fetch_sequences, "content_length", lambda _u: real_length + 10_000
-    )
     with pytest.raises(RuntimeError, match="truncated"):
-        fetch(
-            _normalized(tmp_path, ["ACC0000"]),
-            tmp_path / "trunc",
-            url=url,
-            workers=1,
+        _scan_range(
+            url, {b"ACC0000"}, 0, 0, real_length + 10_000,
+            str(tmp_path / "trunc.fasta.gz"), real_length + 10_000,
         )
 
 

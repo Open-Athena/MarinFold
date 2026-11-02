@@ -268,6 +268,7 @@ def walk_members(
     *,
     header_reads: list[int],
     checkpoint: "_WalkCheckpoint | None" = None,
+    fetch_range: Callable[[str, int, int], bytes] = http_range,
 ) -> dict[str, tuple[int, int]]:
     """Locate ``wanted`` member names, stopping as soon as all are found.
 
@@ -281,6 +282,16 @@ def walk_members(
     never finish -- which is exactly what stalled the run at 79%. The
     checkpoint persists the cursor and what has been found so far, so a
     restart resumes mid-tar instead of repeating the walk.
+
+    Args:
+        url: Source tar URL.
+        wanted: Exact member names to locate.
+        header_reads: Receives the number of header requests in this walk.
+        checkpoint: Optional durable cursor tied to this URL and member set.
+        fetch_range: Byte-range transport; defaults to the retrying HTTP reader.
+
+    Returns:
+        Requested member names mapped to their byte offset and size.
     """
     found: dict[str, tuple[int, int]] = {}
     offset = 0
@@ -288,7 +299,7 @@ def walk_members(
     if checkpoint is not None:
         offset, found = checkpoint.load(url, wanted)
     while found.keys() != wanted:
-        header = http_range(url, offset, 512)
+        header = fetch_range(url, offset, 512)
         reads += 1
         if header == b"\0" * 512:
             break
@@ -493,8 +504,22 @@ def extract_tar(
     *,
     fetch_concurrency: int = 8,
     checkpoint: "_WalkCheckpoint | None" = None,
+    process_model: Callable[[str, dict, int, int], tuple[dict | None, dict]] | None = None,
 ) -> TarResult:
-    """Walk one tar and generate every selected model it holds."""
+    """Walk one tar and generate every selected model it holds.
+
+    Args:
+        url: Source tar URL.
+        rows: Selected model metadata for this tar.
+        fetch_concurrency: Maximum parallel model processing calls.
+        checkpoint: Optional durable archive-walk cursor.
+        process_model: Optional member processor accepting URL, metadata, offset
+            and size, returning a document (or None) and terminal ledger row.
+            The default initializes and uses the production structure generator.
+
+    Returns:
+        Documents, terminal ledger rows and per-tar processing measurements.
+    """
     out = TarResult(tar_uri=url)
     by_member = {MEMBER_TEMPLATE.format(model_id=r["model_id"]): r for r in rows}
     reads: list[int] = []
@@ -529,10 +554,12 @@ def extract_tar(
         )
 
     began = time.monotonic()
-    _generator()  # warm before the pool so every thread sees a hot JIT
+    if process_model is None:
+        _generator()  # warm before the pool so every thread sees a hot JIT
+        process_model = _one_model
     with ThreadPoolExecutor(max_workers=max(1, fetch_concurrency)) as pool:
         futures = [
-            pool.submit(_one_model, url, by_member[name], offset, size)
+            pool.submit(process_model, url, by_member[name], offset, size)
             for name, (offset, size) in sorted(located.items(), key=lambda kv: kv[1][0])
         ]
         for future in futures:
@@ -592,6 +619,7 @@ def run(
     shard_count: int = 1,
     reverse: bool = False,
     max_deferred: int = 25,
+    process_tar: Callable[..., TarResult] = extract_tar,
 ) -> dict[str, Any]:
     """Extract every model in this shard's tars, writing as each tar finishes.
 
@@ -605,6 +633,10 @@ def run(
     Results are written per tar rather than accumulated: a full shard is ~140k
     documents whose text alone would be several GB of live objects on a 16 GB
     worker.
+
+    ``process_tar`` supplies the per-tar extractor with the same URL, selected
+    rows, concurrency and checkpoint arguments as :func:`extract_tar`. Tests
+    can substitute transport/processing failures without changing module state.
     """
     if not 0 <= shard_index < shard_count:
         raise ValueError(f"shard_index {shard_index} out of range for {shard_count}")
@@ -718,7 +750,7 @@ def run(
     skipped: list[str] = []
 
     def process(tar: str) -> TarResult:
-        return extract_tar(
+        return process_tar(
             tar, by_tar[tar], fetch_concurrency=fetch_concurrency,
             checkpoint=_WalkCheckpoint(fs, f"{prefix}/walk/{tar_stem(tar)}.json"),
         )

@@ -21,12 +21,18 @@ import zstandard
 HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
 
+import pyarrow as pa
+import pyarrow.parquet as pq
+
+import extract
+import pinder_extract
 from extract import (
     MEMBER_TEMPLATE,
     TarResult,
     _tar_results,
     _WalkCheckpoint,
     http_range,
+    tar_stem,
     walk_members,
 )
 
@@ -179,7 +185,6 @@ def test_per_call_zstd_decompressors_are_safe_under_threads() -> None:
 
 def test_extract_does_not_cache_a_decompressor_instance() -> None:
     """The safe shape is structural, so guard it rather than trusting review."""
-    import extract
 
     source = Path(extract.__file__).read_text()
     assert "ZstdDecompressor()" in source, "the module should build them per call"
@@ -188,8 +193,6 @@ def test_extract_does_not_cache_a_decompressor_instance() -> None:
 
 
 def _manifest(tmp_path: Path, url: str, names: list[str]) -> Path:
-    import pyarrow as pa
-    import pyarrow.parquet as pq
 
     rows = [
         {
@@ -219,7 +222,6 @@ def test_shards_stride_and_together_cover_every_tar(tar_server, tmp_path: Path) 
     homodimer shard_* together, and those differ by an order of magnitude in
     members per tar, so a contiguous slice hands one pod every 7.5 GB archive.
     """
-    import extract
 
     url, names = tar_server
     manifest = _manifest(tmp_path, url, names)
@@ -237,7 +239,6 @@ def test_shards_stride_and_together_cover_every_tar(tar_server, tmp_path: Path) 
 
 
 def test_shard_index_must_be_in_range() -> None:
-    import extract
 
     with pytest.raises(ValueError, match="out of range"):
         extract.run("unused.parquet", "unused", shard_index=3, shard_count=3)
@@ -245,7 +246,6 @@ def test_shard_index_must_be_in_range() -> None:
 
 def test_tar_stem_disambiguates_the_two_archive_trees() -> None:
     """shard_0_batch_0.tar exists under BOTH homodimers/ and heterodimers/."""
-    from extract import tar_stem
 
     base = "https://ftp.ebi.ac.uk/pub/databases/alphafold/collaborations/nvda"
     assert tar_stem(f"{base}/homodimers/chunk_0286.tar") == "homodimers__chunk_0286"
@@ -254,78 +254,72 @@ def test_tar_stem_disambiguates_the_two_archive_trees() -> None:
     )
 
 
-def _stub_one_model(monkeypatch) -> None:
-    """Replace the structure pipeline; these tests are about resume, not gemmi."""
-    import extract
-
-    def fake(url: str, row: dict, offset: int, size: int):
-        doc = {name: None for name in extract.DOC_SCHEMA.names}
-        doc.update(
-            {
-                "source_model_key": row["source_model_key"],
-                "model_id": row["model_id"],
-                "complex_type": row["complex_type"],
-                "document": "<contacts-v1> stub",
-                "sha1": "0" * 40,
-                "seq_len": 200,
-                "num_tokens": 10,
-                "num_chains": 2,
-                "chain_ids": ["A", "B"],
-                "chain_lengths": [100, 100],
-                "contacts_pre_filter": 10,
-                "contacts_emitted": 8,
-                "contacts_emitted_inter_chain": 2,
-                "contacts_pre_filter_inter_chain": 3,
-                "truncated": False,
-                "accession_a": row["accession_a"],
-                "accession_b": row["accession_b"],
-                "total_residues_manifest": row["total_residues"],
-                "quality_ratio": row["quality_ratio"],
-                "ipsae_score": row["ipsae_score"],
-                "pdockq2_score": row["pdockq2_score"],
-                "confidence_tier": row["confidence_tier"],
-                "source_tar_uri": row["source_tar_uri"],
-                "member_bytes": size,
-                "cif_bytes": size,
-            }
-        )
-        ledger = {
+def _fake_one_model(url: str, row: dict, offset: int, size: int):
+    doc = {name: None for name in extract.DOC_SCHEMA.names}
+    doc.update(
+        {
             "source_model_key": row["source_model_key"],
-            "source_tar_uri": url,
-            "status": "generated",
-            "reason": "ok",
+            "model_id": row["model_id"],
+            "complex_type": row["complex_type"],
+            "document": "<contacts-v1> stub",
+            "sha1": "0" * 40,
+            "seq_len": 200,
+            "num_tokens": 10,
+            "num_chains": 2,
+            "chain_ids": ["A", "B"],
+            "chain_lengths": [100, 100],
+            "contacts_pre_filter": 10,
+            "contacts_emitted": 8,
+            "contacts_emitted_inter_chain": 2,
+            "contacts_pre_filter_inter_chain": 3,
+            "truncated": False,
+            "accession_a": row["accession_a"],
+            "accession_b": row["accession_b"],
+            "total_residues_manifest": row["total_residues"],
+            "quality_ratio": row["quality_ratio"],
+            "ipsae_score": row["ipsae_score"],
+            "pdockq2_score": row["pdockq2_score"],
+            "confidence_tier": row["confidence_tier"],
+            "source_tar_uri": row["source_tar_uri"],
+            "member_bytes": size,
+            "cif_bytes": size,
         }
-        return doc, ledger
+    )
+    ledger = {
+        "source_model_key": row["source_model_key"],
+        "source_tar_uri": url,
+        "status": "generated",
+        "reason": "ok",
+    }
+    return doc, ledger
 
-    monkeypatch.setattr(extract, "_one_model", fake)
+
+def _fake_tar(tar: str, rows: list[dict], **kwargs) -> TarResult:
+    return extract.extract_tar(tar, rows, process_model=_fake_one_model, **kwargs)
 
 
-def test_a_completed_tar_is_not_redone(tar_server, tmp_path: Path, monkeypatch) -> None:
+def test_a_completed_tar_is_not_redone(tar_server, tmp_path: Path) -> None:
     """Resume is the difference between finishing and never finishing.
 
     The first production attempt was preempted 6-9 times per shard and produced
     nothing in 24 hours, because every restart began again at the first tar.
     """
-    import extract
 
-    _stub_one_model(monkeypatch)
     url, names = tar_server
     manifest = _manifest(tmp_path, url, names)
     out = tmp_path / "out"
 
-    first = extract.run(str(manifest), str(out), fetch_concurrency=2)
+    first = extract.run(str(manifest), str(out), process_tar=_fake_tar, fetch_concurrency=2)
     assert first["tars"] == 4 and first["tars_resumed"] == 0
     assert first["documents"] == len(names)
     assert (out / "ledger").is_dir() and (out / "documents").is_dir()
 
     calls: list[str] = []
-    real = extract.extract_tar
-    monkeypatch.setattr(
-        extract,
-        "extract_tar",
-        lambda tar, rows, **kw: (calls.append(tar), real(tar, rows, **kw))[1],
-    )
-    second = extract.run(str(manifest), str(out), fetch_concurrency=2)
+    real = _fake_tar
+    def tracked(tar: str, rows: list[dict], **kwargs) -> TarResult:
+        calls.append(tar)
+        return real(tar, rows, **kwargs)
+    second = extract.run(str(manifest), str(out), process_tar=tracked, fetch_concurrency=2)
 
     assert calls == [], "a completed tar must not be walked again"
     assert second["tars_resumed"] == 4
@@ -333,17 +327,15 @@ def test_a_completed_tar_is_not_redone(tar_server, tmp_path: Path, monkeypatch) 
 
 
 def test_a_partial_shard_resumes_from_where_it_stopped(
-    tar_server, tmp_path: Path, monkeypatch
+    tar_server, tmp_path: Path
 ) -> None:
     """Tars that failed stay pending; tars that finished are kept."""
-    import extract
 
-    _stub_one_model(monkeypatch)
     url, names = tar_server
     manifest = _manifest(tmp_path, url, names)
     out = tmp_path / "out"
 
-    real = extract.extract_tar
+    real = _fake_tar
     seen = {"n": 0}
 
     def die_after_two(tar: str, rows, **kw):
@@ -352,12 +344,10 @@ def test_a_partial_shard_resumes_from_where_it_stopped(
         seen["n"] += 1
         return real(tar, rows, **kw)
 
-    monkeypatch.setattr(extract, "extract_tar", die_after_two)
-    first = extract.run(str(manifest), str(out), fetch_concurrency=2)
+    first = extract.run(str(manifest), str(out), process_tar=die_after_two, fetch_concurrency=2)
     assert first["tars_deferred"] == 2, "failures are deferred, not fatal"
-    monkeypatch.setattr(extract, "extract_tar", real)
 
-    resumed = extract.run(str(manifest), str(out), fetch_concurrency=2)
+    resumed = extract.run(str(manifest), str(out), process_tar=_fake_tar, fetch_concurrency=2)
     assert resumed["tars_resumed"] == 2, "the two finished tars are kept"
     assert resumed["tars"] == 2, "only the unfinished two are redone"
     assert resumed["tars_deferred"] == 0
@@ -370,7 +360,6 @@ def test_a_tar_missing_from_the_archive_is_a_named_rejection(tmp_path: Path) -> 
     tar, and burn all 51 retries -- stalling 17 shards for two days over 373
     documents, 0.012% of the corpus.
     """
-    import extract
 
     class _NotFound(http.server.BaseHTTPRequestHandler):
         def log_message(self, *a: object) -> None:
@@ -406,7 +395,6 @@ def test_a_tar_missing_from_the_archive_is_a_named_rejection(tmp_path: Path) -> 
 
 def test_a_404_is_not_retried_as_an_io_error() -> None:
     """Retrying a 404 eight times per call is what made it expensive."""
-    import extract
 
     class _NotFound(http.server.BaseHTTPRequestHandler):
         hits = 0
@@ -433,7 +421,7 @@ def test_a_404_is_not_retried_as_an_io_error() -> None:
 
 
 def test_reverse_works_the_same_shard_from_the_other_end(
-    tar_server, tmp_path: Path, monkeypatch
+    tar_server, tmp_path: Path
 ) -> None:
     """A pod that finished its own shard can help one that has not.
 
@@ -441,42 +429,36 @@ def test_reverse_works_the_same_shard_from_the_other_end(
     the middle; the worst case when they meet is one tar done twice, and that
     write is idempotent.
     """
-    import extract
 
-    _stub_one_model(monkeypatch)
     url, names = tar_server
     manifest = _manifest(tmp_path, url, names)
 
     order: list[str] = []
-    real = extract.extract_tar
-    monkeypatch.setattr(
-        extract,
-        "extract_tar",
-        lambda tar, rows, **kw: (order.append(tar), real(tar, rows, **kw))[1],
-    )
+    real = _fake_tar
+    def tracked(tar: str, rows: list[dict], **kwargs) -> TarResult:
+        order.append(tar)
+        return real(tar, rows, **kwargs)
 
-    extract.run(str(manifest), str(tmp_path / "fwd"), fetch_concurrency=2)
+    extract.run(str(manifest), str(tmp_path / "fwd"), process_tar=tracked, fetch_concurrency=2)
     forward = list(order)
     order.clear()
-    extract.run(str(manifest), str(tmp_path / "rev"), fetch_concurrency=2, reverse=True)
+    extract.run(str(manifest), str(tmp_path / "rev"), process_tar=tracked, fetch_concurrency=2, reverse=True)
     assert order == forward[::-1], "a helper must start at the far end"
 
 
-def test_an_unreachable_tar_is_deferred_not_fatal(tar_server, tmp_path: Path, monkeypatch) -> None:
+def test_an_unreachable_tar_is_deferred_not_fatal(tar_server, tmp_path: Path) -> None:
     """One unreachable tar must not kill a shard mid-run.
 
     EBI's FTP host refused every connection for hours on 2026-09-21. A single
     exhausted retry budget killed the whole shard and lost its in-progress
     work, 31-39 times per shard.
     """
-    import extract
 
-    _stub_one_model(monkeypatch)
     url, names = tar_server
     manifest = _manifest(tmp_path, url, names)
     out = tmp_path / "out"
 
-    real = extract.extract_tar
+    real = _fake_tar
     calls = {"n": 0}
 
     def flaky(tar: str, rows, **kw):
@@ -485,34 +467,27 @@ def test_an_unreachable_tar_is_deferred_not_fatal(tar_server, tmp_path: Path, mo
             raise RuntimeError("simulated EBI refusal")
         return real(tar, rows, **kw)
 
-    monkeypatch.setattr(extract, "extract_tar", flaky)
-    summary = extract.run(str(manifest), str(out), fetch_concurrency=2)
+    summary = extract.run(str(manifest), str(out), process_tar=flaky, fetch_concurrency=2)
 
     assert summary["tars_deferred"] == 1, "the unreachable tar is deferred"
     assert summary["documents"] > 0, "the reachable tars still produced output"
 
     # The deferred tar has no ledger file, so a later run retries it.
-    monkeypatch.setattr(extract, "extract_tar", real)
-    second = extract.run(str(manifest), str(out), fetch_concurrency=2)
+    second = extract.run(str(manifest), str(out), process_tar=_fake_tar, fetch_concurrency=2)
     assert second["tars"] == 1, "exactly the deferred tar is retried"
     assert second["tars_deferred"] == 0
 
 
-def test_a_wholly_unavailable_source_still_aborts(tar_server, tmp_path: Path, monkeypatch) -> None:
+def test_a_wholly_unavailable_source_still_aborts(tar_server, tmp_path: Path) -> None:
     """Deferring must not become a way to silently produce an empty corpus."""
-    import extract
 
-    _stub_one_model(monkeypatch)
     url, names = tar_server
     manifest = _manifest(tmp_path, url, names)
 
-    monkeypatch.setattr(
-        extract,
-        "extract_tar",
-        lambda *a, **kw: (_ for _ in ()).throw(RuntimeError("everything is down")),
-    )
+    def unavailable(*args, **kwargs) -> TarResult:
+        raise RuntimeError("everything is down")
     with pytest.raises(RuntimeError, match="source looks unavailable"):
-        extract.run(str(manifest), str(tmp_path / "out"), fetch_concurrency=2, max_deferred=2)
+        extract.run(str(manifest), str(tmp_path / "out"), process_tar=unavailable, fetch_concurrency=2, max_deferred=2)
 
 
 def test_an_interrupted_walk_resumes_instead_of_restarting(tar_server, tmp_path: Path) -> None:
@@ -522,9 +497,7 @@ def test_an_interrupted_walk_resumes_instead_of_restarting(tar_server, tmp_path:
     never finish -- which stalled the production run at 79% with pods making
     zero durable progress across three consecutive attempts.
     """
-    import fsspec
 
-    import extract
 
     url, names = tar_server
     fs, _ = fsspec.core.url_to_fs(str(tmp_path))
@@ -542,12 +515,8 @@ def test_an_interrupted_walk_resumes_instead_of_restarting(tar_server, tmp_path:
         budget["n"] -= 1
         return real(u, start, length, **kw)
 
-    extract.http_range = limited
-    try:
-        with pytest.raises(ConnectionResetError):
-            extract.walk_members(url, wanted, header_reads=[], checkpoint=cp)
-    finally:
-        extract.http_range = real
+    with pytest.raises(ConnectionResetError):
+        extract.walk_members(url, wanted, header_reads=[], checkpoint=cp, fetch_range=limited)
 
     saved = json.loads(Path(path).read_text())
     assert saved["offset"] > 0, "the cursor must be persisted mid-walk"
@@ -564,13 +533,10 @@ def test_an_interrupted_walk_resumes_instead_of_restarting(tar_server, tmp_path:
     assert reads[0] < full[0], "resuming must cost fewer reads than starting over"
 
 
-def test_a_finished_tar_clears_its_walk_checkpoint(tar_server, tmp_path: Path, monkeypatch) -> None:
+def test_a_finished_tar_clears_its_walk_checkpoint(tar_server, tmp_path: Path) -> None:
     """Stale cursors must not accumulate, nor be reused for a done tar."""
-    import fsspec
 
-    import extract
 
-    _stub_one_model(monkeypatch)
     url, names = tar_server
     fs, _ = fsspec.core.url_to_fs(str(tmp_path))
     path = f"{tmp_path}/walk.json"
@@ -590,32 +556,29 @@ def test_a_finished_tar_clears_its_walk_checkpoint(tar_server, tmp_path: Path, m
             "source_tar_uri": url,
         }
     ]
-    extract.extract_tar(url, rows, fetch_concurrency=1, checkpoint=cp)
+    extract.extract_tar(url, rows, fetch_concurrency=1, checkpoint=cp, process_model=_fake_one_model)
     assert not Path(path).exists(), "a completed tar clears its cursor"
 
 
-def test_a_malformed_structure_is_a_rejection_not_a_batch_failure(tmp_path, monkeypatch) -> None:
+def test_a_malformed_structure_is_a_rejection_not_a_batch_failure(tmp_path) -> None:
     """Some PDB deposits never parse; retrying the batch cannot fix that.
 
     Eight PINDER batches deferred forever on gemmi's "Wrong format for charge:
     1O" before transport failures and structure defects were separated. A
     transport failure must still propagate so the batch retries.
     """
-    import pinder_extract
 
     row = {
         "system_id": "bad_system", "zip_url": "http://x/y.zip",
         "local_header_offset": 0, "compressed_bytes": 1, "uncompressed_bytes": 1,
     }
-    monkeypatch.setattr(pinder_extract, "fetch_member", lambda *a, **k: "GARBAGE")
 
     class _Gemmi:
         @staticmethod
         def read_pdb_string(text):
             raise ValueError("Wrong format for charge: 1O")
 
-    monkeypatch.setattr(pinder_extract, "_generator", lambda: (_Gemmi, None, None))
-    doc, ledger = pinder_extract._one(row)
+    doc, ledger = pinder_extract._one(row, fetch=lambda *args: "GARBAGE", load_generator=lambda: (_Gemmi, None, None))
     assert doc is None
     assert ledger["status"] == "rejected"
     assert ledger["reason"].startswith("unparseable_structure:ValueError")
@@ -624,9 +587,8 @@ def test_a_malformed_structure_is_a_rejection_not_a_batch_failure(tmp_path, monk
     def boom(*a, **k):
         raise ConnectionResetError("network")
 
-    monkeypatch.setattr(pinder_extract, "fetch_member", boom)
     with pytest.raises(ConnectionResetError):
-        pinder_extract._one(row)
+        pinder_extract._one(row, fetch=boom, load_generator=lambda: (_Gemmi, None, None))
 
 
 def test_changed_manifest_restarts_the_tar_walk(tar_server, tmp_path: Path) -> None:

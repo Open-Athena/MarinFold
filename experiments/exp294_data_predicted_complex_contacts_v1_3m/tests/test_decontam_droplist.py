@@ -14,6 +14,9 @@ import pytest
 HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
 
+import pyarrow as pa
+
+import pinder_decontam
 from decontam_droplist import accession_from_header, build, build_droplist
 
 CACHED_MMSEQS = Path.home() / ".cache/marinfold/mmseqs/mmseqs/bin/mmseqs"
@@ -110,10 +113,7 @@ def test_pinder_decontam_uses_structure_sequences_not_uniprot(tmp_path: Path) ->
     unresolved loops, so the drop list has to run on what the structure
     actually contains.
     """
-    import pyarrow as pa
-    import pyarrow.parquet as pq
 
-    import pinder_decontam
 
     docs = tmp_path / "documents"
     docs.mkdir()
@@ -142,10 +142,7 @@ def test_pinder_decontam_uses_structure_sequences_not_uniprot(tmp_path: Path) ->
 @pytest.mark.skipif(not has_mmseqs, reason="mmseqs binary not available")
 def test_pinder_decontam_drops_a_system_on_either_chain(tmp_path: Path) -> None:
     """Either contaminated chain condemns the document, as for AFCDB."""
-    import pyarrow as pa
-    import pyarrow.parquet as pq
 
-    import pinder_decontam
 
     reference = tmp_path / "eval2.fasta"
     reference.write_text(f">foldbench100__test_A\n{EVAL_SEQ}\n")
