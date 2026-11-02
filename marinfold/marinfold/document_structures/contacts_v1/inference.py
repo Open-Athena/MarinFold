@@ -260,14 +260,15 @@ def prefix_and_positions(
 ) -> tuple[str, list[int], int] | None:
     """Deterministic contacts-v1 sequence prefix + per-seq-index position ids.
 
-    Returns ``(prefix, seq_positions, L)`` where ``prefix`` is the document
-    text up to and including ``<begin_statements>``, ``seq_positions[k]`` is
-    the position index assigned to residue ``k`` (0-based, sequence order),
-    and ``L`` is the residue count. ``None`` when the chain can't be
-    serialized (fewer than 2 residues, or more than the position-token
-    space — see :func:`build_document`). ``entry_id`` is the deterministic
-    RNG seed: changing it resamples the start index + statement order
-    (test-time augmentation).
+    Args:
+        structure: Residues to serialize in sequence order.
+        entry_id: Deterministic RNG seed for the start index and statement order.
+
+    Returns:
+        ``(prefix, seq_positions, L)``: text through ``<begin_statements>``,
+        position-token indices in sequence order, and residue count. Returns
+        None if fewer than two residues or too many for the position-token
+        space prevent serialization; see :func:`build_document`.
     """
     result = build_document(
         entry_id, structure.residues, [], config=GenerationConfig()
@@ -286,11 +287,15 @@ def fwd_matrix(
 ) -> np.ndarray:
     """``log P(i)·P(j|i)`` over all residue pairs for one sequence realization.
 
-    Returns ``fwd[i, j] = lp1[i] + lp2[i, j]`` with
-    ``lp1[i] = log P(<p_i> | prefix, <contact>)`` and
-    ``lp2[i, j] = log P(<p_j> | prefix, <contact>, <p_i>)`` — the two
-    conditional distributions the pairwise readout needs, restricted to this
-    protein's position tokens. Not symmetric; callers symmetrize.
+    Args:
+        backend: Model backend providing token probabilities and tokenizer.
+        prefix: Serialized sequence ending where contact statements begin.
+        seq_positions: Position-token indices in sequence order.
+
+    Returns:
+        Asymmetric ``[L, L]`` log probabilities in sequence coordinates:
+        ``fwd[i, j] = log P(<p_i> | prefix, <contact>) +
+        log P(<p_j> | prefix, <contact>, <p_i>)``. Callers symmetrize.
     """
     tokenizer = backend.tokenizer
     prefix_ids = list(tokenizer.encode(prefix, add_special_tokens=False))
@@ -308,7 +313,14 @@ def fwd_matrix(
 
 
 def pcontact_from_fwd(fwd: np.ndarray) -> np.ndarray:
-    """Unordered ``P(contact)``: ``exp(fwd) + exp(fwd.T)`` (symmetric)."""
+    """Compute unordered contact probabilities from directed log probabilities.
+
+    Args:
+        fwd: Square log-probability matrix returned by :func:`fwd_matrix`.
+
+    Returns:
+        Symmetric ``exp(fwd) + exp(fwd.T)`` in the input coordinates.
+    """
     return np.exp(fwd) + np.exp(fwd.T)
 
 
@@ -331,6 +343,14 @@ def pcontact_matrix(
     Entry (i, j) is the model's probability of emitting {i, j} as its next
     contact statement, unordered. The diagonal / near-diagonal band is
     meaningless here; callers mask it.
+
+    Args:
+        backend: Model backend providing token probabilities and tokenizer.
+        prefix: Serialized sequence ending where contact statements begin.
+        seq_positions: Position-token indices in sequence order.
+
+    Returns:
+        Symmetric ``[L, L]`` contact probabilities in sequence coordinates.
     """
     return pcontact_from_fwd(fwd_matrix(backend, prefix, seq_positions))
 
@@ -347,8 +367,16 @@ def pairwise_score_matrix(
 
     Each draw uses a different deterministic ``entry_id`` salt, so the
     contacts-v1 start index + statement order differ; the resulting matrices
-    are all in sequence coordinates, so averaging is element-wise. Returns
-    ``(score, L)`` or ``None`` if the structure can't be serialized.
+    are all in sequence coordinates, so averaging is element-wise.
+
+    Args:
+        backend: Model backend providing token probabilities and tokenizer.
+        structure: Residues and entry ID defining the input protein.
+        cfg: Inference settings; ``ensemble_k`` must be at least one.
+
+    Returns:
+        ``(score, L)`` containing a symmetric ``[L, L]`` mean probability
+        matrix and residue count, or None if serialization fails.
     """
     acc: np.ndarray | None = None
     seq_len = 0
@@ -685,7 +713,17 @@ def predict(
 def gt_contact_matrix(
     gt_contacts: Iterable[RawContact], seq_len: int, min_seq_separation: int
 ) -> np.ndarray:
-    """Boolean ``[L, L]`` GT matrix: degree >= floor and separation in range."""
+    """Build a symmetric ground-truth matrix with contact degree at least 0.001.
+
+    Args:
+        gt_contacts: Contacts with zero-based ``seq_i < seq_j`` and degree.
+        seq_len: Number of residues defining the matrix dimensions.
+        min_seq_separation: Minimum inclusive sequence-index separation.
+
+    Returns:
+        Boolean ``[seq_len, seq_len]`` matrix. Out-of-range, reversed,
+        low-degree and insufficiently separated contacts are excluded.
+    """
     matrix = np.zeros((seq_len, seq_len), dtype=bool)
     for contact in gt_contacts:
         i, j = contact.seq_i, contact.seq_j
@@ -731,6 +769,18 @@ def metric_rows(
     Mirrors exp89's ``compute_metrics.metric_rows``: candidate pairs are
     every i < j with separation in the range; ``R`` is the number of true
     contacts in the range; precision is over the top-K ranked candidates.
+
+    Args:
+        pcontact: ``[seq_len, seq_len]`` prediction scores, larger being better.
+        gt: Boolean ground-truth matrix in the same sequence coordinates.
+        seq_len: Number of residues.
+        min_seq_separation: Minimum inclusive separation for candidate pairs.
+
+    Returns:
+        Range names (``short``, ``medium``, ``long``, ``all``) mapping to
+        ``auc``, ``precision_at_L``, ``precision_at_L2``, ``precision_at_L5``
+        and ``r_precision``. Undefined metrics are NaN; if no candidate pairs
+        exist, each range maps to an empty dict.
     """
     rows = np.array([i for (i, j) in _candidate_pairs(seq_len, min_seq_separation)])
     cols = np.array([j for (i, j) in _candidate_pairs(seq_len, min_seq_separation)])

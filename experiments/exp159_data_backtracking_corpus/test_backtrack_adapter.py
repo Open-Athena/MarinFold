@@ -43,7 +43,7 @@ _ENTRY = "demo"
 
 def _seq_positions():
     s = inf.structure_from_sequence(_SEQ, entry_id=_ENTRY)
-    _, seq_positions, _ = inf._prefix_and_positions(s, entry_id=_ENTRY)
+    _, seq_positions, _ = inf.prefix_and_positions(s, entry_id=_ENTRY)
     return s, seq_positions
 
 
@@ -158,9 +158,9 @@ def test_full_run_assembles_document_folding_to_gt():
     assert "<retract>" in doc
 
 
-def test_targeted_score_matches_full_fwd_matrix():
+def test_targeted_score_matches_fullfwd_matrix():
     # The adapter's score() computes only the tails its targets need; it must
-    # agree exactly with reading _pcontact_from_fwd(_fwd_matrix(...)) at those
+    # agree exactly with reading pcontact_from_fwd(fwd_matrix(...)) at those
     # entries (the full-L-tail computation it replaces).
     import numpy as np
 
@@ -172,8 +172,8 @@ def test_targeted_score_matches_full_fwd_matrix():
     got = adapter.score(committed, targets)
 
     prompt = adapter.prefix + " " + adapter._render_contacts(committed)
-    full = inf._pcontact_from_fwd(
-        inf._fwd_matrix(adapter.backend, prompt, adapter.seq_positions)
+    full = inf.pcontact_from_fwd(
+        inf.fwd_matrix(adapter.backend, prompt, adapter.seq_positions)
     )
     for i, j in targets:
         assert np.isclose(got[(i, j)], full[i, j], rtol=1e-9, atol=1e-12)

@@ -398,7 +398,7 @@ requires-dist = [
     { name = "huggingface-hub", specifier = ">=0.24" },
     { name = "marin-fray", specifier = ">=0.2.40.dev202607080801" },
     { name = "marin-iris", specifier = ">=0.2.40.dev202607080801" },
-    { name = "marinfold", git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold&branch=exp159-backtracking-corpus" },
+    { name = "marinfold", git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold&rev=4164ccf43309ae98c048d0129e370e152e772e4e" },
     { name = "numpy" },
     { name = "pandas", specifier = ">=2.0" },
     { name = "pyarrow" },
@@ -1013,7 +1013,7 @@ wheels = [
 [[package]]
 name = "marinfold"
 version = "0.1.0"
-source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold&branch=exp159-backtracking-corpus#04fd81e8cba539a36fcea28b5a2390772480aecd" }
+source = { git = "https://github.com/Open-Athena/MarinFold.git?subdirectory=marinfold&rev=4164ccf43309ae98c048d0129e370e152e772e4e#4164ccf43309ae98c048d0129e370e152e772e4e" }
 dependencies = [
     { name = "gemmi", marker = "sys_platform == 'linux'" },
     { name = "huggingface-hub", marker = "sys_platform == 'linux'" },
@@ -1021,6 +1021,7 @@ dependencies = [
     { name = "numpy", marker = "sys_platform == 'linux'" },
     { name = "pyarrow", marker = "sys_platform == 'linux'" },
     { name = "pyyaml", marker = "sys_platform == 'linux'" },
+    { name = "safetensors", marker = "sys_platform == 'linux'" },
     { name = "tokenizers", marker = "sys_platform == 'linux'" },
     { name = "transformers", marker = "sys_platform == 'linux'" },
 ]
