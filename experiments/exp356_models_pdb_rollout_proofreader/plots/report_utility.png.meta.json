@@ -1,0 +1,5 @@
+{
+  "script": "plot_report.py",
+  "args": [],
+  "caption": "Figure 6. Reserved-test downstream uses of the released scores. A compares equal contact budgets within each rollout; B selects a whole rollout by predicted precision, with an unattainable oracle for context; C ranks pooled distinct pairs by occurrence count or summed correctness probability. Bars show structure-mean scores and 95% group-bootstrap intervals. Paired gains and their intervals compare the proofreader with the first baseline in each panel; pp means percentage points."
+}

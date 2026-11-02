@@ -1,0 +1,16 @@
+{
+  "contacts": [
+    {
+      "pair": [
+        16,
+        25
+      ],
+      "probability_correct": 0.053403329104185104
+    }
+  ],
+  "estimated_precision": 0.053403329104185104,
+  "estimated_recall": 0.009125636890530586,
+  "n_unique_contacts": 1,
+  "n_residues": 32,
+  "finished": false
+}
