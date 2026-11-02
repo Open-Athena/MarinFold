@@ -4,12 +4,17 @@
 """Log raw contacts-v1 rollout completions for exp124 think-token analysis."""
 
 import argparse
+import csv
 import os
+import platform
 import re
+import socket
 import sys
 import time
+from datetime import UTC, datetime
 from pathlib import Path
 
+import fsspec
 import pyarrow as pa
 import pyarrow.parquet as pq
 
@@ -44,8 +49,6 @@ SCHEMA = pa.schema(
 
 def stage_model(src: str, dst: Path) -> Path:
     """Copy a remote model directory to local disk for vLLM."""
-    import fsspec
-
     if "://" not in src:
         return Path(src)
     dst.mkdir(parents=True, exist_ok=True)
@@ -66,15 +69,11 @@ def stage_model(src: str, dst: Path) -> Path:
 
 
 def read_parquet(uri: str, **kwargs):
-    import fsspec
-
     with fsspec.open(uri, "rb") as handle:
         return pq.read_table(handle, **kwargs)
 
 
 def write_parquet(table: pa.Table, uri: str) -> None:
-    import fsspec
-
     with fsspec.open(uri, "wb") as handle:
         pq.write_table(table, handle, compression="zstd")
 
@@ -87,8 +86,6 @@ def load_targets(path: str) -> list[dict]:
 
 def done_stems(out_dir: str, shard_i: int, num_shards: int) -> tuple[set[str], int]:
     """Return completed stems for this shard and the next part number."""
-    import fsspec
-
     fs, _ = fsspec.core.url_to_fs(out_dir)
     pattern = f"{out_dir.rstrip('/')}/shard-{shard_i:03d}-of-{num_shards:03d}-part-*.parquet"
     try:
@@ -96,16 +93,45 @@ def done_stems(out_dir: str, shard_i: int, num_shards: int) -> tuple[set[str], i
     except FileNotFoundError:
         return set(), 0
     seen: set[str] = set()
-    for part in parts:
-        try:
-            table = read_parquet(fs.unstrip_protocol(part), columns=["dataset", "stem"])
-            seen |= {
-                f"{dataset}__{stem}"
-                for dataset, stem in zip(table.column("dataset").to_pylist(), table.column("stem").to_pylist())
-            }
-        except Exception as exc:
-            print(f"[raw-rollout] ignoring unreadable part {part}: {exc}", flush=True)
-    return seen, len(parts)
+    next_part = 0
+    incomplete = False
+    for index, part in enumerate(sorted(parts)):
+        if not part.endswith(f"-part-{index:04d}.parquet"):
+            raise ValueError("rollout part indices are not contiguous")
+        uri = fs.unstrip_protocol(part)
+        if not fs.exists(part.removesuffix(".parquet") + ".timings.csv"):
+            incomplete = True
+            continue
+        if incomplete:
+            raise ValueError("completed rollout part follows an incomplete part")
+        table = read_parquet(uri, columns=["dataset", "stem"])
+        stems = {
+            f"{dataset}__{stem}"
+            for dataset, stem in zip(table.column("dataset").to_pylist(), table.column("stem").to_pylist())
+        }
+        with fs.open(part.removesuffix(".parquet") + ".timings.csv", "rt") as handle:
+            timings = list(csv.DictReader(handle))
+        if len(timings) != 1 or stems != {timings[0]["stem"]}:
+            raise ValueError("rollout part and timing record disagree")
+        for key in ("elapsed_seconds", "model_load_seconds", "total_seconds"):
+            if not float(timings[0][key]) >= 0:
+                raise ValueError(f"invalid timing value for {key}")
+        seen |= stems
+        next_part += 1
+    return seen, next_part
+
+
+def write_timing(row: dict, uri: str) -> None:
+    """Persist one input's measured timings and worker identity as a CSV.
+
+    Args:
+        row: Measurements and worker metadata using the repository timing schema.
+        uri: Local or durable remote CSV destination next to the rollout part.
+    """
+    with fsspec.open(uri, "wt") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(row))
+        writer.writeheader()
+        writer.writerow(row)
 
 
 def first_token(text: str) -> str | None:
@@ -159,7 +185,7 @@ def main() -> int:
         ),
     )
     parser.add_argument("--gpu-frac", type=float, default=0.90)
-    parser.add_argument("--chunk", type=int, default=8)
+    parser.add_argument("--accelerator-name", default=None, help="Required for non-CUDA workers, e.g. v5p-8")
     parser.add_argument("--max-num-seqs", type=int, default=512)
     parser.add_argument("--limit", type=int, default=None)
     args = parser.parse_args()
@@ -169,7 +195,9 @@ def main() -> int:
 
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from marinfold.document_structures.contacts_v1 import GenerationConfig, build_document, residues_from_sequence
+    from marinfold.inference._tokenizer import model_source_path
     from transformers import AutoTokenizer
+    import torch
     from vllm import LLM, SamplingParams
 
     records = load_targets(args.targets)
@@ -186,7 +214,8 @@ def main() -> int:
     if not todo:
         return 0
 
-    model_dir = stage_model(args.model, Path("/tmp/marinfold_model"))
+    setup_start = time.perf_counter()
+    model_dir = Path(model_source_path(stage_model(args.model, Path("/tmp/marinfold_model"))))
     tokenizer = AutoTokenizer.from_pretrained(str(model_dir))
     end_id = tokenizer.convert_tokens_to_ids("<end>")
     if end_id is None or end_id < 0:
@@ -202,9 +231,24 @@ def main() -> int:
         seed=args.seed,
     )
 
+    model_load_seconds = time.perf_counter() - setup_start
+    if torch.cuda.is_available():
+        device = torch.cuda.get_device_properties(0)
+        worker = dict(gpu_name=device.name, gpu_total_memory_gb=device.total_memory / 2**30,
+                      gpu_compute_capability=f"{device.major}.{device.minor}")
+    else:
+        if not args.accelerator_name:
+            raise ValueError("--accelerator-name is required for non-CUDA workers")
+        worker = dict(gpu_name=args.accelerator_name, gpu_total_memory_gb=None,
+                      gpu_compute_capability=None)
+    worker.update(hostname=socket.gethostname(), platform=platform.platform(),
+                  torch_version=torch.__version__, runner_tag="iris")
     start_all = time.time()
-    for offset in range(0, len(todo), args.chunk):
-        group = todo[offset : offset + args.chunk]
+    # Batch the independent rollouts for one protein, giving each input its
+    # own measured inference interval and durable completion record.
+    for offset, record in enumerate(todo):
+        input_start = time.perf_counter()
+        group = [record]
         prompts: list[str] = []
         sampling_params = []
         per_protein = []
@@ -241,9 +285,9 @@ def main() -> int:
                 )
             per_protein.append((record, first, pos_maps, int(prompt_token_count), int(max_new)))
 
-        start = time.time()
+        start = time.perf_counter()
         outputs = llm.generate(prompts, sampling_params, use_tqdm=False)
-        elapsed = time.time() - start
+        elapsed = time.perf_counter() - start
 
         rows = {name: [] for name in SCHEMA.names}
         for record, first, pos_maps, prompt_token_count, max_new in per_protein:
@@ -271,6 +315,17 @@ def main() -> int:
 
         dest = f"{out_dir}/shard-{shard_i:03d}-of-{num_shards:03d}-part-{part:04d}.parquet"
         write_parquet(pa.table(rows, schema=SCHEMA), dest)
+        timing = dict(
+            stem=f"{record['dataset']}__{record['stem']}", n_residues=int(record['L']),
+            n_pairs=int(record['L']) * (int(record['L']) - 1) // 2,
+            mode="raw_rollout", elapsed_seconds=elapsed,
+            model_load_seconds=model_load_seconds,
+            total_seconds=model_load_seconds + time.perf_counter() - input_start,
+            model_nickname=args.label, model_source=args.model,
+            n_rollouts=args.n_rollouts, batch_size=args.n_rollouts,
+            timestamp_utc=datetime.now(UTC).isoformat(), **worker,
+        )
+        write_timing(timing, dest.removesuffix(".parquet") + ".timings.csv")
         part += 1
         n_tokens = sum(len(output.outputs[0].token_ids) for output in outputs)
         print(

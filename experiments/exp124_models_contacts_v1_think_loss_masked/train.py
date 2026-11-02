@@ -11,6 +11,7 @@ import os
 from collections.abc import Sequence
 from datetime import timedelta
 
+import jmp
 import numpy as np
 from fray.types import ResourceConfig, get_tpu_topology, tpu_family, tpu_hbm_capacity_bytes
 from haliax import Axis
@@ -348,8 +349,6 @@ def build_step() -> ArtifactStep[LevanterCheckpoint]:
             "loss=next_token_masked_think",
             "exp177-recipe",
         ]
-        import jmp
-
         trainer = TrainerConfig(
             id=name,
             tracker=WandbConfig(

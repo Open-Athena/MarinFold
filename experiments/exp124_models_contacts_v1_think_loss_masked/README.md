@@ -183,6 +183,23 @@ hidden gain; the main ranked metrics stay slightly below the standard prompt.
 Full summaries are in [`data/prompt_intervention_precision.csv`](data/prompt_intervention_precision.csv)
 and [`data/prompt_intervention_recall.csv`](data/prompt_intervention_recall.csv).
 
+### Timing provenance
+
+The historical raw-rollout and prompt-intervention runs did not retain the
+required per-protein wall times and worker metadata. Those measurements cannot
+be recovered reliably from the committed results, and no runtime-comparison
+claim is made for them. No predictor was rerun as part of the review fixes.
+
+`log_rollout_worker.py` now batches one protein's rollouts per generation call
+and writes a matching `.timings.csv` after each output parquet. A part is complete
+only when both files exist. Timings separate model staging/loading from inference
+and include input preparation, parsing and parquet writing in total time. Shared
+model setup is reported on each row, so it must not be summed across proteins.
+CUDA workers record device memory and capability; TPU workers record the supplied
+accelerator name and leave CUDA-only fields empty. Use a new output prefix for
+new instrumented runs, then collect the sidecars with `collect_timings.py` into
+`data/timings.csv` and commit/upload that real measurement artifact.
+
 ## Conclusion
 
 Exp124 was a small contacts-v1 test of the pause-token training setup from

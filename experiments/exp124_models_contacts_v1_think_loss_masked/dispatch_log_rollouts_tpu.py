@@ -49,7 +49,7 @@ WORK_DIR = "/tmp/exp124_raw_rollouts"
 WORKER_LOCAL = f"{WORK_DIR}/log_rollout_worker.py"
 
 
-def build_bootstrap(*, label: str, model: str, shard_i: int, num_shards: int, limit: int | None) -> str:
+def build_bootstrap(*, label: str, model: str, shard_i: int, num_shards: int, limit: int | None, tpu: str) -> str:
     worker_b64 = base64.b64encode(WORKER_SCRIPT.read_bytes()).decode()
     limit_arg = f" --limit {limit}" if limit is not None else ""
     return f"""
@@ -75,6 +75,7 @@ exec uv run --no-sync python {WORKER_LOCAL} \
   --temperature {TEMPERATURE} \
   --top-p {TOP_P} \
   --top-k {TOP_K} \
+  --accelerator-name {tpu} \
   --no-per-request-seed{limit_arg}
 """.strip()
 
@@ -123,7 +124,7 @@ def submit(
         "--",
         "bash",
         "-lc",
-        build_bootstrap(label=label, model=model, shard_i=shard_i, num_shards=num_shards, limit=limit),
+        build_bootstrap(label=label, model=model, shard_i=shard_i, num_shards=num_shards, limit=limit, tpu=tpu),
     ]
     if dry_run:
         print(f"[exp124-rollout-tpu] DRY RUN {name}\n{command[-1][:1600]}")
