@@ -6,7 +6,7 @@ All-range R-precision, natural / designed: two-epoch 5e-4 0.52470 / 0.67385; two
 
 The final 5e-4 model gains 0.06170 on eval-val over its one-epoch fork, remaining 0.03040 below the default. Training exposure and schedules differ. Designs number only 19; matched sequence-KNN null is unavailable.
 
-Per-protein metrics, timings, bootstrap intervals, provenance and comparisons are committed and public. October 29 results remain archived. The default and the separate issue 373 model selection are unchanged.
+Per-protein metrics, timings, bootstrap intervals, provenance and comparisons are committed and public. October 29 results remain archived. The default remains unchanged. At the user's request, the issue 373 agent will update that study to the final two-epoch 5e-4 model; exact checkpoint and artifact details are in the README handoff.
 
 ## November 2 — two-epoch training complete
 
