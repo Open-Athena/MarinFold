@@ -1,0 +1,26 @@
+{
+  "default": {
+    "stem": "7ur2_A",
+    "model": "default",
+    "n_rollouts": 100,
+    "unfinished": 0,
+    "extended": 0,
+    "empty_contacts": 0,
+    "malformed_statements_samples": 0,
+    "invalid_positions_samples": 0,
+    "unexpected_text_samples": 0,
+    "retractions_samples": 0
+  },
+  "mpnn": {
+    "stem": "7ur2_A",
+    "model": "mpnn",
+    "n_rollouts": 100,
+    "unfinished": 0,
+    "extended": 0,
+    "empty_contacts": 0,
+    "malformed_statements_samples": 0,
+    "invalid_positions_samples": 0,
+    "unexpected_text_samples": 0,
+    "retractions_samples": 0
+  }
+}

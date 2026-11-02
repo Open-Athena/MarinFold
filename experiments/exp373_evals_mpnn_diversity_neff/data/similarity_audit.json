@@ -1,0 +1,16 @@
+{
+  "sources": {
+    "experiments/exp245_evals_foldbench_held_out_monomers/data/residual_identity.csv": "fe39c019e509864f1dfaffffeb5905208a09a3ef48c2d7d37d18a5cb06f9462d",
+    "experiments/exp277_models_single_mpnn_pilot/config.py": "7ac1cf66cf46e13a2dd8e612ce27cd7ce407a4533d8c121f6557f69435867ba9",
+    "experiments/exp277_models_single_mpnn_pilot/data/epoch_corpus_counts.csv": "08e317bc545543ebaa51d5b3f48e1eaaf18e856dad0e3c59e9b5e95e2643955a",
+    "experiments/exp245_evals_foldbench_held_out_monomers/run_knn_baseline.py": "b6007a3c352b70fa32deb91141c649cf60dfb59472747406a5049dd3f72480c2",
+    "experiments/exp260_evals_msa_depth_stratified/data/msa_depth.csv": "8c52027ad29f27dc5c2dd15b4a0a1570ad5eb71d9a0e34a22d320fac3ebd9359"
+  },
+  "natural_eval_val": 97,
+  "native_search": "Existing exp245 alignments against native AFDB and ESM-Atlas after the exp225 removal rule (identity >=0.3 over >=0.5 of shorter sequence). Historical evidence; final token-cache rows were not independently searched again.",
+  "redesign_search": "No complete query-versus-redesign-sequence search or redesign-corpus KNN null was found in the available repository artifacts. Coverage is unmeasured for all 162,574,724 redesign documents, not zero similarity.",
+  "native_knn": "Existing decontaminated sequence-KNN null covers AFDB native documents only, excluding ESM-Atlas and all redesigns. It is contextual evidence, not a matched null for either complete recipe.",
+  "ancestry": "Both models trained on the same redesign sources inherited from decontaminated native backbones. Removing native sequence documents does not remove structural ancestry or prove absence of local sequence matches.",
+  "neff_join": "One-to-one stem join to the FoldBench-volume exp260 depth table. Evaluation sequence equality and MSA query length are checked against exp245. Original A3M query sequences were not re-fetched for a new identity audit.",
+  "caveat": "Neither Neff nor native similarity substitutes for similarity to the actual redesign sequences. Training exposure/schedules and one selected checkpoint per recipe prevent a causal isolation of native-document removal."
+}

@@ -1,0 +1,39 @@
+{
+  "status_checked_utc": "2026-10-30T20:24:12.794758+00:00",
+  "status_source": "iris --cluster cw-us-east-02a job list --prefix /bizon/exp373 --state succeeded --limit 40",
+  "successful_production_jobs": [
+    "/bizon/exp373-mpnn-1000-s00-a01",
+    "/bizon/exp373-mpnn-1000-s01-a01",
+    "/bizon/exp373-mpnn-1000-s02-a01",
+    "/bizon/exp373-mpnn-1000-s03-a01",
+    "/bizon/exp373-mpnn-1000-s04-a02",
+    "/bizon/exp373-mpnn-1000-s05-a01",
+    "/bizon/exp373-default-1000-s00-a01",
+    "/bizon/exp373-default-1000-s01-a01",
+    "/bizon/exp373-default-1000-s02-a01",
+    "/bizon/exp373-default-1000-s03-a01",
+    "/bizon/exp373-default-1000-s04-a01",
+    "/bizon/exp373-default-1000-s05-a01"
+  ],
+  "conditions": 232,
+  "new_samples": 162400,
+  "combined_fixed_samples": 232000,
+  "overall_samples": 440800,
+  "retained_unfinished": 0,
+  "extended_samples": 0,
+  "measured_inference_gpu_hours": 2.574038584147218,
+  "inference_hours_scope": "Pure inference for retained conditions, excluding setup, publication, smoke tests and failed-attempt work.",
+  "first_output_timestamp": "2026-10-30T20:02:59.568272+00:00",
+  "last_output_timestamp": "2026-10-30T20:22:34.213936+00:00",
+  "smoke_samples": 200,
+  "failed_attempts": [
+    {
+      "job_id": "/bizon/exp373-mpnn-1000-s04-a01",
+      "phase": "vLLM model initialization, before generation",
+      "diagnostic": "RuntimeError: Engine core initialization failed; detailed root-cause logs were unavailable.",
+      "samples_published": 0,
+      "replacement_job": "/bizon/exp373-mpnn-1000-s04-a02",
+      "recovery": "Restarted the same shard with the identical source bundle and settings."
+    }
+  ]
+}
