@@ -1,0 +1,110 @@
+{
+  "hard_filter": {
+    "min_total_residues": 4,
+    "max_total_residues": 1998,
+    "min_interactions": 1,
+    "max_backbone_clashes": 10
+  },
+  "by_complex_type": [
+    {
+      "complex_type": "heterodimer",
+      "rows": 7594357,
+      "source_quality_pass": 80248,
+      "context_eligible": 7480840,
+      "has_interaction": 6963915,
+      "clash_eligible": 3565630,
+      "hard_eligible": 2985371
+    },
+    {
+      "complex_type": "homodimer",
+      "rows": 21430663,
+      "source_quality_pass": 1920563,
+      "context_eligible": 20559821,
+      "has_interaction": 21050275,
+      "clash_eligible": 12827323,
+      "hard_eligible": 12380049
+    }
+  ],
+  "yield_by_score": [
+    {
+      "quality_ratio_min": 1.0,
+      "complex_type": "heterodimer",
+      "rows": 75582
+    },
+    {
+      "quality_ratio_min": 1.0,
+      "complex_type": "homodimer",
+      "rows": 1848043
+    },
+    {
+      "quality_ratio_min": 0.9,
+      "complex_type": "heterodimer",
+      "rows": 90262
+    },
+    {
+      "quality_ratio_min": 0.9,
+      "complex_type": "homodimer",
+      "rows": 2040969
+    },
+    {
+      "quality_ratio_min": 0.8,
+      "complex_type": "heterodimer",
+      "rows": 105218
+    },
+    {
+      "quality_ratio_min": 0.8,
+      "complex_type": "homodimer",
+      "rows": 2243045
+    },
+    {
+      "quality_ratio_min": 0.7,
+      "complex_type": "heterodimer",
+      "rows": 121744
+    },
+    {
+      "quality_ratio_min": 0.7,
+      "complex_type": "homodimer",
+      "rows": 2431095
+    },
+    {
+      "quality_ratio_min": 0.6,
+      "complex_type": "heterodimer",
+      "rows": 139009
+    },
+    {
+      "quality_ratio_min": 0.6,
+      "complex_type": "homodimer",
+      "rows": 2605294
+    },
+    {
+      "quality_ratio_min": 0.5,
+      "complex_type": "heterodimer",
+      "rows": 158384
+    },
+    {
+      "quality_ratio_min": 0.5,
+      "complex_type": "homodimer",
+      "rows": 2788229
+    },
+    {
+      "quality_ratio_min": 0.4,
+      "complex_type": "heterodimer",
+      "rows": 181648
+    },
+    {
+      "quality_ratio_min": 0.4,
+      "complex_type": "homodimer",
+      "rows": 2992987
+    },
+    {
+      "quality_ratio_min": 0.3,
+      "complex_type": "heterodimer",
+      "rows": 210967
+    },
+    {
+      "quality_ratio_min": 0.3,
+      "complex_type": "homodimer",
+      "rows": 3244146
+    }
+  ]
+}

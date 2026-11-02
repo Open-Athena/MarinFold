@@ -1,0 +1,17 @@
+quality_ratio_min,complex_type,rows
+1.0,heterodimer,75582
+1.0,homodimer,1848043
+0.9,heterodimer,90262
+0.9,homodimer,2040969
+0.8,heterodimer,105218
+0.8,homodimer,2243045
+0.7,heterodimer,121744
+0.7,homodimer,2431095
+0.6,heterodimer,139009
+0.6,homodimer,2605294
+0.5,heterodimer,158384
+0.5,homodimer,2788229
+0.4,heterodimer,181648
+0.4,homodimer,2992987
+0.3,heterodimer,210967
+0.3,homodimer,3244146

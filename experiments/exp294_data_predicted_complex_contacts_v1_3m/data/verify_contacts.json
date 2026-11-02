@@ -1,0 +1,86 @@
+{
+  "systems_sampled": 40,
+  "long_side_chain_fraction_within_ceiling": 0.4234,
+  "long_side_chain_fraction_beyond_ceiling": 0.6066,
+  "long_side_chain_enrichment_beyond_ceiling": 1.43,
+  "most_common_residues_beyond_ceiling": [
+    [
+      "ARG",
+      27
+    ],
+    [
+      "GLU",
+      20
+    ],
+    [
+      "LYS",
+      18
+    ],
+    [
+      "TYR",
+      12
+    ],
+    [
+      "ASP",
+      12
+    ],
+    [
+      "GLN",
+      6
+    ]
+  ],
+  "documents_reproduced_byte_identical": 40,
+  "documents_mismatched": 0,
+  "inter_chain_contacts_checked": 1099,
+  "contact_distance_median_angstrom": 4.018,
+  "contact_distance_p95_angstrom": 8.166,
+  "contact_distance_max_angstrom": 13.012,
+  "fraction_within_ceiling": 0.944495,
+  "contact_distance_ceiling_angstrom": 8.0,
+  "rotamer_reach_ceiling_angstrom": 14.0,
+  "control_distance_median_angstrom": 40.938,
+  "separation_factor": 10.19,
+  "contacts_beyond_ceiling": [
+    [
+      "8bh4__GA1_P02358--8bh4__SA1_P0A7T7",
+      9.31
+    ],
+    [
+      "5lez__E1_P25786--5lez__M1_P28070",
+      8.53
+    ],
+    [
+      "8to0__PF1_P68369--8to0__OF1_P68372",
+      8.1
+    ],
+    [
+      "8to0__PF1_P68369--8to0__OF1_P68372",
+      9.02
+    ],
+    [
+      "8to0__PF1_P68369--8to0__OF1_P68372",
+      12.55
+    ],
+    [
+      "8to0__PF1_P68369--8to0__OF1_P68372",
+      8.81
+    ],
+    [
+      "8to0__PF1_P68369--8to0__OF1_P68372",
+      8.17
+    ],
+    [
+      "8to0__PF1_P68369--8to0__OF1_P68372",
+      10.22
+    ],
+    [
+      "8to0__PF1_P68369--8to0__OF1_P68372",
+      8.49
+    ],
+    [
+      "8to0__PF1_P68369--8to0__OF1_P68372",
+      8.91
+    ]
+  ],
+  "problems": []
+}

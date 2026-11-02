@@ -1,0 +1,16 @@
+{
+  "script": "plots.py",
+  "args": [
+    "--input",
+    "/data/exp294_predicted_complexes/metadata/normalized_*.parquet",
+    "--selection-json",
+    "data/selection.json",
+    "--pilot-json",
+    "data/pilot.json",
+    "--corpus-stats-json",
+    "/data/exp294_release/corpus/corpus_stats.json",
+    "--balanced-manifest",
+    "/data/exp294_release/corpus/manifest_balanced.parquet"
+  ],
+  "caption": "The top clusters are PINDER's most-crystallised interfaces. They hold a visible share of documents and far less sampling mass, so the 0.1% per-cluster cap never has to bind."
+}
