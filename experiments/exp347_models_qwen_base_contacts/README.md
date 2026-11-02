@@ -512,6 +512,55 @@ Before admitting production forks, the remaining gates are:
 
 ## Results
 
+### Full-corpus milestones and recovery — November 2
+
+Four more periodic evaluations completed since October 30. All thirteen
+milestones (raw 1B–9B, prompted 1B–4B) now have 97 eval-val proteins with 100
+terminated rollouts each and no unfinished samples. The new measurements are:
+
+| Format | Additional tokens | Checkpoint step | All-range R | Long-range R |
+| --- | ---: | ---: | ---: | ---: |
+| contacts-v1 | 7,000,102,028 | 46,036 | 0.25001 | 0.21102 |
+| contacts-v1 | 8,000,223,033 | 50,484 | 0.26617 | 0.22886 |
+| contacts-v1 | 9,000,147,334 | 58,458 | 0.27164 | 0.23281 |
+| prompted | 4,000,013,818 | 86,491 | 0.24773 | 0.21288 |
+
+Raw improved by 0.03099 all-range / 0.03481 long-range R from 6B to 9B;
+the earlier 5B–6B tie did not establish a plateau. Prompted improved by
+0.01333 / 0.01521 from 3B to 4B. At matched 4B native tokens, raw scores
+0.21607 / 0.17332, so prompted leads by 0.03166 / 0.03956. Unequal protein
+exposure still prevents a causal format claim. Both remain below exp232 m2-p06
+(0.51980 / 0.50173), and an exact sequence-KNN null over the expanded training
+corpus remains unavailable. Eval-test has not been read.
+
+Latest all-range viral / nonviral R is 0.23250 / 0.27422 for raw and
+0.21853 / 0.24966 for prompted (six / 91 proteins). Long-range values are
+0.19162 / 0.23552 and 0.18675 / 0.21460. The complete periodic record now holds
+1,261 timing rows, 25,220 metric rows, and 52 worker provenance files. All new
+aggregates were recomputed from the per-protein tables and matched their committed
+results. The learning curve includes every completed milestone.
+
+Both training roots stopped again on November 1 at 11:20–11:21 UTC when RNO
+object storage rejected writes with `Account is write suspended for this
+availability zone`. Last logged progress was raw 9,111,332,532 tokens and
+prompted 4,022,572,105 tokens. On November 2, complete local checkpoints were
+independently verified at raw step 59,222 / 9,107,670,999 tokens and prompted
+step 87,225 / 4,021,851,548 tokens. Each retains all 20 objects: FP32 model,
+tokenizer, eight optimizer/cursor shards, and matching completion/resume markers.
+
+Regional PUT/GET and a 5 MiB multipart UploadPart probe now pass. Recovery uses
+the same local full states, run identities, 100B-token targets, eight H100s per
+arm, and 1B eval-val cadence. Replacement roots
+`/timodonnell/exp347-qwen35-4b-contacts_v1-corpus235m-100bt-a08` and
+`/timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a09` were accepted on
+November 2 at 14:30:26 and 14:32:33 UTC. Both resumed optimizer updates and saved
+new complete local checkpoints, independently verified at raw step 59,223 /
+9,107,834,590 tokens and prompted step 87,226 / 4,021,881,608 tokens. Both Iris
+and W&B report running. Both evaluation drivers remain live and have
+completed their request queues. The TPU fork is still in preparation: its
+590 GB transfer approval is pending, and the 4B backend/converter remain
+unimplemented. No TPU dispatch or bulk transfer has occurred.
+
 ### Full-corpus milestones — October 30
 
 All nine periodic requests through raw 6B and prompted 3B additional tokens have
@@ -700,9 +749,9 @@ Measured per-input validation times are retained in [`data/timings.csv`](data/ti
 
 Five of six pilot training trials have completed. Larger models have lower
 validation contact-token NLL within each format. The two 4B pilots have similar,
-low pilot eval-val R-precision (0.14010 / 0.14350 overall). At 6B / 3B additional
-full-corpus tokens, overall R reaches 0.24064 / 0.23440 and long-range R reaches
-0.19799 / 0.19767. Prompted leads at the matched 3B native-token point, but unequal
+low pilot eval-val R-precision (0.14010 / 0.14350 overall). At 9B / 4B additional
+full-corpus tokens, overall R reaches 0.27164 / 0.24773 and long-range R reaches
+0.23281 / 0.21288. Prompted leads at the matched 4B native-token point, but unequal
 protein exposure prevents isolating a causal format advantage. Both remain below
 the existing exp232 model. Both 4B continuations retain their 100B-token
 targets and periodic eval-val scoring. The matched-budget 2B prompted result

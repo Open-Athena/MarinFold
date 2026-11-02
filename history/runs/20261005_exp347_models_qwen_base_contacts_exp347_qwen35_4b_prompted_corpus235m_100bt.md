@@ -21,6 +21,7 @@ marinfold_run:
   - /timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a06
   - /timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a07
   - /timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a08
+  - /timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a09
 ---
 # 2026-10-05 · exp347_models_qwen_base_contacts · exp347-qwen35-4b-prompted-corpus235m-100bt
 
@@ -65,3 +66,6 @@ capacity-pending in east. No GPU progress with this repair is yet verified.
 October 22 regional relocation: the east pending root was canceled before handoff. Production resumed on eight RNO2A H100s with commit 990e3641. Independently verified local checkpoint step 12539 / 476,967,387 additional tokens, all 20 objects (50,489,547,802 bytes), tokenizer and eight optimizer shards at `s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-100bt/step-12539`. All new checkpoints and periodic exports use marin-rno2a (verified physical region RNO2A). Source-corpus URIs and full optimizer/data/RNG state are preserved; subsequent recovery prefers local successors. No checkpoint objects were written to the east root after relocation.
 
 October 30: a07 failed October 27 at 12:35 UTC because CoreWeave suspended RNO writes. Last observed step67826/3154711265 tokens; complete local checkpoint67797/3152923970 tokens independently verified (20 objects). Current regional PUT/GET and multipart upload probes pass. Replacement a08 submitted on the unchanged eight-H100 profile; preserve local resume state and100B target.
+
+November 2: a08 failed November 1 at 11:20–11:21 UTC when RNO account writes were suspended again. Complete local checkpoint step 87225 / 4,021,851,548 tokens was independently verified with all 20 objects. Regional PUT/GET and a 5 MiB multipart UploadPart probe now pass; replacement a09 was submitted with the same full state and eight-H100 configuration. The 4B additional-token eval-val milestone scores all R=0.24773 / long R=0.21288, with 97 proteins and 100 terminated rollouts each.
+Recovery verified: new step 87,226 / 4,021,881,608 tokens, all 20 checkpoint objects complete in RNO; Iris and W&B both report running.

@@ -17,23 +17,24 @@ Exclude the same 5.11% of source rows when either complete document exceeds 16K.
 The pool has 4.493B raw tokens versus 1.290B prompted tokens.
 Equal token budgets imply different protein exposure.
 
-## Latest results — October 30
+## Latest results — November 2
 
-All nine periodic eval-val milestones completed: raw 1B–6B, prompted 1B–3B.
+All thirteen periodic eval-val milestones completed: raw 1B–9B, prompted 1B–4B.
 Each uses 97 proteins × 100 terminated rollouts; no unfinished samples.
-Raw at +6B tokens: all R=0.24064, long R=0.19799.
-Prompted at +3B: all R=0.23440, long R=0.19767.
-At matched +3B, raw scores 0.20366 / 0.16031; prompted leads by 0.03074 / 0.03737.
+Raw at +9B tokens: all R=0.27164, long R=0.23281.
+Prompted at +4B: all R=0.24773, long R=0.21288.
+At matched +4B, raw scores 0.21607 / 0.17332; prompted leads by 0.03166 / 0.03956.
 Native-token budgets imply different protein exposure; format causality is unresolved.
-Raw 5B and 6B are tied within 0.005; too early to conclude a plateau.
+Raw gains 0.03099 / 0.03481 from 6B to 9B; the earlier tie did not establish a plateau.
 Existing exp232 m2-p06 remains higher at 0.51980 / 0.50173.
 An exact sequence-KNN null over the expanded corpus has not been computed.
-Both training jobs stopped October 27 because RNO storage writes were suspended.
-Verified local recovery points: raw 6.705B tokens, prompted 3.153B tokens.
-October 30 raw a07 and prompted a08 resumed and saved complete local checkpoints.
-Preflight checkpoints: raw 6.712B tokens, prompted 3.163B tokens; both parents running.
+Both training jobs stopped November 1 because RNO storage writes were suspended again.
+Verified local recovery points: raw 9.108B tokens, prompted 4.022B tokens.
+November 2 regional PUT/GET and a 5 MiB multipart upload probe pass.
+Recovery roots raw a08 and prompted a09 resumed and saved verified local checkpoints.
 Recovery preserves optimizer state, identities, and local checkpoint outputs.
-Full metric/timing/provenance tables are committed; periodic eval drivers remain live.
+Full records: 1,261 timing rows, 25,220 metric rows, 52 worker provenance files.
+Periodic eval drivers remain live with no backlog. TPU forks still await preparation/approval.
 
 ## TPU forks — preparation, not launched
 
