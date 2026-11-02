@@ -1,0 +1,5 @@
+{
+  "script": "single.py",
+  "args": [],
+  "caption": "M-K's reward is exactly the quantity plotted: the rollout's own consensus R-precision, one scalar per rollout with a GRPO baseline."
+}

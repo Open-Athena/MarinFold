@@ -1,0 +1,47 @@
+[project]
+name = "exp211-evals-contact-set-3d-self-consistency"
+version = "0.1.0"
+description = "Is a contacts-v1 rollout a geometrically self-consistent contact set? — issue #211."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # Ground-truth CA coordinates for bound calibration (shared with exp74/exp78/exp89/exp174).
+    "gemmi>=0.6",
+    "numpy",
+    "scipy",          # sparse.csgraph.shortest_path — the Floyd-Warshall / bound-smoothing tier
+    "pandas",
+    "pyarrow",
+    "matplotlib",
+    # Residues + pyconfind ground-truth contacts in the document format's own terms.
+    "marinfold[contacts-v1]",
+    # Reading the published rollout parquets / publishing results to the public bucket.
+    "huggingface-hub>=0.24",
+    "s3fs>=2026.7.0",
+    # The batched 3D embedder. The host runs CUDA 12.2, so torch is pinned to a
+    # +cu121 wheel (the pin exp20/exp82/exp142/exp174 settled on for this box)
+    # routed through the explicit index below — the default PyPI torch pulls a
+    # cu12x runtime that does not match and silently falls back to CPU.
+    "torch==2.5.1+cu121",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[[tool.uv.index]]
+name = "pytorch-cu121"
+url = "https://download.pytorch.org/whl/cu121"
+explicit = true
+
+[dependency-groups]
+dev = []
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu121" }
+marinfold = { path = "../../marinfold", editable = true }
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'linux'",
+]

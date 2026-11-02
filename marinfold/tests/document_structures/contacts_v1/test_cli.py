@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pytest
 
+from marinfold.registry import default_model_nickname
+
 from marinfold.document_structures.contacts_v1 import cli
 from marinfold.document_structures.contacts_v1.generate import GenerationConfig, build_document
 from marinfold.document_structures.contacts_v1.parse import RawContact, ResidueInfo
@@ -276,6 +278,28 @@ def test_infer_method_rollout_flags():
     assert cfg.temperature == 0.7
     assert cfg.top_p == 0.9
     assert cfg.top_k == 0
+
+
+def test_infer_model_is_optional_and_records_the_resolved_nickname():
+    """Omitting --model is what the README's example does. The config must
+    still name the checkpoint: cfg.model is serialized into the metrics file,
+    and the registry default moves, so `null` there loses provenance."""
+    args = cli.build_parser().parse_args([
+        "infer", "--input-sequence", "ACDE", "--out", "p.json",
+    ])
+    assert args.model is None
+    resolved = cli._inference_config(args).model
+    assert resolved == default_model_nickname()
+    assert resolved is not None
+
+
+def test_explicit_model_is_passed_through_unchanged():
+    """A nickname or a local directory already identifies itself."""
+    for spec in ("contacts-v1-exp75-1.5B", "/local/checkpoint"):
+        args = cli.build_parser().parse_args([
+            "infer", "--model", spec, "--input-sequence", "ACDE", "--out", "p.json",
+        ])
+        assert cli._inference_config(args).model == spec
 
 
 def test_infer_method_rejects_unknown():

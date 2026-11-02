@@ -1,0 +1,96 @@
+{
+  "checkpoint": {
+    "label": "exp232_decontam_train_m2_p06_step363000",
+    "run_name": "prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1",
+    "step": 363000
+  },
+  "coreweave_uri": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp232_sweep_cv1_decontam/evals/rollout-v2/2026-08-24/v2-01/models/exp232-decontam-train-m2-p06-step363000/hf/step-363000",
+  "files": [
+    {
+      "digest": "d8e904f8170ddf00d74c864f31d258a4",
+      "digest_kind": "s3-etag",
+      "name": "config.json",
+      "size": 1557
+    },
+    {
+      "digest": "9a11736b507565aa2be00a5753f51b12-95",
+      "digest_kind": "s3-etag",
+      "name": "model-00001-of-00002.safetensors",
+      "size": 4979485528
+    },
+    {
+      "digest": "1a042bf9b4acde490f0c0ffee76306dd-18",
+      "digest_kind": "s3-etag",
+      "name": "model-00002-of-00002.safetensors",
+      "size": 906042048
+    },
+    {
+      "digest": "bc0a5fd2c9aae096abae4caf9040c79c",
+      "digest_kind": "s3-etag",
+      "name": "model.safetensors.index.json",
+      "size": 20882
+    },
+    {
+      "digest": "c4b3a16978e30eb150cca4fd8934b6ae",
+      "digest_kind": "s3-etag",
+      "name": "tokenizer.json",
+      "size": 64407
+    },
+    {
+      "digest": "336f4e2ca951fa13a20cb1c4b68b2040",
+      "digest_kind": "s3-etag",
+      "name": "tokenizer_config.json",
+      "size": 290
+    }
+  ],
+  "source": {
+    "kind": "coreweave-s3",
+    "uri": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp232_sweep_cv1_decontam/evals/rollout-v2/2026-08-24/v2-01/models/exp232-decontam-train-m2-p06-step363000/hf/step-363000"
+  },
+  "verification": "verified in place; no checkpoint copy was created",
+  "verified_at": "2026-08-24T14:29:52.832840+00:00",
+  "verified_files": [
+    {
+      "digest": "d8e904f8170ddf00d74c864f31d258a4",
+      "digest_kind": "s3-etag",
+      "elapsed_seconds": 2.3939646780490875e-06,
+      "name": "config.json",
+      "size": 1557
+    },
+    {
+      "digest": "9a11736b507565aa2be00a5753f51b12-95",
+      "digest_kind": "s3-etag",
+      "elapsed_seconds": 1.7420388758182526e-06,
+      "name": "model-00001-of-00002.safetensors",
+      "size": 4979485528
+    },
+    {
+      "digest": "1a042bf9b4acde490f0c0ffee76306dd-18",
+      "digest_kind": "s3-etag",
+      "elapsed_seconds": 1.0880175977945328e-06,
+      "name": "model-00002-of-00002.safetensors",
+      "size": 906042048
+    },
+    {
+      "digest": "bc0a5fd2c9aae096abae4caf9040c79c",
+      "digest_kind": "s3-etag",
+      "elapsed_seconds": 6.780028343200684e-07,
+      "name": "model.safetensors.index.json",
+      "size": 20882
+    },
+    {
+      "digest": "c4b3a16978e30eb150cca4fd8934b6ae",
+      "digest_kind": "s3-etag",
+      "elapsed_seconds": 9.338837116956711e-07,
+      "name": "tokenizer.json",
+      "size": 64407
+    },
+    {
+      "digest": "336f4e2ca951fa13a20cb1c4b68b2040",
+      "digest_kind": "s3-etag",
+      "elapsed_seconds": 5.958136171102524e-07,
+      "name": "tokenizer_config.json",
+      "size": 290
+    }
+  ]
+}

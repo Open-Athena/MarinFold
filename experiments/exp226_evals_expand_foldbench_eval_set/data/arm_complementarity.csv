@@ -1,0 +1,7 @@
+subset,n,threshold,dropped,both_arms,afdb_only,esm_atlas_only
+net_new222,222,<40%,199,107,39,53
+net_new222,222,<30%,211,164,18,29
+orig554,554,<40%,270,183,60,27
+orig554,554,<30%,290,241,27,22
+expanded776,776,<40%,469,290,99,80
+expanded776,776,<30%,501,405,45,51

@@ -1,0 +1,9 @@
+{
+  "exp343_results": "/home/bizon/git/MarinFold/.claude/worktrees/complex-corpus-training-eval-af6d68/experiments/exp343_models_complex_corpus_training/data/eval_rollout_v2",
+  "exp277_results": "/home/bizon/git/MarinFold/.claude/worktrees/complex-corpus-training-eval-af6d68/experiments/exp277_models_single_mpnn_pilot/data/eval_rollout_v2",
+  "baseline_rescored": false,
+  "worker_sha256": "dd2f76dd5d34d1549e0be1197d9053d6e3aa0ef909f062ff5355d65f31cd571c",
+  "bootstrap_resamples": 10000,
+  "bootstrap_seed": 343,
+  "tie_threshold": 0.005
+}

@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "Number of frozen fold-switch pairs for which each 100-map pool reaches each mode or both modes."
+}

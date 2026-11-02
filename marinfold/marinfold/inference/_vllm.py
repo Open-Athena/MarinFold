@@ -18,6 +18,21 @@ its scheduler. We just submit each ``(prefix + tail)`` as a separate
 prompt; vLLM detects the shared prefix at scheduling time and reuses
 the KV blocks for it across all rows in the batch. No explicit cache
 plumbing needed on our side.
+
+**Construct this backend before doing heavy native work in the same
+process.** vLLM starts its EngineCore in a child process and its
+default method is fork; forking a parent that has already run, say,
+pyconfind deadlocks the child inside ``_init_executor`` — silently,
+with the engine at ~500 MiB and the GPU at 0%, indefinitely. Measured
+on 8xA100 / driver 580.105: backend-then-pyconfind takes 17.3 s,
+pyconfind-then-backend never returns. :func:`contacts_v1.inference.
+evaluate` orders itself accordingly. A caller that cannot — one
+passing pre-computed ``structures=``, for instance — can set
+``VLLM_WORKER_MULTIPROC_METHOD=spawn`` in the environment. This module
+deliberately does not set it for you: spawn makes the child re-import
+the caller's ``__main__``, which breaks any script that builds a
+backend at module scope without an ``if __name__ == "__main__"``
+guard.
 """
 
 from pathlib import Path
@@ -25,7 +40,7 @@ from pathlib import Path
 import numpy as np
 from vllm import LLM, SamplingParams, TokensPrompt
 
-from marinfold.inference._tokenizer import model_source_path
+from marinfold.inference._model_source import model_source_path
 
 
 class VllmBackend:
@@ -39,6 +54,7 @@ class VllmBackend:
         gpu_memory_utilization: float = 0.85,
         top_k_logprobs: int = 128,
         tail_batch_size: int = 64,
+        fixed_residue_position_embeddings: str | None = None,
     ):
         if tail_batch_size < 1:
             raise ValueError(
@@ -53,7 +69,10 @@ class VllmBackend:
         # transformers-5 export broke (unresolvable tokenizer_class; rope
         # stated as `rope_parameters`), and returns model_path unchanged when
         # nothing needs repair.
-        source_path = model_source_path(model_path)
+        source_path = model_source_path(
+            model_path,
+            fixed_residue_position_embeddings=fixed_residue_position_embeddings,
+        )
         self._llm = LLM(
             model=source_path,
             tokenizer=source_path,
@@ -119,11 +138,31 @@ class VllmBackend:
                         )
         return out
 
+    def teacher_forced_target_probs(
+        self,
+        token_ids_batch: list[list[int]],
+        target_token_ids: list[int],
+        *,
+        batch_size: int | None = None,
+    ) -> np.ndarray:
+        # vLLM can serve this via `prompt_logprobs`, but only as a truncated
+        # top-k per position: targets outside the top-k come back absent, and
+        # this readout's whole point is comparing amino acids that are often
+        # *not* the model's top few. A silently-zeroed target here is a wrong
+        # log-ratio, not a missing one. Left unimplemented until it is needed
+        # with an exactness argument attached.
+        raise NotImplementedError(
+            "teacher_forced_target_probs is not implemented for the vLLM "
+            "backend; its prompt_logprobs path is top-k truncated, which "
+            "silently drops low-probability targets. Use --backend transformers."
+        )
+
     def sample_completions(
         self,
         prefix_token_ids_batch: list[list[int]],
         *,
         max_new_tokens: int,
+        min_new_tokens: int = 0,
         temperature: float = 1.0,
         top_p: float = 0.95,
         top_k: int = 50,
@@ -131,6 +170,8 @@ class VllmBackend:
         seed: int | None = None,
         batch_size: int | None = None,
     ) -> list[list[int]]:
+        if not 0 <= min_new_tokens <= max_new_tokens:
+            raise ValueError("min_new_tokens must be between 0 and max_new_tokens.")
         if not prefix_token_ids_batch:
             return []
         # vLLM samples natively: one SamplingParams, all prompts in one
@@ -144,6 +185,7 @@ class VllmBackend:
             top_p=top_p,
             top_k=top_k if (top_k and top_k > 0) else -1,
             max_tokens=max_new_tokens,
+            min_tokens=min_new_tokens,
             stop_token_ids=[stop_token_id] if stop_token_id is not None else None,
             seed=seed,
             n=1,

@@ -1,0 +1,5 @@
+{
+  "script": "-",
+  "args": [],
+  "caption": "M-B's own reward at lr 1e-5 and 3e-6. Both peak near 0.58; the slow walk holds it while the fast one runs to KL 0.486 and its eval collapses to 0.344. Open circles mark the checkpoints that were scored."
+}

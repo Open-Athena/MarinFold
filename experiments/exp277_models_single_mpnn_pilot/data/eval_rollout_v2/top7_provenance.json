@@ -1,0 +1,7 @@
+{
+  "source_uri": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-01/dense_scores/exp277_full_epoch_m2_p06_step266344/denovo_pdb__1qys_A.npz",
+  "ground_truth_url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-model-eval-exp89/gt_universe.jsonl",
+  "requested_rollouts": 100,
+  "model": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+  "step": 266344
+}

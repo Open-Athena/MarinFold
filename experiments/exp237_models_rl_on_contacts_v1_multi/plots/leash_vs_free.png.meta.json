@@ -1,0 +1,5 @@
+{
+  "script": "plot_leash_vs_free.py",
+  "args": [],
+  "caption": "Arm M-K with and without a 50x KL penalty, plotted against distance moved so the extra steps are a vertical comparison at fixed x. The leashed trace is below the unleashed one at every matched distance and is flat across steps 30-120 \u2014 the path to a distance is not interchangeable."
+}

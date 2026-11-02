@@ -2,33 +2,73 @@
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/inference_example1.ipynb) [![Open in Kaggle](https://kaggle.com/static/images/open-in-kaggle.svg)](https://kaggle.com/kernels/welcome?src=https://github.com/Open-Athena/MarinFold/blob/main/notebooks/inference_example1.ipynb)
 
-Can a vanilla LLM predict protein structures (e.g. contact maps, inter-residue distances) without MSAs or PLMs?
+Can a vanilla LLM predict protein structures without MSAs or PLMs?
+
 MarinFold aims to answer this question. Our models are trained from scratch (without natural language data) on [Marin](https://github.com/marin-community/marin) infrastructure.
 
 This is a research codebase for an ongoing project. It is an experiment in open development.
 
 We welcome collaborators! If you would like to discuss or contribute, join the [Marin Discord](https://discord.gg/J9CTk7pqcM) and look for the `#marinfold` channel.
 
-## Current performance
+See [Latest results](LATEST_RESULTS.md) for major result updates and the current default model. The figures below use the exp232 checkpoint.
 
-Here we are prompting with the amino acid sequence and predicting residue/residue contacts.
+## Background
 
-<img src="experiments/exp82_evals_contacts_v1_contact_prediction/plots/where_we_stand_rprecision.png" alt="Contact R-precision: MarinFold #61, #117 and #166-best n=100 rollouts vs Protenix-v2 / ESMFold / ESMFold2 (n=554)" width="70%">
+Protein structure predictors like [AlphaFold3](https://doi.org/10.1038/s41586-024-07487-w) and [ESMFold2](https://doi.org/10.64898/2026.06.03.729735) rely on evolutionary information in the form of multiple sequence alignments (MSAs) or protein language model (PLM) embeddings. While that works great in many cases, this dependency limits accuracy in key settings such as rapidly evolving viral proteins, rare proteins, highly-conserved proteins, and mutated proteins. It also limits the accessible space of de novo computationally-designed proteins to the highly-stable structures current models can fold without evolutionary information.
 
-All three MarinFold bars use our best test-time inference — 100 resampled rollouts, voted per residue pair (see [exp82](experiments/exp82_evals_contacts_v1_contact_prediction/README.md)) — so the differences between them are the model, not the decoding. `#61` is the model from [#61](https://github.com/Open-Athena/MarinFold/issues/61)/[#75](https://github.com/Open-Athena/MarinFold/issues/75) (eval loss 2.76); `#117` is [@eric-czech](https://github.com/eric-czech)'s [#117](https://github.com/Open-Athena/MarinFold/issues/117) tuning-sweep winner (2.70); `#166 best` is the current best, his [#166](https://github.com/Open-Athena/MarinFold/issues/166) amino-acid augmentation continued from #117 (2.66), which improves on its own initialization by a paired **+0.028** and is now the default model.
+The success of AlphaFold and the like has enabled the creation of enormous databases comprising hundreds of millions of predicted protein monomer structures. In this project we are asking whether single sequence structure prediction might be tractable simply by using these predicted structures as training data. Perhaps the evolutionary information provides models a "shortcut," and if we train a model without this shortcut on a large enough dataset, it might learn single-sequence structure prediction.
 
-R-precision is a top-K metric. On **AUC** over the whole contact map, `#166 best` reaches 0.939 — second only to Protenix-v2 with an MSA (0.941), and above ESMFold2 (0.923).
+For the current experiments, we trained a 1.5 billion parameter large language model from the Qwen3 family on AlphaFold2- or ESMFold2-predicted contact maps from about 70 million natural proteins.
 
-The progression tracked over time, with every number's source, is in [exp180](experiments/exp180_evals_contacts_v1_progress_over_time/README.md).
+Why use an LLM architecture? We've built a lot of infrastructure for training LLMs on large datasets for the [Marin](https://github.com/marin-community/marin) project, which we are making use of here. We also think formulating MarinFold as an autoregressive LLM may eventually prove useful for inference-time search and post-training.
+
+To make it possible to use an LLM without any modifications, we assemble a “document” for each training protein specifying the protein sequence followed by statements indicating residue/residue contacts:
+
+<img src="experiments/exp250_evals_exploration_notebook/figures/output/document_format.png" alt="A contacts-v1 document: an opening format token, a sequence section of position/amino-acid statements, then contact statements between residue positions" width="30%">
+
+As shown above, a MarinFold training document consists of a protein sequence specified as (position, amino acid) pairs followed by a series of residue/residue contacts. The sequence and the contacts are given in a random order. Each element in angle brackets is a token in the model’s 2,845-token vocabulary.
+
+At inference-time, we autoregressively generate 100 rollouts and rank contacts by how often they appear across rollouts. We then use another model called [Helico](https://github.com/Open-Athena/helico) to generate all-atom 3D structures conditioned on the contacts predicted by MarinFold. Helico closely follows the AlphaFold3 architecture and is fine-tuned from an AlphaFold3 clone called [Protenix](https://doi.org/10.64898/2026.02.05.703733).
+
+## Does this work?
+
+Sort of! Here's the MarinFold prediction for a simple de novo designed protein called [Top7](https://www.rcsb.org/structure/1QYS). This is easy to fold (any modern predictor can fold it) but a nice test since it's very dissimilar to anything in our training set, which consists only of natural proteins.
+
+<img src="experiments/exp250_evals_exploration_notebook/figures/output/top7_maps.png" alt="Top7 (1QYS) as a ribbon cartoon, its ground-truth contact map, and the map MarinFold predicts, coloured by the fraction of 100 rollouts that emitted each pair" width="66%">
+
+More quantitatively, we can compare MarinFold contact prediction accuracy to existing predictors on protein monomers from the [FoldBench](https://www.biorxiv.org/content/10.1101/2025.05.22.655600v1) benchmark. We define the R-precision for a protein with N ground truth contacts as the fraction of the model’s N highest-confidence predicted contacts that are present in the ground truth structure. For MarinFold, we rank contacts by how often they occur across 100 rollouts. For the baseline models, we score the single highest-confidence structure and rank contacts by ConFind contact degree. This is what that looks like:
+
+<img src="experiments/exp250_evals_exploration_notebook/figures/output/rprecision_natural.png" alt="Contact R-precision on 314 natural FoldBench monomers: MarinFold 0.56, Protenix-v2 single-sequence 0.26, ESMFold 0.75, ESMFold2 0.80, Protenix-v2 + MSA 0.85" width="49%"> <img src="experiments/exp250_evals_exploration_notebook/figures/output/rprecision_designed.png" alt="Contact R-precision on 19 de novo designs: MarinFold 0.61, Protenix-v2 single-sequence 0.84, ESMFold 0.80, ESMFold2 0.86, Protenix-v2 + MSA 0.84" width="49%">
+
+MarinFold outperforms a weak baseline (Protenix v2 in single sequence mode) on natural proteins from FoldBench (but, curiously, not on de novo designs).
+
+A few notes: the overall paradigm is that we are training on AlphaFold2 or ESMFold2 predicted structures, and testing on experimentally-determined structures. We also remove proteins from our training set that have 30% or higher sequence similarity to anything in our eval set. The model we are using here is **#232's `m2-p06` at step 363,000** (`contacts-v1-exp232-m2-p06-train-1.5B`).
+
+For a more apples-to-apples comparison, we can also look at the accuracy of the predicted structures when we run MarinFold-predicted contacts through [Helico](https://github.com/Open-Athena/helico). Here's what that looks like:
+
+<img src="experiments/exp250_evals_exploration_notebook/figures/output/gdt_ts_natural.png" alt="GDT-TS on natural monomers: Helico with true contacts 0.89, with MarinFold contacts 0.51, with no contacts 0.15; Protenix-v2 single-sequence 0.17, ESMFold2 0.81, Protenix-v2 + MSA 0.87" width="49%"> <img src="experiments/exp250_evals_exploration_notebook/figures/output/gdt_ts_designed.png" alt="GDT-TS on de novo designs: Helico with true contacts 0.92, with MarinFold contacts 0.75, with no contacts 0.86; Protenix-v2 single-sequence 0.89, ESMFold2 0.93, Protenix-v2 + MSA 0.86" width="49%">
+
+We get a nice boost on natural monomers above Protenix v2 SS. We still have a ways to go to get something competitive with the other predictors, however.
+
+## What's next?
+
+The main areas of ongoing work are:
+* Inference-time search techniques that might generate better predictions than simply taking the consensus across 100 MarinFold rollouts
+* Post-training. We've been trying ideas like: fine-tune MarinFold to generate multiple predicted contact maps per rollout, then use reinforcement learning to push the model to generate a diverse set of predictions in each rollout.
+* Extending beyond protein monomers to protein complexes, where existing predictors leave greater room for improvement
 
 ## Try it out
 
-MarinFold predicts a **residue–residue contact map** from a single sequence —
-no MSA, no template, no structure. The default model in
-[`MODELS.yaml`](marinfold/marinfold/MODELS.yaml) is `contacts-v1-exp166-1.5B` —
-the `#166 best` bar in *Current performance* above, an amino-acid augmentation
-continue-train of [#117](https://github.com/Open-Athena/MarinFold/issues/117)
-from [#166](https://github.com/Open-Athena/MarinFold/issues/166).
+The model illustrated above, registered in [`MODELS.yaml`](marinfold/marinfold/MODELS.yaml), is
+`contacts-v1-exp232-m2-p06-train-1.5B` — a 1.47B Qwen3 trained from scratch on a
+50/50 AFDB + ESM-Atlas mixture and then trained on past the sweep with a
+lowered peak LR and a cooldown, from
+[#232](https://github.com/Open-Athena/MarinFold/issues/232). Its training
+corpora were [decontaminated](DOCS.md#training-data-decontamination) against the
+eval proteins. R-precision **0.605** on the 554-protein contact benchmark, and
+0.552 on [#245](https://github.com/Open-Athena/MarinFold/issues/245)'s eval-val.
+
+Omitting `--model` uses the current default described in [Latest results](LATEST_RESULTS.md).
 
 ### GPU example
 
@@ -43,45 +83,20 @@ cd MarinFold/marinfold
 uv sync --extra vllm  # "vllm" for Linux+GPU, "transformers" for CPU/CUDA, "mlx" for Apple Silicon
 ```
 
-Run inference:
+Run inference, with the 100-rollout consensus our published numbers use:
 
 ```bash
 # Predict the contact map for the Top7 de novo designed protein ([1QYS](https://www.rcsb.org/structure/1QYS)).
-# Replace "vllm" with "transformers" (CPU/CUDA) or "mlx" (Apple Silicon).
+# Replace "vllm" with "transformers" (CPU/CUDA); rollouts need one of those two.
 SEQUENCE=MGDIQVQVNIDDNGKNFDYTYTVTTESELQKVLNELMDYIKKQGAKRVRISITARTKKEAEKFAAILIKVFAELGYNDINVTFDGDTVTVEGQLEGGSLEHHHHHH
-uv run marinfold infer \
+uv run contacts-v1 infer \
     --backend vllm \
     --input-sequence $SEQUENCE \
+    --method rollout \
+    --n-rollouts 100 \
     --out ~/prediction.json \
     --out-plots ~/contact_map.pdf
 ```
-
-`--out` holds one `P(contact)` score per residue pair; `--out-plots` is the
-contact-map heatmap. The first run downloads our 1.5B contacts-v1 model
-(~6 gb). Omitting `--model` uses the default (`contacts-v1-exp166-1.5B`); the
-earlier contacts-v1 checkpoints are available as `--model contacts-v1-exp117-1.5B`
-/ `contacts-v1-exp120-1.5B` / `contacts-v1-exp75-1.5B`, and the older distogram
-models as `--model 1B` / `1.5B` (see below).
-
-The command above uses the fast **`pairwise`** readout (~0.3 s/protein). Our
-**best** inference — what every MarinFold bar in *Current performance* uses —
-is exp82's **`rollout`** recipe: vote over 100 sampled
-contact-section completions (each from a freshly resampled document) with a
-pairwise tie-break. It is ~150× slower (~50 s/protein on a GPU) but sharpens the
-top-ranked contacts. Run it via the per-impl driver (the top-level CLI keeps its
-surface narrow):
-
-```bash
-uv run contacts-v1 infer \
-    --backend vllm --model contacts-v1-exp166-1.5B \
-    --method rollout --n-rollouts 100 \
-    --input-sequence $SEQUENCE \
-    --out ~/prediction.json --out-plots ~/contact_map.pdf
-```
-
-`rollout` needs a sampling backend — `--backend vllm` or `transformers` (not
-`mlx`). The pairwise `--ensemble-k N` test-time-augmentation knob lives on this
-driver too.
 
 To score against a known structure's ground-truth contacts, use `evaluate`
 (reports contact-prediction AUC and precision@{L, L/2, L/5}). Ground truth is
@@ -89,328 +104,53 @@ read with [pyconfind](https://github.com/timodonnell/pyconfind), so add its
 extra to the sync (`uv sync --extra vllm --extra contacts-v1`):
 
 ```bash
-uv run marinfold evaluate \
+uv run contacts-v1 evaluate \
     --backend vllm \
     --input tests/data/1QYS.cif \
-    --metrics-out ~/metrics.json \
+    --method rollout \
+    --n-rollouts 100 \
+    --out ~/metrics.json \
     --out-plots ~/gt_vs_pred.pdf
 ```
 
-### Previous generation (distograms)
+Both commands use the default model, because `--model` is omitted.
 
-Our earlier `contacts-and-distances-v1` models predict CB–CB **distograms**
-rather than contacts. Same CLI, just point `--model` at one of them:
+`contacts-v1` is the readout-level CLI for this document structure — that is
+where `--method` and the sampling knobs live. There is also a narrower
+high-level CLI, `marinfold infer` / `marinfold evaluate`, which picks the impl
+for you from the model's registry entry and always uses the fast `pairwise`
+readout (seconds rather than minutes, and several points less accurate). Only
+`pairwise` runs on Apple Silicon; rollouts need `vllm` or `transformers`.
 
-```bash
-uv run marinfold infer \
-    --backend vllm --model 1B \
-    --input-sequence $SEQUENCE \
-    --out ~/distogram.json --out-plots ~/distogram.pdf
-```
+## Details
 
-## Document structures
+### Training set
 
-A **document structure** is a recipe for turning a protein structure
-into the token string a trained model sees (and back).
-`contacts-and-distances-v1` is our current format: a residue
-sequence followed by a mix of CB-CB contact statements and per-pair
-distance statements, with a per-structure pLDDT-bin token.
+Our training set consists of about four million structures predicted by [AlphaFold2](https://doi.org/10.1038/s41586-021-03819-2) and deposited in the [AlphaFold Database](https://doi.org/10.1093/nar/gkad1011) (AFDB) plus about 66 million structures predicted by [ESMFold2](https://doi.org/10.64898/2026.06.03.729735) and deposited in the ESM-Atlas (https://biohub.ai/esm/protein/atlas). We selected these proteins from their databases through a series of filtering and clustering steps. For AFDB, the inclusion criteria were: mean pLDDT >= 70, length 2-2000, and membership in both an AFDB50 sequence cluster and a Foldseek [structural cluster](https://doi.org/10.1038/s41586-023-06510-w) with at least 3 members. Of these we took up to five proteins per structural cluster by mean pLDDT.  For ESM-Atlas, the inclusion criteria were: mean pLDDT >= 70, pTM >= 0.50, length 60-1000, and non-redundant with the AFDB data at 40% sequence identity. This resulted in 163M structures, which we clustered using [MMseqs2](https://doi.org/10.1038/nbt.3988) linclust at 40% identity into 67M clusters. We selected one representative per cluster by taking the longest sequence per cluster. Before assembling the final training dataset from the two sources, we removed proteins that had 30% or greater sequence identity to any protein in our eval set across a span covering at least 50% of the smaller of the two proteins. Our eval set for this purpose consisted of all protein chains in [FoldBench](https://www.biorxiv.org/content/10.1101/2025.05.22.655600v1), plus several hundred additional proteins. This removed 1,373,423 (1.9%) of training points, resulting in a final combined training dataset of 69.5 million proteins.
 
-Generate one document from a structure file:
+### Contact prediction model
 
-```bash
-cd marinfold
-uv sync
-uv run contacts-and-distances-v1 generate \
-    --input tests/data/1QYS.cif \
-    --out /tmp/docs.jsonl
-```
+MarinFold uses a [Qwen3](https://arxiv.org/abs/2505.09388) large language model (LLM) architecture with 1.47 billion parameters (24 layers, hidden dimension 2048, 32 attention heads with 8 key/value heads, QK-normalization, rotary positional embeddings, context length 8192). The model was trained from scratch with a standard next-token cross-entropy objective with no natural language pre-training using a 2,845 token vocabulary. Training used AdamW at peak learning rate 1e-3 and weight decay 0.2. At inference time, we prompt the model with a protein sequence and sample the contact section to completion (a rollout), drawing 100 rollouts per protein. We rank contacts by their frequency of occurrence across the 100 rollouts. MarinFold is available at: https://github.com/Open-Athena/MarinFold.
 
-The output is one row per input structure with a `document` field
-holding the token string (`.parquet` works too — pick by suffix).
-View the first document:
+### Document structure
 
-```bash
-python -c "import json; print(json.loads(open('/tmp/docs.jsonl').readline())['document'])"
-```
+A contact map is represented as a document over a custom vocabulary of 2,845 tokens (Figure 1a). The sequence section gives one (position, amino acid) statement per residue plus n-term and c-term statements defining the termini. The structure section specifies one (contact, position1, position2) triple per contacting residue pair. Statements within each section are emitted in random order. Positions come from a ring of 2,000 index tokens. Each document draws a uniformly-random starting index and numbers protein residues from there, wrapping around after index 1999, so that the whole index range is used even though most proteins are shorter than 2,000 residues.
 
-You'll see a single space-separated token string like:
+### Contacts definition
 
-```
-<contacts-and-distances-v1> <begin_sequence> <M> <G> <D> <I> ... <begin_statements> <long-range-contact> <p3> <p82> <distance> <p7> <p41> <CA> <CB> <d12.5> ... <plddt_95_100> <end>
-```
+We defined contacts using [ConFind](https://doi.org/10.1016/j.str.2015.03.015), which considers the fraction of sidechain rotamer states that clash between residues, rather than a fixed distance cutoff. We used the pyconfind implementation (https://github.com/timodonnell/pyconfind), and counted a residue pair as in contact if its contact degree exceeded 0.001 and the two residues are at least 6 positions apart in primary sequence. Deviating from the standard ConFind implementation, which considers all possible amino acids at each position, we consider only the native amino acids present in the sequence being predicted.
 
-Point `--input` at a directory to batch over a whole set of
-structures (one document per input). See `contacts-and-distances-v1
-generate --help` for the algorithm knobs (contact cutoff, per-mode
-fractions, pLDDT filter, context-length budget).
+### 3D structure prediction model
 
-A second format, `contacts-v1`
-([SPEC.md](marinfold/marinfold/document_structures/contacts_v1/SPEC.md)),
-is contacts-only: a residue sequence — `<pN> <AA>` statements in
-random order, with `<n-term>`/`<c-term>` markers and residues numbered
-from a random start that wraps around 2000 indices — followed by
-`<contact>` statements for the strongest
-[pyconfind](https://github.com/timodonnell/pyconfind) side-chain
-contacts above a minimum degree (as many as fill the context budget),
-listed in random order. Generation needs the `contacts-v1` extra (pyconfind):
+Helico closely follows the [AlphaFold3](https://doi.org/10.1038/s41586-024-07487-w) architecture and is initialized from [Protenix v1](https://doi.org/10.64898/2026.02.05.703733) weights. We replaced the MSA input with a three-state (contact / no-contact / unknown) token by token matrix, projected by a zero-initialized linear layer into the initial pair representation, so that enabling contact conditioning has no effect on the model at the first training step. During fine-tuning the level of contact conditioning is sampled per example from none to complete, and the contacts provided to the model are corrupted with both false positives and false negatives. We fine-tuned Helico for 6,000 steps on data sampled from the original Protenix v1 training set. This took about 8 hours on a machine with 8x H100 GPUs. Helico is available at: https://github.com/Open-Athena/helico.
 
-```bash
-cd marinfold
-uv sync --extra contacts-v1
-# Eyeball documents + their contact tables in the terminal:
-uv run contacts-v1 view --input tests/data/1QYS.cif
-# Write documents (with protein-docs-style metadata columns) plus a
-# per-protein JSON summary (sequence, every contact's degree, truncation):
-uv run contacts-v1 generate --input tests/data/1QYS.cif \
-    --out /tmp/contacts_v1_docs.jsonl --summary-out /tmp/summary.json
-```
+### Baseline predictors
 
-## More details (mostly written by robots)
+[Protenix v2](https://doi.org/10.64898/2026.04.10.717613) (protenix 2.0.0) was run in both single-sequence and MSA modes on H100 GPUs with 10 trunk recycles, 5 random seeds, and 8 diffusion samples per protein. We scored the top-1 sample selected by Protenix's ranking score. MSAs were pre-computed with Protenix's [ColabFold](https://doi.org/10.1038/s41592-022-01488-1) backend. [ESMFold](https://doi.org/10.1126/science.ade2574) was run with 4 recycles, giving one deterministic prediction per protein. ESMFold2 was run with num_loops = 20 and best-of-5 diffusion draws at distinct seeds, keeping the top-1 by the model's own confidence. Helico was run MSA-free with 6 trunk recycles and 3 diffusion samples, keeping the best of the three by its own confidence head. To score contact prediction for the structure-based predictors we took the single highest-confidence predicted structure and rank residue pairs by ConFind contact degree, using the same parameters as for the ground truth.
 
-Trained models are listed in
-[`MODELS.yaml`](marinfold/marinfold/MODELS.yaml) by
-nickname. The `marinfold` CLI looks up the model, picks the first
-document structure it supports, and dispatches to that impl. Two
-subcommands:
+## Acknowledgements
+We thank Lambda Labs for a gift of GPU compute credits.
 
-```bash
-cd marinfold
-uv sync --extra mlx        # or --extra vllm, or --extra transformers
+## More details
 
-# Predict structure for a sequence (contacts or distances, per the model).
-uv run marinfold infer \
-    --backend mlx --input-sequence SIINFEKLLLSKP \
-    --out /tmp/preds.json
-
-# Evaluate predictions against ground-truth structures.
-uv run marinfold evaluate \
-    --backend mlx --input /path/to/pdbs/ \
-    --metrics-out /tmp/metrics.json
-```
-
-
-| Backend        | Platform                                       | Extra                  |
-| -------------- | ---------------------------------------------- | ---------------------- |
-| `vllm`         | Linux + NVIDIA GPU (production / scaled eval)  | `--extra vllm`         |
-| `mlx`          | Apple Silicon (fastest local)                  | `--extra mlx`          |
-| `transformers` | Anywhere torch installs (Apple MPS, CPU, CUDA) | `--extra transformers` |
-
-
-`--model` accepts a [`MODELS.yaml`](marinfold/marinfold/MODELS.yaml) nickname or a
-local checkpoint directory. Omit it to use the entry marked
-`default: true`. `--document-structure` overrides the impl
-selection; without it the first supported impl wins. See
-`[marinfold/README.md](marinfold/README.md)` for the full backend
-matrix and `marinfold infer --help` / `marinfold evaluate --help`
-for the full flag set.
-
-For impl-specific flags (seed-N sweeps, distance cap, batch size,
-etc.) each impl has its own lower-level CLI. `contacts-v1` and
-`contacts-and-distances-v1` install theirs as console scripts
-(`contacts-and-coordinates-v1` has none — run it with `python -m`;
-see [`marinfold/README.md`](marinfold/README.md)):
-
-```bash
-cd marinfold
-uv sync --extra mlx
-uv run contacts-and-distances-v1 evaluate \
-    --backend mlx --model 1B \
-    --input /path/to/pdbs/ --seed-n-values 0,5,20,50 \
-    --out /tmp/metrics.json
-```
-
-## Colab Notebooks
-
-- [Inference Example 1](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/inference_example1.ipynb) — run the `contacts-v1-exp75-1.5B` model on a structure from RCSB and plot the ground-truth vs predicted contact map (choose `pairwise` or `rollout` inference).
-- [Fold From Contacts 1](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/fold_from_contacts1.ipynb) — a classical "approximate AlphaFold" (Floyd–Warshall + MDS) that folds a 3D backbone from predicted contacts, following [sokrypton/ml4me](https://colab.research.google.com/github/sokrypton/ml4me/blob/main/AlphaFold_approx_v2.ipynb) but sourcing contacts from `contacts-v1-exp75-1.5B` (from sequence alone) instead of the MSA. Takes any RCSB PDB id (MSA built via the ColabFold MMseqs2 API) or an AlphaFold-DB UniProt id; compares MarinFold vs MSA-coevolution contact maps side by side, and toggles which one drives the fold (with a py3Dmol overlay vs the reference). Ready-made examples plus a `custom` option for any PDB/UniProt id; the default `1R69` (434 repressor) has a deep MSA, and `1QYS` (Top7) is a designed protein with a nearly empty MSA.
-- [Inspect Data 1](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/inspect_data1.ipynb) — browse legacy `timodonnell/protein-docs` subsets plus newer `open-athena/MarinFold` bucket parquet data, with sample documents and parquet schema previews.
-- [Short-Document Bias](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/short_document_bias.ipynb) — does `contacts-v1-exp75-1.5B` under-generate contacts / emit too-short rollout documents vs the ground truth? ([issue #142](https://github.com/Open-Athena/MarinFold/issues/142)) Part A reproduces the published 12-protein × 200-rollout finding (no GPU); Part B regenerates rollouts on a GPU. The shortfall is mild-to-moderate (`pred/gt ≈ 0.70`), never truncated (100% finish), and tracks difficulty (`corr(pred/gt, recall) = +0.84`) — a symptom of the model being unsure of the fold, not a decoding bug.
-- [Explore ESM Atlas Distill](https://colab.research.google.com/github/Open-Athena/MarinFold/blob/main/notebooks/explore_esm_atlas_distill.ipynb) — randomly sample 10 proteins from the [`open-athena/esm-atlas-esmfold2-distill`](https://huggingface.co/buckets/open-athena/esm-atlas-esmfold2-distill) bucket (the ESMFold2 Atlas distill for training-set expansion, [#91](https://github.com/Open-Athena/MarinFold/issues/91)), load their mmCIFs, and view them in an inline py3Dmol grid cartoon-colored by per-residue pLDDT. Runs on a free CPU runtime with no login; samples cheaply via range reads (never downloads a full part).
-
-## Layout
-
-```
-MarinFold/
-├── RESOURCES.md            # datasets, tokenizers, W&B projects, prior repos
-├── AGENTS.md               # shared agent rules
-├── .github/ISSUE_TEMPLATE/experiment.md
-├── scripts/                # repo-management scripts (scaffold, itemize, history)
-├── experiments/            # one dir per GitHub issue tagged `experiment`
-│   ├── README.md
-│   ├── AGENTS.md
-│   ├── TEMPLATE.md
-│   └── exp<N>_<kind>_<name>/       # individual experiments
-├── marinfold/              # top-level package: MODELS.yaml, backends, doc-structure toolkit + impls, `marinfold` CLI
-├── models/                 # library for model-training experiments
-└── history/                # one file per W&B-logged run + summary RUNS.md
-```
-
-Each top-level dir under the repo root is a **small library** for one
-kind of work. Concrete experimental work begins as an issue and a
-sub-directory under `experiments/` and pulls in helpers from the
-relevant library. An experiment dir is never copied into a kind dir —
-code meant to be reused lands in the library from the start and the
-experiment imports it.
-
-## Experiment workflow
-
-1. **File an issue** with the `experiment` label using the
-  [issue template](.github/ISSUE_TEMPLATE/experiment.md). Specify
-   the `Kind:` in the issue body.
-2. **Scaffold** the experiment dir:
-  ```bash
-   cd scripts
-   uv sync                                                          # one-time setup
-   python scaffold.py --issue <N> --kind <kind>
-  ```
-   Creates `experiments/exp<N>_<kind>_<name>/` with a README
-   pre-filled from the issue body.
-3. **Implement.** Add `.py` files in the experiment dir. If the
-  experiment imports marin, add a `pyproject.toml` declaring a path
-   dep on the relevant kind library; see
-   `[exp0_models_protein_docs_initial_port/pyproject.toml](experiments/exp0_models_protein_docs_initial_port/pyproject.toml)`
-   as the worked example.
-4. **Launch.** Marin's executor hash-caches step outputs, so a rerun
-  with no config changes is a no-op:
-5. **Record results** in the experiment's README. Commit small CSVs
-  to its `data/`, plots to its `plots/`. Large artifacts go to GCS
-   or HuggingFace (see below).
-6. **Regenerate the index**: `python scripts/itemize.py`.
-7. **Close the issue** once the conclusion lands.
-
-Most work happens on `main`. Use a branch (`exp/<N>-<name>`) only
-when an experiment needs speculative changes to a shared kind
-library.
-
-## Experiment kinds
-
-Every experiment is one of four kinds, indicated by the second token
-in its directory name (`exp10_<kind>_<name>`):
-
-
-| Kind                  | What it does                                                                                           | Library lives in                                                                       |
-| --------------------- | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
-| `models`              | Train models                                                                                           | `[models/](models/)`                                                                   |
-| `evals`               | Run evals on trained models                                                                            | — (no shared library yet)                                                              |
-| `data`                | Generate training / eval datasets                                                                      | — (no shared library yet)                                                              |
-| `document_structures` | Define a generate-from-input + evaluate-against-ground-truth interface for one protein-document format | `[marinfold/marinfold/document_structures/](marinfold/marinfold/document_structures/)` |
-
-
-Kind libraries are only created when a second experiment needs the
-same helper. Today `evals/` and `data/` kinds exist as experiment
-kinds (e.g. `experiments/exp9_evals_`*) but have no shared library —
-the first experiment in each kind that finds itself sharing code
-with a sibling creates the kind dir at that point.
-
-A **document structure** is a recipe with two responsibilities: turn
-input data (e.g. a PDB) into a training document string, and score a
-trained model against ground-truth structures using the same format.
-Every format is implemented as a subpackage of
-[`marinfold.document_structures`](marinfold/marinfold/document_structures/)
-from its first commit, with its own `cli.py` driver (`generate` /
-`view` / `infer` / `evaluate` / `tokenizer`, depending on the impl) on
-top of the shared toolkit there (`EvalResult`, `build_tokenizer`,
-parquet/jsonl writers). `contacts-v1` is the current format; see
-[`marinfold/README.md`](marinfold/README.md) for all three and what
-each supports.
-
-## Run history
-
-Every W&B-logged run gets a markdown file under `history/runs/`.
-A **run** is anything with a W&B link — training, evals, data-gen
-pipelines that emit metrics. Multiple processes contributing to the
-same W&B `run_id` share one history file.
-
-Each file has YAML frontmatter (user, launch time, W&B URL, iris
-job IDs, git SHA, kind, experiment, short description) plus a
-free-form body for the detailed plan, changes from prior runs, and
-notes. `history/RUNS.md` is a generated summary table sorted newest-
-first with links out to W&B + the detail file.
-
-After `wandb.init()` returns and you have the W&B URL in hand:
-
-```bash
-python scripts/history.py new \
-    --wandb-url https://wandb.ai/open-athena/MarinFold/runs/<id> \
-    --wandb-name <display-name> \
-    --experiment exp<N>_<kind>_<name>   # or no_experiment
-    --kind <models|evals|data|document_structures|other> \
-    --short "<one-line description>" \
-    --iris-jobs <iris-job-id>
-
-python scripts/history.py add-iris-job <run-stem> <new-iris-job-id>   # on preempt-restart
-python scripts/history.py update-index                                # regenerate RUNS.md
-python scripts/history.py sync                                        # catch missed runs (needs wandb extra)
-python scripts/history.py check                                       # CI gate
-```
-
-See `[history/README.md](history/README.md)` for the full schema and
-policy.
-
-## Where artifacts go
-
-We try hard to avoid committing large files into the repo. The
-authoritative homes for non-source artifacts:
-
-- **HuggingFace bucket** (`buckets/open-athena/MarinFold`) — single
-bucket for **both data artifacts and model checkpoints**. Inside,
-use top-level `data/...` and `checkpoints/...` prefixes so the
-distinction is explicit. Checkpoint names should embed the W&B
-run name. (See `AGENTS.md` "HF bucket" for the splitting policy.)
-- **HuggingFace datasets** (`huggingface.co/datasets/timodonnell/<name>`)
-— first-class published text / tokenized corpora that levanter
-loads via `hf://datasets/` URIs. Long-tail / in-flight data
-artifacts go to the bucket instead.
-- **GCS** (`gs://marin-<region>/<...>`, co-located with the job's
-compute zone — see `AGENTS.md` "GCS bucket") — large intermediate
-artifacts produced by marin's executor (tokenized parquets,
-cached features, predictions).
-- **W&B** (`https://wandb.ai/open-athena/MarinFold`) — training and
-eval metrics, run metadata.
-
-The repo holds source, prose, small CSVs that feed plots, and
-plots themselves. Anything bigger than ~1 MB needs a deliberate
-reason to be checked in.
-
-## Tooling reference
-
-Repo-management scripts live in `[scripts/](scripts/)` and are run
-with plain `python`:
-
-
-| Script                                          | Purpose                                                             |
-| ----------------------------------------------- | ------------------------------------------------------------------- |
-| `python scripts/scaffold.py --issue N --kind K` | Create an experiment dir from a GitHub issue                        |
-| `python scripts/itemize.py`                     | Regenerate `experiments/index.md`                                   |
-| `python scripts/history.py new ...`             | Create a run history file for a W&B run                             |
-| `python scripts/history.py add-iris-job ...`    | Append an iris job ID (preemption / restart)                        |
-| `python scripts/history.py sync`                | Pull W&B runs; skeleton-file the missing ones (needs `wandb` extra) |
-| `python scripts/history.py update-index`        | Regenerate `history/RUNS.md`                                        |
-| `python scripts/history.py check`               | CI gate: exit non-zero if W&B has runs without history files        |
-
-
-For impl-specific CLI surfaces (e.g. `generate` and `tokenizer`
-subcommands), see the per-impl CLI — `contacts-v1` and
-`contacts-and-distances-v1` install one as `<structure-name>` (e.g.
-`contacts-and-distances-v1 {generate,infer,evaluate,tokenizer} ...`)
-alongside the top-level `marinfold` command.
-
-To set up the scripts venv: `cd scripts && uv venv --python 3.11 && uv sync`
-(add `--extra wandb` for `history sync` / `history check`).
-
-## Status
-
-Initial port (commit-level) from the
-`[marin/protein-training-1b](https://github.com/marin-community/marin/tree/protein-training-1b/experiments/protein)`
-branch. All training/export scripts live under
-`[experiments/exp0_models_protein_docs_initial_port/](experiments/exp0_models_protein_docs_initial_port/)`;
-shared marin glue is in `[models/marinfold_models/](models/marinfold_models/)`.
-The `contacts-and-distances-v1` document structure lives at
-`[marinfold/marinfold/document_structures/contacts_and_distances_v1/](marinfold/marinfold/document_structures/contacts_and_distances_v1/)`;
-the experiment that first built it is
-`[experiments/exp1_document_structures_contacts_and_distances_v1/](experiments/exp1_document_structures_contacts_and_distances_v1/)`,
-kept as a historical record.
-Eval experiments (e.g. `experiments/exp9_evals_`*) have started
-landing; a shared `evals` kind library will be created when a second
-eval experiment needs the same helper.
+See [DOCS.md](DOCS.md).

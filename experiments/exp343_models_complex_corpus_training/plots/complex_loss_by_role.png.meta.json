@@ -1,0 +1,5 @@
+{
+  "script": "plot_complex_loss.py",
+  "args": [],
+  "caption": "Held-out complex loss by token role, 10,738 documents of the #294 corpus (all). Compare within a role, not across: roles differ in intrinsic difficulty. Dashed line is uniform over the 2,845-token vocabulary."
+}

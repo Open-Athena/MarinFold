@@ -1,0 +1,12 @@
+{
+  "arm": "afdb",
+  "corpus_rows_checked": 4129682,
+  "droplist_rows_checked": 166679,
+  "entry_ids_missing_from_corpus": 0,
+  "missing_examples": [],
+  "coordinates_resolved": 166679,
+  "coordinates_agreeing_with_entry_id": 166679,
+  "entry_id_unique_in_corpus": true,
+  "limit_shards": null,
+  "droplist": "/data/exp225_decontam/droplist_final.parquet"
+}

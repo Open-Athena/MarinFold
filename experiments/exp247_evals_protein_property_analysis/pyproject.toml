@@ -1,0 +1,30 @@
+[project]
+name = "exp247-evals-protein-property-analysis"
+version = "0.1.0"
+description = "What protein properties explain per-protein contact accuracy, for MarinFold and for the baselines — issue #247. Analysis only: no training, no new model inference."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "numpy",
+    "pandas>=2.0",
+    "scipy>=1.11",
+    "scikit-learn>=1.4",
+    "statsmodels>=0.14",
+    "matplotlib>=3.8",
+    # Secondary structure straight from the ground-truth mmCIFs (P-SEA), and
+    # structure parsing that does not need the marinfold stack.
+    "biotite>=1.0",
+    # Streaming the already-computed colabfold MSAs off their Modal volume.
+    "modal>=0.64",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = ["sys_platform == 'linux'"]

@@ -1,0 +1,237 @@
+---
+marinfold_experiment:
+  issue: 159
+  title: "exp: build a contacts-v1 backtracking corpus by re-conditioning the base model on its own corrected contacts"
+  kind: data
+  branch: exp159-backtracking-corpus
+---
+
+# exp: build a contacts-v1 backtracking corpus by re-conditioning the base model on its own corrected contacts
+
+**Issue:** [#159](https://github.com/Open-Athena/MarinFold/issues/159) · **Kind:** `data` · **Branch:** `exp159-backtracking-corpus` (off `exp158-contacts-v1-retract-token`; depends on the #158 format change)
+
+## Question
+
+Can we build a contacts-v1 training corpus of coherent **self-correction traces** by generating with the base model in the loop — emitting contacts, retracting the wrong ones once the model's own posterior turns against them, and continuously re-conditioning the model on its currently-live (corrected) contact set?
+
+## Hypothesis
+
+Generating incrementally and, after every retraction, **rebuilding the base model's prompt from the live (post-retraction) contact set** keeps every emitted contact on-distribution — unlike a post-hoc splice, which leaves the whole tail conditioned on a context that still contains the mistake. If the *timing* of each retraction is driven by the base model's own collapsing posterior on the queued contact, the corrected-away contacts are enriched for false positives using a signal computable purely from context — what the trained model (#160) needs to learn *when* to retract.
+
+## Background
+
+Depends on #158 (`<retract>` token + `read.py` fold). Feeds #160 (train + eval). Generator = `contacts-v1-exp120-1.5B` (#120). Reuses the #102 HF rollout path (emission order + teacher-forced scoring) and `inference._fwd_matrix` / `_pcontact_from_fwd` for the posterior signal. See the issue for the full method and the twin-corpus/publishing conventions (#53/#105/#126/#132).
+
+## Approach
+
+### Status: engine + adapter + pilot + a 1.02M-document corpus DONE (see Results).
+
+**`backtrack_engine.py` — the pure state machine (done).** No torch / no marinfold model; the base model is reached only through two injected callables, so the whole loop is unit-tested with a stub backend (`test_backtrack_engine.py`, 6 tests, CPU, <1s):
+
+- **Two streams.** Builds the output document's structure section as an ordered edit list of `("contact"|"retract", pair)` while the base model is always handed a clean live-only set via `Proposer.propose(live)` — so every proposal is conditioned on the corrected post-retraction state (the re-conditioning is implicit in the interface).
+- **Posterior-collapse timing.** A queued false positive is retracted when `Scorer.score(committed, targets)` — the base model's `s(c)` against the committed set (live minus queue) — collapses relative to its peak (`tau`), drops below `s_floor`, or falls out of the top-`rank_factor·|GT|`. `min_delay` forbids immediate retraction; `eval_cadence` bounds scorer calls. Timing never uses GT.
+- **Forced noise retraction.** With `noise_retract_prob`, a *true* contact is forcibly retracted (its posterior won't collapse, so this can't be queued) and re-emitted later.
+- **Budget-reserved flush = correctness.** The main loop only runs while it can still afford to retract every live non-GT pair and emit every missing GT pair, so the final live set equals GT **exactly** (recall philosophy F). Budget exhaustion sets `truncated` (the one acknowledged failure mode). Loop guard bans a pair after `loop_cap` retract cycles.
+- Output folds (via the real `read.live_contacts`) to exactly GT — asserted in every test.
+
+**The two model-backed callables (implemented in `backtrack_adapter.py`):**
+- `Proposer.propose(live)` — build the clean contacts-v1 prompt (sequence prefix + live contacts) and sample the next `<contact>` from `contacts-v1-exp120-1.5B` (HF transformers, T=1.0/p=0.95/k=50), returning its canonical position pair or `None` on `<end>`.
+- `Scorer.score(committed, targets)` — one `_fwd_matrix` pass over the committed-set prompt → `s(c)` for every target pair at once.
+
+**GPU adapter + pilot (done).** `backtrack_adapter.py` wraps exp120 into `Proposer`/`Scorer` (unit-tested GPU-free in `test_backtrack_adapter.py`); `run_pilot.py` runs the engine on real proteins from exp98's `targets.parquet` (GT + sequences, no pyconfind) and reports the gating numbers. Pilot ran on an RTX A5000 — see Results.
+
+### Remaining
+1. **10% single-retract probe class** — deferred (a policy mode of the same engine: hold one FP to a designated end/random position). Without it, #160's cheap retract-probe eval arm has no on-distribution training support.
+
+
+### Throughput work — 8.8x (14.7 -> 1.68 s/doc)
+
+Profiling the single-protein loop attributed **~86%** of the time to `propose`
+(~50 calls x ~220 ms, at **batch size 1**) and ~14% to `score`. Both fixed:
+
+- **Cross-protein batching.** The engine core is now a generator
+  (`backtracking_structure_gen`) that *yields* `ProposeRequest`/`ScoreRequest`,
+  so `batch_runner.run_batched` advances N proteins in lockstep and serves every
+  pending propose in **one left-padded GPU batch**.
+  `build_backtracking_structure` remains as a thin synchronous driver, so the
+  unit tests and pilot are unchanged.
+- **Shorter decode budget.** A contact statement is 3 tokens, so generating 12
+  was ~4x more decode steps than needed (now 6). A *duplicate* proposal is
+  returned rather than treated as EOS — the engine already skips live pairs, so
+  this cannot truncate a document early.
+- **Targeted score.** `score` ran one tail per residue (L) to fill the whole
+  [L, L] map when only the queued pairs' entries are ever read; it now runs
+  tails only for residues appearing in the targets. Numerically identical
+  (asserted by an equivalence test vs `_pcontact_from_fwd(_fwd_matrix(...))`),
+  and it removed the serial bottleneck that remained after propose was batched.
+
+| batch | s/doc | folds→GT |
+|---|---|---|
+| 1 (baseline) | 14.7 | ✅ |
+| 8 | 2.18 | 8/8 |
+| **24** | **1.68** | 24/24 |
+| 48 | 2.09 | 48/48 |
+| 96 | 1.83 | 96/96 |
+
+Batch 24 is the sweet spot on one A5000; larger batches lose to padding waste
+from ragged prompt lengths. Correctness is untouched at every size.
+
+**Implication for 1M documents:** ~470 A5000-GPU-hours, or roughly 120-160
+H100-hours — a few hours across a CoreWeave H100 fleet at batch priority. The
+per-GPU loop is now fast enough that scale is a fan-out problem, not an
+algorithmic one.
+
+### Source for the scale run — exp139's saved contacts
+
+`esm_atlas_source.py` reads proteins + ground truth from the raw-contacts
+shards exp139 published for the 66.76M-protein ESMFold2 distillation set
+(3,338 shards x 20k rows; public bucket, anonymously readable, plus an exp147
+GCS mirror), deserializing with `analyzed_from_row` — **no pyconfind**. Those
+contacts are RAW (every pair with degree > 0), so the loader applies the
+contacts-v1 document filters (`min_seq_separation=6`,
+`min_contact_degree=0.001`); without them ~2/3 of the "ground truth" would be
+weak/local pairs the base model was never trained to emit, and the engine would
+score them all as false positives.
+
+
+### Scale run — 1M documents on CoreWeave H100s
+
+`gen_esm_atlas_worker.py` (sharded, resumable) + `dispatch_coreweave.py` (fan-out).
+Ran 2026-07-26 on `cw-rno2a` at **batch priority**: 48 independent 1-GPU
+workers over shards 0-255, 4,000 docs/shard -> 1,023,997 documents, writing
+`s3://marin-us-east-02a/protein-structure/MarinFold/exp159_backtracking_esm_atlas/documents/`.
+
+Single-worker smoke on one H100 first: **24 docs in 32 s (1.32 s/doc)**, all
+folding to exactly GT, written to and read back from S3. Per-doc time should
+improve at scale — in the smoke the batch drained to stragglers after 24 docs,
+whereas a 4,000-doc shard keeps the scheduler saturated.
+
+Launch plumbing that had to be right (each one cost a failed submission; the
+recipe is now in the CoreWeave memory note):
+
+| symptom | cause / fix |
+|---|---|
+| CLI refuses `--memory 8GB` | needs `--enable-extra-resources` |
+| `Group 'dev' is not defined` | add `[dependency-groups] dev = []` |
+| `cannot normalize a relative path beyond the base directory` | the pod only gets the experiment dir -> marinfold must be a **git dep**, not `../../marinfold` |
+| `No module named 'fray'` | the job env installs **base** deps only -> marin-fray/iris cannot live in an extra |
+| `cannot import name 'ResourceConfig' from 'fray'` | this fray build exports nothing at top level -> import from `fray.types` / `fray.current_client` |
+| `No module named 'pandas'` after a clean sync | child entrypoint must be **`uv run python ...`**, not bare `python` |
+| torch downloaded twice per worker | a `.python-version` pin made `uv run` rebuild the venv iris had just synced |
+
+Two design points that matter for correctness at this scale: **batch priority is
+set on each child `JobRequest` (`priority=3`)** — the CLI flag bands only the
+driver — and workers are **independent `replicas=1` jobs**, not a co-scheduled
+gang, so preemption on the batch band retries one worker instead of the fleet.
+Workers resume by skipping shards whose output already exists.
+
+**First 5,000 documents (20 parts) — validated at scale, 2026-07-26:**
+
+```
+fold == n_gt:     5,000/5,000 (OK)      truncated: 0
+docs with a retraction: 83.7%           mean retracts/doc: 36.2
+FP emitted: 175,890  caught by trigger: 136,785 (77.8%)  false alarms: 0
+FP base rate: 0.182   retract precision: 0.975
+ENRICHMENT:   5.37x   (ceiling 1/0.182 = 5.49x -> 98% of max)
+retract distance: mean 17.8 / median 9 statements (0.1% immediate)
+recovery rate: 0.771
+```
+
+Throughput at scale is **1.09 s/doc** (250-doc part in 273 s), better than the
+1.32 s/doc single-worker smoke — the batch stays saturated instead of draining
+to stragglers. ~1.02M documents across 48 workers projects to ~6.5 h.
+
+Two things worth noting against the AFDB reference corpus (2.73x enrichment):
+
+- ESM-Atlas enrichment is **higher (5.37x)**, but that is mostly because its FP
+  base rate is lower (0.182 vs 0.360) so the ceiling is higher; in both cases
+  the trigger reaches ~98% of the achievable maximum. Enrichment is
+  base-rate-normalised, which is exactly why it is the metric to compare on.
+- An earlier single-worker smoke suggested ESM-Atlas had a *weaker* retraction
+  rate (45% of FPs caught). That was an artifact of a 24-doc batch draining to
+  stragglers; at scale it is 77.8%, above AFDB's 61.8%.
+
+### DONE — 1,023,997 documents (2026-07-26)
+
+Full-corpus QA over all 4,096 parts (`consolidate_esm_atlas.py`), with the
+invariant re-derived per document rather than read off the worker's columns:
+
+```
+documents:        1,023,997        unique entry_ids: 1,023,997
+tokens:           1,076,910,057    mean seq_len: 193.7
+truncated:        0
+fold == n_gt:     1,023,997/1,023,997 (OK)
+
+docs with a retraction: 79.7%      mean retracts/doc: 33.1
+FP emitted: 32,849,569  caught by trigger: 25,105,853 (76.4%)
+trigger false alarms:   0
+FP base rate: 0.166   retract precision: 0.974
+ENRICHMENT:   5.85x   (ceiling 1/0.166 = 6.02x -> 97% of max)
+retract distance: mean 17.9 / median 9 statements (0.1% immediate)
+recovery rate: 0.778
+```
+
+**Every one of 1.02M documents folds to exactly its ground truth, none
+truncated, and the posterior trigger never once retracted a true contact**
+across 32.8M emitted false positives. (The 16k "true contacts retracted" in the
+diagnostics sample are the deliberate 5% noise retractions, which the trigger
+column separates out.)
+
+Metrics were stable from 5k -> 30k -> 1.02M documents (precision 0.975 ->
+0.974 -> 0.974; distance 17.8 -> 18.1 -> 17.9), so the generator did not drift
+across proteins.
+
+Run: 48 x 1 H100 on `cw-rno2a` at batch priority, ~4.5 h wall-clock, 0 worker
+failures after the `max_task_failures` fix. Output:
+`s3://marin-us-east-02a/protein-structure/MarinFold/exp159_backtracking_esm_atlas/documents/`
+(4,096 parquet parts).
+
+**Published** (2026-07-27) to
+`hf://buckets/open-athena/MarinFold/data/document_structures/contacts_v1_backtracking/`
+— 16 shards (`train/shard-{00000..00015}.parquet`, 1.5 GB zstd), tokenizer
+co-located, README. Verified by an **anonymous** (no-token) download of
+shard-00000: 64,000 rows, 2000/2000 sampled documents fold to exactly GT.
+
+Write-up: [`WRITEUP.md`](WRITEUP.md) · slides:
+[`plots/summary.pdf`](plots/summary.pdf) (17 slides).
+
+The 10% single-retract probe class remains deferred.
+
+## Success criteria
+
+- Engine: output always folds to exactly GT (unless `truncated`); posterior trigger produces FP-enriched retractions on the stub; loop terminates under adversarial proposers. **✅ (unit tests).**
+- Pilot: retracted contacts strongly FP-enriched vs kept contacts (go/no-go); retraction delays spread (not immediate, not end-clustered); per-document wall-clock measured + extrapolated.
+- Corpus: 0-drop 1:1 twin of the other corpora; ~10% single-retract probe class; anonymously readable from the public bucket.
+
+## Results
+
+**Pilot: 3 proteins (L 55–69), exp120 on one RTX A5000, T=1.0/p=0.95/k=50, eval_cadence=3, min_delay=3, tau=0.35, s_floor=1e-3.** (`data/pilot_metrics.csv`, sample doc in `data/pilot_docs/`.)
+
+| entry | L | n_gt | wall | FP emitted | FP caught by trigger | trigger false alarms (TP) | folds→GT |
+|---|---|---|---|---|---|---|---|
+| AF-A0A0E3P1D7-F1 | 55 | 33 | 14.4 s | 24 | 14 | 0 | ✅ |
+| AF-A0A0R2QD14-F1 | 65 | 23 | 14.8 s | 29 | 23 | 0 | ✅ |
+| AF-A0A0W8FZR3-F1 | 69 | 6 | 9.7 s | 26 | 9 | 0 | ✅ |
+
+- **Correctness holds on real model output:** all 3 documents fold (via `read.live_contacts`) to exactly GT; none truncated.
+- **The posterior-collapse trigger is discriminative (the go/no-go):** across the three proteins, **46 of 79** emitted false positives were retracted *by the trigger* (before the flush), with **0** true contacts ever wrongly retracted by the trigger. So on the real base model the "which contact is wrong" signal is real, and — the point of the whole design — it flags false positives using only the visible contact set, never GT. The uncaught FPs (33) are cleaned at the correctness flush.
+- **`trigger_recall` tracks context:** it falls when there are few true contacts (0.35 at n_gt=6 vs 0.79 at n_gt=23) — a small committed set gives the posterior little to lean on, so more FPs survive to the flush. Expect richer proteins to be the trigger's strong suit.
+- **Cost:** ~13 s/doc at L≈60 on one A5000 with **no KV-cache reuse** (each step re-prefills the growing prompt). That extrapolates to impractical for a 4.2M-doc corpus — scale needs KV reuse + cross-protein batching + probably TPU. The pilot's job was to *measure* this, and it did.
+- Base model emits many FPs when sampled one-at-a-time at T=1.0 (24–29 per protein) — plenty of retraction signal per document.
+
+### Modest corpus (370 docs) — the corpus-level go/no-go
+
+`gen_corpus.py` ran the engine over the 370 exp98 targets with L in [30,130] (one document each, `noise_retract_prob=0.05`), ~1.5 h on the A5000. Aggregated to `data/backtracking_corpus.parquet` (370 docs, ~198k tokens):
+
+- **Correctness at scale:** all **370/370** documents fold to exactly GT; **0 truncated**.
+- **Trigger is discriminative across the corpus (the real go/no-go):** of **11,489** emitted false positives, **7,098 (61.8%)** were retracted *by the posterior trigger*, with **0** true-contact false alarms — across all 370 proteins the trigger never once retracted a true contact. The remaining 38% of FPs are cleaned at the correctness flush.
+- **Delayed, not immediate:** mean trigger delay **6.4 statements** — retractions sit well back from the mistake (the learnable long-range signal #160 needs), and the trigger-catch rate rises with protein size (70%+ at L~110-120, as the committed context grows).
+- mean 31.6 retracts + 83.5 contacts per doc — retraction is a substantial, well-distributed fraction of each document.
+
+This is a much stronger read than the 3-protein pilot and gives #160 a real (if small) corpus to train on. It is **not** the full corpus — 370 docs is pipeline-validation + first-signal scale; a 4.2M-doc twin needs the throughput work above.
+
+Note: exp120's checkpoint declares a marinfold-custom `tokenizer_class` that `AutoTokenizer` could not resolve; this is now **fixed upstream** (main, PR #165 — the backend falls back to loading `tokenizer.json`), so no workaround is needed here.
+
+## Conclusion
+
+The method works as designed on the real base model: model-in-the-loop generation with re-conditioning produces **exactly-correct** documents, and the base model's own posterior collapse is a **discriminative, GT-free** signal for *which* contacts to retract and *when* (46/79 FPs caught, 0 false alarms on 3 pilot proteins). The open risk is no longer "does the trigger flag the right contacts" (it does) but **throughput**: at ~13 s/doc unbatched, a full corpus needs KV-cache reuse + batching + TPU before scaling. Recommended next step is that throughput work (or a modest-scale corpus for a first #160 training signal), plus the 10% single-retract probe class.

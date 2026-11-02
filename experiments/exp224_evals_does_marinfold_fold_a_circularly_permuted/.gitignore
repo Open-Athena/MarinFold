@@ -1,0 +1,6 @@
+# Repaired bf16 model copy + per-seed vote matrices (~2.8 GB). Reproduce with
+# prepare_hf_export.py + score_rollout.py; the scored metrics are in data/.
+_scratch/
+# vLLM runtime lives in its own venv (see README); .gitignore's bare ".venv"
+# does not match this name.
+.venv-vllm/

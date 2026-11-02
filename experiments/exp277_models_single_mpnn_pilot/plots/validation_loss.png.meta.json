@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "Full language-model validations across the first epoch. Cooldown begins at step 213076; final checkpoint is step 266344."
+}

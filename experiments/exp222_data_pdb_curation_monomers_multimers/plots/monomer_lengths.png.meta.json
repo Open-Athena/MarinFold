@@ -1,0 +1,5 @@
+{
+  "script": "qc.py",
+  "args": [],
+  "caption": "Residue count and token count of the PDB monomer corpus. The 8192-token ceiling is what truncates the right tail."
+}

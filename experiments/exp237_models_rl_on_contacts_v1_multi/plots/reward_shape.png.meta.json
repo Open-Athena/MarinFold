@@ -1,0 +1,10 @@
+{
+  "script": "plot_reward_shape.py",
+  "args": [
+    "--data",
+    "data",
+    "--out",
+    "plots"
+  ],
+  "caption": "Arm M-C's reward before training: 55% of sections change no vote, and average -0.062 once centred. M-F has no such atom and collapsed the same -- so this is not the cause. See RESULTS.md."
+}

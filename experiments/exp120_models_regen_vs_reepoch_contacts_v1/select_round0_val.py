@@ -47,7 +47,7 @@ RES_RE = re.compile(r"<p(\d+)>\s+<([A-Z]{3})>")
 
 # Standard 3-letter -> 1-letter amino-acid map (matches contacts-v1 residues;
 # unknown/non-standard fall back to "X"). Equivalent to exp100 parse_doc's
-# THREE_TO_ONE derived from marinfold's _ONE_LETTER_TO_THREE.
+# THREE_TO_ONE derived from marinfold's ONE_LETTER_TO_THREE.
 THREE_TO_ONE = {
     "ALA": "A", "ARG": "R", "ASN": "N", "ASP": "D", "CYS": "C", "GLN": "Q",
     "GLU": "E", "GLY": "G", "HIS": "H", "ILE": "I", "LEU": "L", "LYS": "K",

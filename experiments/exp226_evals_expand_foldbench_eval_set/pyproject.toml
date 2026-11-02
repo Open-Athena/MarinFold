@@ -1,0 +1,39 @@
+[project]
+name = "exp226-evals-expand-foldbench-eval-set"
+version = "0.1.0"
+description = "Expand the 554-protein contact eval set with the 222 FoldBench monomers we never used, and measure sequence-identity survival against exp199's training set — issue #226. CPU-only, no GPU, no model inference."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # No marinfold: unlike exp213 this never decodes a training document —
+    # it reuses exp213's already-built 70.9 M-sequence mmseqs targetDB. The
+    # only network I/O is RCSB (sequences) and GitHub (the pinned FoldBench
+    # target list); both go through urllib from the stdlib.
+    # mmseqs itself is a binary, installed by exp213's overlap_lib.ensure_mmseqs.
+    "numpy",
+    "pandas>=2.0",
+    "matplotlib>=3.8",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+# Ground-truth contacts for the 23 eval2 proteins that #89's frozen universe
+# does not cover. Kept out of the base install because it drags in marinfold
+# and the pyconfind extension, which nothing else in this experiment needs —
+# the identity search is pure mmseqs + pandas. Same dependency exp78 declares,
+# so the geometry defaults are the ones contacts_v1 generates with.
+gt = ["marinfold[contacts-v1]", "gemmi>=0.6"]
+
+[tool.uv.sources]
+marinfold = { path = "../../marinfold" }
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+# Scripts, not a packaged library.
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'linux'",
+]

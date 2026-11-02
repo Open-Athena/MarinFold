@@ -1,0 +1,5 @@
+{
+  "script": "plot_decontam.py",
+  "args": [],
+  "caption": "Red = what #41 predicted and nobody had measured \u2014 documents a sequence filter keeps and a structural one removes: 22,320 at Tier B, 1,462,710 at C."
+}

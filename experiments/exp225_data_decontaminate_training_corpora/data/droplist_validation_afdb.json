@@ -1,0 +1,11 @@
+{
+  "arm": "afdb",
+  "corpus_rows_checked": 4129682,
+  "droplist_rows_checked": 77887,
+  "entry_ids_missing_from_corpus": 0,
+  "missing_examples": [],
+  "coordinates_resolved": 77887,
+  "coordinates_agreeing_with_entry_id": 77887,
+  "entry_id_unique_in_corpus": true,
+  "limit_shards": null
+}

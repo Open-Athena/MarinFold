@@ -1,0 +1,35 @@
+
+=== PRIMARY — main (n=394 proteins) ===
+
+  per-contact excess by arm (lower = more 3D-consistent):
+    rollout              mean 0.0562   median 0.0506
+    chimera_marginal     mean 0.1216   median 0.0990
+    chimera_splice       mean 0.0900   median 0.0821
+    gt                   mean 0.0639   median 0.0541
+    gt_subsampled        mean 0.0630   median 0.0512
+    random               mean 0.2715   median 0.2225
+    decoy                mean 0.0668   median 0.0558
+
+  rollout vs chimera_marginal:
+    mean delta (null - rollout) +0.0655  95% CI [+0.0561, +0.0752]
+    rollout better on 89.8% of proteins   Wilcoxon p = 1.39e-58
+    VERDICT: rollout MORE consistent
+
+  rollout vs chimera_splice:
+    mean delta (null - rollout) +0.0339  95% CI [+0.0304, +0.0373]
+    rollout better on 93.1% of proteins   Wilcoxon p = 2.42e-62
+    VERDICT: rollout MORE consistent
+
+=== SECONDARY — reference-free selection, main (n=394 proteins) ===
+  Spearman rho(excess, precision): mean -0.0175   negative (i.e. useful) on 51.8% of proteins
+  precision of most-consistent rollout vs mean rollout: +0.0110  95% CI [+0.0032, +0.0188]
+  oracle-best rollout vs mean: +0.1299  (the headroom any selector is competing for)
+
+=== by length ===
+  L  100- 200  n=240  delta +0.0473  CI [+0.0391, +0.0558]  rollout better on 88.3%
+  L  200- 350  n=128  delta +0.0771  CI [+0.0603, +0.0948]  rollout better on 90.6%
+  L  350- 761  n= 26  delta +0.1763  CI [+0.1044, +0.2524]  rollout better on 100.0%
+
+  [L<100 subset, excluded from the headline] n=81  delta +0.0029  rollout better on 70.4%
+
+  [chain-break subset, excluded from the headline] n=84  delta +0.0915  rollout better on 95.2%

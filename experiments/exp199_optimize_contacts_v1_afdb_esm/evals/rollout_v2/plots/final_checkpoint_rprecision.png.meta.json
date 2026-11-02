@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "figure": "final_checkpoint_rprecision",
+  "metric": "all-range R-precision",
+  "box_order": [
+    "exp75-historical",
+    "exp75-reproduced",
+    "exp146",
+    "exp166",
+    "trc-p03-aug",
+    "trc-p03-base",
+    "trc-cont",
+    "protenix",
+    "cw-p06-aug",
+    "cw-p06-cool"
+  ],
+  "computed_here": [
+    "exp75-reproduced",
+    "trc-p03-aug",
+    "trc-p03-base",
+    "cw-p06-aug",
+    "trc-cont",
+    "cw-p06-cool"
+  ],
+  "previous_evaluations": [
+    "exp75-historical",
+    "exp146",
+    "exp166"
+  ],
+  "exp75_fit_treatment": "Both evaluations are plotted; their mean enters the fit once.",
+  "sigmoid_fit": {
+    "upper": 0.6615788685769426,
+    "midpoint": 3.1927391447840705,
+    "width": 0.09176987775552493,
+    "r_squared": 0.9874940287130357,
+    "input_groups": [
+      "exp75",
+      "exp166",
+      "trc-p03-aug",
+      "trc-p03-base",
+      "cw-p06-aug",
+      "trc-cont",
+      "cw-p06-cool"
+    ],
+    "minimum_observed_loss": 2.9396727085113525,
+    "maximum_observed_loss": 3.138312048873902
+  },
+  "comparison_table": "experiments/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/data/pr_comparison.csv",
+  "comparison_table_sha256": "5a49ca5b4a6ce8bb8f96b377bec513c56b5a6f63af8e300dd3a658b50794ec33",
+  "per_protein_rows": "experiments/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/data/pr_all_r_rows.csv.gz",
+  "per_protein_rows_sha256": "b48126caadce813b7913a7bbc60667dc0c28759f8bfe4a2cf930caeb2fd64f29",
+  "plot_sha256": "517f21c839137404a2ec607b8526554496a383059bf48b6d7c2eca6bc6870aa4"
+}

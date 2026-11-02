@@ -78,8 +78,9 @@ N_ROLLOUTS = int(os.environ.get("EVAL_CW_N_ROLLOUTS", "100"))
 TOP_K = int(os.environ.get("EVAL_CW_TOP_K", "-1"))
 TOP_P = float(os.environ.get("EVAL_CW_TOP_P", "0.95"))
 TEMPERATURE = float(os.environ.get("EVAL_CW_TEMPERATURE", "1.0"))
-PROMPT_THINK_AFTER_SEQUENCE = os.environ.get("EVAL_CW_PROMPT_THINK_AFTER_SEQUENCE", "0") in {"1", "true", "True", "yes"}
-PROMPT_THINK_COUNT = int(os.environ.get("EVAL_CW_PROMPT_THINK_COUNT", "1" if PROMPT_THINK_AFTER_SEQUENCE else "0"))
+PROMPT_THINK_COUNT = int(os.environ.get("EVAL_CW_PROMPT_THINK_COUNT", "0"))
+if PROMPT_THINK_COUNT < 0:
+    raise ValueError("EVAL_CW_PROMPT_THINK_COUNT must be nonnegative")
 
 WORKER_SCRIPT = Path(__file__).with_name("score_rollout_worker.py")
 WORK_DIR = "/tmp/eval_cw"

@@ -1,0 +1,19 @@
+{
+  "source_url": "https://huggingface.co/buckets/timodonnell/helico-experiments/resolve/exp14_foldbench_held_out_monomers/scores/per_target.csv",
+  "source_sha256": "1cba4eb14fbd92c842bc908f9114e20b0cba0176c79dd3b1f9735c899a3b62cb",
+  "source_bytes": 548800,
+  "metrics": [
+    "gdt_ts"
+  ],
+  "predictor_arms": {
+    "esmfold": "ESMFold",
+    "esmfold2": "ESMFold2",
+    "protenix_v2_single_seq": "Protenix-v2 single sequence",
+    "protenix_v2_msa": "Protenix-v2 + MSA"
+  },
+  "target_counts": {
+    "eval-val": 96,
+    "eval-denovo": 19
+  },
+  "output_rows": 460
+}

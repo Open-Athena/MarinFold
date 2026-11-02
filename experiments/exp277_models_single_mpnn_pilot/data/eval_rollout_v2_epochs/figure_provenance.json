@@ -1,0 +1,11 @@
+{
+  "bootstrap_replicates": 10000,
+  "bootstrap_seed": 277,
+  "eval_job": "/bizon/exp277-eval-v2-02",
+  "sources": {
+    "data/epoch2_validation_progress.csv": "093941d6f2821db510bf8a93a1b6a3e3fb903abb7eef3fc89b5820956af48355",
+    "data/epoch_validation_progress.csv": "000cfc07f03da26f1c1f6c5faf245d7546ddb1bbba912fc0a3b134285ac66f83",
+    "data/eval_rollout_v2_epochs/epoch_comparison.csv": "16bcc5940b787484ac750439e8a52293ba46dde806fe955d97698514c723c8ca",
+    "data/eval_rollout_v2_epochs/subset_aggregate_metrics.csv": "58eef324754c2dab52ee9699b6f27562bf400ba3754735ea7eabbb4e3b6bc0e5"
+  }
+}

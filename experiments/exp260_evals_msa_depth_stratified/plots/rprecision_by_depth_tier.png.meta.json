@@ -1,0 +1,5 @@
+{
+  "script": "plot_depth.py",
+  "args": [],
+  "caption": "Mean all-range R-precision per MSA-depth tier, 95 % bootstrap intervals; de novo designs are held out of the natural panels."
+}

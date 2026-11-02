@@ -1,0 +1,25 @@
+[project]
+name = "exp222-pdb-curation"
+version = "0.1.0"
+description = "exp222: Protenix-style PDB curation into contacts-v1 monomer + multimer corpora."
+requires-python = ">=3.11,<3.14"
+# NB: no huggingface_hub>=1.5 here. marinfold pins transformers<5, which
+# caps huggingface-hub below 1.0, and the >=1.5 bucket API is only needed by
+# publish_to_hf.py -- run that one script in its own environment:
+#     uv run --no-project --with "huggingface_hub>=1.5" python publish_to_hf.py
+dependencies = [
+    "marinfold[contacts-v1]",
+    "gemmi>=0.6",
+    "numpy",
+    "pandas",
+    "pyarrow",
+]
+
+[tool.uv]
+environments = ["sys_platform == 'linux'"]
+
+[tool.uv.sources]
+marinfold = { path = "../../marinfold" }
+
+[dependency-groups]
+dev = ["pytest>=8"]

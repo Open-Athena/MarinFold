@@ -1,0 +1,7 @@
+analysis,scope,arm,reference,n_proteins,mean_delta,ci_low,ci_high,proteins_improved,proteins_tied
+canonical,withheld_continuation,false_large,iid,97,-0.3189001507462188,-0.35588937489872013,-0.28155792238989724,3,1
+canonical,withheld_continuation,true_large,false_large,97,0.5913406180542417,0.5781010481059817,0.605088031894442,97,0
+original_failure_replay,withheld_continuation,false_large,iid,97,-0.3189001507462188,-0.35588937489872013,-0.28155792238989724,3,1
+original_failure_replay,withheld_continuation,true_large,false_large,97,0.5913406180542417,0.5781010481059817,0.605088031894442,97,0
+replay_minus_canonical_effect,withheld_continuation,false_large_vs_iid,canonical_effect,97,0.0,0.0,0.0,0,97
+replay_minus_canonical_effect,withheld_continuation,true_large_vs_false_large,canonical_effect,97,0.0,0.0,0.0,0,97

@@ -1,0 +1,2 @@
+wandb_run,global_step,train_loss,validation_loss,step_seconds,packed_examples,iris_job
+contacts-v1-exp277-m2-p06-full-epoch-1.5B-smoke,9,7.772661209106445,7.03358793258667,0.8505070670507848,34092146,/bizon/exp277-train-smoke-a02

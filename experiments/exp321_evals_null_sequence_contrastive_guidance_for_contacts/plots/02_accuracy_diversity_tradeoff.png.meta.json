@@ -1,0 +1,5 @@
+{
+  "script": "summarize_dev.py",
+  "args": [],
+  "caption": "Paired mean deltas versus gamma=0 on the same 16 proteins. Incremental coverage subtracts each arm's N=1 coverage from its N=20 coverage. Circles are all-range and squares long-range. Moderate guidance raises oracle accuracy despite higher overlap and no gain in incremental union coverage."
+}

@@ -32,6 +32,7 @@ Run (the dispatcher's bootstrap does this)::
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import sys
@@ -48,6 +49,22 @@ CONTACT_RE = re.compile(r"<contact>\s+<p(\d+)>\s+<p(\d+)>")
 SCHEMA = pa.schema([
     ("dataset", pa.string()), ("stem", pa.string()), ("L", pa.int32()),
     ("i", pa.int16()), ("j", pa.int16()), ("votes", pa.int16()),
+])
+
+"""``--dump-rollouts`` (opt-in, default OFF) additionally writes the PER-ROLLOUT
+pair sets that the vote matrix is the sum of, under ``<out>/<label>/rollouts/``.
+
+The aggregated matrix is all the R-precision metric needs, but it has already
+integrated away the thing #208 has to reason about: how much each individual
+rollout contributed to the consensus, and whether that is the same information as
+its own precision. Recovering that from votes alone is impossible.
+
+Default-off is not politeness. Every published MarinFold R-precision came from
+this file, and #169 reproduces #82's numbers by running the same bytes on a
+different accelerator; a flag that changes nothing when unset keeps that true."""
+DUMP_SCHEMA = pa.schema([
+    ("dataset", pa.string()), ("stem", pa.string()), ("L", pa.int32()),
+    ("rollout", pa.int16()), ("i", pa.int16()), ("j", pa.int16()),
 ])
 
 
@@ -106,8 +123,6 @@ def normalize_tokenizer_metadata(model_dir: Path) -> None:
     Transformers, which can load the same ``tokenizer.json`` as a
     ``PreTrainedTokenizerFast`` once the metadata names the stock class.
     """
-    import json
-
     tokenizer_config = model_dir / "tokenizer_config.json"
     if not tokenizer_config.exists():
         return
@@ -177,9 +192,6 @@ def main() -> int:
                          "protein are independent draws from the same distribution either "
                          "way, so the estimator is unchanged — only bitwise replay of one "
                          "specific run is lost.")
-    ap.add_argument("--prompt-think-after-sequence", action="store_true",
-                    help="Append one literal <think> token after the sequence prefix. "
-                         "Deprecated alias for --prompt-think-count 1.")
     ap.add_argument("--prompt-think-count", type=int, default=0,
                     help="Append this many literal <think> tokens after the sequence prefix "
                          "before generating contacts.")
@@ -187,11 +199,17 @@ def main() -> int:
     ap.add_argument("--chunk", type=int, default=8)
     ap.add_argument("--max-num-seqs", type=int, default=512)
     ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--dump-rollouts", type=int, default=0, metavar="N",
+                    help="ALSO dump per-rollout pair sets for the first N proteins of "
+                         "this shard, under <out>/<label>/rollouts/. Default 0 = off, and "
+                         "off means byte-identical behaviour to every published run. "
+                         "Proteins are taken from the shard's length-interleaved order, so "
+                         "N gets a spread of lengths rather than the short tail.")
     a = ap.parse_args()
 
     shard_i, num_shards = (int(x) for x in a.shard.split("/"))
     out_dir = f"{a.out.rstrip('/')}/{a.label}"
-    prompt_think_count = max(a.prompt_think_count, 1 if a.prompt_think_after_sequence else 0)
+    prompt_think_count = a.prompt_think_count
     if prompt_think_count < 0:
         raise ValueError(f"--prompt-think-count must be nonnegative, got {prompt_think_count}")
 
@@ -208,6 +226,9 @@ def main() -> int:
     todo = [r for r in mine if f"{r['dataset']}__{r['stem']}" not in skip]
     if a.limit:
         todo = todo[: a.limit]
+    # From `mine` rather than `todo`: `todo` shrinks on a resume, so keying off it
+    # would silently dump a different set of proteins after a preemption.
+    dump_stems = {f"{r['dataset']}__{r['stem']}" for r in mine[: a.dump_rollouts]}
     print(f"[worker] shard {shard_i}/{num_shards}: {len(mine)} assigned, {len(skip)} already done, "
           f"{len(todo)} to do | n_rollouts={a.n_rollouts} top_k={a.top_k} top_p={a.top_p} "
           f"T={a.temperature} per_request_seed={a.per_request_seed} "
@@ -254,13 +275,15 @@ def main() -> int:
         dt = time.time() - ts
 
         rows = {c: [] for c in ("dataset", "stem", "L", "i", "j", "votes")}
+        dump = {c: [] for c in ("dataset", "stem", "L", "rollout", "i", "j")}
         for r, first, maps in per:
             chunk_outs = outs[first:first + a.n_rollouts]
             n_unfinished += sum(1 for o in chunk_outs if o.outputs[0].finish_reason != "stop")
             n_total += a.n_rollouts
             L = r["L"]
             M = np.zeros((L, L), np.int32)
-            for o, seqidx in zip(chunk_outs, maps):
+            dumping = f"{r['dataset']}__{r['stem']}" in dump_stems
+            for k_roll, (o, seqidx) in enumerate(zip(chunk_outs, maps)):
                 seen = set()
                 for x, y in CONTACT_RE.findall(o.outputs[0].text):
                     ia, ib = seqidx.get(int(x)), seqidx.get(int(y))
@@ -270,6 +293,17 @@ def main() -> int:
                     if abs(ia - ib) >= MIN_SEP and key not in seen:
                         seen.add(key)
                         M[key] += 1
+                if dumping:
+                    # Emit even an empty rollout as zero rows: the reader
+                    # reconstructs the group from `--n-rollouts`, and a rollout
+                    # that predicted nothing is a real datum for #208, not a gap.
+                    for ia, ib in sorted(seen):
+                        dump["dataset"].append(r["dataset"])
+                        dump["stem"].append(r["stem"])
+                        dump["L"].append(L)
+                        dump["rollout"].append(k_roll)
+                        dump["i"].append(ia)
+                        dump["j"].append(ib)
             ii, jj = np.nonzero(np.triu(M, k=1))
             rows["dataset"] += [r["dataset"]] * len(ii)
             rows["stem"] += [r["stem"]] * len(ii)
@@ -280,6 +314,13 @@ def main() -> int:
 
         dest = (f"{out_dir}/shard-{shard_i:03d}-of-{num_shards:03d}-part-{part:04d}.parquet")
         write_parquet(pa.table(rows, schema=SCHEMA), dest)
+        if dump["stem"]:
+            # Under a subdirectory, and NOT named `shard-*-part-*`: `done_stems`
+            # globs that pattern at `out_dir` to decide what to skip on a resume,
+            # and a dump file matching it would be read as vote parts and fail.
+            write_parquet(pa.table(dump, schema=DUMP_SCHEMA),
+                          f"{out_dir}/rollouts/dump-shard-{shard_i:03d}-of-{num_shards:03d}"
+                          f"-part-{part:04d}.parquet")
         part += 1
         ntok = sum(len(o.outputs[0].token_ids) for o in outs)
         print(f"[worker] [{s + len(group)}/{len(todo)}] L={group[0]['L']}-{group[-1]['L']} "

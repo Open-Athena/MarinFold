@@ -1,0 +1,5 @@
+{
+  "script": "summarize_dev.py",
+  "args": [],
+  "caption": "Fifteen primary fold-switch development pairs, 20 rollouts each. Pure ratio had 25/300 unfinished rollouts and 648 malformed contact statements; gamma=2 had one unfinished rollout and 58 malformed statements."
+}

@@ -1,0 +1,5 @@
+# Scratch that belongs on disk, not in git: mmCIF downloads, rollout parts,
+# baseline prediction dumps. Everything committed under data/ is derived and
+# small.
+.venv/
+scratch/

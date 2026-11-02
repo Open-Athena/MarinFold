@@ -1,0 +1,9 @@
+{
+  "_source": "pool_vs_plain100.py, legacy554, paired per protein, 10000 bootstrap resamples, seed 237",
+  "plain_100_rollouts": 0.6058,
+  "arms": {
+    "M-K step-36 (8 multi rollouts pooled)":  {"r_prec": 0.6098, "delta": 0.0041, "ci": [-0.0010, 0.0090], "wins": 260, "losses": 203, "n": 554},
+    "M-B lr3e-6 step-90 (8 multi rollouts pooled)": {"r_prec": 0.6054, "delta": -0.0004, "ci": [-0.0049, 0.0044], "wins": 224, "losses": 239, "n": 554}
+  },
+  "warm_start_pooled": 0.5992
+}

@@ -1,0 +1,8 @@
+{
+  "script": "plot_overlap.py",
+  "args": [
+    "--data-dir=/home/bizon/git/MarinFold/.claude/worktrees/eval-sequence-overlap-analysis-33a77a/experiments/exp213_evals_train_sequence_overlap_audit/data",
+    "--out-dir=/home/bizon/git/MarinFold/.claude/worktrees/eval-sequence-overlap-analysis-33a77a/experiments/exp213_evals_train_sequence_overlap_audit/plots"
+  ],
+  "caption": "The homology-free subset is not homogeneous: de novo designed proteins have no homologs anywhere by construction, and structure predictors find their idealised backbones easy. Splitting the subset keeps that confound visible."
+}

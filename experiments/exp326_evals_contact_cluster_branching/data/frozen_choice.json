@@ -1,0 +1,15 @@
+{
+  "chosen_arm": "cluster_k5",
+  "control_arm": "random_k5",
+  "decision_split": "natural-dev",
+  "decision_metric": "validity_gated_oracle_r_precision",
+  "map_variant": "continuation",
+  "iid100_mean": 0.479883,
+  "random_k5_mean": 0.480947,
+  "cluster_k5_mean": 0.489253,
+  "delta_vs_iid100": 0.009370,
+  "delta_vs_random_k5": 0.008306,
+  "gate_threshold": 0.005,
+  "gate_passed": true,
+  "heldout_scope": "81 untouched eval-val proteins; eval-test remains unread"
+}

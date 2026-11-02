@@ -1,0 +1,13 @@
+dataset,stem,accession_in_arm,afdb_best_identity,best_identity,in_eval2,passes_control
+denovo_pdb,5ys7_A,D0VWU8,0.875,0.875,0,0
+foldbench100,7qsj_A,K5BIS0,1.000,1.000,0,1
+foldbench100,7xi5_A,A0A4Z0IPS5,0.939,0.939,0,1
+foldbench100,7yhr_A,A0A239N0M2,0.944,0.944,0,1
+foldbench100,8axj_A,Q38DI2,0.954,0.954,0,1
+foldbench100,8gmy_A,Q9W138,0.975,0.975,0,1
+foldbench_rest,8j2x_A,A0A5Q0H231,0.946,0.946,0,1
+foldbench_rest,8jup_A,Q0JA29,0.945,0.945,0,1
+foldbench_rest,8jws_A,Q9DAG9,1.000,1.000,0,1
+foldbench_rest,8rdd_A,Q12129,0.996,0.996,0,1
+foldbench_rest,8u0x_A,P33760,0.992,0.992,0,1
+foldbench_rest,8wae_A,A0A0D5CS34,0.926,0.926,0,1

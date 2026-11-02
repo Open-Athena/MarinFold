@@ -1,0 +1,14 @@
+{
+  "arm": "afdb",
+  "prefix": "data/document_structures/contacts_v1_decontam/train",
+  "reference_version": "v1",
+  "shards_expected": 2067,
+  "shards_missing": [],
+  "rows_expected": 3963003,
+  "rows_found": 3963003,
+  "rows_match": true,
+  "contaminated_rows_surviving": 0,
+  "contaminated_examples": [],
+  "entry_id_unique": true,
+  "documents_removed": 166679
+}

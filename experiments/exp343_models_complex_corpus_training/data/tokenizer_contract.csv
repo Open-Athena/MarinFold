@@ -1,0 +1,2 @@
+shard,documents_checked,max_token_id,max_document_tokens,documents_flagged_truncated,documents_at_8192_cap,num_tokens_mismatches,boundary_failures,in_model_vocabulary,model_tokenizer,model_vocab_size,published_vocab_size,appended_tokens,appended_ids
+shard0.parquet,20000,2142,8192,493,178,0,0,True,eczech/contacts-v1-tokenizer-5d68a24a899f,2845,2848,<contacts-v1.sequence_only> <retract> <contacts-v1.backtracking>,2845 2846 2847

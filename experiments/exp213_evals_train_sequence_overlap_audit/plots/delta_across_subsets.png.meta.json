@@ -1,0 +1,8 @@
+{
+  "script": "plot_overlap.py",
+  "args": [
+    "--data-dir=/home/bizon/git/MarinFold/.claude/worktrees/eval-sequence-overlap-analysis-33a77a/experiments/exp213_evals_train_sequence_overlap_audit/data",
+    "--out-dir=/home/bizon/git/MarinFold/.claude/worktrees/eval-sequence-overlap-analysis-33a77a/experiments/exp213_evals_train_sequence_overlap_audit/plots"
+  ],
+  "caption": "Paired MarinFold-minus-baseline R-precision as the eval set is restricted to proteins with no training homolog. Above zero means MarinFold wins. Bars are 95% percentile CIs from 10,000 paired bootstrap resamples over proteins. The right panel drops the de novo designs, which make up 80\u201392% of the homology-free subsets and which structure predictors find unusually easy."
+}

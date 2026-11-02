@@ -1,0 +1,8 @@
+{
+  "script": "plot_overlap.py",
+  "args": [
+    "--data-dir=/home/bizon/git/MarinFold/.claude/worktrees/eval-sequence-overlap-analysis-33a77a/experiments/exp213_evals_train_sequence_overlap_audit/data",
+    "--out-dir=/home/bizon/git/MarinFold/.claude/worktrees/eval-sequence-overlap-analysis-33a77a/experiments/exp213_evals_train_sequence_overlap_audit/plots"
+  ],
+  "caption": "The pre-registered cut. Left: the published benchmark. Middle and right: only eval proteins with no homolog in either training corpus, under the conventional significance line and under the strictest possible one \u2014 shown together because that threshold is the experiment's one judgement call. Error bars are \u00b1SEM over proteins; paired MarinFold-minus-baseline CIs are in data/headline.csv."
+}

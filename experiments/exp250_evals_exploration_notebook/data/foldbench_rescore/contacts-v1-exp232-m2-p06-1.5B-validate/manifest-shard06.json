@@ -1,0 +1,67 @@
+{
+  "model": "contacts-v1-exp232-m2-p06-1.5B",
+  "shard": 6,
+  "num_shards": 8,
+  "eval_sets": [
+    "eval-val"
+  ],
+  "n_targets": 12,
+  "recipe": {
+    "method": "rollout+resample+tiebreak",
+    "n_rollouts": 100,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "top_k": -1,
+    "dtype": "bfloat16",
+    "backend": "vllm",
+    "min_seq_separation": 6
+  },
+  "seconds": 287.27087330818176,
+  "git": {
+    "commit": "9e0a47d664097448387b28ac300077b03a3a760c",
+    "branch": "exp250/evals-exploration-notebook",
+    "dirty": true,
+    "dirty_files": [
+      "?? experiments/exp250_evals_exploration_notebook/data/foldbench_rescore/"
+    ]
+  },
+  "machine": {
+    "hostname": "8xA100 node",
+    "hostname_overridden": true,
+    "user": "ubuntu",
+    "platform": "Linux-6.8.0-1046-nvidia-x86_64-with-glibc2.35",
+    "python": "3.12.14",
+    "gpu": {
+      "name": "NVIDIA A100-SXM4-80GB",
+      "compute_capability": "8.0",
+      "memory_gib": 79.3,
+      "count": 1
+    }
+  },
+  "packages": {
+    "marinfold": "0.1.0",
+    "torch": "2.11.0+cu129",
+    "transformers": "4.57.6",
+    "vllm": "0.20.2+cu129",
+    "numpy": "2.3.5",
+    "pandas": "3.0.5",
+    "matplotlib": "3.11.1"
+  },
+  "inputs": [
+    {
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-foldbench-monomers-exp245/eval_targets_foldbench_monomers.parquet",
+      "bytes": 97519,
+      "sha256": "2eb4f1fee148fe2d6601bd171ef6e9431b96f38c82eaed1ad119a069a13f1fb8"
+    },
+    {
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-foldbench-monomers-exp245/eval_sets.csv",
+      "bytes": 199548,
+      "sha256": "b13d060a091240921bc8466acecc9fa6ccbb45a56de4efda02cd903f6abf9861"
+    },
+    {
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-foldbench-monomers-exp245/gt_universe_scored.jsonl",
+      "bytes": 6938887,
+      "sha256": "f30c23e3d2fbab245755fc01548388b41730ddfa45da87325539698cadb153e5"
+    }
+  ]
+}

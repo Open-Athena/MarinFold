@@ -1,0 +1,5 @@
+{
+  "script": "plot_mechanisms.py",
+  "args": [],
+  "caption": "Share of eval proteins with a hit in each training arm, and share surviving eval2's filter, by source kingdom. Viral proteins are missing from both corpora and survive at 4x the bacterial rate."
+}

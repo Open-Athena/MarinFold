@@ -102,6 +102,21 @@ def _vocab_safe_atoms(gemmi_residue) -> tuple[AtomCoord, ...]:
     return tuple(out)
 
 
+def _chain_key(chain_name: str) -> str:
+    """Normalize an author chain id so gemmi and pyconfind agree on it.
+
+    The two libraries render a *blank* author chain id differently — gemmi
+    reports ``""``, pyconfind reports ``"_"`` — so keying the coordinate walk
+    on gemmi's spelling and looking it up with pyconfind's silently matched
+    nothing and produced a residue list with no coordinates at all. AFDB
+    chains are always ``A`` so the corpus never hit it; hand-built PDBs (CASP
+    target files, for one) routinely have a blank chain id. Mapping both
+    spellings to ``"_"`` makes the join work and is a no-op for every named
+    chain.
+    """
+    return chain_name.strip() or "_"
+
+
 def _atoms_by_residue_key(gemmi_structure) -> dict[tuple[str, int], tuple[AtomCoord, ...]]:
     """Map ``(chain, author-resnum)`` to a residue's eligible heavy atoms.
 
@@ -112,11 +127,12 @@ def _atoms_by_residue_key(gemmi_structure) -> dict[tuple[str, int], tuple[AtomCo
     like ``MSE`` that pyconfind canonicalizes and places geometry for. This
     matches the residue set pyconfind reports, so the ``(chain, resnum)``
     alignment in :func:`analyze_coordinates` is against protein residues on
-    both sides. Residues with no in-vocab heavy atoms are skipped. A repeated
-    ``(chain, resnum)`` key — an insertion code, essentially never seen in
-    the AFDB single chains this format targets — keeps the first occurrence
-    and warns, so the collision is visible rather than silently mixing two
-    residues' atoms.
+    both sides. Chain names go through :func:`_chain_key` so a blank author
+    chain id is spelled the same way on both sides. Residues with no in-vocab
+    heavy atoms are skipped. A repeated ``(chain, resnum)`` key — an insertion
+    code, essentially never seen in the AFDB single chains this format targets
+    — keeps the first occurrence and warns, so the collision is visible rather
+    than silently mixing two residues' atoms.
     """
     out: dict[tuple[str, int], tuple[AtomCoord, ...]] = {}
     if len(gemmi_structure) == 0:
@@ -129,7 +145,7 @@ def _atoms_by_residue_key(gemmi_structure) -> dict[tuple[str, int], tuple[AtomCo
             atoms = _vocab_safe_atoms(res)
             if not atoms:
                 continue
-            key = (chain.name, res.seqid.num)
+            key = (_chain_key(chain.name), res.seqid.num)
             if key in out:
                 warnings.warn(
                     f"duplicate residue key {key} (insertion code?); keeping "
@@ -165,7 +181,10 @@ def analyze_coordinates(
 
     Raises:
         ValueError: propagated from :func:`analyze_structure` — no protein
-            residues, or more than one protein chain (single-chain only).
+            residues, or more than one protein chain (single-chain only) —
+            or raised here when the residue list and the coordinate walk fail
+            to join on a single residue, which would otherwise yield a
+            document with an empty coordinate section.
     """
     import gemmi
 
@@ -190,9 +209,17 @@ def analyze_coordinates(
     # residue sequence by (chain, author-resnum).
     atoms_by_key = _atoms_by_residue_key(gemmi_structure)
     atoms_by_seq_index: dict[int, tuple[AtomCoord, ...]] = {
-        r.seq_index: atoms_by_key.get((r.chain, r.resnum), ())
+        r.seq_index: atoms_by_key.get((_chain_key(r.chain), r.resnum), ())
         for r in analyzed.residues
     }
+    if analyzed.residues and not any(atoms_by_seq_index.values()):
+        raise ValueError(
+            f"{analyzed.source_path}: {len(analyzed.residues)} protein residues "
+            f"but no heavy atoms joined to any of them. The pyconfind residue "
+            f"list and the gemmi polymer walk disagree about "
+            f"(chain, residue number) keys, so the coordinate section would be "
+            f"empty."
+        )
 
     return AnalyzedCoordStructure(
         entry_id=analyzed.entry_id,

@@ -1,0 +1,5 @@
+{
+  "script": "summarize_full.py",
+  "args": [],
+  "caption": "Mean curves on the 81 non-development eval-val proteins. The top row is the primary endpoint: the best valid rollout in each prefix, with unfinished or malformed rollouts assigned zero. Ordinary iid and T=1.1 use their first 100 of 200 rollouts."
+}

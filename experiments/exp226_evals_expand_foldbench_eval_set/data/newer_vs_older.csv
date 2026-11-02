@@ -1,0 +1,3 @@
+threshold,old_n,old_survive,old_pct,new_n,new_survive,new_pct,predicted_from_old_rate,shortfall,fisher_p
+<40%,100,15,15.0,222,23,10.4,33.3,-10.3,0.2635
+<30%,100,11,11.0,222,11,5.0,24.4,-13.4,0.0569

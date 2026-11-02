@@ -1,0 +1,10 @@
+{
+  "script": "plot_reward_shape.py",
+  "args": [
+    "--data",
+    "data",
+    "--out",
+    "plots"
+  ],
+  "caption": "m_k is not scale-free in the section count: at 1 section it is 366x its value at 22, while the rollout's own consensus falls 0.543 -> 0.341. Centring does not remove it -- the shorter rollout is the one above its group's mean."
+}

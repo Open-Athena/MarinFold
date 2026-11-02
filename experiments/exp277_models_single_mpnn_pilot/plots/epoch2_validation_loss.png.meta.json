@@ -1,0 +1,5 @@
+{
+  "script": "plot_epochs.py",
+  "args": [],
+  "caption": "LM validation loss for both exp277 epochs on absolute steps. Best 2.98274 (epoch 1) vs 2.98099 (epoch 2): a second full epoch is worth 0.00175 nats."
+}

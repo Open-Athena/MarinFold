@@ -1,0 +1,13 @@
+subset,filter,n,survivors,rate
+all,passes_40,585,43,0.0735
+all,passes_30,585,30,0.0513
+natural,passes_40,576,41,0.0712
+natural,passes_30,576,29,0.0503
+designed_signal,passes_40,9,2,0.2222
+designed_signal,passes_30,9,1,0.1111
+natural/archaea,passes_40,14,1,0.0714
+natural/bacteria,passes_40,171,3,0.0175
+natural/eukaryote,passes_40,336,21,0.0625
+natural/synthetic,passes_40,2,0,0.0000
+natural/unclassified,passes_40,2,0,0.0000
+natural/virus,passes_40,51,16,0.3137

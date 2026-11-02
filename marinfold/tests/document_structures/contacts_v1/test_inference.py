@@ -78,6 +78,7 @@ class _PlantedBackend:
         return out
 
     def sample_completions(self, prefix_token_ids_batch, *, max_new_tokens,
+                           min_new_tokens=0,
                            temperature=1.0, top_p=0.95, top_k=50,
                            stop_token_id=None, seed=None, batch_size=None):
         """Emit each prefix's planted contacts, in *that* realization's tokens.
@@ -301,6 +302,18 @@ def test_score_matrix_rejects_unknown_method():
         inf._score_matrix(object(), s, cfg)
 
 
+def test_rollout_contact_minimum_reaches_sampler():
+    structure = inf.structure_from_sequence(_SEQ, entry_id="demo")
+    positions = inf._prefix_and_positions(structure, entry_id="demo")[1]
+    backend = _PlantedBackend(_tokenizer(), positions, planted=[(0, 12)])
+    cfg = inf.InferenceConfig(
+        model="/stub", method="rollout", n_rollouts=2, min_new_contacts=1,
+    )
+    scores, length = inf._rollout_score_matrix(backend, structure, cfg)
+    assert length == len(_SEQ)
+    assert scores[0, 12] >= 2
+
+
 def test_predict_rollout_votes_and_ranks(monkeypatch):
     s = inf.structure_from_sequence(_SEQ, entry_id="demo")
     canonical_positions = inf._prefix_and_positions(s, entry_id="demo")[1]
@@ -340,3 +353,154 @@ def test_evaluate_rollout_recovers_planted(monkeypatch):
     result = inf.evaluate(cfg, structures=[structure])
     assert result.extras["method"] == "rollout"
     assert result.metrics["r_precision_all"] == 1.0
+
+
+class _RetractingBackend(_PlantedBackend):
+    """Like ``_PlantedBackend`` but each rollout also RETRACTS one seq pair.
+
+    Emits ``<contact>`` for every planted pair, then a ``<retract>`` for the
+    designated pair — so the rollout vote-counter must fold the edit list and
+    end up voting only the pairs still live (issue #158).
+    """
+
+    def __init__(self, tokenizer, seq_positions, planted=(), retract=None):
+        super().__init__(tokenizer, seq_positions, planted=planted)
+        self._retract = None if retract is None else tuple(sorted(retract))
+
+    def sample_completions(self, prefix_token_ids_batch, **kwargs):
+        completions = []
+        for prefix_ids in prefix_token_ids_batch:
+            text = self._tok.decode(prefix_ids, skip_special_tokens=False)
+            nterm = int(re.search(r"<n-term>\s+<p(\d+)>", text).group(1))
+            positions = sorted(
+                {int(p) for p in re.findall(r"<p(\d+)>", text)},
+                key=lambda p: (p - nterm) % 2000,
+            )
+            toks: list[str] = []
+            for pair in self._planted:
+                a, b = sorted(pair)
+                toks += ["<contact>", f"<p{positions[a]}>", f"<p{positions[b]}>"]
+            if self._retract is not None:
+                a, b = self._retract
+                toks += ["<retract>", f"<p{positions[a]}>", f"<p{positions[b]}>"]
+            completions.append(
+                list(self._tok.encode(" ".join(toks), add_special_tokens=False))
+            )
+        return completions
+
+
+def test_rollout_honors_retraction(monkeypatch):
+    # Both (0,12) and (2,16) are emitted, but (0,12) is retracted in every
+    # rollout, so only (2,16) should collect votes.
+    s = inf.structure_from_sequence(_SEQ, entry_id="demo")
+    canonical_positions = inf._prefix_and_positions(s, entry_id="demo")[1]
+    backend = _RetractingBackend(
+        _tokenizer(), canonical_positions, planted=[(0, 12), (2, 16)], retract=(0, 12)
+    )
+    monkeypatch.setattr(inf, "_make_backend", lambda cfg: backend)
+
+    cfg = inf.InferenceConfig(
+        model="/stub", backend="transformers", method="rollout", n_rollouts=4
+    )
+    rec = list(inf.predict(cfg, structures=[s]))[0]
+    score = {tuple(p): sc for p, sc in zip(rec["pairs"], rec["score"])}
+    # The live pair wins with full votes; the retracted pair keeps only the
+    # sub-1.0 pairwise tie-break mass (no votes).
+    assert tuple(rec["pairs"][int(np.argmax(rec["score"]))]) == (3, 17)  # (2,16)
+    assert score[(3, 17)] >= 4.0
+    assert score[(1, 13)] < 1.0  # (0,12) retracted → no votes
+
+
+def test_make_backend_rejects_rollout_on_mlx():
+    """MLX has no sample_completions, and the checkpoint is several GB — say so
+    before the download rather than from inside the first rollout."""
+    cfg = inf.InferenceConfig(model="/stub", backend="mlx", method="rollout")
+    with pytest.raises(ValueError, match="not supported by the MLX backend"):
+        inf._make_backend(cfg)
+
+
+def test_evaluate_builds_the_backend_before_ground_truth(monkeypatch, tmp_path):
+    """Order is load-bearing: vLLM forks its EngineCore, and forking a parent
+    that has already run pyconfind deadlocks the child in `_init_executor`."""
+    calls: list[str] = []
+
+    def _fake_backend(cfg):
+        calls.append("backend")
+        return object()
+
+    def _fake_structures(cfg, structures):
+        calls.append("ground_truth")
+        return []
+
+    monkeypatch.setattr(inf, "_make_backend", _fake_backend)
+    monkeypatch.setattr(inf, "_structures_for_evaluate", _fake_structures)
+
+    cif = tmp_path / "x.cif"
+    cif.write_text("")
+    inf.evaluate(inf.InferenceConfig(model="/stub", backend="vllm", input_path=cif))
+
+    assert calls == ["backend", "ground_truth"]
+
+
+def test_evaluate_skips_an_empty_input_dir_without_loading_the_model(
+    monkeypatch, tmp_path
+):
+    """An existing but empty directory is no work, and no work must not cost a
+    multi-GB download — the reorder put the model load ahead of the analysis
+    that used to discover this."""
+    def _never(cfg):
+        raise AssertionError("the model must not load when there is no input")
+
+    monkeypatch.setattr(inf, "_make_backend", _never)
+
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    (tmp_path / "unsupported").mkdir()
+    (tmp_path / "unsupported" / "notes.txt").write_text("not a structure")
+
+    for path in (empty, tmp_path / "unsupported"):
+        result = inf.evaluate(
+            inf.InferenceConfig(model="/stub", backend="vllm", input_path=path)
+        )
+        assert result.metrics == {}
+        assert result.extras.get("warning") == "no input structures"
+
+
+def test_evaluate_accepts_a_parquet_dir(monkeypatch, tmp_path):
+    """`.parquet` is not in _STRUCTURE_EXTS, so a check built on
+    iter_structure_paths alone would reject a valid parquet input as empty."""
+    calls: list[str] = []
+    monkeypatch.setattr(inf, "_make_backend", lambda cfg: calls.append("backend"))
+    monkeypatch.setattr(inf, "_structures_for_evaluate", lambda cfg, s: [])
+
+    shards = tmp_path / "shards"
+    shards.mkdir()
+    (shards / "part-0.parquet").write_bytes(b"")
+
+    inf.evaluate(inf.InferenceConfig(model="/stub", backend="vllm", input_path=shards))
+    assert calls == ["backend"]
+
+
+def test_evaluate_rejects_a_bad_input_before_loading_the_model(monkeypatch, tmp_path):
+    """The reorder must not cost the fail-fast: a typo'd --input should not
+    buy a multi-GB download first."""
+    def _never(cfg):
+        raise AssertionError("the model must not load for a nonexistent input")
+
+    monkeypatch.setattr(inf, "_make_backend", _never)
+
+    cfg = inf.InferenceConfig(
+        model="/stub", backend="vllm", input_path=tmp_path / "nope.cif"
+    )
+    with pytest.raises(FileNotFoundError):
+        inf.evaluate(cfg)
+
+
+def test_evaluate_without_input_or_structures_is_an_error(monkeypatch):
+    def _never(cfg):
+        raise AssertionError("the model must not load without an input")
+
+    monkeypatch.setattr(inf, "_make_backend", _never)
+
+    with pytest.raises(ValueError, match="input_path or structures"):
+        inf.evaluate(inf.InferenceConfig(model="/stub", backend="vllm"))

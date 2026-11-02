@@ -1,0 +1,21 @@
+{
+  "eval_units": 554,
+  "predictors": [
+    "MarinFold #199 (1.5B, seq only)",
+    "Protenix-v2 single-seq",
+    "ESMFold",
+    "ESMFold2",
+    "Protenix-v2 + MSA",
+    "seq-KNN k=10 (null)"
+  ],
+  "stratum_counts": {
+    "no_homolog": 231,
+    "remote": 8,
+    "id_20_30": 25,
+    "id_30_50": 65,
+    "id_50_70": 125,
+    "id_70_100": 100
+  },
+  "marinfold_rows": "/home/bizon/git/MarinFold/.claude/worktrees/eval-sequence-overlap-analysis-33a77a/experiments/exp213_evals_train_sequence_overlap_audit/data/exp199_rollout_rows.csv.gz",
+  "n_bootstrap": 10000
+}

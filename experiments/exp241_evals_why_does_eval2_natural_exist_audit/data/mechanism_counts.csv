@@ -1,0 +1,6 @@
+escape_mechanism,n,share,n_novelty_curated,n_recent_pdb
+designed_not_natural,15,0.1923,15,0
+not_in_uniprot,3,0.0385,2,1
+afdb_absent,15,0.1923,10,5
+unsampled_corpus,45,0.5769,16,29
+search_miss,0,0.0000,0,0

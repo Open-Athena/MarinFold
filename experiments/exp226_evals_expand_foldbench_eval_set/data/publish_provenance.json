@@ -1,0 +1,17 @@
+{
+  "prefix": "hf://buckets/open-athena/MarinFold/data/contacts-v1-eval2-exp226",
+  "merge": {
+    "n_published": 554,
+    "n_added": 23,
+    "n_total": 577,
+    "n_unique_stems": 575,
+    "path": "/data/exp226_gt/gt_universe_eval2_577.jsonl",
+    "bytes": 8362085
+  },
+  "files": [
+    "gt_universe_eval2.jsonl",
+    "gt_universe_eval2_new_23.jsonl",
+    "eval2_manifest.csv",
+    "eval2.fasta"
+  ]
+}

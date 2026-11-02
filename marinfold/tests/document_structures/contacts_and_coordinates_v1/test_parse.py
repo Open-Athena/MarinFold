@@ -13,6 +13,7 @@ import gemmi
 
 from marinfold.document_structures.contacts_and_coordinates_v1.parse import (
     _atoms_by_residue_key,
+    _chain_key,
     _vocab_safe_atoms,
 )
 
@@ -64,3 +65,32 @@ def test_atoms_by_residue_key_keeps_modified_residues():
     for key in mse_keys:
         assert key in atoms_by_key
         assert "CA" in {name for name, *_ in atoms_by_key[key]}
+
+
+def test_chain_key_normalizes_the_blank_author_chain():
+    # gemmi renders a blank author chain id as "", pyconfind as "_". Keying
+    # the coordinate walk on one and looking it up with the other joined
+    # nothing and silently produced a residue list with no coordinates.
+    assert _chain_key("") == "_"
+    assert _chain_key(" ") == "_"
+    assert _chain_key("_") == "_"
+    # A named chain is untouched.
+    assert _chain_key("A") == "A"
+    assert _chain_key("AAA") == "AAA"
+
+
+def test_atoms_by_residue_key_finds_atoms_on_a_blank_chain(tmp_path):
+    # CASP target files (and other hand-built PDBs) leave the chain id blank.
+    structure = gemmi.read_structure(str(_1QYS))
+    structure.setup_entities()
+    for chain in structure[0]:
+        chain.name = ""
+    blank_pdb = tmp_path / "blank_chain.pdb"
+    structure.write_pdb(str(blank_pdb))
+
+    reloaded = gemmi.read_structure(str(blank_pdb))
+    keyed = _atoms_by_residue_key(reloaded)
+    assert keyed, "blank-chain structure produced no atoms"
+    # Every key uses the normalized blank spelling, which is what the
+    # pyconfind-derived residue list will look the atoms up with.
+    assert {chain for chain, _ in keyed} == {"_"}

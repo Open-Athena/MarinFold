@@ -1,0 +1,21 @@
+{
+  "tokenizer": "/data/exp230_multi/tokenizer_multi",
+  "vocab": 2845,
+  "seq_len": 8192,
+  "w_header": 0.1,
+  "w_draft": 1.0,
+  "w_final": 1.0,
+  "plain_weight": "uniform 1.0",
+  "batch_size": 128,
+  "steps_per_epoch": 1280,
+  "stats": {
+    "docs": 698812,
+    "multi": 349400,
+    "plain": 349412,
+    "tokens": 1103184801,
+    "weighted": 985273402.5432377,
+    "sequences": 163838,
+    "too_long": 12,
+    "max_token_id": 2142
+  }
+}

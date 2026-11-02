@@ -1,0 +1,79 @@
+dataset,stem,length,kingdom,designed_signal,uniprot_accessions,best_identity,afdb_best_identity,esm_atlas_best_identity,n_hits_significant,msa_neff,in_afdb_arm,in_afdb_full,uniref100_size,uniref90_id,uniref90_size,uniref50_id,uniref50_size,uniref90_in_arm,uniref50_in_arm,uniref50_censored,uniprot_first_public,uniprot_sequence_date,protein_existence
+cameo_hard,8jvx_B,39,synthetic,1,,,,,0,1.0,,,,,,,,,,,,,
+cameo_hard,8raj_A,62,bacteria,0,C5B3B7,,,,0,3.0,0,0,1,UniRef90_C5B3B7,2,UniRef50_C5B3B7,4,0,0,0,2009-07-28,2009-07-28,1: Evidence at protein level
+cameo_hard,8s3m_A,345,virus,0,A0MNG2,0.222,0.222,0.219,97,1725.1,0,0,1,UniRef90_A0MNG2,1,UniRef50_A0MNG2,1,0,0,0,2006-12-12,2006-12-12,1: Evidence at protein level
+cameo_hard,8s89_A,401,synthetic,1,,,,,0,1.0,,,,,,,,,,,,,
+cameo_hard,8u1a_A,324,synthetic,1,,,,,1,1.0,,,,,,,,,,,,,
+cameo_hard,8v4w_A,207,bacteria,0,A0A2R4P333,,,,0,21.5,0,1,1,UniRef90_A0A2R4P333,1,UniRef50_A0A2R4P333,14,0,0,0,2018-06-20,2018-06-20,1: Evidence at protein level
+cameo_hard,8vd6_A,174,synthetic,1,,,,,0,1.0,,,,,,,,,,,,,
+cameo_hard,8vej_B,242,synthetic,1,,,,,0,1.0,,,,,,,,,,,,,
+cameo_hard,8wwc_C,113,synthetic,1,,,,,0,1.0,,,,,,,,,,,,,
+cameo_hard,8yl4_B,207,bacteria,1,,,,,0,1.0,,,,,,,,,,,,,
+cameo_hard,9b7d_D,192,unclassified,0,,0.347,0.347,,10,404.3,,,,,,,,,,,,,
+cameo_hard,9bch_A,198,bacteria,0,Q6NEE5,,,,0,5.0,0,1,1,UniRef90_Q6NEE5,1,UniRef50_Q6NEE5,3,0,0,0,2004-07-05,2004-07-05,1: Evidence at protein level
+cameo_hard,9de9_B,81,synthetic,1,,,,,0,1.0,,,,,,,,,,,,,
+cameo_hard,9deb_E,83,synthetic,1,,,,,0,1.0,,,,,,,,,,,,,
+cameo_hard,9def_A,151,synthetic,1,,,,,0,40.0,,,,,,,,,,,,,
+cameo_hard,9deg_A,157,synthetic,1,,,,,0,1.0,,,,,,,,,,,,,
+cameo_hard,9dl1_D,124,eukaryote,0,,,,,0,6.0,,,,,,,,,,,,,
+cameo_hard,9eqn_A,72,virus,0,P61825,,,,0,7.2,0,0,17,UniRef90_P15480,504,UniRef50_P15480,510,0,0,0,2004-06-07,2006-04-04,1: Evidence at protein level
+cameo_hard,9fdg_A,179,synthetic,1,,,,,0,44.1,,,,,,,,,,,,,
+cameo_hard,9hac_B,127,synthetic,1,,,,,0,1.0,,,,,,,,,,,,,
+cameo_hard,9had_C,108,synthetic,1,,,,,0,1.0,,,,,,,,,,,,,
+cameo_hard,9j46_F,124,virus,0,A0A2X0S7E9,,,,0,5.0,0,1,2,UniRef90_Q65197,18,UniRef50_Q65197,18,0,0,0,2018-09-12,2018-09-12,1: Evidence at protein level
+cameo_hard,9j5h_A,35,synthetic,1,,,,,0,1.0,,,,,,,,,,,,,
+cameo_hard,9k3e_C,116,bacteria,0,A0A654KG21,0.331,,0.331,4,10.0,0,1,2,UniRef90_A0A654KG21,2,UniRef50_A0A654KG21,2,0,0,0,2020-04-22,2020-04-22,1: Evidence at protein level
+casp_fm,T1027-D1,168,eukaryote,0,Q9BLZ2,,,,0,80.9,0,1,1,UniRef90_Q9BLZ2,1,UniRef50_A0A1L6CBM1,27,0,0,0,2001-06-01,2001-06-01,1: Evidence at protein level
+casp_fm,T1033-D1,100,virus,0,S0A2C3,,,,0,9.0,0,1,1,UniRef90_S0A2C3,1,UniRef50_S0A2C3,1,0,0,0,2013-09-18,2013-09-18,1: Evidence at protein level
+casp_fm,T1035-D1,102,virus,0,S0A2C3,,,,0,89.0,0,1,1,UniRef90_S0A2C3,1,UniRef50_S0A2C3,1,0,0,0,2013-09-18,2013-09-18,1: Evidence at protein level
+casp_fm,T1037-D1,404,virus,0,S0A2C3,,,,0,269.5,0,1,1,UniRef90_S0A2C3,1,UniRef50_S0A2C3,1,0,0,0,2013-09-18,2013-09-18,1: Evidence at protein level
+casp_fm,T1038-D1,114,virus,0,P36291,,,,0,25.8,0,0,1,UniRef90_P36291,78,UniRef50_P36291,98,0,0,0,1994-06-01,1994-06-01,1: Evidence at protein level
+casp_fm,T1038-D2,76,virus,0,P36291,,,,0,150.2,0,0,1,UniRef90_P36291,78,UniRef50_P36291,98,0,0,0,1994-06-01,1994-06-01,1: Evidence at protein level
+casp_fm,T1039-D1,161,virus,0,S0A2C3,,,,0,16.0,0,1,1,UniRef90_S0A2C3,1,UniRef50_S0A2C3,1,0,0,0,2013-09-18,2013-09-18,1: Evidence at protein level
+casp_fm,T1040-D1,130,virus,0,S0A2C3,,,,0,43.4,0,1,1,UniRef90_S0A2C3,1,UniRef50_S0A2C3,1,0,0,0,2013-09-18,2013-09-18,1: Evidence at protein level
+casp_fm,T1041-D1,242,virus,0,S0A2C3,,,,0,371.5,0,1,1,UniRef90_S0A2C3,1,UniRef50_S0A2C3,1,0,0,0,2013-09-18,2013-09-18,1: Evidence at protein level
+casp_fm,T1042-D1,276,virus,0,S0A2C3,,,,0,43.0,0,1,1,UniRef90_S0A2C3,1,UniRef50_S0A2C3,1,0,0,0,2013-09-18,2013-09-18,1: Evidence at protein level
+casp_fm,T1043-D1,148,virus,0,S0A2C3,,,,0,3.0,0,1,1,UniRef90_S0A2C3,1,UniRef50_S0A2C3,1,0,0,0,2013-09-18,2013-09-18,1: Evidence at protein level
+casp_fm,T1104-D1,117,bacteria,0,Q836L4,,,,0,60.8,0,1,4,UniRef90_Q836L4,4,UniRef50_Q836L4,6,0,0,0,2003-06-01,2003-06-01,1: Evidence at protein level
+casp_fm,T1113-D1,167,virus,0,A0A4D6BFJ2,,,,0,4.0,0,0,,,,,,,,,,,
+casp_fm,T1122-D1,230,virus,0,A0A0B4VFQ3,,,,0,1.0,0,1,1,UniRef90_A0A0B4VFQ3,1,UniRef50_A0A0B4VFQ3,1,0,0,0,2015-04-01,2015-04-01,1: Evidence at protein level
+casp_fm,T1123-D1,214,virus,0,B6UYJ1,,,,0,4.0,0,1,28,UniRef90_D9MNM0,34,UniRef50_D9MNM0,35,0,0,0,2008-12-16,2008-12-16,1: Evidence at protein level
+casp_fm,T1125-D1,134,virus,0,A7XXD0,,,,0,1.0,0,0,1,UniRef90_A7XXD0,2,UniRef50_A7XXD0,2,0,0,0,2007-10-23,2007-10-23,1: Evidence at protein level
+casp_fm,T1125-D2,148,virus,0,A7XXD0,,,,0,2.0,0,0,1,UniRef90_A7XXD0,2,UniRef50_A7XXD0,2,0,0,0,2007-10-23,2007-10-23,1: Evidence at protein level
+casp_fm,T1125-D4,141,virus,0,A7XXD0,,,,0,1.0,0,0,1,UniRef90_A7XXD0,2,UniRef50_A7XXD0,2,0,0,0,2007-10-23,2007-10-23,1: Evidence at protein level
+casp_fm,T1125-D5,150,virus,0,A7XXD0,,,,0,2.0,0,0,1,UniRef90_A7XXD0,2,UniRef50_A7XXD0,2,0,0,0,2007-10-23,2007-10-23,1: Evidence at protein level
+foldbench100,7urp_A,160,bacteria,0,A0A2N0UYJ0,0.274,,0.274,3,,0,0,,,,,,,,,,,
+foldbench100,7xp9_A,84,eukaryote,0,D0NTY1,,,,0,,0,1,3,UniRef90_D0NTY1,5,UniRef50_D0NTY1,8,0,0,0,2019-05-08,2009-12-15,1: Evidence at protein level
+foldbench100,7y8i_A,97,eukaryote,0,A0A159W468,0.373,0.347,0.373,13,,0,1,1,UniRef90_A0A159W468,1,UniRef50_A0A159W468,4,0,0,0,2016-07-06,2016-07-06,1: Evidence at protein level
+foldbench100,7zu3_A,132,virus,0,Q66578,,,,0,,0,1,12,UniRef90_Q66578,21,UniRef50_Q66578,717,0,0,0,1999-07-15,1996-11-01,1: Evidence at protein level
+foldbench100,7zv1_A,136,virus,0,O91464,,,,0,,0,1,36,UniRef90_O91464,142,UniRef50_O91464,144,0,0,0,2019-10-16,2019-10-16,1: Evidence at protein level
+foldbench100,8adc_A,215,bacteria,0,D6YWY5,0.262,0.230,0.262,15,,0,1,1,UniRef90_D6YWY5,1,UniRef50_D6YWY5,1,0,0,0,2010-08-10,2010-08-10,1: Evidence at protein level
+foldbench100,8add_A,213,eukaryote,0,A0A8M9QCC7,0.389,0.389,0.366,24,,0,0,,,,,,,,,,,
+foldbench100,8b61_A,238,bacteria,0,Q5LDF1,0.340,0.334,0.340,157,,0,1,1,UniRef90_Q5LDF1,1,UniRef50_G5GAZ1,48,0,0,0,2005-06-21,2005-06-21,1: Evidence at protein level
+foldbench100,8bux_A,334,eukaryote,0,O15063,,,,0,,0,1,3,UniRef90_O15063,9,UniRef50_O15063,612,0,0,0,1998-07-15,2008-09-23,1: Evidence at protein level
+foldbench100,8cba_A,214,bacteria,0,Q79A46,0.292,0.282,0.292,4,,0,1,4,UniRef90_Q79A46,25,UniRef50_Q79A46,30,0,0,0,2004-07-05,2004-07-05,1: Evidence at protein level
+foldbench100,8eb9_A,95,eukaryote,0,C9WMH0,,,,0,,0,1,1,UniRef90_C9WMH0,6,UniRef50_C9WMH0,9,0,0,0,2009-11-24,2009-11-24,1: Evidence at protein level
+foldbench100,8ec3_A,168,bacteria,0,G9BXS5,,,,0,,0,1,2,UniRef90_M1X4Z3,5,UniRef50_A0ABM8DL51,12,0,0,0,2012-02-22,2012-02-22,1: Evidence at protein level
+foldbench_rest,8fib_A,441,bacteria,0,A0A0M2KDV0,0.348,0.348,0.324,3083,,0,1,1,UniRef90_A0A0M2KDV0,8,UniRef50_Q59204,646,0,0,0,2015-11-11,2015-11-11,1: Evidence at protein level
+foldbench_rest,8gbe_A,207,virus,0,A0A220T6L2,,,,0,,0,1,1,UniRef90_A0A220T6L2,1,UniRef50_A0A220T6L2,1,0,0,0,2017-10-25,2017-10-25,1: Evidence at protein level
+foldbench_rest,8gm7_A,170,archaea,0,Q5JCX2,,,,0,,0,1,1,UniRef90_Q5JCX2,1,UniRef50_Q5JCX2,12,0,0,0,2005-02-15,2005-02-15,1: Evidence at protein level
+foldbench_rest,8gsy_A,144,bacteria,0,A0A2X3IRB0,0.351,0.351,,1,,0,1,1,UniRef90_A0A2X3IRB0,2,UniRef50_A0A2X3IRB0,2,0,0,0,2018-09-12,2018-09-12,1: Evidence at protein level
+foldbench_rest,8ini_A,99,virus,0,P08583,,,,0,,0,1,3,UniRef90_P08583,17,UniRef50_P08583,37,0,0,0,1988-08-01,2004-12-07,1: Evidence at protein level
+foldbench_rest,8iqc_A,254,virus,0,A0A0C5B022,0.351,0.286,0.351,52,,0,1,2,UniRef90_Q65162,19,UniRef50_Q65162,19,0,0,0,2015-04-29,2015-04-29,1: Evidence at protein level
+foldbench_rest,8ou1_A,148,eukaryote,0,B1ASB6,0.345,,0.345,1,,0,1,1,UniRef90_B1ASB6,3,UniRef50_B1ASB6,6,0,0,0,2021-02-10,2021-02-10,1: Evidence at protein level
+foldbench_rest,8ovq_A,232,eukaryote,0,Q9U965,0.228,0.228,0.224,5,,0,1,1,UniRef90_Q9U965,1,UniRef50_Q9U965,3,0,0,0,2000-05-01,2000-05-01,1: Evidence at protein level
+foldbench_rest,8ow8_A,446,bacteria,0,A0A242DI27,0.371,0.371,0.258,8,,0,1,1,UniRef90_A0A242DI27,1,UniRef50_A0A242DI27,1,0,0,0,2018-07-18,2017-10-25,1: Evidence at protein level
+foldbench_rest,8p0e_A,190,virus,0,G3M8F4,0.363,0.363,0.352,203,,0,0,4,UniRef90_Q86500,36,UniRef50_Q86500,45,0,0,0,2026-06-10,2011-11-16,1: Evidence at protein level
+foldbench_rest,8q79_A,236,eukaryote,0,A0A8S0GSD4,0.360,0.360,,9,,0,1,1,UniRef90_A0A8S0GSD4,2,UniRef50_A0A8S0GSD4,2,0,0,0,2022-10-12,2022-10-12,1: Evidence at protein level
+foldbench_rest,8qnf_A,537,bacteria,0,,0.375,0.375,0.320,3780,,,,,,,,,,,,,,
+foldbench_rest,8sx0_A,111,bacteria,0,P12255,,,,0,,0,0,103,UniRef90_P12255,158,UniRef50_P12255,305,0,0,0,1989-10-01,2003-09-19,1: Evidence at protein level
+foldbench_rest,8t5t_A,208,bacteria,0,O51321,0.317,,0.317,67,,0,1,1,UniRef90_G0ALF1,23,UniRef50_G0ALF1,39,0,0,0,1998-06-01,1998-06-01,1: Evidence at protein level
+foldbench_rest,8ux2_A,246,bacteria,0,Q7NY09,,,,0,,0,1,1,UniRef90_Q7NY09,3,UniRef50_Q7NY09,3,0,0,0,2022-10-12,2003-12-15,1: Evidence at protein level
+foldbench_rest,8w7p_A,274,bacteria,0,A0AAN0NPC6,0.235,,0.235,3,,0,1,1,UniRef90_A0AAN0NPC6,1,UniRef50_A0AAN0NPC6,1,0,0,0,2024-10-02,2024-10-02,1: Evidence at protein level
+foldbench_rest,8wc1_A,178,bacteria,0,A0A2K9P019,0.334,0.310,0.334,50,,0,1,3,UniRef90_A0A2K9P019,3,UniRef50_A0A2K9P019,3,0,0,0,2018-04-25,2018-04-25,1: Evidence at protein level
+foldbench_rest,8wqn_A,173,archaea,0,Q981B4,,,,0,,0,1,1,UniRef90_Q981B4,1,UniRef50_Q981B4,5,0,0,0,2001-10-01,2001-10-01,1: Evidence at protein level
+foldbench_rest,8xif_A,224,virus,0,P04305,,,,0,,0,1,2,UniRef90_P04305,23,UniRef50_P04305,53,0,0,0,1987-03-20,1987-03-20,1: Evidence at protein level
+foldbench_rest,9aue_A,415,bacteria,0,Q70KE6,0.371,0.346,0.371,940,,0,1,1,UniRef90_Q70KE6,4,UniRef50_Q70KE6,9,0,0,0,2004-07-05,2004-07-05,1: Evidence at protein level
+foldbench_rest,9b8e_A,233,bacteria,0,A0AA44XLE0,0.229,0.229,0.229,2,,0,0,,,,,,,,,,,
+foldbench_rest,9gso_A,177,eukaryote,0,A0A640KTL4,,,,0,,0,1,1,UniRef90_A0A640KTL4,1,UniRef50_Q4Q239,18,0,0,0,2020-04-22,2020-04-22,1: Evidence at protein level
+foldbench_rest,9jq9_A,179,eukaryote,0,Q8I224,0.350,0.350,0.343,40,,0,1,2,UniRef90_Q8I224,4,UniRef50_Q8I224,23,0,0,0,2003-03-01,2003-03-01,1: Evidence at protein level

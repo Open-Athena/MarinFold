@@ -1,0 +1,16 @@
+structure,residues,native_contacts,variant,variant_contacts,jaccard_vs_native,recall_of_native
+1crn,46,28,shuffled_native,17,0.364,0.429
+1crn,46,28,random_uniform,27,0.341,0.5
+1crn,46,28,poly_LEU,32,0.463,0.679
+1crn,46,28,poly_ALA,0,0.0,0.0
+1crn,46,28,poly_GLY,0,0.0,0.0
+1ubq,76,67,shuffled_native,57,0.409,0.537
+1ubq,76,67,random_uniform,77,0.426,0.642
+1ubq,76,67,poly_LEU,71,0.586,0.761
+1ubq,76,67,poly_ALA,0,0.0,0.0
+1ubq,76,67,poly_GLY,0,0.0,0.0
+101m,154,130,shuffled_native,127,0.353,0.515
+101m,154,130,random_uniform,130,0.313,0.477
+101m,154,130,poly_LEU,134,0.492,0.669
+101m,154,130,poly_ALA,1,0.0,0.0
+101m,154,130,poly_GLY,0,0.0,0.0

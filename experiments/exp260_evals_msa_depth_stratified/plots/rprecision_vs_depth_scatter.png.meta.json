@@ -1,0 +1,5 @@
+{
+  "script": "plot_depth.py",
+  "args": [],
+  "caption": "Every natural eval protein, accuracy against depth, with per-decade means; the histogram shows where each subset sits."
+}

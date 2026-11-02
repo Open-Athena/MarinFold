@@ -1,0 +1,3 @@
+arm,label,n_documents,n_dropped,pct_dropped,n_surviving,tier,reference_version
+afdb,AFDB / AlphaFold2 labels (issue #53),4129682,77887,1.886,4051795,A,v1
+esm_atlas,ESM Atlas / ESMFold2 labels (issue #139),66759922,1047096,1.5685,65712826,A,v1

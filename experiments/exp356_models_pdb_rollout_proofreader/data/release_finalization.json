@@ -1,0 +1,7 @@
+{
+  "reports": "hf://buckets/open-athena/MarinFold/data/exp356/reports",
+  "source": "s3://marin-us-east-02a/MarinFold/exp356/reports/release/exp356-exp277-frozen-contact-pdb50k-v2/step-18000-verified",
+  "bytes": 100127475,
+  "verified_model": "hf://buckets/open-athena/MarinFold/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18000",
+  "anonymous_reports_verified": true
+}

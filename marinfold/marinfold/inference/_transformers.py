@@ -33,6 +33,7 @@ from marinfold.inference._config import load_config as _load_config
 
 # Re-exported for backward compatibility: the shared loader used to live
 # here. Tests and callers may still import it from this module.
+from marinfold.inference._model_source import model_source_path as _model_source_path
 from marinfold.inference._tokenizer import load_tokenizer as _load_tokenizer
 
 
@@ -87,6 +88,7 @@ class TransformersBackend:
         dtype: str = "bfloat16",
         device: str | None = None,
         tail_batch_size: int = 64,
+        fixed_residue_position_embeddings: str | None = None,
     ):
         if tail_batch_size < 1:
             raise ValueError(
@@ -95,14 +97,22 @@ class TransformersBackend:
         self._device = device or _best_device()
         self._tail_batch_size = tail_batch_size
         torch_dtype = _resolve_dtype(dtype)
-        self._tokenizer = _load_tokenizer(model_path)
+        source_path = Path(
+            _model_source_path(
+                model_path,
+                fixed_residue_position_embeddings=fixed_residue_position_embeddings,
+            )
+        )
+        self._tokenizer = _load_tokenizer(source_path)
         # Pass the config explicitly rather than letting from_pretrained read
         # it: a transformers-5 export states rope as `rope_parameters`, which
         # our pinned transformers 4.x silently ignores in favour of the
-        # architecture default (theta 10000, no scaling). See _config.
+        # architecture default (theta 10000, no scaling). See _config. The
+        # source-path overlay also materializes any config-declared fixed
+        # residue-position input embeddings into standard HF rows.
         self._model = (
             AutoModelForCausalLM.from_pretrained(
-                str(model_path), config=_load_config(model_path), dtype=torch_dtype
+                str(source_path), config=_load_config(source_path), dtype=torch_dtype
             )
             .to(self._device)
             .eval()
@@ -189,11 +199,65 @@ class TransformersBackend:
                 )
         return out
 
+    def teacher_forced_target_probs(
+        self,
+        token_ids_batch: list[list[int]],
+        target_token_ids: list[int],
+        *,
+        batch_size: int | None = None,
+    ) -> np.ndarray:
+        n_targets = len(target_token_ids)
+        if not token_ids_batch:
+            return np.zeros((0, 0, n_targets), dtype=np.float32)
+
+        lengths = {len(row) for row in token_ids_batch}
+        if len(lengths) != 1:
+            raise ValueError(
+                "teacher_forced_target_probs requires equal-length rows in a "
+                f"single call; got lengths {sorted(lengths)}."
+            )
+        seq_len = lengths.pop()
+        if seq_len == 0:
+            raise ValueError(
+                "teacher_forced_target_probs requires rows of length >= 1."
+            )
+
+        # Peak memory is the (rows, T, vocab) logits tensor, not the KV
+        # cache — the whole point is that there is no cache to keep. Default
+        # small and let callers raise it.
+        rows_per_pass = batch_size if batch_size is not None else 8
+        if rows_per_pass < 1:
+            raise ValueError(f"batch_size must be >= 1; got {rows_per_pass}.")
+
+        target_ids = torch.tensor(
+            target_token_ids, dtype=torch.long, device=self._device
+        )
+        out = np.empty(
+            (len(token_ids_batch), seq_len, n_targets), dtype=np.float32
+        )
+        with torch.inference_mode():
+            for start in range(0, len(token_ids_batch), rows_per_pass):
+                chunk = token_ids_batch[start : start + rows_per_pass]
+                input_ids = torch.tensor(
+                    chunk, dtype=torch.long, device=self._device
+                )
+                logits = self._model(input_ids=input_ids, use_cache=False).logits
+                probs = torch.softmax(logits.float(), dim=-1)
+                target_probs = probs.index_select(dim=-1, index=target_ids)
+                out[start : start + len(chunk)] = (
+                    target_probs.detach()
+                    .cpu()
+                    .numpy()
+                    .astype(np.float32, copy=False)
+                )
+        return out
+
     def sample_completions(
         self,
         prefix_token_ids_batch: list[list[int]],
         *,
         max_new_tokens: int,
+        min_new_tokens: int = 0,
         temperature: float = 1.0,
         top_p: float = 0.95,
         top_k: int = 50,
@@ -201,6 +265,8 @@ class TransformersBackend:
         seed: int | None = None,
         batch_size: int | None = None,
     ) -> list[list[int]]:
+        if not 0 <= min_new_tokens <= max_new_tokens:
+            raise ValueError("min_new_tokens must be between 0 and max_new_tokens.")
         if not prefix_token_ids_batch:
             return []
         lengths = {len(p) for p in prefix_token_ids_batch}
@@ -231,6 +297,11 @@ class TransformersBackend:
             gen_kwargs["top_k"] = top_k
         if stop_token_id is not None:
             gen_kwargs["eos_token_id"] = stop_token_id
+        if min_new_tokens:
+            gen_kwargs["min_new_tokens"] = min_new_tokens
+            # A checkpoint's forced terminal token must not override the
+            # minimum when a constrained segment reaches its token cap.
+            gen_kwargs["forced_eos_token_id"] = None
 
         chunk_size = batch_size or self._tail_batch_size
         results: list[list[int]] = []

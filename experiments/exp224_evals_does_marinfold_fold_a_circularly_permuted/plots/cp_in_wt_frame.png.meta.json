@@ -1,0 +1,5 @@
+{
+  "script": "plot.py",
+  "args": [],
+  "caption": "Both predictions re-indexed into wild-type coordinates. The block straddling the T99/Q100 cut is visibly thinner in the permutant."
+}

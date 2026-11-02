@@ -1,0 +1,30 @@
+{
+  "model": "/data/tim/hf_cache_exp238/buckets/open-athena/MarinFold/checkpoints/prot-exp199-cw-cv1-p06-cool-s01/hf/step-290400",
+  "rope_theta": 500000,
+  "rows": [
+    {
+      "document": "1UBQ",
+      "tokens": 361,
+      "repaired": 1.7897061109542847,
+      "as_published": 2.6741864681243896,
+      "delta": 0.884480357170105
+    },
+    {
+      "document": "1QYS",
+      "tokens": 420,
+      "repaired": 2.367128610610962,
+      "as_published": 3.322906255722046,
+      "delta": 0.955777645111084
+    },
+    {
+      "document": "7BNY (A)",
+      "tokens": 683,
+      "repaired": 2.6456711292266846,
+      "as_published": 4.705108165740967,
+      "delta": 2.0594370365142822
+    }
+  ],
+  "mean_repaired": 2.267501950263977,
+  "mean_as_published": 3.5674002965291343,
+  "mean_delta": 1.2998983462651572
+}

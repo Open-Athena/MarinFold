@@ -1,0 +1,5 @@
+{
+  "script": "analyze.py",
+  "args": [],
+  "caption": "Unpaired mean at each absolute k; targets with L < k leave the cohort. Dashed line is the all-target top-L mean."
+}

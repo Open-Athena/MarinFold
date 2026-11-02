@@ -1,0 +1,7 @@
+eval_scope,tier,tm_threshold,n_clusters_purged,n_documents_purged,pct_of_corpus
+all_554,B,0.9,10284,37242,0.902
+all_554,C,0.5,487969,1518281,36.765
+natural_158,B,0.9,1013,4068,0.099
+natural_158,C,0.5,119973,387396,9.381
+designed_396,B,0.9,9271,33174,0.803
+designed_396,C,0.5,367996,1130885,27.384

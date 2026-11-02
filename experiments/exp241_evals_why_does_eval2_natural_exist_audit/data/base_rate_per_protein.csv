@@ -1,0 +1,586 @@
+entity_id,entry_id,length,deposit_date,source_organisms,kingdom,is_synthetic_taxon,has_denovo_keyword,has_uniprot_xref,title,designed_signal,best_identity,n_hits,n_hits_significant,afdb_best_identity,esm_atlas_best_identity,passes_40,passes_30
+9YFW_1,9yfw,656,2025-09-27,Homo sapiens,eukaryote,0,0,1,VPS13A central bridge domain,0,0.682,75,57,0.459,0.682,0,0
+9YFX_1,9yfx,364,2025-09-27,Escherichia coli,bacteria,0,0,1,KrKA retaining Kdo transferase CMP complex,0,0.513,430,370,0.491,0.513,0,0
+9YFY_1,9yfy,364,2025-09-27,Escherichia coli,bacteria,0,0,1,KrkA D193C Kdo adduct,0,0.507,420,361,0.487,0.507,0,0
+9KRP_39,9krp,374,2024-11-28,Homo sapiens,eukaryote,0,0,1,Structure of the HCV IRES-dependent 48S translation initiation complex with eIF5B and eIF3,0,0.596,391,358,0.596,0.475,0,0
+7ZYJ_3,7zyj,285,2022-05-24,Leishmania tarentolae,eukaryote,0,0,1,Leishmania tarentolae proteasome 20S subunit in complex with compound 2,0,0.938,740,578,0.938,0.382,0,0
+8VVT_79,8vvt,69,2024-01-31,Oryctolagus cuniculus,eukaryote,0,0,1,Mammalian ribosomes bound to Anisomycin in the rotated conformation,0,0.934,107,101,0.934,,0,0
+7UVY_29,7uvy,58,2022-05-02,Acinetobacter baumannii AB0057,bacteria,0,0,1,A. baumannii ribosome-Streptothricin-D complex: 70S with P-site tRNA,0,0.776,233,57,0.776,0.517,0,0
+8JKM_1,8jkm,700,2023-06-01,Mus musculus,eukaryote,0,0,1,RN-1747 bound state of mTRPV4,0,0.952,486,228,0.952,0.296,0,0
+8JKN_3,8jkn,116,2023-06-01,Homo sapiens,eukaryote,0,0,1,T95R mutant IRF4 DNA-binding domain bound to an DNA containing GAAA motif,0,0.972,99,61,0.972,0.372,0,0
+8JKP_1,8jkp,216,2023-06-01,Streptococcus pneumoniae TIGR4,bacteria,0,0,1,SP1746 in complex with dTMP,0,0.796,2723,2403,0.796,0.6,0,0
+9PJ7_53,9pj7,60,2025-07-12,Cutibacterium acnes,bacteria,0,0,1,C. acnes 70S ribosome bound to Doxycycline,0,0.699,359,145,0.699,0.515,0,0
+9TI5_41,9ti5,132,2025-12-05,Staphylococcus aureus subsp. aureus NCTC 8325,bacteria,0,0,1,Staphylococcus aureus 70S ribosome with p/E tRNA and RRF oriented towards the SSU (postTC-RRF-SSU),0,0.791,1155,902,0.791,0.486,0,0
+9M26_1,9m26,189,2025-02-27,Enterobacter cloacae,bacteria,0,0,1,"Crystal structure of Enterobacter cloacae YcdY, a member of the redox enzyme maturation protein family",0,0.869,350,124,0.869,0.591,0,0
+9M27_1,9m27,64,2025-02-27,Homo sapiens,eukaryote,0,0,1,"SERF1_HUMAN short isoform of Small EDRK-rich factor 1, SERF1a at pH 6.0.",0,0.773,35,25,0.773,,0,0
+9M28_1,9m28,385,2025-02-27,Promethearchaeum syntrophicum,archaea,0,0,1,Crystal Structure of monomeric Rag-like small GTPase from Asgard Lokiarchaeota (LokiRagM) in complex with GTP,0,0.947,616,391,0.3,0.947,0,0
+9M29_1,9m29,310,2025-02-27,Severe acute respiratory syndrome coronavirus 2,virus,0,0,1,Crystal Structure of the SARS-CoV-2 (COVID-19) main protease with inhibitor AD05,0,0.545,6,4,,0.545,0,0
+8ESZ_20,8esz,186,2022-10-15,Drosophila melanogaster,eukaryote,0,0,1,"Structure of mitochondrial complex I from Drosophila melanogaster, Helix-locked state",0,0.736,57,57,0.736,,0,0
+9RVU_50,9rvu,201,2025-07-09,Schizosaccharomyces pombe,eukaryote,0,0,1,in situ S. pombe hibernating ribosome after 7 days of glucose depletion,0,0.832,126,117,0.832,0.391,0,0
+8P7X_25,8p7x,85,2023-05-31,Mycoplasmoides pneumoniae M129,bacteria,0,0,1,Mycoplasma pneumoniae 70S ribosome in chloramphenicol-treated cells,0,0.529,178,102,0.529,0.467,0,0
+8PQL_8,8pql,118,2023-07-11,Homo sapiens,eukaryote,0,0,1,K48-linked ubiquitin chain formation with a cullin-RING E3 ligase and Cdc34: NEDD8-CUL2-RBX1-ELOB/C-FEM1C with trapped UBE2R2-donor UB-acceptor UB-SIL1 peptide,0,0.929,85,56,0.929,0.488,0,0
+8PQM_1,8pqm,82,2023-07-11,Bacillus subtilis subsp. subtilis str. 168,bacteria,0,0,1,The DNA-binding domain of L-lactate utilization repressor (LutR-DBD) from Bacillus subtilis,0,0.791,5800,5420,0.791,0.737,0,0
+8PQN_1,8pqn,273,2023-07-11,Homo sapiens,eukaryote,0,0,1,NQO1 bound to RBS-10,0,0.951,1436,826,0.951,0.434,0,0
+8PQO_1,8pqo,271,2023-07-11,Homo sapiens,eukaryote,0,0,1,PITP in complex with the inhibitor VT01545,0,1.000,222,213,1.0,0.429,0,0
+8VUP_41,8vup,127,2024-01-29,Escherichia coli,bacteria,0,0,1,E. coli 70S ribosome with unmodified tRNAPro(GGG) in the e*/E conformation on a slippery CCC-C codon,0,0.781,404,334,0.781,0.515,0,0
+8CDL_9,8cdl,152,2023-01-31,Saccharomyces cerevisiae,eukaryote,0,0,1,80S S. cerevisiae ribosome with ligands in hybrid-2 pre-translocation (PRE-H2) complex,0,0.935,2258,1259,0.935,0.502,0,0
+9SRE_33,9sre,155,2025-09-24,Pyrococcus abyssi GE5,archaea,0,0,1,Cryo-EM structure of P. abyssi 70S ribosome in complex with hibernation factor HibA (PTC conformation with E-site tRNA),0,0.588,439,393,0.544,0.588,0,0
+28ZV_5,28zv,264,2026-03-03,Homo sapiens,eukaryote,0,0,1,human 48S PIC with mRNA (non-Kozak),0,0.951,498,345,0.951,0.385,0,0
+28ZX_10,28zx,143,2026-03-03,Homo sapiens,eukaryote,0,0,1,human 48S PIC with mRNA (Kozak_1),0,0.975,142,123,0.975,0.357,0,0
+8EVT_9,8evt,156,2022-10-20,Saccharomyces cerevisiae,eukaryote,0,0,1,Hypopseudouridylated yeast 80S bound with Taura syndrome virus (TSV) internal ribosome entry site (IRES) refined against a composite map,0,0.778,165,102,0.778,0.435,0,0
+8EVU_3,8evu,257,2022-10-20,Vibrio cholerae O395,bacteria,0,0,1,Cryo EM structure of Vibrio cholerae NQR,0,0.947,1409,891,0.947,0.524,0,0
+9ZPN_1,9zpn,290,2025-12-16,Rattus norvegicus,eukaryote,0,0,1,"WNK1/S382A kinase domain in complex with potassium formate, x-ray wavelength 3.3968 Angstroms",0,0.974,5303,4010,0.974,0.42,0,0
+9ZPO_1,9zpo,329,2025-12-16,Homo sapiens,eukaryote,0,0,1,Cryo-EM structure of KCa3.1_I/calmodulin channel in complex with SKA31.,0,0.766,130,123,0.766,0.279,0,0
+9ZPQ_1,9zpq,234,2025-12-17,Borreliella burgdorferi B31,bacteria,0,0,1,Crystal structure of B. burgdorferi HtrA protease domain Ser226Ala mutant,0,0.489,5467,3964,0.489,0.403,0,0
+9QZP_34,9qzp,217,2025-04-23,Mus musculus,eukaryote,0,0,1,Mouse Ribosome Classical Pre translocation state,0,0.942,348,275,0.942,0.411,0,0
+8JDM_9,8jdm,297,2023-05-14,Homo sapiens,eukaryote,0,0,1,Structure of the Human cytoplasmic Ribosome with human tRNA Tyr(GalQ34) and mRNA(UAU) (rotated state),0,0.942,167,149,0.942,0.294,0,0
+9ISZ_2,9isz,76,2024-07-19,Homo sapiens,eukaryote,0,0,1,Structure of Clr4 catalyzing K14-ubiquitinated histone H3 K9 methylation,0,0.975,2385,1416,0.975,0.55,0,0
+9IT0_1,9it0,886,2024-07-19,Escherichia coli BL21(DE3),bacteria,0,0,1,Liganded-state E.coli PatZ,0,0.841,5798,5236,0.841,0.346,0,0
+9IT1_1,9it1,164,2024-07-19,Homo sapiens,eukaryote,0,0,1,Crystal structure of Pin1 using laue diffraction,0,0.847,3818,748,0.847,0.454,0,0
+9IT2_1,9it2,101,2024-07-19,Ureaplasma parvum serovar 3 str. ATCC 700970,bacteria,0,0,1,Cryo-EM structure of urease from Ureaplasma parvum,0,0.675,124,95,0.675,0.424,0,0
+9HSN_1,9hsn,179,2024-12-19,Plasmodium falciparum,eukaryote,0,0,1,Crystal structure of C-terminal catalytic domain of Plasmodium falciparum CTP:phosphocholine cytidylyltransferase with 1-cyclopropylmethanamine,0,0.837,1630,664,0.837,0.439,0,0
+9O3K_23,9o3k,98,2025-04-07,Thermus thermophilus HB8,bacteria,0,0,1,"Crystal structure of the wild-type Thermus thermophilus 70S ribosome in complex with macrolide erythromycin, mRNA, aminoacylated A-site Lys-tRNAlys, P-site fMAC-peptidyl-tRNAmet, and deacylated E-site tRNAlys at 2.70A resolution",0,0.902,39,22,0.902,0.501,0,0
+8IQC_1,8iqc,254,2023-03-16,African swine fever virus BA71V,virus,0,0,1,Crystal structure of AsfvPrimPol N-terminal Prim/Pol domain in complex with Mn2+,0,0.351,92,52,0.286,0.351,1,0
+8IQE_1,8iqe,586,2023-03-16,Klebsiella phage VLC6,virus,0,0,1,Crystal structure of tetrameric K2-2 TSP,0,0.957,272,47,0.236,0.957,0,0
+8IQF_1,8iqf,956,2023-03-16,Homo sapiens,eukaryote,0,0,1,Cryo-EM structure of the dimeric human CAF1-H3-H4 complex,0,,5,3,,,1,1
+9KZU_60,9kzu,145,2024-12-11,Homo sapiens,eukaryote,0,0,1,Cryo-EM structure of the HCV IRES-dependently initiated CMV-stalled 80S ribosome (non-rotated state) in complexed with eIF3,0,0.960,172,164,0.96,0.535,0,0
+8W30_2,8w30,456,2024-02-21,Homo sapiens,eukaryote,0,0,1,Crystal structure of alpha-V beta-1 integrin headpiece in complex with TR01225179,0,0.976,354,266,0.976,0.384,0,0
+8W31_2,8w31,75,2024-02-21,Homo sapiens,eukaryote,0,0,1,Crystal structure of parkin (R0RB):2pUb with activator compound,0,0.975,2372,1404,0.975,0.55,0,0
+8W32_1,8w32,83,2024-02-21,Human immunodeficiency virus 1,virus,0,0,1,Structure and interactions of HIV-1 gp41 CHR-NHR reverse hairpin constructs reveal molecular determinants of antiviral activity,0,0.874,10,10,,0.874,0,0
+8EIU_47,8eiu,100,2022-09-15,Escherichia coli,bacteria,0,0,1,E. coli 70S ribosome with A-loop mutations U2554C and U2555C,0,0.862,958,602,0.862,0.608,0,0
+7U2H_26,7u2h,71,2022-02-24,Thermus thermophilus HB8,bacteria,0,0,1,"Crystal structure of the Thermus thermophilus 70S ribosome in complex with mRNA, aminoacylated A-site Gly-NH-tRNAgly, aminoacylated P-site fMet-NH-tRNAmet, and deacylated E-site tRNAgly at 2.55A resolution",0,0.786,124,98,0.786,,0,0
+9PRQ_4,9prq,188,2025-07-24,Homo sapiens,eukaryote,0,0,1,In situ structure of human mitoribosome in the A/T-P state from TACO1-knockout cells,0,0.879,37,37,0.879,0.384,0,0
+9UBX_3,9ubx,278,2025-04-03,Mus musculus,eukaryote,0,0,1,The atomic coordinates of the mouse CatSper trimer,0,0.697,704,421,0.697,0.293,0,0
+7ZLG_1,7zlg,236,2022-04-15,synthetic construct,synthetic,1,0,0,"Cryo-EM structure of C-mannosyltransferase CeDPY19, in complex with acceptor peptide and bound to CMT2-Fab and anti-Fab nanobody",1,0.768,447,294,0.768,0.679,0,0
+8DHL_1,8dhl,889,2022-06-27,Tannerella forsythia,bacteria,0,0,1,Tannerella forsythia beta-glucuronidase (L2),0,0.461,5676,4979,0.461,0.412,0,0
+8DHM_1,8dhm,504,2022-06-27,Homo sapiens,eukaryote,0,0,1,Human TMEM175 in complex with 4-aminopyridine,0,0.932,2552,1381,0.932,0.295,0,0
+8DHN_1,8dhn,192,2022-06-27,Influenza A virus (A/California/04/2009(H1N1)),virus,0,0,1,"The N-terminal domain of PA endonuclease from the influenza H1N1 viral polymerase in complex with 6-Bromo-3-hydroxy-2-(5-methyl-1,2,4-oxadiazol-3-yl)pyridin-4(1H)-one",0,,6,0,,,1,1
+8DHR_1,8dhr,244,2022-06-28,Aequorea victoria,eukaryote,0,0,1,An ester mutant of SfGFP,0,0.907,15,9,0.907,,0,0
+8C1C_3,8c1c,171,2022-12-20,Homo sapiens,eukaryote,0,0,1,Structure of IgE bound to the ectodomain of FceRIa,0,0.715,318,121,0.672,0.715,0,0
+8C1D_1,8c1d,265,2022-12-20,Homo sapiens,eukaryote,0,0,1,Aurora A kinase in complex with TPX2-inhibitor 9,0,0.804,5800,5774,0.804,0.457,0,0
+8D9V_4,8d9v,949,2022-06-11,Homo sapiens,eukaryote,0,0,1,"gamma-Arf1 homodimeric interface within AP-1, Arf1, Nef lattice on narrow membrane tubes",0,0.914,947,704,0.914,0.403,0,0
+8VWQ_23,8vwq,110,2024-02-02,Escherichia coli,bacteria,0,0,1,E. coli 70S ribosome with unmodified Lys-tRNAPro(GGG) in the P/P conformation on a slippery CCC-C codon and Elongation Factor P bound (uL1 in the closed conformation),0,0.905,906,787,0.905,0.482,0,0
+8FCC_2,8fcc,440,2022-12-01,HIV whole-genome vector AA1305#18,synthetic,0,0,1,HIV-1 Reverse Transcriptase in complex with 5-membered bicyclic core NNRTI,0,0.996,1871,917,0.37,0.996,0,0
+8FCE_1,8fce,560,2022-12-01,HIV whole-genome vector AA1305#18,synthetic,0,0,1,HIV-1 Reverse Transcriptase in complex with 7-membered bicyclic core NNRTI,0,0.915,2091,810,0.352,0.915,0,0
+9Y9Z_8,9y9z,502,2025-09-15,Toxoplasma gondii,eukaryote,0,0,1,Cryo-EM structure of conoid fiber from Toxoplasma gondii (24-nm repeat),0,,2,0,,,1,1
+9YA0_18,9ya0,172,2025-09-15,Toxoplasma gondii,eukaryote,0,0,1,Cryo-EM structure of pre-conoid ring 2 (PCR P2 ring)from Toxoplasma gondii,0,0.965,79,24,0.965,0.41,0,0
+9UNO_1,9uno,813,2025-04-24,Mus musculus,eukaryote,0,0,1,native NMDA receptor-GluN1/N2A in the inactive state,0,0.927,2298,1458,0.927,0.299,0,0
+9UNP_2,9unp,805,2025-04-24,Mus musculus,eukaryote,0,0,1,native NMDA receptor-GluN1/N2A/N2B-S2 in the closed state,0,0.658,1907,1231,0.658,0.292,0,0
+8V4Z_5,8v4z,242,2023-11-29,Homo sapiens,eukaryote,0,0,0,Crystal structure of a HLA-B*35:01-NP7 with D1 TCR,0,1.000,835,375,1.0,0.657,0,0
+8V50_1,8v50,274,2023-11-30,Homo sapiens,eukaryote,0,0,1,Crystal structure of a HLA-B*35:01-NP6 with D1 TCR,0,0.968,725,437,0.968,0.385,0,0
+8JNE_7,8jne,342,2023-06-06,Homo sapiens,eukaryote,0,0,1,The cryo-EM structure of the decameric RAD51 ring bound to the nucleosome without the linker DNA binding,0,0.954,2356,1605,0.954,0.401,0,0
+8JNF_1,8jnf,139,2023-06-06,Homo sapiens,eukaryote,0,0,1,The cryo-EM structure of the RAD51 filament bound to the nucleosome,0,0.928,636,520,0.928,0.473,0,0
+9QOF_1,9qof,368,2025-03-26,Escherichia coli K-12|Escherichia coli K-12,bacteria,0,0,1,E.coli seryl-tRNA synthetase (Arm deletion mutant) bound to sulphamoyl seryl-adenylate analogue,0,0.954,1901,1342,0.954,0.427,0,0
+9QOG_1,9qog,66,2025-03-26,Sulfolobus acidocaldarius,archaea,0,1,0,Crystal structure of Nanofitin C10 in complex with a a double-helical aromatic oligoamide foldamer,1,0.668,18,4,,0.668,0,0
+9QOH_11,9qoh,119,2025-03-26,Mus musculus,eukaryote,0,0,1,Mouse Ribosome POST translocation state,0,0.970,91,71,0.97,0.415,0,0
+7I4H_1,7i4h,144,2025-03-12,Coxsackievirus A16,virus,0,0,1,Group deposition of Coxsackievirus A16 (G-10) 2A protease in complex with inhibitors from the ASAP AViDD centre -- Crystal structure of Coxsackievirus A16 (G-10) 2A protease in complex with ASAP-0036609-001 (A71EV2A-x4707),0,0.777,6,5,,0.777,0,0
+7TMC_1,7tmc,274,2022-01-19,Homo sapiens,eukaryote,0,0,1,TMEM106B singlet filament extracted from MSTD neurodegenerative human brain,0,0.907,81,77,0.907,0.537,0,0
+7TMD_1,7tmd,342,2022-01-19,Klebsiella pneumoniae subsp. pneumoniae HS11286,bacteria,0,0,1,Crystal structure of Ornithine carbamoyltransferase from Klebsiella pneumoniae,0,0.879,1609,1108,0.879,0.397,0,0
+7TMF_1,7tmf,191,2022-01-19,Klebsiella pneumoniae subsp. pneumoniae HS11286,bacteria,0,0,1,Crystal Structure of NAD(P)H nitroreductase from Klebsiella pneumoniae (short b-axis),0,0.971,1641,935,0.971,0.844,0,0
+8Y63_5,8y63,285,2024-02-01,synthetic construct,synthetic,1,0,0,Cryo-EM structure of the C20:0 ceramide-bound FPR2-Gi complex,1,0.356,628,402,0.356,0.246,1,0
+8Y64_1,8y64,503,2024-02-01,Saccharomyces cerevisiae,eukaryote,0,0,1,"Crystal structure of open state ferulic acid decarboxylase from Saccharomyces cerevisiae, F397V/I398L/T438P/P441V mutant",0,0.977,1026,817,0.977,0.498,0,0
+8Y65_1,8y65,582,2024-02-01,Homo sapiens,eukaryote,0,0,1,Cryo-EM structure of human urate transporter GLUT9 bound to substrate urate,0,0.848,5192,4481,0.848,0.378,0,0
+7TKS_5,7tks,138,2022-01-17,Saccharomyces cerevisiae,eukaryote,0,0,1,Yeast ATP synthase State 3catalytic(e) with 10 mM ATP backbone model,0,0.634,2295,611,0.561,0.634,0,0
+7YRZ_1,7yrz,302,2022-08-11,Human coronavirus 229E,virus,0,0,1,Crystal structure of HCoV 229E main protease in complex with PF07321332,0,0.745,5,4,,0.745,0,0
+7YS6_2,7ys6,357,2022-08-11,Homo sapiens,eukaryote,0,0,1,Cryo-EM structure of the Serotonin 6 (5-HT6) receptor-DNGs-scFv16 complex,0,0.996,5754,3898,0.996,0.539,0,0
+20ZJ_4,20zj,259,2025-12-03,Mus musculus,eukaryote,0,0,0,"Cryo-EM structure of the human neurotensin receptor 1 (hNTSR1)-Gi1 complex in the GTP-bound, AHD-open NC state 2, plunge-frozen 0-5 seconds after GTP addition",0,0.389,646,409,0.389,0.246,1,0
+20ZK_1,20zk,354,2025-12-03,Homo sapiens,eukaryote,0,0,1,"Cryo-EM structure of the human neurotensin receptor 1 (hNTSR1)-Gi1 complex in the GTP-bound, AHD-open NC state 3, plunge-frozen 0-5 seconds after GTP addition",0,0.948,1095,886,0.948,0.403,0,0
+9I2D_86,9i2d,133,2025-01-20,Homo sapiens,eukaryote,0,0,1,NMT1-NAC bound human RNC with 10 amino acid ARF1-linker,0,0.888,407,174,0.888,0.513,0,0
+8RTE_1,8rte,370,2024-01-25,Bacillus phage phi105,virus,0,0,1,Rap from bacteriophage Phi105 with peptide ERPVGT,0,0.629,988,175,0.353,0.629,0,0
+8RTF_1,8rtf,514,2024-01-26,Trypanosoma congolense,eukaryote,0,0,1,Crystal structure of Trypanosoma congolense pyruvate kinase in complex with a single-domain antibody (TcoPYK-sdAb42),0,0.784,2879,2157,0.784,0.353,0,0
+8RTG_1,8rtg,405,2024-01-26,Nitratidesulfovibrio vulgaris,bacteria,0,0,1,Nitratidesulfovibrio vulgaris [FeFe]-hydrogenase [FeFe]-hydrogenase in apo form,0,0.806,3045,1010,0.806,0.409,0,0
+9PGM_74,9pgm,106,2025-07-08,Homo sapiens,eukaryote,0,0,1,In situ structure of the human mitoribosome in the P-E state from TACO1-knockout cells,0,0.827,43,42,0.827,,0,0
+8VKV_35,8vkv,82,2024-01-10,Escherichia coli,bacteria,0,0,1,"Escherichia coli transcription-translation coupled complex (TTC-B) containing mRNA with a 33 nt long spacer, ops signal, RfaH, NusA, and fMet-tRNAs in E-site and P-site",0,0.795,381,298,0.795,0.469,0,0
+9K4Z_7,9k4z,246,2024-10-21,Homo sapiens,eukaryote,0,0,1,Structure of substrate-engaged human 26S proteasome RP-CP subcomplex in state ED1.1,0,0.956,672,568,0.956,0.639,0,0
+8FL7_52,8fl7,239,2022-12-21,Homo sapiens,eukaryote,0,0,1,Human nuclear pre-60S ribosomal subunit (State J2),0,0.904,280,253,0.904,0.494,0,0
+9D3S_3,9d3s,105,2024-08-11,Homo sapiens,eukaryote,0,0,1,147-bp 5S rDNA nucleosome - open I (open on the downstream side),0,0.926,728,538,0.926,0.489,0,0
+8J2F_1,8j2f,423,2023-04-14,Homo sapiens,eukaryote,0,0,1,Human neutral shpingomyelinase,0,0.847,741,494,0.847,0.382,0,0
+8J2G_1,8j2g,507,2023-04-14,Homo sapiens,eukaryote,0,0,1,Human ZnT1-D47N/D255N mutant,0,0.578,1802,1147,0.578,0.317,0,0
+8J2H_1,8j2h,242,2023-04-14,Cytaeis uchidae,eukaryote,0,0,1,Crystal structure of a bright green fluorescent protein (StayGold) with single mutation (N137A) in jellyfish Cytaeis uchidae from Biortus,0,0.299,10,10,0.299,,1,1
+8J2I_1,8j2i,242,2023-04-14,Cytaeis uchidae,eukaryote,0,0,1,Crystal structure of a bright green fluorescent protein (StayGold) with single mutation (Q140S) in jellyfish Cytaeis uchidae from Biortus,0,0.318,11,10,0.318,,1,0
+9GGR_3,9ggr,233,2024-08-14,Escherichia coli,bacteria,0,0,1,"Structure of the HrpA-bound E. coli disome, Class II",0,0.943,535,373,0.943,0.458,0,0
+9YPZ_63,9ypz,135,2025-10-14,Oryctolagus cuniculus,eukaryote,0,0,1,"Vacant ribosome with P-site tRNA, substate 1, Structure Ia",0,0.931,185,126,0.931,0.325,0,0
+10VC_1,10vc,111,2026-02-10,Geobacillus stearothermophilus,bacteria,0,0,1,Crystal structure of GeoCas9 HNH domain bound to anti-CRISPR AcrIIC1,0,0.976,1010,574,0.976,0.704,0,0
+10WC_1,10wc,326,2026-02-10,Klebsiella pneumoniae,bacteria,0,0,1,"KpSwz DUF4062 (Hexamer, catalytic mutant E97A)",0,0.617,1038,400,0.617,0.409,0,0
+10WY_1,10wy,132,2026-02-11,Prescottella equi,bacteria,0,0,1,Rhodococcus hoagii DnaA DI in the P4(3)2(1)2 space group,0,0.495,127,106,0.495,0.39,0,0
+8QNN_1,8qnn,264,2023-09-27,Nocardia cyriacigeorgica,bacteria,0,0,1,Crystal structure of a Class A beta-lactamase from Nocardia cyriacigeorgica,0,0.708,1032,600,0.708,0.411,0,0
+8QNO_1,8qno,441,2023-09-27,Pyrococcus furiosus,archaea,0,0,1,Crystal structure of S-adenosyl-L-homocysteine hydrolase treated at 368 K from Pyrococcus furiosus in complex with inosine,0,0.925,1243,874,0.925,0.414,0,0
+8QNP_1,8qnp,397,2023-09-27,Solanum lycopersicum,eukaryote,0,0,1,OPR3 with redesigned loop 6 (9aa) in complex with NADH4,0,0.694,2230,1542,0.694,0.343,0,0
+8QNQ_1,8qnq,129,2023-09-27,Pseudomonas aeruginosa PAO1,bacteria,0,0,1,Structure of the toxin-antitoxin NatRT complex from Pseudomonas aeruginosa. NatTE29D mutant,0,0.963,958,279,0.963,0.489,0,0
+8G2Z_36,8g2z,175,2023-02-06,Tetrahymena thermophila CU428,eukaryote,0,0,1,48-nm doublet microtubule from Tetrahymena thermophila strain CU428,0,0.992,8,6,0.992,,0,0
+8VVI_2,8vvi,277,2024-01-31,Sulfuricurvum kujiense DSM 16994,bacteria,0,0,1,Cryo-EM structure of a type II ZorAB complex from Sulfuricurvum kujiense,0,0.488,507,371,0.454,0.488,0,0
+8VVK_1,8vvk,268,2024-01-31,Crimean-Congo hemorrhagic fever virus strain IbAr10200,virus,0,0,1,CCHFV GP38 bound to ADI-46143 Fab,0,,2,0,,,1,1
+9H10_1,9h10,215,2024-10-09,synthetic construct,synthetic,1,1,0,Crystal structure of a computationally designed protein bound to a Au-containing cofactor ([(sulfaNHC)Au.TRP]),1,,0,0,,,1,1
+9H11_1,9h11,245,2024-10-09,Klebsiella pneumoniae,bacteria,0,0,1,Crystal structure of OXA-48 apoenzyme,0,0.550,747,683,0.55,0.495,0,0
+9H13_1,9h13,241,2024-10-09,Enterobacter cloacae,bacteria,0,0,1,Crystal structure of OXA-163 apoenzyme,0,0.549,745,674,0.538,0.549,0,0
+8Q87_5,8q87,257,2023-08-18,Gallus gallus,eukaryote,0,0,1,Structure of the G. gallus 80S rotated ribosome in complex with eEF2 and SERBP1,0,0.961,359,275,0.961,0.356,0,0
+8RBF_1,8rbf,759,2023-12-04,Mus musculus,eukaryote,0,0,1,CryoEM structure of the post-powerstroke actomyosin-5a complex,0,0.964,2308,1979,0.964,0.269,0,0
+8RBG_1,8rbg,801,2023-12-04,Mus musculus,eukaryote,0,0,1,CryoEM structure of primed myosin-5a (ADP-Pi state),0,0.962,2347,2019,0.962,0.269,0,0
+8RBH_1,8rbh,301,2023-12-04,Homo sapiens,eukaryote,0,0,1,Crystal structure of the kelch domain of human KLHL12 in complex with PEF1 peptide,0,0.980,5732,4944,0.98,0.526,0,0
+9F9G_1,9f9g,231,2024-05-07,Halobacterium salinarum,archaea,0,0,1,Laser excitation effects on BR: Reprocessed Dark from Nogly et al.,0,0.528,634,446,0.371,0.528,0,0
+9F9H_1,9f9h,231,2024-05-07,Halobacterium salinarum,archaea,0,0,1,Laser excitation effects on BR: Reprocessed Extrapolated 10ps Light dataset recorded at 525 GW/cm2 from Nogly et al.,0,0.529,639,447,0.372,0.529,0,0
+9F9I_1,9f9i,231,2024-05-07,Halobacterium salinarum,archaea,0,0,1,Laser excitation effects on BR: Dark dataset recorded at SACLA,0,0.527,634,445,0.37,0.527,0,0
+8AJJ_1,8ajj,446,2022-07-28,Staphylococcus aureus,bacteria,0,0,1,Crystal structure of the disulfide reductase MerA from Staphylococcus aureus,0,0.931,4846,3467,0.931,0.344,0,0
+8AJK_1,8ajk,448,2022-07-28,Staphylococcus aureus,bacteria,0,0,1,Crystal structure of a C43S variant from the disulfide reductase MerA from Staphylococcus aureus,0,0.929,4865,3449,0.929,0.344,0,0
+8AJM_2,8ajm,477,2022-07-28,Homo sapiens,eukaryote,0,0,1,Structure of human DDB1-DCAF12 in complex with the C-terminus of CCT5,0,0.457,273,69,0.457,0.382,0,0
+7U4T_4,7u4t,118,2022-03-01,Homo sapiens,eukaryote,0,0,1,Human V-ATPase in state 2 with SidK and mEAK-7,0,0.700,35,32,0.7,0.488,0,0
+8UPF_7,8upf,174,2023-10-22,Homo sapiens,eukaryote,0,0,1,Cryo-EM structure of the human nucleosome core particle in complex with RNF168-UbcH5c,0,0.980,2267,1611,0.98,0.431,0,0
+9YPS_36,9yps,116,2025-10-14,Oryctolagus cuniculus,eukaryote,0,0,1,"GTPBP1*GCP*Phe-tRNA*ribosome in the open state, Structure IIb",0,0.938,168,126,0.938,0.425,0,0
+8UN9_1,8un9,247,2023-10-18,Bacillus subtilis,bacteria,0,0,1,Crystal structure of the MrfB exonuclease catalytic core,0,0.811,1383,1127,0.668,0.811,0,0
+8UND_1,8und,306,2023-10-18,Severe acute respiratory syndrome coronavirus,virus,0,0,1,X-ray Structure of SARS-CoV-2 main protease covalently bound to inhibitor GRL-190-21 at 1.90 A.,0,0.545,6,4,,0.545,0,0
+8UNF_3,8unf,228,2023-10-18,Tequatrovirus T4,virus,0,0,1,Cryo-EM structure of T4 Bacteriophage Clamp Loader with Sliding Clamp and DNA,0,0.945,1543,1373,0.928,0.945,0,0
+8YDS_2,8yds,230,2024-02-21,Severe acute respiratory syndrome coronavirus 2,virus,0,0,1,Crystal structure of the receptor binding domain of SARS-CoV-2 Delta variant spike protein in complex with Ce59,0,1.000,26,16,,1.0,0,0
+8YDT_2,8ydt,230,2024-02-21,Severe acute respiratory syndrome coronavirus 2,virus,0,0,1,Crystal structure of the receptor binding domain of SARS-CoV-2 Alpha variant spike protein in complex with Ce41,0,1.000,25,15,,1.0,0,0
+8YDU_2,8ydu,230,2024-02-21,Severe acute respiratory syndrome coronavirus 2,virus,0,0,1,Crystal structure of the receptor binding domain of SARS-CoV-2 Omicron BA.2 variant spike protein in complex with CeSPIACE,0,0.957,30,15,,0.957,0,0
+8YDV_2,8ydv,230,2024-02-21,Severe acute respiratory syndrome coronavirus 2,virus,0,0,1,Crystal structure of the receptor binding domain of SARS-CoV-2 Omicron BA.5 variant spike protein in complex with CeSPIACE,0,0.949,32,15,,0.949,0,0
+8W2N_17,8w2n,127,2024-02-20,Escherichia coli,bacteria,0,0,1,E. coli 70S ribosome with unmodified Lys-tRNAPro(GGG) in the P/P conformation on a slippery CCC-C codon and Elongation Factor P bound (uL1 in the open conformation),0,0.833,813,672,0.833,0.443,0,0
+8OY6_1,8oy6,498,2023-05-03,Methanosarcina mazei Go1,archaea,0,0,1,Time-resolved SFX structure of the class II photolyase complexed with a thymine dimer (3 nanosecond pump-probe delay),0,0.615,1355,829,0.615,0.423,0,0
+9ZRG_44,9zrg,213,2025-12-19,Heterocephalus glaber,eukaryote,0,0,0,Structure of naked mole-rat ribosome (non-rotated),0,0.994,168,157,0.994,0.368,0,0
+9MYR_2,9myr,144,2025-01-22,Comamonas testosteroni KF-1,bacteria,0,0,1,Sal-Shy(DUF35) aldolase from Comamonas testosteroni,0,0.785,3427,2653,0.592,0.785,0,0
+9MYT_1,9myt,159,2025-01-22,Mycobacteroides abscessus subsp. massiliense str. GO 06,bacteria,0,0,0,EatA-EatI complex from Mycobacterium abscessus,0,0.620,43,15,0.62,0.279,0,0
+9T7H_27,9t7h,51,2025-11-10,Pyrococcus abyssi GE5,archaea,0,0,1,Cryo-EM structure of P. abyssi 70S ribosome in complex with hibernation factor HibA (L1 stalk conformation),0,0.926,240,104,0.926,,0,0
+9G8M_40,9g8m,132,2024-07-23,Homo sapiens,eukaryote,0,0,1,human 80S ribosome bound by a SKI2-exosome complex,0,0.935,79,65,0.935,0.428,0,0
+9BFG_1,9bfg,555,2024-04-17,Brevibacillus parabrevis,bacteria,0,0,1,Structure of the crosslinked PCP-E didomain of tyrocidine synthetase A,0,0.946,4876,3049,0.946,0.43,0,0
+9BFI_1,9bfi,614,2024-04-17,Homo sapiens,eukaryote,0,0,1,Cryo-EM structure of human CHT1 in the apo inward-open state,0,0.902,1779,1267,0.902,0.374,0,0
+8BF8_1,8bf8,408,2022-10-24,Deinococcus radiodurans R1 = ATCC 13939 = DSM 20539,bacteria,0,0,1,ISDra2 TnpB in complex with reRNA,0,0.519,2207,1561,0.519,0.367,0,0
+8BF9_11,8bf9,134,2022-10-24,Ovis aries,eukaryote,0,0,1,Molecular view of ER membrane remodeling by the Sec61/TRAP translocon.,0,0.912,209,189,0.912,0.436,0,0
+8AZK_4,8azk,261,2022-09-06,Bos taurus,eukaryote,0,0,1,"Bovine 20S proteasome, untreated",0,0.915,772,621,0.915,0.42,0,0
+8HFS_4,8hfs,54,2022-11-12,Lactococcus lactis subsp. lactis,bacteria,0,0,1,"The structure of LcnA, LciA, and the man-PTS of Lactococcus lactis",0,0.988,1,1,,0.988,0,0
+8HFV_1,8hfv,220,2022-11-12,Homo sapiens,eukaryote,0,0,1,Crystal structure of CTSL in complex with K777,0,0.818,4694,2910,0.818,0.446,0,0
+8HFW_1,8hfw,304,2022-11-12,Burkholderia pyrrocinia,bacteria,0,0,1,The crystal structure of alpha/beta fold hydrolase,0,0.485,3210,1371,0.37,0.485,0,0
+8HFX_2,8hfx,613,2022-11-13,Odocoileus virginianus texanus,eukaryote,0,0,1,Cryo-EM structure of SARS-CoV-2 Omicron BA.1 spike protein in complex with white-tailed deer ACE2,0,0.959,609,513,0.959,0.388,0,0
+8T6H_1,8t6h,898,2023-06-16,Plasmodium falciparum,eukaryote,0,0,1,X-ray crystal structure of PfA-M1(E319A),0,0.467,2643,1914,0.467,0.284,0,0
+8T6I_1,8t6i,129,2023-06-16,Homo sapiens,eukaryote,0,0,0,Structure of VHH-Fab complex with engineered Crystal Kappa region,0,0.691,440,207,0.691,0.447,0,0
+5SUE_1,5sue,258,2022-08-26,Saccharomyces cerevisiae S288C,eukaryote,0,0,1,PanDDA analysis group deposition -- Aar2/RNaseH in complex with fragment P03G10 from the F2X-Universal Library,0,0.760,32,31,0.76,,0,0
+9BDL_22,9bdl,176,2024-04-12,Oryctolagus cuniculus,eukaryote,0,0,1,80S ribosome with angiogenin,0,0.988,123,120,0.988,0.437,0,0
+9B3J_8,9b3j,99,2024-03-19,Artemia franciscana,eukaryote,0,0,1,"Artemia franciscana ATP synthase state 2 (composite structure), pH 8.0",0,0.595,39,38,0.595,,0,0
+9B3K_1,9b3k,489,2024-03-19,Staphylococcus aureus|Staphylococcus aureus,bacteria,0,0,1,NorA in complex with Fab36 (NorA-BRIL fusion),0,0.805,5800,5330,0.805,0.677,0,0
+9SMF_15,9smf,343,2025-09-08,Bos taurus,eukaryote,0,0,1,"Reduced bovine complex I in lipid nanodisc, NADH-active-Q10",0,0.826,707,348,0.826,0.35,0,0
+9SMG_1,9smg,115,2025-09-08,Bos taurus,eukaryote,0,0,1,"Reduced bovine complex I in lipid nanodisc, NADH-active-altQ10",0,0.809,333,232,0.809,,0,0
+9IMM_2,9imm,198,2024-07-03,Severe acute respiratory syndrome coronavirus 2,virus,0,0,1,SARS-CoV-2 Replication-Transcription Complex has a dimer architecture (local dRTC) in post-capping state,0,,2,1,,,1,1
+8TW7_6,8tw7,258,2023-08-20,Saccharomyces cerevisiae,eukaryote,0,0,1,Cryo-EM structure of S. cerevisiae Ctf18-RFC-PCNA complex in Apo state conformation I,0,0.579,1878,1640,0.526,0.579,0,0
+8TW8_2,8tw8,327,2023-08-20,Saccharomyces cerevisiae,eukaryote,0,0,1,Cryo-EM structure of S. cerevisiae Ctf18-RFC-PCNA complex in Apo state conformation I,0,0.696,5685,3803,0.671,0.696,0,0
+9BV2_31,9bv2,264,2024-05-19,Homo sapiens,eukaryote,0,0,1,M2B Midnolin-Proteasome (translocating),0,0.871,330,219,0.871,0.495,0,0
+9UF8_2,9uf8,439,2025-04-10,Homo sapiens,eukaryote,0,0,1,The cryo-EM structure of 26S proteasome-Midnolin complex in the MA state,0,0.931,5051,3996,0.931,0.32,0,0
+8BM1_2,8bm1,98,2022-11-10,Escherichia coli,bacteria,0,0,1,Structure of GroEL:GroES-ATP complex under continuous turnover conditions,0,0.910,578,351,0.91,0.507,0,0
+8BM2_1,8bm2,317,2022-11-10,Homo sapiens,eukaryote,0,0,1,Crystal structure of JAK2 JH1 in complex with gandotinib,0,0.989,5796,5322,0.989,0.339,0,0
+8BM3_1,8bm3,264,2022-11-10,Escherichia coli K-12,bacteria,0,0,1,"H207A mutant of E. coli PgpB, a PAP2 type phosphatidyl glycerol phosphate and C55-PP phosphatase, in complex with farnesyl pyrophosphate",0,0.845,485,128,0.845,0.42,0,0
+9LE1_3,9le1,312,2025-01-06,synthetic construct,synthetic,1,0,0,Consensus olfactory receptor bmOR6A2 in complex with mini-Golf trimeric protein,1,0.629,1296,525,0.629,0.464,0,0
+9LE2_1,9le2,339,2025-01-06,Homo sapiens,eukaryote,0,0,1,Consensus olfactory receptor bmOR6A2 in complex with mini-Golf trimeric protein,0,0.996,5754,3957,0.996,0.54,0,0
+7WUW_2,7wuw,352,2022-02-09,Streptomyces sahachiroi,bacteria,0,0,1,Crystal structure of AziU3/U2 from Streptomyces sahachiroi,0,0.859,112,45,0.446,0.859,0,0
+7WUY_1,7wuy,409,2022-02-09,Aspergillus carbonarius ITEM 5010,eukaryote,0,0,1,The crystal structure of FinI in complex with SAM and fischerin,0,0.646,1923,1465,0.415,0.646,0,0
+13ZI_1,13zi,467,2026-03-06,enterovirus D68,virus,0,0,1,PanDDA analysis group deposition -- Crystal Structure of Enterovirus D68 3Dpol in complex with Z384361454,0,0.662,1005,758,,0.662,0,0
+7UYA_1,7uya,246,2022-05-06,Pseudomonas aeruginosa,bacteria,0,0,1,Inhibitor bound VIM1,0,0.975,1985,1055,0.975,0.71,0,0
+7UYD_1,7uyd,240,2022-05-06,Pseudomonas aeruginosa,bacteria,0,0,1,Inhibitor bound VIM1,0,0.937,2152,1150,0.937,0.701,0,0
+9SPS_2,9sps,126,2025-09-17,synthetic construct,synthetic,1,0,0,p53 cancer mutant E285K in complex with DARPin C10-H82R,1,0.778,5800,5800,0.778,0.539,0,0
+9SPU_2,9spu,239,2025-09-18,Echovirus E18,virus,0,0,1,"Echovirus 18 particle missing one pentamer in situ, symmetrized reconstruction (C5)",0,0.772,19,11,,0.772,0,0
+9GR7_1,9gr7,322,2024-09-10,Psilocybe cubensis,eukaryote,0,0,1,PsiM in complex with sinefungin,0,0.518,573,340,0.518,0.397,0,0
+9GR8_1,9gr8,337,2024-09-11,Saccharomyces cerevisiae,eukaryote,0,0,1,Crystal structure of the N-terminal kinase domain from Saccharomyces cerevisiae Vip1 in complex with ADP.,0,0.826,130,106,0.826,0.404,0,0
+9GR9_1,9gr9,124,2024-09-11,Homo sapiens,eukaryote,0,0,1,Homodimer of BACH1 BTB domain,0,0.652,1945,745,0.652,0.418,0,0
+7U8E_3,7u8e,221,2022-03-08,Homo sapiens,eukaryote,0,0,0,Crystal structure of antibody Ab246 in complex with SARS-CoV-2 receptor binding domain,0,0.779,851,495,0.779,0.424,0,0
+7U8F_1,7u8f,405,2022-03-08,Homo sapiens,eukaryote,0,0,1,Ternary complex structure of Cereblon-DDB1 bound to IKZF2(ZF2) and the molecular glue DKY709,0,0.972,290,193,0.972,0.272,0,0
+8IN9_2,8in9,94,2023-03-09,Streptomyces graminofaciens,bacteria,0,0,1,The structure of the GfsA KSQ-AT didomain in complex with the GfsA ACP domain,0,0.610,863,370,0.61,0.494,0,0
+8INA_1,8ina,474,2023-03-09,Catharanthus roseus,eukaryote,0,0,1,Crystal structure of UGT74AN3-UDP,0,0.547,2995,1394,0.547,0.284,0,0
+8INB_1,8inb,737,2023-03-09,Biggievirus Mos11,virus,0,0,0,Cryo-EM structure of Cas12j-SF05-crRNA-dsDNA complex,0,,125,14,,,1,1
+8IND_1,8ind,465,2023-03-09,Catharanthus roseus,eukaryote,0,0,1,Crystal structure of UGT74AN3-UDP-RES,0,0.547,2975,1386,0.547,0.284,0,0
+9QQB_55,9qqb,84,2025-03-31,Oryctolagus cuniculus,eukaryote,0,0,1,"Quaternary complex of a translating ribosome, NAC, NMT1, and NatA",0,1.000,129,117,1.0,,0,0
+8P5D_57,8p5d,164,2023-05-23,Spraguea lophii 42_110,eukaryote,0,0,1,Spraguea lophii ribosome in the closed conformation by cryo sub tomogram averaging,0,0.932,31,13,0.233,0.932,0,0
+7TLY_2,7tly,214,2022-01-19,Homo sapiens,eukaryote,0,0,0,SARS-CoV-2 S B.1.1.529 Omicron variant (RBD + S309 Local Refinement),0,0.896,854,467,0.877,0.896,0,0
+7TLZ_1,7tlz,107,2022-01-19,Homo sapiens,eukaryote,0,0,0,SARS-CoV-2 S NTD B.1.1.529 Omicron variant + S309 Local Refinement,0,0.842,586,286,0.842,0.437,0,0
+8WHY_21,8why,61,2023-09-23,Mycolicibacterium smegmatis MC2 155,bacteria,0,0,1,Cryo- EM structure of Mycobacterium smegmatis 50S ribosomal subunit (body 1) of 70S ribosome and RafH.,0,0.869,264,93,0.869,0.534,0,0
+9DZQ_3,9dzq,217,2024-10-16,Homo sapiens,eukaryote,0,0,0,CryoEM structure of the human antibodies PIV3HN-05 and PIV3HN-13 in complex with the parainfluenza virus hemagglutinin-neuraminidase protein,0,0.782,916,526,0.782,0.441,0,0
+7R5V_4,7r5v,269,2022-02-11,Homo sapiens,eukaryote,0,0,1,Structure of the human CCAN CENP-A alpha-satellite complex,0,0.807,49,42,0.807,0.365,0,0
+8XQP_5,8xqp,286,2024-01-05,Homo sapiens,eukaryote,0,0,0,Structure of human class T GPCR TAS2R14-Gustducin complex with Aristolochic acid A.,0,0.374,636,406,0.374,0.246,1,0
+8XQR_1,8xqr,264,2024-01-05,Homo sapiens,eukaryote,0,0,1,Structure 2 of human class T GPCR TAS2R14-miniGs/gust complex with Flufenamic acid.,0,0.843,1597,918,0.843,0.366,0,0
+7YLX_3,7ylx,528,2022-07-27,Saccharomyces cerevisiae,eukaryote,0,0,1,yeast TRiC-plp2-actin complex at S4 closed TRiC state,0,0.786,1446,1099,0.786,0.313,0,0
+8Y2P_1,8y2p,140,2024-01-27,Homo sapiens,eukaryote,0,0,1,The cryo-EM structure of a-synuclein fibril in Tris buffer.,0,0.876,6,6,0.876,,0,0
+8Y2S_1,8y2s,400,2024-01-27,Pseudomonas aeruginosa,bacteria,0,0,1,P-hydroxybenzoate hydroxylase complexed with 4-hydroxy-3-methylbenzoic acid,0,0.976,2466,847,0.976,0.387,0,0
+8Y2T_1,8y2t,180,2024-01-27,Coxsackievirus B3,virus,0,0,1,Crystal structure of 3C protease from coxsackievirus B3,0,0.955,15,7,,0.955,0,0
+9C3C_7,9c3c,291,2024-05-31,Oryctolagus cuniculus,eukaryote,0,0,1,Cryo-EM structure of native dystrophin-glycoprotein complex (DGC),0,0.872,55,54,0.872,,0,0
+9C3D_1,9c3d,225,2024-05-31,Dyadobacter fermentans DSM 18053,bacteria,0,0,1,Crystal structure of metallo-beta-lactamase superfamily protein CcrA-like_MBL-B1 from Dyadobacter fermentans,0,0.657,2273,1062,0.605,0.657,0,0
+8Y0U_10,8y0u,176,2024-01-23,Saccharomyces cerevisiae,eukaryote,0,0,1,dormant ribosome with STM1,0,0.915,141,127,0.915,0.361,0,0
+9GQU_1,9gqu,222,2024-09-09,Synechococcus elongatus PCC 7942 = FACHB-805,bacteria,0,0,1,Crystal structure of NtcA from S. elongatus in apo form A2,0,0.770,5790,4398,0.324,0.77,0,0
+9GQV_1,9gqv,419,2024-09-09,Pseudomonas aeruginosa,bacteria,0,0,1,Pseudomonas aeruginosa FabF C164A in complex with N-((1-((2-hydroxy-4-methylpentanamido)methyl)cyclobutyl)methyl)-1H-pyrazole-3-carboxamide,0,0.792,5435,4501,0.792,0.417,0,0
+9GQX_1,9gqx,511,2024-09-10,unidentified influenza virus,virus,0,0,1,influenza neuraminidase mSN1,0,0.901,15,10,0.532,0.901,0,0
+9GQY_1,9gqy,540,2024-09-10,Homo sapiens,eukaryote,0,0,1,Interaction with AK2A links AIFM1 to cellular energy metabolism. The cryo-EM structure of dimeric AIFM1 without any binding partner.,0,0.961,3637,2875,0.961,0.365,0,0
+9E5C_97,9e5c,682,2024-10-28,Trypanosoma brucei brucei TREU927,eukaryote,0,0,1,Cryo-EM structure of 96 nm repeat of microtubule doublet from T. brucei flagellum,0,0.905,92,67,0.905,,0,0
+9E5D_1,9e5d,170,2024-10-28,Homo sapiens,eukaryote,0,0,1,Discovery of an Orally Biovailable KRAS G12D Inhibitor,0,0.963,4180,3296,0.963,0.49,0,0
+8GLV_70,8glv,471,2023-03-23,Chlamydomonas reinhardtii,eukaryote,0,0,1,96-nm repeat unit of doublet microtubules from Chlamydomonas reinhardtii flagella,0,0.646,111,96,0.646,,0,0
+9N0S_2,9n0s,201,2025-01-24,Orthobornavirus,virus,0,0,1,3.47A Bornavirus L-P complex (after incubation with RNA/NTP) (state 2),0,,0,0,,,1,1
+9N0V_1,9n0v,220,2025-01-24,Human immunodeficiency virus 1,virus,0,0,1,"Crystal structure of the HIV capsid hexamer bound to the small molecule long-acting inhibitor, KFA-027",0,0.852,49,11,0.259,0.852,0,0
+9Q1S_15,9q1s,94,2025-08-14,Oryctolagus cuniculus,eukaryote,0,0,1,NediV IRES (P site) in complex with Rabbit 80S ribosome,0,0.970,174,140,0.97,0.412,0,0
+8J0S_5,8j0s,121,2023-04-11,Mycobacterium tuberculosis,bacteria,0,0,1,Cryo-EM structure of Mycobacterium tuberculosis ATP synthase in complex with bedaquiline(BDQ),0,0.860,2467,800,0.86,0.679,0,0
+8B3F_5,8b3f,210,2022-09-16,Sus scrofa domesticus,eukaryote,0,0,1,Pol II-CSB-CSA-DDB1-ELOF1,0,0.952,1718,1263,0.952,0.431,0,0
+8P16_11,8p16,129,2023-05-11,Escherichia coli,bacteria,0,0,1,E167K RF2 on E. coli 70S release complex with UGG (Structure I),0,0.860,460,356,0.86,0.498,0,0
+9WKW_1,9wkw,488,2025-09-01,Homo sapiens|Homo sapiens,eukaryote,0,0,1,Wild-type Menin complexed with DS-1594,0,0.970,37,32,0.97,0.39,0,0
+9WKX_1,9wkx,488,2025-09-01,Homo sapiens|Homo sapiens,eukaryote,0,0,1,[M322I] Menin complexed with DS-1594,0,0.969,37,32,0.969,0.39,0,0
+9WL5_1,9wl5,133,2025-09-02,Homo sapiens,eukaryote,0,0,1,ALECT2 type Ia filament from renal biopsy tissue of an individual with ALECT2 amyloidosis,0,1.000,624,472,1.0,0.537,0,0
+8YH9_5,8yh9,344,2024-02-27,Selenomonas sp.,bacteria,0,0,1,Type I-FHNH Cascade complex,0,,170,8,,,1,1
+8YHA_1,8yha,388,2024-02-27,Candidatus Cloacimonetes bacterium ADurb.Bin088,bacteria,0,0,1,Type I-EHNH Cascade-ssDNA complex,0,0.955,990,674,0.955,0.455,0,0
+9CZF_4,9czf,218,2024-08-05,Mus musculus,eukaryote,0,0,0,Crystal structure of integrin avb6 headpiece in complex with compound MORF-627,0,0.752,429,274,0.752,0.511,0,0
+9CZH_2,9czh,239,2024-08-05,Homo sapiens|Homo sapiens,eukaryote,0,0,1,Ca2+ bound intermediate state of hSlo1 + beta2N-beta4 channel in detergent.,0,0.986,45,43,0.986,0.332,0,0
+9CZI_1,9czi,73,2024-08-05,Homo sapiens,eukaryote,0,0,1,Paired helical tau filaments in dominantly inherited Alzheimer disease with cotton wool plaques,0,,20,0,,,1,1
+8UU9_37,8uu9,114,2023-10-31,Listeria innocua,bacteria,0,0,1,Cryo-EM structure of the ratcheted Listeria innocua 70S ribosome (head-swiveled) in complex with HflXr and pe/E-tRNA (structure II-D),0,0.780,327,248,0.78,0.479,0,0
+9RLC_4,9rlc,69,2025-06-16,Escherichia coli K-12,bacteria,0,0,1,LolCDE complex with Lpp lipoprotein,0,0.492,6,3,0.492,,0,0
+9RLD_1,9rld,399,2025-06-16,Escherichia coli K-12,bacteria,0,0,1,LolCDE complex with Lpp lipoprotein,0,0.944,4527,3585,0.944,0.548,0,0
+8ZOU_25,8zou,67,2024-05-29,Sus scrofa,eukaryote,0,0,1,Respirasome open state 2 in presence of metformin (SC-MetO2),0,1.000,37,30,1.0,,0,0
+9JY4_8,9jy4,212,2024-10-12,Homo sapiens,eukaryote,0,0,0,gamma epsilon/gamma epsilon Fab-TCR tetramer,0,0.928,615,340,0.928,0.904,0,0
+9JYM_1,9jym,491,2024-10-12,Escherichia coli,bacteria,0,0,0,YdiU complexed with NAD and Mn2+,0,0.976,1019,827,0.976,0.343,0,0
+9JYO_1,9jyo,163,2024-10-12,Homo sapiens,eukaryote,0,0,1,Crystal structure of the Pin1 and fragment 2 complex.,0,0.847,3816,748,0.847,0.454,0,0
+9J9I_73,9j9i,137,2024-08-22,Plasmodium falciparum 3D7,eukaryote,0,0,1,High-resolution cryo-EM structure of the Plasmodium falciparum 80S ribosome bound to E-tRNA,0,0.700,69,61,0.7,0.53,0,0
+9V1I_36,9v1i,108,2025-05-19,Entamoeba histolytica HM-1:IMSS,eukaryote,0,0,1,Cryo- EM structure of ribosomal large subunit (LSU) from Entamoeba histolytica at 2.8 angstrom resolution,0,0.630,138,112,0.63,0.377,0,0
+8YB7_2,8yb7,500,2024-02-12,Severe acute respiratory syndrome coronavirus 2,virus,0,0,1,"SARS-CoV-2 DMV nsp3-4 pore complex (consensus-pore, C3 symmetry)",0,,1,1,,,1,1
+8YBB_1,8ybb,233,2024-02-12,Xenopus laevis,eukaryote,0,0,1,Crystal structure of the sigma-1 receptor from Xenopus laevis with side opening,0,0.890,161,142,0.89,0.737,0,0
+8YBC_1,8ybc,67,2024-02-12,Homo sapiens,eukaryote,0,0,1,Crystal structure of coiled coil domain of Golm1 (Golgi membrane protein 1),0,,0,0,,,1,1
+8YBE_1,8ybe,371,2024-02-13,Escherichia coli,bacteria,0,0,1,Cryo-EM structure of Maltose Binding Protein,0,0.999,3780,2535,0.999,0.629,0,0
+7TGH_20,7tgh,116,2022-01-07,Tetrahymena thermophila,eukaryote,0,0,1,Cryo-EM structure of respiratory super-complex CI+III2 from Tetrahymena thermophila,0,0.585,29,22,0.585,0.568,0,0
+9SRC_41,9src,130,2025-09-24,Pyrococcus abyssi GE5,archaea,0,0,1,Cryo-EM structure of P. abyssi 70S ribosome in complex with hibernation factor HibA in PTC conformation,0,0.789,397,379,0.789,0.543,0,0
+7GU8_1,7gu8,321,2024-01-05,Homo sapiens,eukaryote,0,0,1,"PanDDA analysis group deposition of ground-state model of PTP1B, using pre-clustering, cluster16",0,0.905,1895,1489,0.905,0.374,0,0
+7WIR_1,7wir,620,2022-01-04,Arthrobacter globiformis,bacteria,0,0,1,Holo form of N381A mutant of copper amine oxidase from Arthrobacter globiformis,0,0.700,757,688,0.7,0.357,0,0
+7WIU_2,7wiu,579,2022-01-05,Mycobacterium tuberculosis H37Rv,bacteria,0,0,1,Cryo-EM structure of Mycobacterium tuberculosis irtAB in inward-facing state,0,0.610,5800,5293,0.39,0.61,0,0
+8ZOW_10,8zow,52,2024-05-29,Sus scrofa,eukaryote,0,0,1,Cryo-EM structure of Metyltetraprole-bound porcine bc1 complex,0,1.000,43,15,1.0,,0,0
+8EVP_61,8evp,127,2022-10-20,Saccharomyces cerevisiae,eukaryote,0,0,1,"Hypopseudouridylated yeast 80S bound with Taura syndrome virus (TSV) internal ribosome entry site (IRES), Structure I",0,0.793,222,204,0.793,0.439,0,0
+7ICC_1,7icc,116,2025-05-27,Severe acute respiratory syndrome coronavirus 2,virus,0,0,1,"PanDDA analysis group deposition -- SARS-CoV-2 Nsp1 crystal B10 (dataset 1) from the KIT library screening campaign, data used for ground state calculation",0,,13,0,,,1,1
+8BEL_7,8bel,57,2022-10-21,Arabidopsis thaliana,eukaryote,0,0,1,Cryo-EM structure of the Arabidopsis thaliana I+III2 supercomplex (CIII membrane domain),0,0.980,16,14,0.98,,0,0
+9GKT_1,9gkt,126,2024-08-26,Lactococcus cremoris subsp. cremoris MG1363,bacteria,0,0,1,Crystal structure of artificial enzyme LmrR_pAF variant RGN,0,0.534,2201,806,0.533,0.534,0,0
+9GKU_1,9gku,380,2024-08-26,Sphingomonas sp. Y57,bacteria,0,0,1,Crystal Structure of Propanil hydrolase (PrpH) from Sphingomonas sp. Y57,0,0.668,2819,2110,0.668,0.388,0,0
+9GKV_1,9gkv,318,2024-08-26,Vibrio cholerae,bacteria,0,0,1,Crystal Structure of Deacetylase (HdaH) from Vibrio cholerae in complex with SAHA,0,0.504,2312,1690,0.504,0.435,0,0
+9GKW_1,9gkw,380,2024-08-26,Rhizorhabdus wittichii DC-6,bacteria,0,0,1,Crystal Structure of Dimethoate hydrolase (DmhA) of Rhizorhabdus wittichii in complex with octanoic acid,0,0.681,2938,2238,0.681,0.412,0,0
+7WTU_7,7wtu,59,2022-02-05,Homo sapiens,eukaryote,0,0,1,Cryo-EM structure of a human pre-40S ribosomal subunit - State RRP12-A1 (without CK1),0,0.914,116,102,0.914,,0,0
+8FLB_53,8flb,163,2022-12-21,Homo sapiens,eukaryote,0,0,1,Human nuclear pre-60S ribosomal subunit (State K2),0,0.936,194,148,0.936,,0,0
+7R1F_3,7r1f,798,2022-02-02,Influenza B virus (B/Memphis/13/2003),virus,0,0,1,Early transcription elongation state of influenza B polymerase backtracked due to double incoproation of nucleotide analogue T1106,0,,5,0,,,1,1
+7R1G_2,7r1g,143,2022-02-02,Escherichia coli,bacteria,0,0,1,"Structure of E.coli Class 2 L-asparaginase EcAIII, mutant RDM1-38 (R207C, D210S, S211V)",0,0.918,569,423,0.918,0.79,0,0
+9ITU_6,9itu,164,2024-07-20,Chloroflexus aurantiacus J-10-fl,bacteria,0,0,1,"Chloroflexus aurantiacus ADP-bound ATP synthase, state 3",0,0.646,187,83,0.353,0.646,0,0
+7QV2_33,7qv2,246,2022-01-19,Bacillus subtilis subsp. subtilis str. 168,bacteria,0,0,1,Bacillus subtilis collided disome (Collided 70S),0,0.789,813,690,0.789,0.443,0,0
+9EVX_2,9evx,510,2024-04-02,Thermosynechococcus vestitus BP-1,bacteria,0,0,1,cryoEM structure of Photosystem II averaged across S2-S3 states at 1.71 Angstrom resolution,0,0.879,90,78,0.879,,0,0
+8T0K_1,8t0k,876,2023-06-01,Homo sapiens,eukaryote,0,0,1,Cryo-EM of the GDP-bound human dynamin (full-length) polymer assembled on the membrane in the super constricted state,0,0.929,860,729,0.929,0.253,0,0
+8T0L_4,8t0l,72,2023-06-01,Escherichia coli,bacteria,0,0,1,E. coli Sw2/Snf2 ATPase RapA bound to both ADP-AlF3 and reconstituted E. coli RNA polymerase post-termination complex on negatively-supercoiled DNA,0,0.915,226,107,0.915,0.496,0,0
+8VFT_35,8vft,97,2023-12-22,Oryctolagus cuniculus,eukaryote,0,0,1,Translating 80S rabbit ribosome stalled by emetine with eEF2,0,0.976,125,120,0.976,,0,0
+8Y4D_1,8y4d,296,2024-01-30,Severe acute respiratory syndrome coronavirus 2,virus,0,0,1,Crystal structure of SARS-Cov-2 main protease in complex with Bofutrelvir,0,0.551,5,4,,0.551,0,0
+8Y4E_1,8y4e,298,2024-01-30,Severe acute respiratory syndrome-related coronavirus,virus,0,0,1,Crystal structure of SARS main protease in complex with Bofutrelvir,0,0.549,9,4,,0.549,0,0
+8Y4F_1,8y4f,298,2024-01-30,Human coronavirus 229E,virus,0,0,1,Crystal structure of HCoV 229E main protease in complex with Bofutrelvir,0,0.744,5,4,,0.744,0,0
+8Y4G_1,8y4g,296,2024-01-30,Severe acute respiratory syndrome coronavirus 2,virus,0,0,1,Crystal structure of SARS-Cov-2 main protease G15S mutant in complex with Bofutrelvir,0,0.546,5,4,,0.546,0,0
+9U8Q_2,9u8q,194,2025-03-26,Streptomyces mobaraensis,bacteria,0,0,1,Crystal structure of thiamine pyrophosphate (TPP)-dependent alpha-imino acid decarboxylase (AzcB and AzcC) from Streptomyces mobaraensis in complex with TPP.,0,0.626,534,301,0.315,0.626,0,0
+9U8R_1,9u8r,168,2025-03-26,Streptomyces mobaraensis,bacteria,0,0,1,"Crystal structure of thiamine pyrophosphate (TPP)-dependent alpha-imino acid decarboxylase (AzcB and AzcC) from Streptomyces mobaraensis in complex with TTPP and 6-amino-4-oxo-4,5-dihydro-1,3,5-triazine-2-carboxylic acid.",0,0.638,654,364,0.367,0.638,0,0
+7ZM7_36,7zm7,95,2022-04-19,Thermochaetoides thermophila DSM 1495,eukaryote,0,0,1,CryoEM structure of mitochondrial complex I from Chaetomium thermophilum (inhibited by DDM),0,0.792,77,62,0.792,0.48,0,0
+8ZH3_16,8zh3,203,2024-05-10,Saccharomyces cerevisiae S288C,eukaryote,0,0,1,80S ribosome with A/P-P/E tRNA and mRNA of WNV,0,0.931,122,119,0.931,0.382,0,0
+9FY3_35,9fy3,102,2024-07-02,Bacillus subtilis subsp. subtilis str. 168,bacteria,0,0,1,Structure of CliM-stalled Bacillus subtilis 70S ribosome with tRNA-Tyr in the A-site,0,0.938,224,119,0.938,0.515,0,0
+9LK4_7,9lk4,267,2025-01-16,Arabidopsis thaliana,eukaryote,0,0,1,Cryo-EM structure of Lhcb4.1-C2S2 PSII-LHCII supercomplex from Arabidopsis thaliana,0,0.932,339,229,0.932,0.265,0,0
+8BTK_77,8btk,145,2022-11-29,Oryctolagus cuniculus,eukaryote,0,0,1,Structure of the TRAP complex with the Sec translocon and a translating ribosome,0,0.999,261,161,0.999,0.368,0,0
+8JZF_20,8jzf,176,2023-07-05,Symbiodinium,eukaryote,0,0,0,PSI-AcpPCI supercomplex from Symbiodinium,0,0.579,354,154,0.579,0.372,0,0
+8RTH_1,8rth,678,2024-01-26,Trypanosoma brucei,eukaryote,0,0,1,Trypanosoma brucei 3-methylcrotonyl-CoA carboxylase,0,0.625,2790,1204,0.625,0.302,0,0
+8RTI_2,8rti,88,2024-01-26,Desulfovibrio desulfuricans,bacteria,0,0,1,Nitratidesulfovibrio vulgaris [FeFe] hydrogenase in the apo form derivatized with krypton,0,1.000,119,67,1.0,,0,0
+8KHF_8,8khf,58,2023-08-21,Homo sapiens,eukaryote,0,0,1,Structure of the human ATP synthase bound to bedaquiline (membrane domain),0,0.991,34,29,0.991,,0,0
+8KHG_1,8khg,275,2023-08-21,Pseudomonas aeruginosa,bacteria,0,0,1,Itaconyl-CoA hydratase PaIch,0,0.800,977,630,0.8,0.497,0,0
+8KHL_1,8khl,275,2023-08-22,Pseudomonas aeruginosa,bacteria,0,0,1,(S)-citramalyl-CoA lyase,0,0.534,2084,1604,0.45,0.534,0,0
+8P09_6,8p09,215,2023-05-09,Oryctolagus cuniculus,eukaryote,0,0,1,48S late-stage initiation complex with non methylated mRNA,0,0.946,468,322,0.946,0.423,0,0
+11NX_1,11nx,343,2026-03-05,Oryctolagus cuniculus,eukaryote,0,0,1,Rabbit muscle Aldolase (D2 symmetry) determined using the TFS Vitrobot Mark IV in the presence of 1x SurfACT,0,0.962,421,391,0.962,0.407,0,0
+11NY_1,11ny,176,2026-03-05,Orthonairovirus tachengense,virus,0,0,1,Crystal Structure of viral OTU domain protease from Tacheng Tick Virus 1,0,1.000,209,20,,1.0,0,0
+8KI3_4,8ki3,81,2023-08-22,Homo sapiens,eukaryote,0,0,1,Structure of the human ATP synthase bound to bedaquiline (composite),0,0.735,46,30,0.735,,0,0
+9HM0_25,9hm0,237,2024-12-06,Saccharomyces cerevisiae W303,eukaryote,0,0,1,Translational activator Aep3 in complex with mRNA and the yeast mitochondrial ribosome,0,0.388,145,41,0.388,,1,0
+8ZGR_15,8zgr,136,2024-05-09,Saccharomyces cerevisiae S288C,eukaryote,0,0,1,80S ribosome with A/A tRNA and mRNA of WNV,0,0.605,174,151,0.605,0.45,0,0
+8R7N_13,8r7n,76,2023-11-26,Homo sapiens,eukaryote,0,0,1,Overall structure of the U11 snRNP,0,0.950,453,130,0.95,0.479,0,0
+7HCW_1,7hcw,169,2024-08-15,Severe acute respiratory syndrome coronavirus 2,virus,0,0,1,PanDDA analysis group deposition -- Crystal structure of SARS-CoV-2 NSP3 macrodomain in complex with AVI-0001444,0,0.362,280,134,0.36,0.362,1,0
+8T3A_18,8t3a,63,2023-06-07,Saccharomyces cerevisiae,eukaryote,0,0,1,"Hypomethylated yeast 80S bound with Taura syndrome virus (TSV) internal ribosome entry site (IRES), eEF2, GDP, sordarin, and hibernating factor Los2",0,0.933,129,94,0.933,,0,0
+8TW4_4,8tw4,171,2023-08-20,Homo sapiens,eukaryote,0,0,1,TCR in nanodisc ND-I,0,0.972,27,17,0.972,,0,0
+8TW6_1,8tw6,412,2023-08-20,Homo sapiens|human respiratory syncytial virus,virus,0,0,1,TCR in nanodisc ND-II,0,0.859,19,10,0.859,,0,0
+10DQ_7,10dq,458,2026-01-14,Saccharomyces cerevisiae,eukaryote,0,0,1,Cbf1-CCAN-CEN complex,0,0.432,26,19,0.432,0.311,0,0
+9BPB_20,9bpb,129,2024-05-07,Saccharomyces cerevisiae W303,eukaryote,0,0,1,Tethered respiratory III2IV2 supercomplex from Saccharomyces cerevisiae,0,0.836,109,89,0.836,,0,0
+8XZ3_21,8xz3,114,2024-01-20,Mycolicibacterium smegmatis MC2 155,bacteria,0,0,1,Mycobacterium smegmatis 50S ribosomal subunit with Erythromycin,0,0.888,757,630,0.888,0.493,0,0
+9MBQ_21,9mbq,247,2025-03-17,Homo sapiens,eukaryote,0,0,1,Substrate-engaged human 26S proteasome bound to midnolin with RPT5 at top of spiral staircase,0,0.930,830,716,0.93,0.427,0,0
+8CLH_4,8clh,381,2023-02-16,Gallus gallus,eukaryote,0,0,1,"Drug cocktail (Colchicine, Epothilone A, Peloruside, Ansamitocin P3, Vinblastine) bound to tubulin (T2R-TTL) complex",0,0.911,1762,1128,0.911,0.377,0,0
+7XFH_4,7xfh,126,2022-04-01,Xenopus laevis,eukaryote,0,0,1,"Structure of nucleosome-AAG complex (A-30I, post-catalytic state)",0,0.904,480,362,0.904,0.497,0,0
+8X30_6,8x30,136,2023-11-10,Saccharomyces cerevisiae,eukaryote,0,0,1,Structure of piccolo NuA4 and H2A.Z nucleosome 2:1 complex,0,0.864,598,485,0.864,0.464,0,0
+9OSI_2,9osi,942,2025-05-24,Rattus norvegicus,eukaryote,0,0,1,The intact LBD state of GluK2/K5 with alpha-amino-3-hydroxy-5-methyl-4-isoxazolepropionic acid (AMPA),0,0.964,2911,2214,0.964,0.317,0,0
+9OSK_1,9osk,330,2025-05-24,Neisseria gonorrhoeae,bacteria,0,0,1,Crystal structure of the transpeptidase domain of a Y422A mutant of PBP2 from Neisseria gonorrhoeae strain H041,0,0.813,5063,3880,0.788,0.813,0,0
+9OSR_1,9osr,388,2025-05-25,Influenza A virus,virus,0,0,1,Structure of Fab HB420 in complex with influenza H3N2 A/Moscow/10/1999 neuraminidase,0,0.959,13,8,0.529,0.959,0,0
+9RLF_4,9rlf,162,2025-06-16,Escherichia coli K-12,bacteria,0,0,1,LolCDE complex with Pal lipoprotein,0,0.705,5800,5556,0.705,0.624,0,0
+8CIV_23,8civ,254,2023-02-10,Saccharomyces cerevisiae,eukaryote,0,0,1,Translocation intermediate 5 (TI-5) of 80S S. cerevisiae ribosome with ligands and eEF2 in the presence of sordarin,0,0.949,356,271,0.949,0.387,0,0
+9D0J_45,9d0j,61,2024-08-07,Thermus thermophilus HB8,bacteria,0,0,1,"Crystal structure of the wild-type Thermus thermophilus 70S ribosome in complex with BT-33, mRNA, deacylated A-site tRNAphe, aminoacylated P-site fMet-tRNAmet, and deacylated E-site tRNAphe at 2.50A resolution",0,0.958,401,98,0.958,0.623,0,0
+9HEI_19,9hei,61,2024-11-14,Chlamydomonas reinhardtii,eukaryote,0,0,1,Universal Photosystem II Intermediate with Light-Dependent Water-Ferrocyanide Oxydo-reductase activity from Chlamydomonas reinhardtii,0,0.696,43,32,0.696,,0,0
+9UKT_5,9ukt,444,2025-04-18,Thermus thermophilus HB8,bacteria,0,0,1,"CryoEM structure of the T.thermophilus transcription initiation complex bound to Gp4A-C-U and CTP, -1 dC in the template DNA strand",0,0.642,3236,1587,0.642,0.328,0,0
+9UKU_1,9uku,99,2025-04-18,Thermus thermophilus HB8,bacteria,0,0,1,"CryoEM structure of the T.thermophilus transcription initiation complex bound to Gp4A-C, -1 dC in the template DNA strand",0,,22,0,,,1,1
+9NLQ_9,9nlq,271,2025-03-03,Escherichia coli,bacteria,0,0,1,E. coli initiation complex with EQ2-YbiT in Hydrolytic 1/PtIM(a) conformation,0,0.965,498,439,0.965,0.471,0,0
+9NLR_1,9nlr,373,2025-03-03,Homo sapiens,eukaryote,0,0,1,Crystal structure of human glutamine synthetase in complex with ADP and phosphate,0,1.000,646,344,1.0,0.347,0,0
+9NLS_1,9nls,220,2025-03-03,Escherichia coli,bacteria,0,0,1,E. coli initiation complex with EQ2-YbiT in Intermediate/PtIM(b) conformation,0,0.870,535,463,0.87,0.452,0,0
+8HW9_1,8hw9,139,2022-12-29,Homo sapiens,eukaryote,0,0,1,Solution structure of ubiquitin-like domain (UBL) of human ZFAND1,0,0.988,102,81,0.988,0.667,0,0
+8HWA_1,8hwa,785,2022-12-29,Monkeypox virus,virus,0,0,1,D5 ATP-ADP-Apo-ssDNA IS1,0,0.193,774,394,,0.193,1,1
+7ZHE_1,7zhe,158,2022-04-06,Ruminiclostridium cellulolyticum,bacteria,0,0,1,Crystal structure of CtaZ from Ruminiclostridium cellulolyticum,0,0.668,1380,475,0.336,0.668,0,0
+7ZHF_1,7zhf,274,2022-04-06,Sulfolobus acidocaldarius,archaea,0,0,1,GPN-loop GTPase from Sulfolobus acidocaldarius closed state (GppNHp),0,0.605,408,310,0.509,0.605,0,0
+7ZHG_11,7zhg,127,2022-04-06,Pyrococcus abyssi GE5,archaea,0,0,1,High-resolution cryo-EM structure of Pyrococcus abyssi 30S ribosomal subunit bound to mRNA and initiator tRNA anticodon stem-loop,0,0.905,132,88,0.905,0.479,0,0
+8BCW_8,8bcw,213,2022-10-17,Avena sativa,eukaryote,0,0,0,Photosystem I assembly intermediate of Avena sativa,0,0.869,32,22,0.869,0.397,0,0
+8BCX_1,8bcx,492,2022-10-17,Geobacter metallireducens GS-15,bacteria,0,0,1,Crystal structure of NrfA-1 from Geobacter metallireducens,0,0.623,323,203,0.623,0.514,0,0
+8BCY_2,8bcy,169,2022-10-17,Bos taurus,eukaryote,0,0,1,HUMAN PI3KDELTA IN COMPLEX WITH COMPOUND 13,0,0.910,72,67,0.91,0.887,0,0
+8BCZ_1,8bcz,202,2022-10-17,Severe acute respiratory syndrome coronavirus 2,virus,0,0,1,"SARS-CoV-2 Delta-RBD complexed with Fabs BA.2-36, BA.2-23, EY6A and COVOX-45",0,1.000,23,15,,1.0,0,0
+8CWH_1,8cwh,129,2022-05-19,Gallus gallus,eukaryote,0,0,1,"200us Temperature-Jump (Dark2) XFEL structure of Lysozyme Bound to N,N'-diacetylchitobiose",0,0.711,523,163,0.711,0.443,0,0
+8CWI_2,8cwi,228,2022-05-19,Homo sapiens,eukaryote,0,0,0,Fab arm of antibody 10G4 bound to CoV-2 receptor binding domain (RBD),0,0.853,515,328,0.834,0.853,0,0
+9V2O_5,9v2o,110,2025-05-20,Homo sapiens,eukaryote,0,0,0,Cryo-EM structure of RSV pre-F monomer in complex with CNR2056/CNR2047,0,0.819,420,268,0.819,0.415,0,0
+9V2P_1,9v2p,727,2025-05-20,Homo sapiens,eukaryote,0,0,1,Complex structure of GX2012 spike RBD bound to human DPP4,0,1.000,4244,2908,1.0,0.368,0,0
+8B0H_7,8b0h,934,2022-09-07,Homo sapiens,eukaryote,0,0,1,"2C9, C5b9-CD59 cryoEM structure",0,1.000,1702,509,1.0,0.277,0,0
+8B0I_1,8b0i,284,2022-09-07,Escherichia coli K-12,bacteria,0,0,1,CryoEM structure of bacterial RapZ.GlmZ complex central to the control of cell envelope biogenesis,0,0.940,804,513,0.94,0.44,0,0
+8VTY_47,8vty,88,2024-01-27,Thermus thermophilus HB8,bacteria,0,0,1,Crystal structure of the wild-type Thermus thermophilus 70S ribosome in complex with ciprofloxacin and protein Y at 2.60A resolution,0,0.621,439,322,0.621,0.516,0,0
+8POE_1,8poe,960,2023-07-04,Homo sapiens,eukaryote,0,0,1,"Structure of tissue-specific lipid scramblase ATG9B homotrimer, refined with C3 symmetry applied",0,0.820,256,234,0.82,0.352,0,0
+8POF_1,8pof,321,2023-07-04,Reticulitermes speratus gut symbiotic protist,eukaryote,0,0,1,The crystal structure of RsSymEG1 reveals a unique form of smaller GH7 endoglucanases alongside GH7 cellobiohydrolases in protist symbionts of termites,0,0.463,269,237,0.389,0.463,0,0
+8POG_1,8pog,161,2023-07-04,Enterobacter sp. 638,bacteria,0,0,1,Cryo-EM structure of Enterobacter sp. 638 BcsD,0,0.699,224,182,0.699,0.52,0,0
+8POH_1,8poh,729,2023-07-04,Influenza A virus (A/Zhejiang/DTID-ZJU01/2013(H7N9)),virus,0,0,1,Influenza A/H7N9 polymerase symmetric dimer bound to the promoter (PA K289A/C489R),0,,1,0,,,1,1
+8OG2_1,8og2,640,2023-03-17,Mus musculus|Mus musculus,eukaryote,0,0,1,Crystal structure of CREBBP histone acetyltransferase domain in complex with Coenzyme A,0,0.591,1244,582,0.591,0.295,0,0
+8OG3_1,8og3,216,2023-03-17,Escherichia coli,bacteria,0,0,1,E. coli NfsB triple mutant T41L/N71S/F124T bound to citrate,0,0.944,672,337,0.944,0.533,0,0
+8OG4_1,8og4,891,2023-03-18,Homo sapiens,eukaryote,0,0,1,Exostosin-like 3 UDP complex,0,0.883,953,473,0.883,0.692,0,0
+8OG5_1,8og5,367,2023-03-19,Homo sapiens,eukaryote,0,0,1,Crystal structure of human DCAF1 WD40 repeats (Q1250L) in complex with compound 1,0,0.992,126,67,0.992,0.633,0,0
+7TRN_1,7trn,135,2022-01-29,Homo sapiens,eukaryote,0,0,1,Crystal structure of R14A-R20A human Galectin-7 mutant,0,0.796,681,582,0.796,0.792,0,0
+7TRP_1,7trp,349,2022-01-30,Homo sapiens|Homo sapiens,eukaryote,0,0,1,Human M4 muscarinic acetylcholine receptor complex with Gi1 and the agonist iperoxo and positive allosteric modulator LY2033298,0,0.675,3897,2790,0.609,0.675,0,0
+8BHJ_19,8bhj,94,2022-10-31,Escherichia coli K-12,bacteria,0,0,1,Elongating E. coli 70S ribosome containing deacylated tRNA(iMet) in the P-site and Am6AA mRNA codon with cognate dipeptidyl-tRNA(Lys) in the A-site,0,0.934,3243,1683,0.934,0.492,0,0
+9OLC_1,9olc,278,2025-05-12,Homo sapiens,eukaryote,0,0,1,Crystal structure of PPARg ligand-binding domain in complex with NCoR1 peptide and FTX-6746,0,0.935,265,191,0.935,0.935,0,0
+9OLD_1,9old,485,2025-05-12,Salmonella enterica subsp. enterica serovar Typhimurium,bacteria,0,0,1,Crystal structure of alpha-NPG-bound D59C MelBSt,0,0.433,5014,4032,0.327,0.433,0,0
+9OLE_1,9ole,377,2025-05-12,Homo sapiens,eukaryote,0,0,1,Crystal Structure of PI5P4KIIAlpha complex with 066ATZ,0,0.968,757,619,0.968,0.346,0,0
+9OLF_1,9olf,188,2025-05-12,Homo sapiens,eukaryote,0,0,1,Membrane-associated human mitoribosome in complex with TACO1,0,0.934,60,31,0.934,,0,0
+9S7B_50,9s7b,102,2025-08-04,Homo sapiens,eukaryote,0,0,1,Structure of human mitochondrial COX1-translating ribosome nascent chain complex with tRNAs in intermediate state (AP*),0,0.953,21,15,0.953,,0,0
+8DCX_2,8dcx,723,2022-06-17,Homo sapiens,eukaryote,0,0,1,PI 3-kinase alpha with nanobody 3-159,0,0.950,881,358,0.95,0.21,0,0
+8DCY_1,8dcy,233,2022-06-17,Mus musculus,eukaryote,0,0,0,CCHFV GP38 Hoti/Kosovo bound with 13G8 Fab,0,0.754,434,283,0.754,0.681,0,0
+8IPA_72,8ipa,69,2023-03-14,Triticum aestivum,eukaryote,0,0,1,Wheat 80S ribosome stalled on AUG-Stop boron dependently with cycloheximide,0,0.915,102,75,0.915,0.468,0,0
+9A4C_2,9a4c,348,2024-01-22,Bacillus subtilis (strain 168),unclassified,0,0,1,Integrative model of ACP-HEPS2 by crosslinking MS and deep learning,0,0.581,5648,4636,0.437,0.581,0,0
+9A4D_1,9a4d,395,2024-01-22,Bacillus subtilis (strain 168),unclassified,0,0,1,Integrative model of ACKA-BCP by crosslinking MS and deep learning,0,0.832,1459,1169,0.832,0.415,0,0
+8POV_2,8pov,328,2023-07-05,Cupriavidus necator H16,bacteria,0,0,1,Crystal Structure of the C19G/C120G variant of the membrane-bound [NiFe]-Hydrogenase from Cupriavidus necator in the H2-reduced state at 1.92 A Resolution.,0,0.941,340,275,0.941,0.508,0,0
+8POW_2,8pow,328,2023-07-05,Cupriavidus necator H16,bacteria,0,0,1,Crystal Structure of the C19G variant of the membrane-bound [NiFe]-Hydrogenase from Cupriavidus necator in the air-oxidized state at 1.61 A Resolution.,0,0.949,305,252,0.949,0.509,0,0
+9Z3Q_3,9z3q,107,2025-11-07,Mus musculus,eukaryote,0,0,0,Cryo-EM structure of KSHV glycoprotein gHgL in complex with MLKH3 and MLKH10 FABs,0,0.812,650,292,0.812,0.445,0,0
+8YDI_36,8ydi,144,2024-02-20,Escherichia coli K-12,bacteria,0,0,1,"E.coli transcription translation coupling complex in TTC-P state 1 (subclass 2) containing mRNA with 39-mer spacer, NusG, NusA, fMet-tRNA(iMet), Phe-tRNA(Phe), and viomycin",0,0.892,304,233,0.892,0.54,0,0
+9BC2_1,9bc2,687,2024-04-07,Homo sapiens,eukaryote,0,0,1,Transglutaminase 2 - Open State,0,0.908,419,262,0.908,0.393,0,0
+8UEV_32,8uev,154,2023-10-02,Sus scrofa,eukaryote,0,0,1,"In-situ complex I, Deactive class04",0,0.911,35,30,0.911,,0,0
+9SRA_59,9sra,91,2025-09-24,Pyrococcus abyssi GE5,archaea,0,0,1,Cryo-EM structure of P. abyssi HibA:ribosome with an SD:antiSD duplex,0,0.947,154,79,0.947,0.517,0,0
+9HLZ_22,9hlz,115,2024-12-06,Saccharomyces cerevisiae W303,eukaryote,0,0,1,"Translational activators Aep1, Aep2 and Atp25 in complex with mRNA and the yeast mitochondrial ribosome",0,0.761,473,215,0.761,0.628,0,0
+8IWQ_1,8iwq,315,2023-03-30,Pseudomonas aeruginosa,bacteria,0,0,1,Pseudomoans Aerugiona Native Ketopantoate Reductase with glycerol,0,0.960,2961,2236,0.661,0.96,0,0
+8IWR_1,8iwr,919,2023-03-31,Homo sapiens,eukaryote,0,0,1,hSPCA1 in the CaE1-ATP state,0,0.798,5401,4034,0.798,0.276,0,0
+8R3M_6,8r3m,114,2023-11-09,Mycolicibacterium smegmatis MC2 155,bacteria,0,0,1,"Mycobacterium smegnatis RNA polymerase transcription initiation complex with SigmaA, RbpA, HelD N-terminal, CO and PCh loop domain, and an upstream-fork promoter fragment; State III conformation",0,0.793,67,32,0.793,0.53,0,0
+8R3N_1,8r3n,179,2023-11-10,Pseudomonas aeruginosa,bacteria,0,0,1,"Crystal structure of PfpI, Pseudomonas aeruginosa PAO1",0,0.575,1861,1274,0.575,0.485,0,0
+8IEC_3,8iec,261,2023-02-15,Mus musculus,eukaryote,0,0,0,Cryo-EM structure of miniGo-scFv16 of GPR156-miniGo-scFv16 complex (local refine),0,0.387,644,413,0.387,0.25,1,0
+8IED_1,8ied,598,2023-02-15,Homo sapiens,eukaryote,0,0,1,Cryo-EM structure of GPR156-miniGo-scFv16 complex,0,0.269,344,213,0.247,0.269,1,1
+8RGT_9,8rgt,175,2023-12-14,Mus musculus,eukaryote,0,0,1,Open Complex I from murine brain,0,0.923,154,126,0.923,0.41,0,0
+8RGU_1,8rgu,336,2023-12-14,Homo sapiens,eukaryote,0,0,1,Arginase 2 in complex with inhibitor,0,0.740,3821,2968,0.74,0.472,0,0
+8RGW_1,8rgw,373,2023-12-14,Streptomyces lividans,bacteria,0,0,1,"Serial synchrotron in plate room temperature structure of Dye Type Peroxidase Aa, 12 drops merged",0,0.604,367,292,0.604,0.521,0,0
+9P7F_63,9p7f,120,2025-06-20,Homo sapiens,eukaryote,0,0,1,In situ HHT and CHX treated A-P state 80S ribosome,0,0.939,628,407,0.939,0.549,0,0
+7ZW0_28,7zw0,135,2022-05-17,Saccharomyces cerevisiae W303,eukaryote,0,0,1,FAP-80S Complex - Rotated state,0,0.871,162,124,0.871,0.354,0,0
+8Y5R_10,8y5r,167,2024-01-31,Escherichia coli K-12,bacteria,0,0,1,"E.coli Transcription translation coupling complex in TTC-B state 5 (subclass 1) containing mRNA with 27-mer spacer, NusG, NusA, fMet-tRNA(iMet), Phe-tRNA(Phe), and fusidic acid",0,0.922,440,387,0.922,0.434,0,0
+8JT3_1,8jt3,523,2023-06-21,Actinoalloteichus sp. 2216-6,bacteria,0,0,1,Crystal structure of aminotransferase CrmG from Actinoalloteichus sp. WH1-2216-6 in complex with amino donor L-Arg,0,0.572,1294,770,0.572,0.365,0,0
+8JT4_1,8jt4,261,2023-06-21,Flavobacterium sp. UMI-01,bacteria,0,0,1,Substrate -binding mode guided protein design of alginate lyase FlAlyA for altered end-product distribution,0,0.985,382,264,0.985,0.565,0,0
+8JT5_1,8jt5,457,2023-06-21,Homo sapiens,eukaryote,0,0,1,VMAT2 complex with histamine,0,0.854,2577,1123,0.854,0.62,0,0
+8JT6_1,8jt6,354,2023-06-21,Homo sapiens,eukaryote,0,0,1,5-HT1A-Gi in complex with compound (R)-IHCH-7179,0,0.938,958,839,0.938,0.39,0,0
+9C82_4,9c82,450,2024-06-11,Homo sapiens,eukaryote,0,0,1,Structure of human ULK1C:PI3KC3-C1 supercomplex,0,0.951,173,154,0.951,0.253,0,0
+8RF4_1,8rf4,118,2023-12-12,Severe acute respiratory syndrome coronavirus 2,virus,0,0,1,Crystal structure of N-terminal SARS-CoV-2 nsp1 in complex with fragment hit 9D4 refined against the anomalous diffraction data,0,,15,0,,,1,1
+8RF7_1,8rf7,360,2023-12-12,Zea mays,eukaryote,0,0,1,Crystal structure of maize adenosine kinase 2 (ADK2) apoform,0,0.912,4541,1868,0.912,0.429,0,0
+8HL1_12,8hl1,140,2022-11-28,Sulfolobus acidocaldarius DSM 639,archaea,0,0,1,Cryo-EM Structures and Translocation Mechanism of Crenarchaeota Ribosome,0,0.568,438,357,0.492,0.568,0,0
+8WI7_3,8wi7,215,2023-09-24,Mycolicibacterium smegmatis MC2 155,bacteria,0,0,1,"Cryo- EM structure of Mycobacterium smegmatis 70S ribosome, bS1 and RafH.",0,0.762,906,750,0.762,0.465,0,0
+9TQA_19,9tqa,101,2025-12-19,Escherichia coli,bacteria,0,0,1,"E. coli 70S ribosome, trapped conformational ground state of SSU-h44 apical loop, with A- and P-site tRNA",0,0.928,504,253,0.928,0.492,0,0
+7ZDH_5,7zdh,606,2022-03-29,Ovis aries,eukaryote,0,0,1,"Complex I from Ovis aries at pH7.4, Closed state",0,0.933,4426,3348,0.933,0.495,0,0
+8FL6_8,8fl6,203,2022-12-21,Homo sapiens,eukaryote,0,0,1,Human nuclear pre-60S ribosomal subunit (State J1),0,0.938,406,375,0.938,0.439,0,0
+7QYA_5,7qya,70,2022-01-27,Homo sapiens,eukaryote,0,0,1,Proteasome-ZFAND5 Complex Z-B state,0,0.547,5,5,0.547,0.439,0,0
+9G1Z_21,9g1z,118,2024-07-10,Candida albicans SC5314,eukaryote,0,0,1,Structure of Candida albicans 80S ribosome in complex with mefloquine (non-rotated state),0,0.843,65,59,0.843,0.489,0,0
+8EOO_4,8eoo,227,2022-10-03,Homo sapiens,eukaryote,0,0,0,Crystal structure of SARS-CoV-2 receptor binding domain in complex with neutralizing human antibodies WRAIR-2063 and WRAIR-2151,0,0.827,504,331,0.827,0.657,0,0
+8G4I_15,8g4i,145,2023-02-09,Giardia duodenalis assemblage A,eukaryote,0,0,1,40S ribosomal subunit of the 80S Giardia intestinalis assemblage A ribosome with Emetine bound in V1 conformation,0,0.669,122,108,0.669,0.399,0,0
+8ABK_10,8abk,82,2022-07-04,Yarrowia lipolytica,eukaryote,0,0,1,"Complex III2 from Yarrowia lipolytica, decylubiquinol bound, b-position",0,0.693,88,56,0.693,,0,0
+8QIE_50,8qie,173,2023-09-12,Leishmania major strain Friedlin,eukaryote,0,0,0,"CRYO-EM STRUCTURE OF LEISHMANIA MAJOR 80S RIBOSOME : LM32Cs1C1 mutant snoRNA overexpression, class 4",0,0.782,140,91,0.782,0.39,0,0
+9LWU_2,9lwu,794,2025-02-17,Homo sapiens,eukaryote,0,0,1,Cryo-EM structure of HRD1-SEL1LX3-XTP3B complex in C2 symmetry,0,0.949,5798,4116,0.949,0.381,0,0
+8FKV_55,8fkv,812,2022-12-21,Homo sapiens,eukaryote,0,0,1,Human nucleolar pre-60S ribosomal subunit (State D1),0,0.557,5532,4795,0.557,,0,0
+9RHU_39,9rhu,263,2025-06-10,Oryctolagus cuniculus,eukaryote,0,0,1,"Rabbit 80S ribosome in complex with eRF1-AAQ, stalled at the Stop codon in mutated F2A sequence",0,0.975,730,712,0.975,0.402,0,0
+7XSZ_18,7xsz,911,2022-05-15,Komagataella phaffii,eukaryote,0,0,1,RNA polymerase II elongation complex transcribing a nucleosome (EC115),0,0.363,170,128,0.363,,1,0
+8WPR_1,8wpr,357,2023-10-10,Anabaena sp. 90,bacteria,0,0,1,Anabaena McyI R166A with prebound NAD and malate,0,0.498,5742,4771,0.447,0.498,0,0
+8WPS_1,8wps,357,2023-10-10,Anabaena sp. 90,bacteria,0,0,1,Anabaena McyI R166M with prebound NAD and malate,0,0.498,5743,4774,0.448,0.498,0,0
+8WPT_1,8wpt,171,2023-10-10,Ureaplasma diversum,bacteria,0,0,1,Truncated mutant (1-171) of ferritin from Ureaplasma diversum,0,0.574,50,12,0.495,0.574,0,0
+8WPU_2,8wpu,246,2023-10-10,Homo sapiens,eukaryote,0,0,1,Human calcium-sensing receptor(CaSR) bound to cinacalcet in complex with Gq protein,0,0.873,1601,940,0.873,0.366,0,0
+9GAE_21,9gae,195,2024-07-26,Paracoccus denitrificans PD1222,bacteria,0,0,1,Respiratory supercomplex CI1-CIII2-CIV2 from alphaproteobacterium,0,0.783,897,233,0.783,0.373,0,0
+9TAX_18,9tax,775,2025-11-18,Homo sapiens,eukaryote,0,0,1,Structure of the human inner kinetochore CCAN bound to a mono-CENP-A nucleosome,0,,552,358,,,1,1
+8TPU_62,8tpu,294,2023-08-05,Plasmodium falciparum 3D7,eukaryote,0,0,1,Subtomogram averaged consensus structure of the malarial 80S ribosome in Plasmodium falciparum-infected human erythrocytes,0,0.597,169,156,0.597,0.302,0,0
+9G6K_46,9g6k,122,2024-07-18,Toxoplasma gondii,eukaryote,0,0,1,LSU structure derived from the LSU sample of the mitoribosome from T. gondii.,0,0.958,8,4,0.958,,0,0
+8Z44_1,8z44,509,2024-04-16,Chlamydomonas reinhardtii,eukaryote,0,0,1,SFX structure of CraCRY 300 ns after photoexcitation of the oxidized protein,0,0.860,2195,1589,0.86,0.335,0,0
+8Z47_1,8z47,551,2024-04-16,Bacteroides xylanisolvens XB1A,bacteria,0,0,1,Beta-galactosidase from Bacteroides xylanisolvens (ligand-free),0,0.505,643,447,0.505,0.427,0,0
+8U7Z_3,8u7z,234,2023-09-15,Homo sapiens,eukaryote,0,0,1,KCTD5/Cullin3/Gbeta1gamma2 Complex: Local Refinment of KCTD5(CTD)/Gbeta1gamma2,0,0.937,918,355,0.937,0.353,0,0
+8U80_2,8u80,381,2023-09-15,Homo sapiens,eukaryote,0,0,1,KCTD5/Cullin3/Gbeta1gamma2 Complex: Local Refinment of KCTD5(BTB)/Cullin3(NTD),0,0.948,850,742,0.948,0.421,0,0
+8U81_1,8u81,233,2023-09-15,Homo sapiens,eukaryote,0,0,1,KCTD5/Cullin3/Gbeta1gamma2 Complex: State A From Composite RELION Multi-body Refinement Map,0,0.935,917,355,0.935,0.353,0,0
+8WLQ_6,8wlq,104,2023-09-30,Salmonella enterica subsp. enterica serovar Typhimurium str. LT2,bacteria,0,0,1,Cryo-EM structure of the whole rod-export apparatus with hook within the flagellar motor-hook complex in the CCW state.,0,0.773,319,119,0.773,0.74,0,0
+8VL1_48,8vl1,273,2024-01-11,Escherichia coli,bacteria,0,0,1,"Escherichia coli transcription-translation loosely coupled complex (TTC-LC) containing mRNA with a 36 nt long spacer, ops signal, RfaH, NusA, and fMet-tRNAs in E-site and P-site",0,0.964,499,437,0.964,0.471,0,0
+8RJD_36,8rjd,148,2023-12-20,Oryctolagus cuniculus,eukaryote,0,0,1,"Structure of the rabbit 80S ribosome stalled on a 2-TMD rhodopsin intermediate in complex with Sec61-TRAP, open conformation 2",0,0.974,102,77,0.974,0.357,0,0
+9CH3_2,9ch3,78,2024-07-01,Shewanella oneidensis,bacteria,0,0,1,Structure of the alpha-N-methyltransferase (SonM) and RiPP precursor (SonA-L63D) heteromeric complex (bound to SAH),0,0.652,66,12,0.652,0.485,0,0
+9CH4_1,9ch4,268,2024-07-01,Ginglymostoma cirratum,eukaryote,0,0,0,"Crystal structure of shark nonclassical MHC CLASS I, UGA",0,0.412,736,488,0.412,0.332,0,0
+8QXV_2,8qxv,97,2023-10-25,Escherichia coli BL21(DE3),bacteria,0,0,1,In situ structure average of GroEL14-GroES7 complexes with narrow GroEL7 trans ring conformation in Escherichia coli cytosol obtained by cryo electron tomography,0,0.910,592,370,0.91,0.507,0,0
+8QXW_1,8qxw,510,2023-10-25,Mus musculus,eukaryote,0,0,1,HCMV DNA polymerase processivity factor UL44 unphosphorylated NLS 410-433 bound to mouse importin alpha 2,0,0.873,2370,1863,0.873,0.45,0,0
+8QXY_1,8qxy,185,2023-10-25,Niallia circulans subsp. circulans,bacteria,0,0,1,Xylanase from Bacillus circulans mutant E78Q bound to xylotriose,0,0.866,225,214,0.866,0.451,0,0
+7XQK_2,7xqk,305,2022-05-07,Homo sapiens,eukaryote,0,0,1,The Crystal Structure of CDK3 and CyclinE1 Complex from Biortus.,0,0.812,1642,1018,0.812,0.37,0,0
+7XQL_1,7xql,471,2022-05-07,Legionella pneumophila subsp. pneumophila str. Philadelphia 1,bacteria,0,0,1,complex structure of LegA15 with GNP,0,0.932,28,21,0.932,0.449,0,0
+7XQM_1,7xqm,253,2022-05-08,Thermus thermophilus HB27,bacteria,0,0,1,InDel-mutant short chain Dehydrogenase bound to SAH,0,0.440,5800,5687,0.44,0.415,0,0
+7XQN_1,7xqn,310,2022-05-08,Escherichia coli,bacteria,0,0,1,InDel-mutant malate dehydrogenase from E. coli,0,0.923,590,414,0.923,0.355,0,0
+9TI8_16,9ti8,207,2025-12-05,Staphylococcus aureus subsp. aureus NCTC 8325,bacteria,0,0,1,"Staphylococcus aureus 50S ribosome in complex with RRF, EF-G and fusidic acid (50S-RRF-EF-G-FA)",0,0.958,1174,1039,0.958,0.725,0,0
+7ZT5_4,7zt5,262,2022-05-09,Homo sapiens,eukaryote,0,0,0,Structure of E8 TCR in complex in human MR1 bound to 3FSA,0,0.793,729,342,0.793,0.492,0,0
+7ZT6_2,7zt6,732,2022-05-09,Homo sapiens,eukaryote,0,0,1,Cryo-EM structure of Ku 70/80 bound to inositol hexakisphosphate,0,0.823,368,336,0.823,0.342,0,0
+7ZT7_1,7zt7,290,2022-05-09,Homo sapiens,eukaryote,0,0,1,Structure of E8 TCR in complex in human MR1 bound to 5FSA,0,0.898,807,525,0.898,0.414,0,0
+8Z9O_5,8z9o,303,2024-04-23,Homo sapiens,eukaryote,0,0,1,Cryo-EM structure of human GPR4-Gs complex,0,0.508,2956,1714,0.416,0.508,0,0
+8Z9P_1,8z9p,345,2024-04-23,Rattus norvegicus,eukaryote,0,0,1,Cryo-EM structure of human GPR4-Gi complex,0,0.996,5754,3957,0.996,0.536,0,0
+8XWV_5,8xwv,56,2024-01-16,Homo sapiens,eukaryote,0,0,1,Structure of CXCR2 bound to CXCL1 (CXCR2-CXCL1-Go Full map),0,0.988,142,82,0.988,,0,0
+8XWW_1,8xww,349,2024-01-16,Homo sapiens,eukaryote,0,0,1,"Crystal structure of the catalytic domain of human PDE5A complexed with 2-(3-chlorobenzyl)-4-oxo-3,4-dihydroquinazoline-7-carboxylic acid",0,0.938,1595,1267,0.938,0.387,0,0
+8XWX_1,8xwx,72,2024-01-17,Homo sapiens,eukaryote,0,0,1,Crystal structure of FIS1-BAP31 complex from human,0,0.842,41,14,0.842,,0,0
+8VVR_25,8vvr,136,2024-01-31,Oryctolagus cuniculus,eukaryote,0,0,1,Post-decoding/Post-hydrolysis state obtained from Anisomycin-treated mammalian ribosomes,0,0.948,106,98,0.948,0.393,0,0
+9U4M_8,9u4m,953,2025-03-19,Homo sapiens,eukaryote,0,0,1,Focused refinement of 19S in the substrate-engaged human 26S proteasome bound to midnolin with RPT6 at top of spiral staircase,0,0.918,577,384,0.918,0.388,0,0
+8F7B_2,8f7b,813,2022-11-18,Mus musculus,eukaryote,0,0,1,LRRC8A(T48D):C conformation 2 top focus,0,0.605,5093,3563,0.605,0.424,0,0
+8F7C_1,8f7c,487,2022-11-18,Homo sapiens|Escherichia coli,bacteria,0,0,1,Cryo-EM structure of human pannexin 2,0,0.276,121,64,0.276,,1,1
+8F7D_1,8f7d,911,2022-11-18,Mus musculus|Mus musculus|Mus musculus,eukaryote,0,0,1,LRRC8A(T48D):C conformation 2 top focus,0,0.751,5576,4369,0.751,0.375,0,0
+8ZP8_20,8zp8,320,2024-05-29,Sus scrofa,eukaryote,0,0,1,Respirasome open state 1 in presence of metformin(SC-MetO1),0,0.842,644,309,0.842,0.35,0,0
+8AYE_52,8aye,78,2022-09-02,Escherichia coli,bacteria,0,0,1,E. coli 70S ribosome bound to thermorubin and fMet-tRNA,0,0.989,167,95,0.989,0.445,0,0
+8UVS_20,8uvs,110,2023-11-03,Thermus thermophilus HB8,bacteria,0,0,1,"Crystal structure of the wild-type Thermus thermophilus 70S ribosome in complex with spectinomycin derivative 2694, mRNA, deacylated A- and E-site tRNAphe, and deacylated P-site tRNAmet at 2.75A resolution",0,0.588,454,348,0.588,0.477,0,0
+9FYF_1,9fyf,338,2024-07-03,Homo sapiens,eukaryote,0,0,1,Crystal structure of human Casein Kinase II subunit alpha (CK2a1) in complex with TR06772818,0,0.992,5633,3732,0.992,0.411,0,0
+9FYG_1,9fyg,246,2024-07-03,Sabia virus,virus,0,0,1,Structure of the Sabia Virus spike complex H157M mutant in a closed conformation,0,,5,0,,,1,1
+7UWO_1,7uwo,533,2022-05-03,Homo sapiens,eukaryote,0,0,1,"Structure of beta-catenin in complex with FP05874, a Helicon Polypeptide",0,0.941,686,362,0.941,0.5,0,0
+7UWP_1,7uwp,460,2022-05-03,Acanthamoeba castellanii,eukaryote,0,0,1,Detergent-bound CYP51 from Acanthamoeba castellanii,0,0.533,5200,3785,0.527,0.533,0,0
+7UWQ_1,7uwq,492,2022-05-03,Klebsiella pneumoniae,bacteria,0,0,1,Klebsiella pneumoniae adenosine monophosphate nucleosidase,0,0.949,772,162,0.949,0.294,0,0
+7UWR_1,7uwr,886,2022-05-03,Streptomyces venezuelae,bacteria,0,0,1,KSQ+AT from first module of the pikromycin synthase,0,0.605,5271,4339,0.605,0.286,0,0
+8AKE_1,8ake,302,2022-07-29,Homo sapiens,eukaryote,0,0,1,Human Sirt6 in complex with ADP-ribose and fragment nicotinamide,0,0.957,1471,1014,0.957,0.384,0,0
+8AKH_1,8akh,374,2022-07-29,Lactiplantibacillus plantarum,bacteria,0,0,1,Crystal structure of DltE from L. plantarum soaked with LTA,0,0.810,5404,3559,0.391,0.81,0,0
+8FBA_2,8fba,213,2022-11-29,Mus musculus,eukaryote,0,0,0,Crystal structure of Ky315 Fab in complex with circumsporozoite protein DND peptide,0,0.885,737,400,0.862,0.885,0,0
+8FBB_1,8fbb,56,2022-11-29,Magnetospirillum molischianum,bacteria,0,0,1,LH2-LH3 antenna in parallel configuration embedded in a nanodisc,0,0.939,12,11,0.939,,0,0
+9P76_66,9p76,313,2025-06-20,Homo sapiens,eukaryote,0,0,1,In situ human eEF1A-A/T-P state 80S ribosome,0,0.932,5799,4275,0.932,0.441,0,0
+8UTO_3,8uto,445,2023-10-31,Sus scrofa,eukaryote,0,0,1,KIF1A[1-393] AMP-PNP bound two-heads-bound state in complex with a microtubule - class T2L1,0,0.982,1193,1049,0.982,0.412,0,0
+8UTP_1,8utp,438,2023-10-31,Homo sapiens,eukaryote,0,0,1,KIF1A[1-393] - AMP-PNP two-heads-bound state in complex with a microtubule - class T3L1,0,0.816,2582,2196,0.816,0.313,0,0
+8TOE_5,8toe,613,2023-08-03,Escherichia coli K-12,bacteria,0,0,1,Escherichia coli RNA polymerase unwinding intermediate (I1c) at the lambda PR promoter,0,0.900,3696,1969,0.9,0.342,0,0
+8TOF_10,8tof,130,2023-08-03,Xenopus laevis,eukaryote,0,0,1,Rpd3S bound to an H3K36Cme3 modified nucleosome,0,0.909,717,542,0.909,0.465,0,0
+7WSC_3,7wsc,108,2022-01-28,Homo sapiens,eukaryote,0,0,0,Local structure of BD55-3500 and omicron RBD complex,0,0.779,533,233,0.779,0.394,0,0
+7WSE_1,7wse,739,2022-01-29,Mammalia,eukaryote,0,0,1,Cryo-EM structure of SARS-CoV-2 spike receptor-binding domain complexed with its receptor minke whale ACE2,0,0.905,606,516,0.905,0.386,0,0
+9SCU_12,9scu,134,2025-08-12,Arabidopsis thaliana,eukaryote,0,0,1,Cryo-EM structure of the Arabidopsis thaliana 60S ribosomal subunit,0,0.854,176,158,0.854,0.422,0,0
+9HDD_1,9hdd,618,2024-11-12,Saccharomyces cerevisiae,eukaryote,0,0,1,Sla2 C-terminal region (Residues 560-968) (REND and THATCH domains),0,0.351,128,110,0.351,0.335,1,0
+9HDE_1,9hde,413,2024-11-12,Brevibacterium aurantiacum,bacteria,0,0,1,Crystal structure of methionine gamma-lyase (K209Q variant) from Brevibacterium aurantiacum in complex with PLP and alpha-ketobutyrate,0,0.540,2134,1440,0.407,0.54,0,0
+9HDF_2,9hdf,248,2024-11-12,Homo sapiens,eukaryote,0,0,0,Glucocorticoid Receptor Ligand Binding Domain in complex with dexamethasone,0,0.890,177,42,0.89,0.314,0,0
+23RI_1,23ri,129,2026-02-13,Escherichia phage RB49,virus,0,0,1,l-alanoyl-d-glutamate peptidase bacteriophage RB49 comlpex with Zn2+,0,0.688,2172,1326,0.688,0.539,0,0
+23SF_1,23sf,124,2026-02-15,Klebsiella phage RAN69,virus,0,0,1,Cryo-EM structure of icosahedrally averaged bacteriophage RAN69 capsid,0,,0,0,,,1,1
+7V00_2,7v00,340,2022-05-09,Staphylococcus epidermidis RP62A,bacteria,0,0,1,Staphylococcus epidermidis RP62a CRISPR tall effector complex with bound ATP,0,0.603,1523,701,0.243,0.603,0,0
+8UBK_7,8ubk,270,2023-09-23,Mus musculus,eukaryote,0,0,0,Cryo-EM structure of Ascl1/E12a in complex with NRCAM nucleosome,0,0.289,673,403,0.289,0.253,1,1
+9XVI_2,9xvi,870,2025-11-26,Arabidopsis thaliana,eukaryote,0,0,1,Arabidopsis ISA2-ISA1-ISA1-ISA2 heterotetramer,0,0.585,1644,1028,0.585,0.252,0,0
+9XVO_1,9xvo,167,2025-11-26,Homo sapiens,eukaryote,0,0,1,Crystal structure of NFIC monomer bound to DNA,0,0.929,33,33,0.929,,0,0
+9XVP_2,9xvp,764,2025-11-26,Arabidopsis thaliana,eukaryote,0,0,1,Arabidopsis ISA2-ISA1-ISA1 heterotrimer,0,0.509,3628,2456,0.509,0.329,0,0
+8IDT_18,8idt,70,2023-02-14,Homo sapiens,eukaryote,0,0,1,human nuclear pre-60S ribosomal particle - State G,0,0.905,100,77,0.905,0.497,0,0
+8CHX_1,8chx,209,2023-02-08,Vibrio cholerae,bacteria,0,0,1,Structure and function of LolA from Vibrio cholerae,0,0.644,2996,1817,0.644,0.425,0,0
+8CHY_1,8chy,292,2023-02-08,synthetic construct,synthetic,1,1,0,Crystal structure of an 8-repeat consensus TPR superhelix with Zinc.,1,0.443,5800,5800,0.421,0.443,0,0
+8CI0_1,8ci0,688,2023-02-08,Zea mays,eukaryote,0,0,1,Maize Transketolase in complex with TPP and hydrolyzed (+)-Cornexistin,0,0.907,1915,1396,0.907,0.333,0,0
+8CI1_1,8ci1,388,2023-02-08,Homo sapiens|Homo sapiens,eukaryote,0,0,1,Human alpha7 nicotinic receptor in complex with the E3 nanobody and nicotine,0,0.958,2875,2401,0.958,0.403,0,0
+8FR8_30,8fr8,79,2023-01-06,Mycolicibacterium smegmatis MC2 155,bacteria,0,0,1,Structure of Mycobacterium smegmatis Rsh bound to a 70S translation initiation complex,0,0.866,230,184,0.866,0.368,0,0
+8Y0W_26,8y0w,140,2024-01-23,Homo sapiens,eukaryote,0,0,1,"dormant ribosome with eIF5A, eEF2 and SERBP1",0,0.951,277,171,0.951,0.489,0,0
+9HUS_16,9hus,149,2024-12-23,Escherichia coli,bacteria,0,0,1,"Structure of WT E.coli ribosome with complexed filament nascent chain at length 31, with P-site tRNAs",0,0.675,669,421,0.6,0.675,0,0
+8AB7_7,8ab7,330,2022-07-04,Yarrowia lipolytica,eukaryote,0,0,1,"Complex III2 from Yarrowia lipolytica, atovaquone and antimycin A bound",0,0.838,281,227,0.838,0.352,0,0
+9RYC_4,9ryc,130,2025-07-15,Influenza A virus (A/Brevig Mission/1/1918(H1N1)),virus,0,0,1,Structure of human 1918 influenza A polymerase heterotrimer in complex with WSN NEP.,0,0.839,4,1,,0.839,0,0
+9RYD_1,9ryd,265,2025-07-15,Klebsiella pneumoniae,bacteria,0,0,1,Room temperature serial structure of CTX-M-15 collected on tape drive at Diamond Light Source VMXi,0,0.912,748,539,0.912,0.424,0,0
+9RYE_1,9rye,623,2025-07-15,Thermus thermophilus,bacteria,0,0,1,Heterodimeric ABC exporter TmrAB (EQ mutant) in ATP-bound outward-facing occluded conformation in the absence of Mg2+,0,0.507,5800,5798,0.507,0.5,0,0
+8IYH_5,8iyh,248,2023-04-04,Mus musculus,eukaryote,0,0,0,Structure of MK6892-GPR109A-G-protein complex,0,0.389,641,407,0.389,0.246,1,0
+8IYI_1,8iyi,293,2023-04-05,Kluyveromyces lactis NRRL Y-1140,eukaryote,0,0,1,Spermidine synthase from Kluyveromyces lactis,0,0.799,4428,3329,0.799,0.429,0,0
+8IYJ_1,8iyj,228,2023-04-05,Mus musculus,eukaryote,0,0,1,Cryo-EM structure of the 48-nm repeat doublet microtubule from mouse sperm,0,0.388,8,4,0.388,,1,0
+8TMH_3,8tmh,373,2023-07-29,Thermotoga maritima,bacteria,0,0,1,"Cryo-EM structure of CorA in complex with conformation-specific synthetic antibody C18 and 100 uM MgCl2, State MG0.1-2B",0,0.614,3911,3098,0.614,0.497,0,0
+8TMI_1,8tmi,237,2023-07-29,Homo sapiens,eukaryote,0,0,0,"Cryo-EM structure of CorA in complex with conformation-specific synthetic antibody C18 and 100 uM MgCl2, State MG0.1-2C",0,0.767,454,298,0.767,0.661,0,0
+9CO2_1,9co2,382,2024-07-16,Escherichia coli,bacteria,0,0,1,Crystal structure of BamA in complex with the PTB2 open-state inhibitor (anisotropic data set),0,1.000,3799,2177,1.0,0.677,0,0
+9CO5_2,9co5,60,2024-07-16,Homo sapiens,eukaryote,0,0,1,Crystal Structure of Macrocycle mediated complex of FKBP12 and MAPRE1,0,0.935,112,90,0.935,0.649,0,0
+9CO6_2,9co6,150,2024-07-16,Vicugna pacos,eukaryote,0,0,0,BA.5 spike/Nanosota-9 complex,0,0.666,352,193,0.666,0.453,0,0
+7ZDM_6,7zdm,223,2022-03-29,Ovis aries,eukaryote,0,0,1,"Complex I from Ovis aries at pH5.5, Closed state",0,0.981,523,409,0.981,0.424,0,0
+8ZVZ_1,8zvz,394,2024-06-12,Homo sapiens,eukaryote,0,0,1,Cryo-EM strcuture of Prostaglandin D2 Receptor DP1 activated by BW245C,0,0.963,833,666,0.963,0.338,0,0
+8XO0_18,8xo0,144,2023-12-30,Mus musculus,eukaryote,0,0,1,"Respiratory complex Peripheral Arm of CI, close form B, focus-refined map of type I, PERK -/- mouse under Cold Acclimation",0,0.995,102,86,0.995,,0,0
+8QU1_5,8qu1,311,2023-10-13,Homo sapiens,eukaryote,0,0,1,"mt-LSU assembly intermediate in GTPBP8 knock-out cells, state 1",0,0.893,684,541,0.893,0.369,0,0
+8FOI_5,8foi,213,2022-12-30,Mus musculus,eukaryote,0,0,0,"Native GABA-A receptor from the mouse brain, alpha1-beta2-gamma2 subtype, in complex with GABA and allopregnanolone",0,0.971,815,457,0.971,0.877,0,0
+8FOJ_2,8foj,409,2022-12-30,Saccharomyces cerevisiae,eukaryote,0,0,1,Cryo-EM structure of S. cerevisiae DNA polymerase alpha-primase complex in the post RNA handoff state,0,0.766,474,373,0.766,0.387,0,0
+9HGA_6,9hga,412,2024-11-19,Escherichia coli K-12,bacteria,0,0,1,BAM-SurA-darobactin complex in the swing-out state,0,0.937,5725,4421,0.937,0.439,0,0
+9HGC_1,9hgc,119,2024-11-19,Homo sapiens,eukaryote,0,0,1,Crystal structure of human GABARAPL1 in complex with cyclic peptide GAB_D8,0,1.000,926,778,1.0,0.475,0,0
+9HGD_1,9hgd,119,2024-11-19,Homo sapiens,eukaryote,0,0,1,Crystal structure of human GABARAP in complex with cyclic peptide GAB_D23,0,0.949,947,802,0.949,0.463,0,0
+9HGE_1,9hge,104,2024-11-19,Homo sapiens,eukaryote,0,0,1,PB1 domain of p62/SQSTM1,0,0.551,45,12,0.551,0.414,0,0
+24QT_6,24qt,155,2026-03-17,Saccharomyces cerevisiae S288C,eukaryote,0,0,1,Structure of yeast pre-translocation state Pol II in complex with a cisplatin-ICL lesion at +2 position in the second ICL DNA sequence.,0,0.807,492,356,0.807,0.485,0,0
+7Y5E_15,7y5e,360,2022-06-17,Porphyridium purpureum,eukaryote,0,0,1,In situ single-PBS-PSII-PSI-LHCs megacomplex.,0,0.935,159,143,0.935,,0,0
+9Y7X_1,9y7x,466,2025-09-11,Homo sapiens,eukaryote,0,0,1,Homomeric Glycine Receptor alpha2 with 0.1 mM Glycine in an Open State,0,0.899,3269,2504,0.899,0.471,0,0
+9Y81_1,9y81,526,2025-09-11,Chlamydia pneumoniae,bacteria,0,0,1,Crystal structure of Glutamate-tRNA synthetase GluRS from Chlamydia pneumoniae,0,0.614,2627,1944,0.614,0.354,0,0
+8QSZ_8,8qsz,141,2023-10-12,Schizosaccharomyces pombe|Schizosaccharomyces pombe,eukaryote,0,0,1,Structure of s. pombe RNA polymerase II in complex with DSIF and Rat1/Rai1,0,0.621,140,86,0.621,0.335,0,0
+8YIH_1,8yih,359,2024-02-29,Drosophila melanogaster,eukaryote,0,0,1,DmDcr-2/LoqsPD/slm1 in pre-dicing state,0,0.534,247,53,0.534,,0,0
+8YIK_1,8yik,403,2024-02-29,African swine fever virus pig/Kenya/KEN-50/1950,virus,0,0,1,pP1192R-ATPase-domain,0,0.435,427,335,0.263,0.435,0,0
+8YIL_1,8yil,431,2024-02-29,Saccharomyces cerevisiae,eukaryote,0,0,1,Cryo-EM structure of Saccharomyces cerevisiae bc1 complex in YF24228-bound state,0,0.667,625,271,0.345,0.667,0,0
+8J9H_39,8j9h,325,2023-05-03,Euglena gracilis,eukaryote,0,0,0,"Cryo-EM structure of Euglena gracilis respiratory complex I, deactive state",0,,174,57,,,1,1
+8BSI_52,8bsi,248,2022-11-25,Giardia duodenalis,eukaryote,0,0,1,Giardia ribosome chimeric hybrid-like GDP+Pi bound state (B1),0,0.572,167,128,0.572,,0,0
+8V9F_1,8v9f,127,2023-12-08,Homo sapiens,eukaryote,0,0,1,BRD4 BD1 liganded with macrocyclic compound 2d (JJ-II-363A),0,0.915,1313,809,0.915,0.471,0,0
+8V9G_1,8v9g,284,2023-12-08,Klebsiella pneumoniae,bacteria,0,0,1,GES-5-meropenem complex,0,0.947,1144,613,0.947,0.554,0,0
+8V9H_1,8v9h,287,2023-12-08,Klebsiella pneumoniae,bacteria,0,0,1,GES-5-NA-1-157 complex,0,0.945,1155,617,0.945,0.512,0,0
+8V9I_1,8v9i,650,2023-12-08,Deinococcus radiodurans,bacteria,0,0,1,1-deoxy-D-xylulose 5-phosphate synthase (DXPS) from Deinococcus radiodurans with D-phenylalanine-derived triazole acetylphosphonate (D-PheTrAP) bound,0,0.627,3332,2471,0.627,0.363,0,0
+7U2J_17,7u2j,101,2022-02-24,Thermus thermophilus HB8,bacteria,0,0,1,"Crystal structure of the Thermus thermophilus 70S ribosome in complex with mRNA, aminoacylated A-site Gly-NH-tRNAgly, peptidyl P-site fMAC-NH-tRNAmet, deacylated E-site tRNAgly, and chloramphenicol at 2.55A resolution",0,0.570,546,460,0.57,0.553,0,0
+9UGG_2,9ugg,646,2025-04-11,Bacillus sp. TSA-4,bacteria,0,0,1,PsdAB dimer (peptidisc sample),0,0.905,1159,882,0.313,0.905,0,0
+9UGH_1,9ugh,175,2025-04-12,Sus scrofa,eukaryote,0,0,1,crystal structure of ferritin from pig spleen,0,0.886,372,304,0.886,0.378,0,0
+9UGJ_1,9ugj,761,2025-04-12,Homo sapiens,eukaryote,0,0,1,Structure of SARM1 bound to SIR3-ADPR,0,0.943,1552,804,0.943,0.358,0,0
+8IRA_7,8ira,65,2023-03-17,Thermostichus vulcanus,bacteria,0,0,1,XFEL structure of cyanobacterial photosystem II following one flash (1F) with a 200-microsecond delay,0,0.823,43,36,0.823,,0,0
+8IRB_1,8irb,344,2023-03-17,Thermostichus vulcanus,bacteria,0,0,1,XFEL structure of cyanobacterial photosystem II following one flash (1F) with a 5-millisecond delay,0,0.948,153,142,0.948,,0,0
+8TPA_4,8tpa,222,2023-08-04,Influenza A virus (A/New Caledonia/20/1999(H1N1)),virus,0,0,1,H1 hemagglutinin (NC99) in complex with medial-junction-targeting Fab 2-2-1G06,0,0.867,9,7,,0.867,0,0
+8TPB_1,8tpb,305,2023-08-04,Severe acute respiratory syndrome coronavirus 2,virus,0,0,1,"Synthesis, X-Ray Crystallographic and Biological Activities of Covalent, Non-Peptidic Inhibitors of SARS-CoV-2 Main Protease",0,0.547,6,4,,0.547,0,0
+9VTI_10,9vti,142,2025-07-10,Nicotiana benthamiana,eukaryote,0,0,1,cryoEM structure of tobacco mosaic virus tRNA-like structure complexed with tobacco 80S,0,0.950,172,129,0.95,0.325,0,0
+9KV7_1,9kv7,120,2024-12-04,Mus musculus,eukaryote,0,0,1,Cryo-EM structure of mouse RIPK1-DD filament,0,0.964,461,224,0.964,0.461,0,0
+9KV8_3,9kv8,250,2024-12-04,Homo sapiens|Homo sapiens,eukaryote,0,0,1,Structure of human TLQP21 bound to mouse C3aR in complex with Go,0,0.959,1317,841,0.959,0.466,0,0
+5SFH_1,5sfh,343,2022-01-21,Homo sapiens,eukaryote,0,0,1,"CRYSTAL STRUCTURE OF HUMAN PHOSPHODIESTERASE 10 IN COMPLEX WITH N(C1CC1)(C)c2nn(c(n2)CCc4nn3c(cnc(c3n4)C)C)C, micromolar IC50=0.042255",0,0.973,1423,1129,0.973,0.46,0,0
+7Y7D_50,7y7d,65,2022-06-22,Escherichia coli,bacteria,0,0,1,Structure of the Bacterial Ribosome with human tRNA Asp(Q34) and mRNA(GAU),0,0.966,121,47,0.966,0.554,0,0
+8PW5_15,8pw5,227,2023-07-19,Mus musculus,eukaryote,0,0,1,CS respirasome from murine liver,0,0.927,1527,794,0.927,0.398,0,0
+8RYM_5,8rym,245,2024-02-09,Homo sapiens,eukaryote,0,0,0,Structure of S2 TCR in complex with HLA-A*03:01 bound to ELFSYLIEK peptide,0,1.000,754,364,1.0,0.478,0,0
+8RYN_1,8ryn,276,2024-02-09,Homo sapiens,eukaryote,0,0,1,Structure of S2 TCR in complex with HLA-A*11:01 bound to ELFSYLIEK peptide,0,0.990,706,430,0.99,0.398,0,0
+8G8G_4,8g8g,122,2023-02-17,Xenopus laevis,eukaryote,0,0,1,Interaction of H3 tail in LIN28B nucleosome with Oct4,0,0.904,478,366,0.904,0.497,0,0
+9T92_4,9t92,522,2025-11-13,Homo sapiens,eukaryote,0,0,1,"cryo-EM structure of autophosphorylated mTOR complex 2, overall refinement",0,0.943,36,33,0.943,,0,0
+8IPY_12,8ipy,123,2023-03-15,Homo sapiens,eukaryote,0,0,1,human nuclear pre-60S ribosomal particle - State D',0,0.857,289,114,0.857,0.509,0,0
+8PV1_42,8pv1,139,2023-07-17,Thermochaetoides thermophila DSM 1495,eukaryote,0,0,1,Chaetomium thermophilum pre-60S State 6 - pre-5S rotation - L1 intermediate - composite structure,0,0.955,256,159,0.955,0.458,0,0
+8G39_1,8g39,374,2023-02-07,Equus caballus,eukaryote,0,0,1,Horse liver alcohol dehydrogense His-51-Gln form complexed with NADH and N-cyclohexylformamide,0,0.913,5446,3960,0.913,0.386,0,0
+8G3A_1,8g3a,646,2023-02-07,Bacillus subtilis subsp. subtilis str. 168,bacteria,0,0,1,BceAB-S nucleotide free TM state 1,0,0.546,1246,977,0.546,0.529,0,0
+9I5N_3,9i5n,143,2025-01-28,Homo sapiens,eukaryote,0,0,1,Single particle cryo electron microscopy of a Fab fragment bound to recombinant human CD40 ligand,0,0.965,156,41,0.951,0.965,0,0
+9I5O_1,9i5o,529,2025-01-28,Homo sapiens,eukaryote,0,0,1,"Recombinant human butyrylcholinesterase in complex with 1-(cyclohexylmethyl)-5-(2,4-difluorobenzyl)-N-(2-(dimethylamino)ethyl)-1H-indazole-6-carboxamide",0,0.840,3737,2315,0.84,0.342,0,0
+9NWI_2,9nwi,513,2025-03-23,Pseudomonas virus Pa223,virus,0,0,1,Pseudomonas phage Pa223 tail (C6 symmetry),0,0.896,2830,2431,0.32,0.896,0,0
+9NWJ_1,9nwj,456,2025-03-23,Winmispira thermophila DSM 6578,bacteria,0,0,1,Apo WT SthK in 3:1 DOPC:POPE nanodiscs,0,0.900,5788,4418,0.9,0.555,0,0
+9NWM_1,9nwm,706,2025-03-24,Pseudomonas virus Pa223,virus,0,0,1,Pseudomonas phage Pa223 Portal (C12 symmetry),0,0.768,1554,1474,0.364,0.768,0,0
+9RS0_1,9rs0,228,2025-06-30,Homo sapiens,eukaryote,0,0,1,Crystal structure of the human METTL3-METTL14 in complex with compound 2 (T148),0,1.000,800,665,1.0,0.386,0,0
+9RS1_2,9rs1,307,2025-06-30,Homo sapiens,eukaryote,0,0,1,Crystal structure of the human METTL3-METTL14 in complex with compound 2 (T148),0,1.000,210,150,1.0,0.327,0,0
+7ZMB_33,7zmb,93,2022-04-19,Thermochaetoides thermophila DSM 1495,eukaryote,0,0,1,CryoEM structure of mitochondrial complex I from Chaetomium thermophilum (state 2),0,0.789,62,42,0.789,,0,0
+7QV1_45,7qv1,89,2022-01-19,Bacillus subtilis subsp. subtilis str. 168,bacteria,0,0,1,Bacillus subtilis collided disome (Leading 70S),0,0.842,382,305,0.842,0.525,0,0
+8E0N_1,8e0n,174,2022-08-09,synthetic construct,synthetic,1,1,0,"Homotrimeric variant of tcTRP9, BGL18",1,0.719,9,6,,0.719,0,0
+8E0O_2,8e0o,206,2022-08-09,synthetic construct,synthetic,1,1,0,"Heterotrimeric variant of tcTRP9, hetBGL03-15-18",1,0.833,8,5,,0.833,0,0
+8GZU_143,8gzu,71,2022-09-27,Tetrahymena thermophila SB210,eukaryote,0,0,1,Cryo-EM structure of Tetrahymena thermophila respiratory Megacomplex MC (IV2+I+III2+II)2,0,,0,0,,,1,1
+9ZRK_2,9zrk,146,2025-12-20,Homo sapiens,eukaryote,0,0,1,Cryo-EM structure of KCa3.1_I/calmodulin channel in complex with SKA111.,0,0.948,4011,2147,0.948,0.458,0,0
+9ZRL_1,9zrl,343,2025-12-20,Homo sapiens,eukaryote,0,0,1,Cryo-EM structure of KCa3.1_II/calmodulin channel in complex with SKA111.,0,0.913,787,226,0.913,0.338,0,0
+9ZRM_1,9zrm,232,2025-12-20,Homo sapiens,eukaryote,0,0,0,Potently Neutralizing W010 antibody Fab fragment in complex with West Nile Virus EDIII,0,0.767,444,301,0.767,0.696,0,0
+9BQE_1,9bqe,262,2024-05-09,Homo sapiens,eukaryote,0,0,1,"Estrogen Receptor Alpha Ligand Binding Domain Y537S Mutant in Complex with (6'-hydroxy-1'-(4-(2-(1-propylpyrrolidin-3-yl)ethoxy)phenyl)-1',4'-dihydro-2'<i>H</i>-spiro[cyclopropane-1,3'-isoquinolin]-2'-yl)(phenyl)methanone",0,0.931,243,150,0.931,0.333,0,0
+9BQH_1,9bqh,388,2024-05-09,Homo sapiens,eukaryote,0,0,1,Cryo-EM structure of the full-length human P2X4 receptor in the apo closed state,0,0.985,281,247,0.985,0.4,0,0
+9GLZ_2,9glz,135,2024-08-28,Homo sapiens,eukaryote,0,0,0,KRas-G12D-GMPPnP in complex with the nanobody KM12-AM,0,0.626,347,208,0.626,0.423,0,0
+9GM0_1,9gm0,308,2024-08-28,Streptomyces,bacteria,0,0,1,"KvPepI F420-dependent oxidoreductase, F420 complex",0,0.412,3121,1246,0.41,0.412,0,0
+9GM2_1,9gm2,247,2024-08-28,Homo sapiens,eukaryote,0,0,1,Human SMUG1 in complex with DNA,0,0.984,138,115,0.984,0.437,0,0
+9GM3_1,9gm3,375,2024-08-28,Fischerella,bacteria,0,0,1,Crystal structure of the complex formed between the radical SAM protein ChlB and the leader region of its precursor substrate ChlA,0,0.662,5187,4275,0.473,0.662,0,0
+28SD_2,28sd,181,2026-02-17,Pseudomonas phage LUZ19,virus,0,0,1,portal - core interface of bacteriophage LUZ19 computed in C4 symmetry,0,0.485,34,17,,0.485,0,0
+28SV_1,28sv,300,2026-02-17,Leptospira biflexa,bacteria,0,0,1,Structure of ASBT homologue from Leptospira biflexa in inward-facing form (Crystal Form 1),0,0.469,1298,1116,0.418,0.469,0,0
+7X2K_3,7x2k,214,2022-02-25,Homo sapiens,eukaryote,0,0,0,Crystal structure of nanobody Nb70 with antibody 1F11 fab and SARS-CoV-2 RBD,0,0.926,900,504,0.884,0.926,0,0
+7X2L_1,7x2l,196,2022-02-25,Severe acute respiratory syndrome coronavirus 2,virus,0,0,1,Crystal structure of nanobody 3-2A2-4 with SARS-CoV-2 RBD,0,1.000,24,15,,1.0,0,0
+8SYI_5,8syi,76,2023-05-25,Synechococcus elongatus,bacteria,0,0,1,Cyanobacterial RNAP-EC,0,0.917,14,14,0.917,,0,0
+8SYJ_1,8syj,170,2023-05-25,Thermococcus kodakarensis,archaea,0,0,1,Structure of apurinic/apyrimidinic DNA lyase TK0353 from Thermococcus kodakarensis (Iodide crystal form),0,,5,0,,,1,1
+8SYL_10,8syl,103,2023-05-25,Escherichia coli,bacteria,0,0,1,"Cryo-EM structure of the Escherichia coli 70S ribosome in complex with amikacin, mRNA, and A-, P-, and E-site tRNAs",0,0.807,204,87,0.807,0.46,0,0
+8QX8_6,8qx8,918,2023-10-23,Saccharomyces cerevisiae,eukaryote,0,0,1,Endosomal membrane tethering complex CORVET,0,0.399,268,211,0.39,0.399,1,0
+8QX9_1,8qx9,414,2023-10-24,Homo sapiens,eukaryote,0,0,1,TDP-43 amyloid fibrils: Morphology-1a,0,0.885,1350,331,0.885,,0,0
+9KYP_1,9kyp,477,2024-12-09,Aquifex aeolicus VF5,bacteria,0,0,1,GH57 family amylopullulanase from Aquifex aeolicus wild type complex with beta-cyclodextrin,0,0.498,865,705,0.498,0.436,0,0
+9KYQ_2,9kyq,478,2024-12-09,Aquifex aeolicus VF5,bacteria,0,0,1,GH57 family amylopullulanase from Aquifex aeolicus wild type co-crystallize with gama-cyclodextrin,0,0.498,865,705,0.498,0.436,0,0
+9KYR_1,9kyr,477,2024-12-09,Aquifex aeolicus VF5,bacteria,0,0,1,GH57 family amylopullulanase from Aquifex aeolicus D352N mutant complex with gama-cyclodextrin,0,0.496,857,703,0.496,0.433,0,0
+8V5R_2,8v5r,474,2023-11-30,Homo sapiens,eukaryote,0,0,1,Active conformation of DNA polymerase gamma bound to DNA,0,0.865,167,140,0.865,0.426,0,0
+8V5S_2,8v5s,210,2023-11-30,Homo sapiens,eukaryote,0,0,0,VZV glycoprotein E C-terminal domain (cleaved) in complex with human Fab 5A2,0,0.769,943,512,0.769,0.443,0,0
+8DXL_2,8dxl,428,2022-08-02,Human immunodeficiency virus type 1 BH10,virus,0,0,1,HIV-1 reverse transcriptase/rilpivirine with bound fragment 4-iodopyrazole at multiple sites,0,0.983,1824,900,0.367,0.983,0,0
+9P0K_5,9p0k,71,2025-06-06,Homo sapiens,eukaryote,0,0,1,Composite map of CXCL9-CXCR3-Gi-scFv16,0,0.994,151,120,0.994,,0,0
+9P0L_2,9p0l,77,2025-06-06,Homo sapiens,eukaryote,0,0,1,Composite map of CXCL10-CXCR3-Gi-scFv16,0,0.774,57,27,0.774,,0,0
+8AP6_24,8ap6,98,2022-08-09,Trypanosoma brucei brucei,eukaryote,0,0,1,Trypanosoma brucei mitochondrial F1Fo ATP synthase dimer,0,,1,0,,,1,1
+9RFW_15,9rfw,123,2025-06-05,Escherichia coli BW25113,bacteria,0,0,1,Manikomycin bound to the Escherichia coli 50S ribosomal subunit,0,0.965,676,605,0.965,0.512,0,0
+8QSI_2,8qsi,675,2023-10-10,Haloferax tailed virus 1,virus,0,0,1,Portal protein of empty Haloferax tailed virus 1.,0,0.177,36,17,,0.177,1,1
+8QSJ_10,8qsj,137,2023-10-10,Homo sapiens,eukaryote,0,0,1,Human mitoribosomal large subunit assembly intermediate 2 with GTPBP7,0,0.915,74,44,0.915,,0,0
+9R9P_58,9r9p,197,2025-05-20,Saccharomyces cerevisiae,eukaryote,0,0,1,Yeast 80S with nascent chain in complex with Ssb1-ADP in the S2 state,0,0.779,255,165,0.779,0.407,0,0
+8GCQ_3,8gcq,261,2023-03-02,Bos taurus,eukaryote,0,0,1,SFX structure of oxidized cytochrome c oxidase at 2.38 Angstrom resolution,0,0.983,1458,1047,0.983,0.456,0,0
+9G30_38,9g30,82,2024-07-11,Candida albicans,eukaryote,0,0,1,"The structure of the Candida albicans ribosome with tRNA-fMet, mRNA, and compounds (GEN and MFQ) shows strong density for the A site tRNA",0,0.844,132,115,0.844,,0,0
+9ZCD_17,9zcd,86,2025-11-23,Flavobacterium johnsoniae,bacteria,0,0,1,Flavobacterium johnsoniae 30S ribosomal subunit.,0,0.954,261,173,0.954,0.532,0,0
+9UM2_1,9um2,329,2025-04-21,Glycyrrhiza uralensis,eukaryote,0,0,0,Pterocarpan Reductase GuPTR1 from Glycyrrhiza uralensis,0,0.714,1471,432,0.714,0.401,0,0
+9UM3_1,9um3,261,2025-04-21,Cryptosporangium aurantiacum,bacteria,0,0,1,CaPETaseM9 SEC loop of 6CLb variant,0,0.603,1088,575,0.603,0.592,0,0
+9UM4_1,9um4,264,2025-04-21,Cryptosporangium aurantiacum,bacteria,0,0,1,CaPETaseM9 SEC loop of 9CL variant,0,0.613,1102,589,0.613,0.602,0,0
+9UM5_1,9um5,264,2025-04-21,Cryptosporangium aurantiacum,bacteria,0,0,1,CaPETaseM9 SEC loop of 10CL variant,0,0.621,1068,577,0.621,0.614,0,0
+8U6Y_11,8u6y,198,2023-09-14,Saccharomyces cerevisiae S288C,eukaryote,0,0,1,Preholo-Proteasome from Beta 3 D205 deletion,0,0.565,360,270,0.565,0.436,0,0
+7ZHR_1,7zhr,236,2022-04-07,Drosophila melanogaster,eukaryote,0,0,1,Complex structure of drosophila Unr CSD789 and pAbp RRM3,0,0.882,105,45,0.882,0.409,0,0
+7ZHS_1,7zhs,497,2022-04-07,Saccharomyces cerevisiae S288C|Homo sapiens,eukaryote,0,0,1,3D reconstruction of the cylindrical assembly of DnaJA2 delta G/F by imposing D5 symmetry,0,0.590,4706,2615,0.59,0.42,0,0
+7ZHT_1,7zht,562,2022-04-07,Leishmania donovani,eukaryote,0,0,1,Leishmania donovani Glucose 6-Phosphate Dehydrogenase apo form,0,0.797,1293,1033,0.797,0.344,0,0
+9J3L_2,9j3l,120,2024-08-08,Vicugna pacos,eukaryote,0,0,0,ATP bound Arabidopsis ATP/ADP translocator AtNTT1,0,0.722,498,254,0.722,0.472,0,0
+9J3N_1,9j3n,121,2024-08-08,Vicugna pacos,eukaryote,0,0,0,ATP bound Chlamydia pneumoniae ATP/ADP translocator NTT1(Inward open state),0,0.745,485,252,0.745,0.493,0,0
+8B9W_1,8b9w,354,2022-10-10,Trypanosoma theileri,eukaryote,0,0,1,Cysteine Synthase from Trypanosoma theileri with PLP bound,0,0.609,2173,1607,0.609,0.392,0,0
+8B9X_1,8b9x,274,2022-10-10,Homo sapiens|Homo sapiens,eukaryote,0,0,1,"Chimeric protein of human UFM1 E3 ligase, UFL1, and DDRGK1",0,0.931,179,142,0.931,0.451,0,0
+8B9Y_1,8b9y,344,2022-10-10,Trypanosoma cruzi,eukaryote,0,0,1,Cysteine Synthase from Trypanosoma cruzi with PLP and OAS,0,0.598,2085,1552,0.598,0.378,0,0
+8B9Z_1,8b9z,117,2022-10-10,Drosophila melanogaster,eukaryote,0,0,1,Drosophila melanogaster complex I in the Active state (Dm1),0,0.715,267,164,0.715,,0,0
+8Q29_1,8q29,248,2023-08-01,Teredinibacter turnerae,bacteria,0,0,1,TtX122A - A domain of unknown function from the Teredinibacter turnerae protein TERTU_3803,0,0.778,93,33,0.761,0.778,0,0
+8Q2A_1,8q2a,245,2023-08-01,Teredinibacter turnerae,bacteria,0,0,1,TtX122B - A domain of unknown function from the Teredinibacter turnerae protein TERTU_2913,0,0.754,61,23,0.753,0.754,0,0
+8Q2B_1,8q2b,214,2023-08-01,Escherichia coli,bacteria,0,0,1,E. coli Adenylate Kinase variant D158A (AK D158A) showing significant changes to the stacking of catalytic arginine side chains,0,0.955,3708,2890,0.955,0.42,0,0
+8Q2C_1,8q2c,195,2023-08-02,Escherichia coli,bacteria,0,0,1,Crystal structure of the E. coli PqiC Lipoprotein,0,0.979,1306,689,0.979,0.437,0,0
+10JY_1,10jy,145,2026-01-22,Fimbriimonas ginsengisoli Gsoil 348,bacteria,0,0,0,"Crystal structure of heme binding PAS domain from one component transcription factor, FG214 reduced with dithionite",0,0.547,3233,1434,0.5,0.547,0,0
+10JZ_1,10jz,401,2026-01-22,Homo sapiens,eukaryote,0,0,1,Structure of the human CHI3L1-LZ6 complex,0,0.866,4045,3224,0.866,0.356,0,0

@@ -1,0 +1,18 @@
+predictor,set,n,value
+#199 cooldown (contaminated),denovo_pdb (396),396,0.6849
+#232 m2-p06 (decontaminated),denovo_pdb (396),396,0.6479
+#232 m1-p02 (decontaminated),denovo_pdb (396),396,0.6435
+Protenix-v2 single-seq,denovo_pdb (396),396,0.7231
+ESMFold,denovo_pdb (396),396,0.8069
+ESMFold2,denovo_pdb (396),396,0.8292
+Protenix-v2 + MSA,denovo_pdb (396),396,0.8278
+seq-KNN (unfiltered corpus),denovo_pdb (396),396,0.3138
+#199 cooldown (contaminated),eval-denovo (19),19,0.6188
+#232 m1-p02 (decontaminated),eval-denovo (19),19,0.5879
+#232 m2-p06 (decontaminated),eval-denovo (19),19,0.5914
+ESMFold,eval-denovo (19),19,0.7951
+ESMFold2,eval-denovo (19),19,0.8635
+Protenix-v2 + MSA,eval-denovo (19),19,0.8444
+Protenix-v2 single-seq,eval-denovo (19),19,0.8351
+seq-KNN (decontaminated corpus),eval-denovo (19),19,0.0503
+seq-KNN (unfiltered corpus),eval-denovo (19),19,0.0659

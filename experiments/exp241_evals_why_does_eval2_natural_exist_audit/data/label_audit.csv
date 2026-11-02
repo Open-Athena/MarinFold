@@ -1,0 +1,20 @@
+dataset,stem,entry_id,published_designed_any,audited_designed,is_synthetic_taxon,has_denovo_keyword,has_uniprot_xref,source_organisms,in_eval2,title
+cameo_hard,8jvx_B,8jvx,0,1,1,0,0,synthetic construct,1,Crystal structure of the dimeric DZBB fold protein mkaL2_v1.2_Z
+cameo_hard,8s89_A,8s89,0,1,1,1,0,synthetic construct,1,Efficient and scalable protein design using a relaxed sequence space
+cameo_hard,8u1a_A,8u1a,0,1,1,1,0,synthetic construct,1,De novo Design of Near Infrared Fluorescent Proteins
+cameo_hard,8vd6_A,8vd6,0,1,1,1,0,synthetic construct,1,Crystal structure of CAP Repeat
+cameo_hard,8vej_B,8vej,0,1,1,1,0,synthetic construct,1,De novo designed cholic acid binder: CHD_buttress
+cameo_hard,8wwc_C,8wwc,0,1,1,1,0,synthetic construct,1,De novo design binder of HRAS -120-4
+cameo_hard,8yl4_B,8yl4,0,1,0,1,0,Escherichia coli,1,Crystal structure of the de novo designed protein 200 AA in the crystal form 1
+cameo_hard,9de9_B,9de9,0,1,1,1,0,synthetic construct,1,Crystal Structure of HE-B11
+cameo_hard,9deb_E,9deb,0,1,1,1,0,synthetic construct,1,Crystal Structure of D3-threaded
+cameo_hard,9def_A,9def,0,1,1,0,0,synthetic construct,1,The designed serine hydrolase known as win
+cameo_hard,9deg_A,9deg,0,1,1,0,0,synthetic construct,1,The designed serine hydrolase known as win1
+cameo_hard,9fdg_A,9fdg,0,1,1,0,0,synthetic construct,1,Solution structure of a de novo designed 12-stranded transmembrane beta-barrel in LDAO micelles.
+cameo_hard,9hac_B,9hac,0,1,1,1,0,synthetic construct,1,De novo designed BBF-14 beta barrel with computationally designed BBF-14_b4 binder
+cameo_hard,9had_C,9had,0,1,1,1,0,synthetic construct,1,Der f 21 dust mite allergen with computationally designed DerF21_b10 binder
+cameo_hard,9j5h_A,9j5h,0,1,1,0,0,synthetic construct,1,Solution structure of disulfide-directed multicyclic peptides with affinity to pdl1
+foldbench_rest,8gac_A,8gac,0,1,1,1,0,synthetic construct,0,Crystal structure of a high affinity CTLA-4 binder
+foldbench_rest,8k83_A,8k83,0,1,1,1,0,synthetic construct,0,De novo design protein -N2
+foldbench_rest,8k84_A,8k84,0,1,1,1,0,synthetic construct,0,De novo design protein -N3
+foldbench_rest,8oyy_A,8oyy,0,1,1,1,0,synthetic construct,0,De novo designed soluble GPCR-like fold GLF_32

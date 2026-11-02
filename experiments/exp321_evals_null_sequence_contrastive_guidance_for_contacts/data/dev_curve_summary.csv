@@ -1,0 +1,321 @@
+mode,label,range,N,metric,n,mean,sem
+dev_g0_pa_pos,paired gamma=0,all,1,validity_gated_oracle_r_precision,16,0.34429933186843825,0.056715759021536465
+dev_g0_pa_pos,paired gamma=0,all,1,consensus_r_precision,16,0.32816812260286327,0.05734857552934314
+dev_g0_pa_pos,paired gamma=0,all,1,true_union_recall,16,0.3622517831064398,0.06044752497079341
+dev_g0_pa_pos,paired gamma=0,all,1,mean_pairwise_jaccard,16,,
+dev_g0_pa_pos,paired gamma=0,all,2,validity_gated_oracle_r_precision,16,0.3591362129789236,0.056718980780704364
+dev_g0_pa_pos,paired gamma=0,all,2,consensus_r_precision,16,0.34427774059959293,0.06136137886170204
+dev_g0_pa_pos,paired gamma=0,all,2,true_union_recall,16,0.45432120519545793,0.06501855106568762
+dev_g0_pa_pos,paired gamma=0,all,2,mean_pairwise_jaccard,16,0.24812139757141807,0.04463031844747461
+dev_g0_pa_pos,paired gamma=0,all,5,validity_gated_oracle_r_precision,16,0.3969238182976508,0.05191395920329171
+dev_g0_pa_pos,paired gamma=0,all,5,consensus_r_precision,16,0.41361486461444275,0.05975797772779943
+dev_g0_pa_pos,paired gamma=0,all,5,true_union_recall,16,0.5897592324524491,0.058675512849264436
+dev_g0_pa_pos,paired gamma=0,all,5,mean_pairwise_jaccard,16,0.24805016354540368,0.04401266016644837
+dev_g0_pa_pos,paired gamma=0,all,10,validity_gated_oracle_r_precision,16,0.42036929592380345,0.04933851148964767
+dev_g0_pa_pos,paired gamma=0,all,10,consensus_r_precision,16,0.4503105748190424,0.05696467063945574
+dev_g0_pa_pos,paired gamma=0,all,10,true_union_recall,16,0.7002671059650057,0.05512683832603198
+dev_g0_pa_pos,paired gamma=0,all,10,mean_pairwise_jaccard,16,0.2490848102705578,0.04407156615541413
+dev_g0_pa_pos,paired gamma=0,all,20,validity_gated_oracle_r_precision,16,0.44899076119070563,0.04585095874407451
+dev_g0_pa_pos,paired gamma=0,all,20,consensus_r_precision,16,0.47786686508504295,0.052894221300387095
+dev_g0_pa_pos,paired gamma=0,all,20,true_union_recall,16,0.8038481320372111,0.03812161224912793
+dev_g0_pa_pos,paired gamma=0,all,20,mean_pairwise_jaccard,16,0.2502182955597756,0.044213128480802576
+dev_g0_pa_pos,paired gamma=0,long,1,validity_gated_oracle_r_precision,16,0.3027507315431555,0.0583189080005586
+dev_g0_pa_pos,paired gamma=0,long,1,consensus_r_precision,16,0.2913996410074797,0.05865718232514816
+dev_g0_pa_pos,paired gamma=0,long,1,true_union_recall,16,0.3208543310872751,0.06365544103913211
+dev_g0_pa_pos,paired gamma=0,long,1,mean_pairwise_jaccard,16,,
+dev_g0_pa_pos,paired gamma=0,long,2,validity_gated_oracle_r_precision,16,0.31500149176691816,0.060270947886370024
+dev_g0_pa_pos,paired gamma=0,long,2,consensus_r_precision,16,0.313435828995824,0.06290086669739997
+dev_g0_pa_pos,paired gamma=0,long,2,true_union_recall,16,0.4039131464861076,0.07250501859230274
+dev_g0_pa_pos,paired gamma=0,long,2,mean_pairwise_jaccard,16,0.23294382980949108,0.04532199358773119
+dev_g0_pa_pos,paired gamma=0,long,5,validity_gated_oracle_r_precision,16,0.36844280550412434,0.05297354223703314
+dev_g0_pa_pos,paired gamma=0,long,5,consensus_r_precision,16,0.37319778106761325,0.06319196522908928
+dev_g0_pa_pos,paired gamma=0,long,5,true_union_recall,16,0.5421048072629517,0.06529430288393231
+dev_g0_pa_pos,paired gamma=0,long,5,mean_pairwise_jaccard,16,0.22441435624608058,0.045391151831838734
+dev_g0_pa_pos,paired gamma=0,long,10,validity_gated_oracle_r_precision,16,0.4044334052893214,0.04781798041485806
+dev_g0_pa_pos,paired gamma=0,long,10,consensus_r_precision,16,0.4320410354509602,0.05741453555760475
+dev_g0_pa_pos,paired gamma=0,long,10,true_union_recall,16,0.6535436744850693,0.0648406392693403
+dev_g0_pa_pos,paired gamma=0,long,10,mean_pairwise_jaccard,16,0.22951686472876712,0.04412085145317185
+dev_g0_pa_pos,paired gamma=0,long,20,validity_gated_oracle_r_precision,16,0.42873047713919654,0.04766122638671556
+dev_g0_pa_pos,paired gamma=0,long,20,consensus_r_precision,16,0.4500879446712138,0.05588918696163424
+dev_g0_pa_pos,paired gamma=0,long,20,true_union_recall,16,0.7368670651873459,0.06055360265316957
+dev_g0_pa_pos,paired gamma=0,long,20,mean_pairwise_jaccard,16,0.23045258509495267,0.043722682965382884
+dev_g025_pa_pos,gamma=0.25,all,1,validity_gated_oracle_r_precision,16,0.3679703213630632,0.05538207729947877
+dev_g025_pa_pos,gamma=0.25,all,1,consensus_r_precision,16,0.3571478614214115,0.055704759794787
+dev_g025_pa_pos,gamma=0.25,all,1,true_union_recall,16,0.37275010268507247,0.05625698237019386
+dev_g025_pa_pos,gamma=0.25,all,1,mean_pairwise_jaccard,16,,
+dev_g025_pa_pos,gamma=0.25,all,2,validity_gated_oracle_r_precision,16,0.3890205982009537,0.055418586538309444
+dev_g025_pa_pos,gamma=0.25,all,2,consensus_r_precision,16,0.362482418411171,0.05839684367714275
+dev_g025_pa_pos,gamma=0.25,all,2,true_union_recall,16,0.4653783438442136,0.05935760469793929
+dev_g025_pa_pos,gamma=0.25,all,2,mean_pairwise_jaccard,16,0.2714907595884038,0.05004943309195708
+dev_g025_pa_pos,gamma=0.25,all,5,validity_gated_oracle_r_precision,16,0.42517618375194854,0.04779310935313953
+dev_g025_pa_pos,gamma=0.25,all,5,consensus_r_precision,16,0.43251108559932494,0.056157143808889816
+dev_g025_pa_pos,gamma=0.25,all,5,true_union_recall,16,0.6029634209399061,0.05521498219762041
+dev_g025_pa_pos,gamma=0.25,all,5,mean_pairwise_jaccard,16,0.2782561136037537,0.04669146102312934
+dev_g025_pa_pos,gamma=0.25,all,10,validity_gated_oracle_r_precision,16,0.4416464538677106,0.05012077418316706
+dev_g025_pa_pos,gamma=0.25,all,10,consensus_r_precision,16,0.45232841003256896,0.056055412167475484
+dev_g025_pa_pos,gamma=0.25,all,10,true_union_recall,16,0.7001966650149497,0.04880359372988713
+dev_g025_pa_pos,gamma=0.25,all,10,mean_pairwise_jaccard,16,0.2758770456772739,0.04684270385069496
+dev_g025_pa_pos,gamma=0.25,all,20,validity_gated_oracle_r_precision,16,0.46937866879975687,0.046033327534076345
+dev_g025_pa_pos,gamma=0.25,all,20,consensus_r_precision,16,0.4762226761064945,0.05194123848588247
+dev_g025_pa_pos,gamma=0.25,all,20,true_union_recall,16,0.7949859589325108,0.03674269469095693
+dev_g025_pa_pos,gamma=0.25,all,20,mean_pairwise_jaccard,16,0.2762219012075364,0.04550599432882651
+dev_g025_pa_pos,gamma=0.25,long,1,validity_gated_oracle_r_precision,16,0.3264781007729917,0.05697372314254996
+dev_g025_pa_pos,gamma=0.25,long,1,consensus_r_precision,16,0.32225105187514574,0.05625430222071514
+dev_g025_pa_pos,gamma=0.25,long,1,true_union_recall,16,0.33385861097061365,0.05855031840972316
+dev_g025_pa_pos,gamma=0.25,long,1,mean_pairwise_jaccard,16,,
+dev_g025_pa_pos,gamma=0.25,long,2,validity_gated_oracle_r_precision,16,0.3537444887437676,0.05762657659477024
+dev_g025_pa_pos,gamma=0.25,long,2,consensus_r_precision,16,0.34087976986829,0.05820082926302135
+dev_g025_pa_pos,gamma=0.25,long,2,true_union_recall,16,0.4230553524928338,0.06646976203201273
+dev_g025_pa_pos,gamma=0.25,long,2,mean_pairwise_jaccard,16,0.25759809917649673,0.05033957446583658
+dev_g025_pa_pos,gamma=0.25,long,5,validity_gated_oracle_r_precision,16,0.39237332835778516,0.049401704233107725
+dev_g025_pa_pos,gamma=0.25,long,5,consensus_r_precision,16,0.40001085038511314,0.06135922697071589
+dev_g025_pa_pos,gamma=0.25,long,5,true_union_recall,16,0.5603058155811098,0.06624543476212919
+dev_g025_pa_pos,gamma=0.25,long,5,mean_pairwise_jaccard,16,0.2644054443926641,0.04719456072184395
+dev_g025_pa_pos,gamma=0.25,long,10,validity_gated_oracle_r_precision,16,0.4140977163439988,0.05356204503293894
+dev_g025_pa_pos,gamma=0.25,long,10,consensus_r_precision,16,0.42614378541226755,0.06030988509949725
+dev_g025_pa_pos,gamma=0.25,long,10,true_union_recall,16,0.6657312315819444,0.05563486224611669
+dev_g025_pa_pos,gamma=0.25,long,10,mean_pairwise_jaccard,16,0.2609685758134255,0.046403684601840516
+dev_g025_pa_pos,gamma=0.25,long,20,validity_gated_oracle_r_precision,16,0.437016314511437,0.052449453105708
+dev_g025_pa_pos,gamma=0.25,long,20,consensus_r_precision,16,0.4501233068348659,0.056879417430891
+dev_g025_pa_pos,gamma=0.25,long,20,true_union_recall,16,0.7479271888112307,0.05217030132187594
+dev_g025_pa_pos,gamma=0.25,long,20,mean_pairwise_jaccard,16,0.26082062471353346,0.04475617295432671
+dev_g05_pa_pos,gamma=0.5,all,1,validity_gated_oracle_r_precision,16,0.37322667083880157,0.05216297348058512
+dev_g05_pa_pos,gamma=0.5,all,1,consensus_r_precision,16,0.36629894805118046,0.052804763572346716
+dev_g05_pa_pos,gamma=0.5,all,1,true_union_recall,16,0.37992405967238624,0.053527088694486726
+dev_g05_pa_pos,gamma=0.5,all,1,mean_pairwise_jaccard,16,,
+dev_g05_pa_pos,gamma=0.5,all,2,validity_gated_oracle_r_precision,16,0.393070193946241,0.04996394628665595
+dev_g05_pa_pos,gamma=0.5,all,2,consensus_r_precision,16,0.36503255760621556,0.053821692726312174
+dev_g05_pa_pos,gamma=0.5,all,2,true_union_recall,16,0.4719025867746449,0.0558873934702814
+dev_g05_pa_pos,gamma=0.5,all,2,mean_pairwise_jaccard,16,0.2820506589647857,0.04421494345834419
+dev_g05_pa_pos,gamma=0.5,all,5,validity_gated_oracle_r_precision,16,0.4148787676858564,0.05056243140334397
+dev_g05_pa_pos,gamma=0.5,all,5,consensus_r_precision,16,0.437905071019155,0.052587210212386847
+dev_g05_pa_pos,gamma=0.5,all,5,true_union_recall,16,0.6003519876499459,0.05578671691950288
+dev_g05_pa_pos,gamma=0.5,all,5,mean_pairwise_jaccard,16,0.28761886388210944,0.04484986286507832
+dev_g05_pa_pos,gamma=0.5,all,10,validity_gated_oracle_r_precision,16,0.4378503830788908,0.04699225114675707
+dev_g05_pa_pos,gamma=0.5,all,10,consensus_r_precision,16,0.465908371917913,0.051928903231623524
+dev_g05_pa_pos,gamma=0.5,all,10,true_union_recall,16,0.699432917292304,0.04965134606950744
+dev_g05_pa_pos,gamma=0.5,all,10,mean_pairwise_jaccard,16,0.286501328519118,0.04609506846552549
+dev_g05_pa_pos,gamma=0.5,all,20,validity_gated_oracle_r_precision,16,0.46948080498193756,0.04471456831013197
+dev_g05_pa_pos,gamma=0.5,all,20,consensus_r_precision,16,0.4811416573391407,0.051930517770160584
+dev_g05_pa_pos,gamma=0.5,all,20,true_union_recall,16,0.7739281580528631,0.045126330255761106
+dev_g05_pa_pos,gamma=0.5,all,20,mean_pairwise_jaccard,16,0.29082817737866484,0.04608141431853086
+dev_g05_pa_pos,gamma=0.5,long,1,validity_gated_oracle_r_precision,16,0.34474628810882657,0.050780505412106824
+dev_g05_pa_pos,gamma=0.5,long,1,consensus_r_precision,16,0.34167875685079474,0.05007918891681183
+dev_g05_pa_pos,gamma=0.5,long,1,true_union_recall,16,0.3555618972980402,0.05249880094512481
+dev_g05_pa_pos,gamma=0.5,long,1,mean_pairwise_jaccard,16,,
+dev_g05_pa_pos,gamma=0.5,long,2,validity_gated_oracle_r_precision,16,0.3591950239863102,0.05153965972235278
+dev_g05_pa_pos,gamma=0.5,long,2,consensus_r_precision,16,0.3326872921310397,0.056149636036792086
+dev_g05_pa_pos,gamma=0.5,long,2,true_union_recall,16,0.4301342650599247,0.06165012500083693
+dev_g05_pa_pos,gamma=0.5,long,2,mean_pairwise_jaccard,16,0.25841833201660125,0.047495627183807544
+dev_g05_pa_pos,gamma=0.5,long,5,validity_gated_oracle_r_precision,16,0.39128277496619795,0.05030251214776166
+dev_g05_pa_pos,gamma=0.5,long,5,consensus_r_precision,16,0.407427698400005,0.0557010672333954
+dev_g05_pa_pos,gamma=0.5,long,5,true_union_recall,16,0.5706865372402699,0.06247002523927813
+dev_g05_pa_pos,gamma=0.5,long,5,mean_pairwise_jaccard,16,0.2626392527389293,0.04739837983928524
+dev_g05_pa_pos,gamma=0.5,long,10,validity_gated_oracle_r_precision,16,0.4162547691221503,0.04753788910712087
+dev_g05_pa_pos,gamma=0.5,long,10,consensus_r_precision,16,0.435422998898693,0.05604880271247988
+dev_g05_pa_pos,gamma=0.5,long,10,true_union_recall,16,0.6628394408541488,0.05744159509207969
+dev_g05_pa_pos,gamma=0.5,long,10,mean_pairwise_jaccard,16,0.2652133379036357,0.04749409785659685
+dev_g05_pa_pos,gamma=0.5,long,20,validity_gated_oracle_r_precision,16,0.4591813386979096,0.04418443420767076
+dev_g05_pa_pos,gamma=0.5,long,20,consensus_r_precision,16,0.45945714547997735,0.05498688933787651
+dev_g05_pa_pos,gamma=0.5,long,20,true_union_recall,16,0.7397086188582034,0.0557300486314434
+dev_g05_pa_pos,gamma=0.5,long,20,mean_pairwise_jaccard,16,0.26785644700986,0.047387300356883856
+dev_g1_pa_pos,gamma=1,all,1,validity_gated_oracle_r_precision,16,0.3492161077149043,0.049452969159774325
+dev_g1_pa_pos,gamma=1,all,1,consensus_r_precision,16,0.3471243912820559,0.050655220647733284
+dev_g1_pa_pos,gamma=1,all,1,true_union_recall,16,0.3645525917137715,0.05069598616638012
+dev_g1_pa_pos,gamma=1,all,1,mean_pairwise_jaccard,16,,
+dev_g1_pa_pos,gamma=1,all,2,validity_gated_oracle_r_precision,16,0.3769529725697189,0.049731597725389445
+dev_g1_pa_pos,gamma=1,all,2,consensus_r_precision,16,0.37284138213349854,0.05378164207146523
+dev_g1_pa_pos,gamma=1,all,2,true_union_recall,16,0.46289429785854885,0.056920731402514343
+dev_g1_pa_pos,gamma=1,all,2,mean_pairwise_jaccard,16,0.31160495323219345,0.044056464327962765
+dev_g1_pa_pos,gamma=1,all,5,validity_gated_oracle_r_precision,16,0.4285017923340189,0.05060122951499339
+dev_g1_pa_pos,gamma=1,all,5,consensus_r_precision,16,0.43607669921003334,0.055431141917257405
+dev_g1_pa_pos,gamma=1,all,5,true_union_recall,16,0.6080757621704599,0.053061952783329654
+dev_g1_pa_pos,gamma=1,all,5,mean_pairwise_jaccard,16,0.3067701935683551,0.04623218211193214
+dev_g1_pa_pos,gamma=1,all,10,validity_gated_oracle_r_precision,16,0.4553483311593446,0.04633240350018738
+dev_g1_pa_pos,gamma=1,all,10,consensus_r_precision,16,0.47150648398773176,0.05119480777922598
+dev_g1_pa_pos,gamma=1,all,10,true_union_recall,16,0.7136075315058237,0.04413501433147403
+dev_g1_pa_pos,gamma=1,all,10,mean_pairwise_jaccard,16,0.3038627593797579,0.04630501607864692
+dev_g1_pa_pos,gamma=1,all,20,validity_gated_oracle_r_precision,16,0.46686967594226303,0.04416678796319639
+dev_g1_pa_pos,gamma=1,all,20,consensus_r_precision,16,0.4842272365934619,0.05157787805356204
+dev_g1_pa_pos,gamma=1,all,20,true_union_recall,16,0.7810731597314792,0.03796998516226776
+dev_g1_pa_pos,gamma=1,all,20,mean_pairwise_jaccard,16,0.3032597760744354,0.04641372522358602
+dev_g1_pa_pos,gamma=1,long,1,validity_gated_oracle_r_precision,16,0.3169571373644459,0.05282037697554957
+dev_g1_pa_pos,gamma=1,long,1,consensus_r_precision,16,0.3141405886563537,0.051930738198621144
+dev_g1_pa_pos,gamma=1,long,1,true_union_recall,16,0.3297685938247593,0.057399427724364585
+dev_g1_pa_pos,gamma=1,long,1,mean_pairwise_jaccard,16,,
+dev_g1_pa_pos,gamma=1,long,2,validity_gated_oracle_r_precision,16,0.3413741184229479,0.05376227956054367
+dev_g1_pa_pos,gamma=1,long,2,consensus_r_precision,16,0.337002862342245,0.05796695462785158
+dev_g1_pa_pos,gamma=1,long,2,true_union_recall,16,0.42021711142209206,0.06369688155313769
+dev_g1_pa_pos,gamma=1,long,2,mean_pairwise_jaccard,16,0.2944444222138439,0.047763371588572766
+dev_g1_pa_pos,gamma=1,long,5,validity_gated_oracle_r_precision,16,0.4050724691413763,0.0508997509316035
+dev_g1_pa_pos,gamma=1,long,5,consensus_r_precision,16,0.40403924481876174,0.05823299575848574
+dev_g1_pa_pos,gamma=1,long,5,true_union_recall,16,0.5782313561995392,0.060559134101869826
+dev_g1_pa_pos,gamma=1,long,5,mean_pairwise_jaccard,16,0.2807425909290871,0.048399772019128935
+dev_g1_pa_pos,gamma=1,long,10,validity_gated_oracle_r_precision,16,0.4231634928020543,0.047756994452876164
+dev_g1_pa_pos,gamma=1,long,10,consensus_r_precision,16,0.4376159506902415,0.05672434179126597
+dev_g1_pa_pos,gamma=1,long,10,true_union_recall,16,0.684153702528894,0.055578942686400505
+dev_g1_pa_pos,gamma=1,long,10,mean_pairwise_jaccard,16,0.27876871845021073,0.04790365314536207
+dev_g1_pa_pos,gamma=1,long,20,validity_gated_oracle_r_precision,16,0.44370347836345214,0.046096243601045854
+dev_g1_pa_pos,gamma=1,long,20,consensus_r_precision,16,0.4582469107260778,0.05612976073795097
+dev_g1_pa_pos,gamma=1,long,20,true_union_recall,16,0.7499881235421861,0.04945429540595544
+dev_g1_pa_pos,gamma=1,long,20,mean_pairwise_jaccard,16,0.27737485330983264,0.04845117193424262
+dev_g2_pa_pos,gamma=2,all,1,validity_gated_oracle_r_precision,16,0.36626642074504434,0.05285175851241489
+dev_g2_pa_pos,gamma=2,all,1,consensus_r_precision,16,0.35211276541090897,0.05641433767312249
+dev_g2_pa_pos,gamma=2,all,1,true_union_recall,16,0.3802394986500441,0.05411656355209572
+dev_g2_pa_pos,gamma=2,all,1,mean_pairwise_jaccard,16,,
+dev_g2_pa_pos,gamma=2,all,2,validity_gated_oracle_r_precision,16,0.37974460558482737,0.051808911047361704
+dev_g2_pa_pos,gamma=2,all,2,consensus_r_precision,16,0.3670585168573446,0.05387024013733992
+dev_g2_pa_pos,gamma=2,all,2,true_union_recall,16,0.47363021736299066,0.05651663461174142
+dev_g2_pa_pos,gamma=2,all,2,mean_pairwise_jaccard,16,0.30617287915414326,0.047437446675220485
+dev_g2_pa_pos,gamma=2,all,5,validity_gated_oracle_r_precision,16,0.41200042105293244,0.0521897801136343
+dev_g2_pa_pos,gamma=2,all,5,consensus_r_precision,16,0.41417294881629974,0.05648020167517928
+dev_g2_pa_pos,gamma=2,all,5,true_union_recall,16,0.6038975158743853,0.0596841323731735
+dev_g2_pa_pos,gamma=2,all,5,mean_pairwise_jaccard,16,0.30525611337843306,0.044154695326360516
+dev_g2_pa_pos,gamma=2,all,10,validity_gated_oracle_r_precision,16,0.44875411794538506,0.04698864930895432
+dev_g2_pa_pos,gamma=2,all,10,consensus_r_precision,16,0.4545852596478508,0.05170385669543979
+dev_g2_pa_pos,gamma=2,all,10,true_union_recall,16,0.704895606867429,0.04772827206537849
+dev_g2_pa_pos,gamma=2,all,10,mean_pairwise_jaccard,16,0.301271005713254,0.04500098912172518
+dev_g2_pa_pos,gamma=2,all,20,validity_gated_oracle_r_precision,16,0.47416637356602126,0.04220134250414814
+dev_g2_pa_pos,gamma=2,all,20,consensus_r_precision,16,0.478599238957763,0.04629847926391129
+dev_g2_pa_pos,gamma=2,all,20,true_union_recall,16,0.7810206373377664,0.04349723522729706
+dev_g2_pa_pos,gamma=2,all,20,mean_pairwise_jaccard,16,0.2972431179589305,0.04539760163370074
+dev_g2_pa_pos,gamma=2,long,1,validity_gated_oracle_r_precision,16,0.33545260065512805,0.05587725715140473
+dev_g2_pa_pos,gamma=2,long,1,consensus_r_precision,16,0.3272079785495642,0.05756867957823995
+dev_g2_pa_pos,gamma=2,long,1,true_union_recall,16,0.3458288116013466,0.05827157517895305
+dev_g2_pa_pos,gamma=2,long,1,mean_pairwise_jaccard,16,,
+dev_g2_pa_pos,gamma=2,long,2,validity_gated_oracle_r_precision,16,0.35093356442105245,0.05526571521291318
+dev_g2_pa_pos,gamma=2,long,2,consensus_r_precision,16,0.33985905624413515,0.056879294728848666
+dev_g2_pa_pos,gamma=2,long,2,true_union_recall,16,0.43022935445767974,0.06381582828619178
+dev_g2_pa_pos,gamma=2,long,2,mean_pairwise_jaccard,16,0.27973442607442456,0.050385824740573196
+dev_g2_pa_pos,gamma=2,long,5,validity_gated_oracle_r_precision,16,0.39793534720121526,0.05104928907618997
+dev_g2_pa_pos,gamma=2,long,5,consensus_r_precision,16,0.3809409457887189,0.05812504645867026
+dev_g2_pa_pos,gamma=2,long,5,true_union_recall,16,0.5792889103742485,0.06638413305389079
+dev_g2_pa_pos,gamma=2,long,5,mean_pairwise_jaccard,16,0.28127342152128687,0.04584247262690154
+dev_g2_pa_pos,gamma=2,long,10,validity_gated_oracle_r_precision,16,0.4358087677281091,0.04603802976453411
+dev_g2_pa_pos,gamma=2,long,10,consensus_r_precision,16,0.4348009237601058,0.05357484839093981
+dev_g2_pa_pos,gamma=2,long,10,true_union_recall,16,0.6852660786611344,0.05906244571578805
+dev_g2_pa_pos,gamma=2,long,10,mean_pairwise_jaccard,16,0.27640023842372363,0.04548427683020059
+dev_g2_pa_pos,gamma=2,long,20,validity_gated_oracle_r_precision,16,0.4680271108069418,0.045239527133632856
+dev_g2_pa_pos,gamma=2,long,20,consensus_r_precision,16,0.4626269292533414,0.04792401358534358
+dev_g2_pa_pos,gamma=2,long,20,true_union_recall,16,0.7646793351494301,0.053859155872866604
+dev_g2_pa_pos,gamma=2,long,20,mean_pairwise_jaccard,16,0.270488441875807,0.046227736279410465
+dev_ratio_pa_pos,pure ratio,all,1,validity_gated_oracle_r_precision,16,0.3058998566266088,0.04714761710812421
+dev_ratio_pa_pos,pure ratio,all,1,consensus_r_precision,16,0.2643901516372039,0.05055531907773594
+dev_ratio_pa_pos,pure ratio,all,1,true_union_recall,16,0.39286690650084677,0.05998688965501668
+dev_ratio_pa_pos,pure ratio,all,1,mean_pairwise_jaccard,16,,
+dev_ratio_pa_pos,pure ratio,all,2,validity_gated_oracle_r_precision,16,0.3388880767638164,0.04523995789001371
+dev_ratio_pa_pos,pure ratio,all,2,consensus_r_precision,16,0.33038758706545357,0.05605740340746479
+dev_ratio_pa_pos,pure ratio,all,2,true_union_recall,16,0.5049152026908821,0.062674621739584
+dev_ratio_pa_pos,pure ratio,all,2,mean_pairwise_jaccard,16,0.21725323486415787,0.039947392669819226
+dev_ratio_pa_pos,pure ratio,all,5,validity_gated_oracle_r_precision,16,0.3625467320354163,0.04335482599427057
+dev_ratio_pa_pos,pure ratio,all,5,consensus_r_precision,16,0.3963180978344102,0.05734108561297133
+dev_ratio_pa_pos,pure ratio,all,5,true_union_recall,16,0.6553001865389172,0.05352942126217692
+dev_ratio_pa_pos,pure ratio,all,5,mean_pairwise_jaccard,16,0.21611827714400922,0.039750237345715464
+dev_ratio_pa_pos,pure ratio,all,10,validity_gated_oracle_r_precision,16,0.3744198258814592,0.04523086928181925
+dev_ratio_pa_pos,pure ratio,all,10,consensus_r_precision,16,0.44011642415131413,0.0577250725631766
+dev_ratio_pa_pos,pure ratio,all,10,true_union_recall,16,0.7552855023575639,0.04663483928737524
+dev_ratio_pa_pos,pure ratio,all,10,mean_pairwise_jaccard,16,0.21579693301368166,0.03982995994551511
+dev_ratio_pa_pos,pure ratio,all,20,validity_gated_oracle_r_precision,16,0.3922557616288528,0.04316715469874275
+dev_ratio_pa_pos,pure ratio,all,20,consensus_r_precision,16,0.4528630957729699,0.05366348561442414
+dev_ratio_pa_pos,pure ratio,all,20,true_union_recall,16,0.8458501940576558,0.03671228195320092
+dev_ratio_pa_pos,pure ratio,all,20,mean_pairwise_jaccard,16,0.21382291731542302,0.03964546557487697
+dev_ratio_pa_pos,pure ratio,long,1,validity_gated_oracle_r_precision,16,0.27528363937375444,0.052861651659408246
+dev_ratio_pa_pos,pure ratio,long,1,consensus_r_precision,16,0.23289261424439253,0.0517148885961759
+dev_ratio_pa_pos,pure ratio,long,1,true_union_recall,16,0.35505996213580393,0.06674925240622492
+dev_ratio_pa_pos,pure ratio,long,1,mean_pairwise_jaccard,16,,
+dev_ratio_pa_pos,pure ratio,long,2,validity_gated_oracle_r_precision,16,0.30810427808447305,0.050438578629460495
+dev_ratio_pa_pos,pure ratio,long,2,consensus_r_precision,16,0.30960714699756586,0.05635197703564795
+dev_ratio_pa_pos,pure ratio,long,2,true_union_recall,16,0.46208106800952675,0.07094150893481868
+dev_ratio_pa_pos,pure ratio,long,2,mean_pairwise_jaccard,16,0.2055964157000344,0.04379896092243168
+dev_ratio_pa_pos,pure ratio,long,5,validity_gated_oracle_r_precision,16,0.33372712271677896,0.04879569281262977
+dev_ratio_pa_pos,pure ratio,long,5,consensus_r_precision,16,0.36848476466612434,0.06198705645793125
+dev_ratio_pa_pos,pure ratio,long,5,true_union_recall,16,0.6067628481041865,0.06860490672604265
+dev_ratio_pa_pos,pure ratio,long,5,mean_pairwise_jaccard,16,0.19897142487163988,0.0393919310380704
+dev_ratio_pa_pos,pure ratio,long,10,validity_gated_oracle_r_precision,16,0.36006767441297816,0.04419677689392751
+dev_ratio_pa_pos,pure ratio,long,10,consensus_r_precision,16,0.40964483825150966,0.06054388425368824
+dev_ratio_pa_pos,pure ratio,long,10,true_union_recall,16,0.7255587670787271,0.05386633675048448
+dev_ratio_pa_pos,pure ratio,long,10,mean_pairwise_jaccard,16,0.19875650035986483,0.03882716707323298
+dev_ratio_pa_pos,pure ratio,long,20,validity_gated_oracle_r_precision,16,0.39240239211590855,0.04090908154155524
+dev_ratio_pa_pos,pure ratio,long,20,consensus_r_precision,16,0.4323321888274255,0.05428167814159018
+dev_ratio_pa_pos,pure ratio,long,20,true_union_recall,16,0.8192539375510959,0.04581548615584948
+dev_ratio_pa_pos,pure ratio,long,20,mean_pairwise_jaccard,16,0.19493913855375522,0.038309478235103354
+dev_g05_pa_all,"gamma=0.5, all tokens",all,1,validity_gated_oracle_r_precision,16,0.37789055075713035,0.05194392812381116
+dev_g05_pa_all,"gamma=0.5, all tokens",all,1,consensus_r_precision,16,0.3664002769954876,0.054240618987609505
+dev_g05_pa_all,"gamma=0.5, all tokens",all,1,true_union_recall,16,0.38848246894043825,0.05224659759850942
+dev_g05_pa_all,"gamma=0.5, all tokens",all,1,mean_pairwise_jaccard,16,,
+dev_g05_pa_all,"gamma=0.5, all tokens",all,2,validity_gated_oracle_r_precision,16,0.40047740692351463,0.04991119846386168
+dev_g05_pa_all,"gamma=0.5, all tokens",all,2,consensus_r_precision,16,0.3676226094657564,0.05601315209188053
+dev_g05_pa_all,"gamma=0.5, all tokens",all,2,true_union_recall,16,0.48249218718288145,0.054825065544685345
+dev_g05_pa_all,"gamma=0.5, all tokens",all,2,mean_pairwise_jaccard,16,0.2860412988330602,0.045808416285675745
+dev_g05_pa_all,"gamma=0.5, all tokens",all,5,validity_gated_oracle_r_precision,16,0.4223342175849921,0.05076981820502421
+dev_g05_pa_all,"gamma=0.5, all tokens",all,5,consensus_r_precision,16,0.44058554098204383,0.05345150307026374
+dev_g05_pa_all,"gamma=0.5, all tokens",all,5,true_union_recall,16,0.6130150204839382,0.05303758299641086
+dev_g05_pa_all,"gamma=0.5, all tokens",all,5,mean_pairwise_jaccard,16,0.2925178066652817,0.045969778067257286
+dev_g05_pa_all,"gamma=0.5, all tokens",all,10,validity_gated_oracle_r_precision,16,0.44779363598849964,0.04691463281164124
+dev_g05_pa_all,"gamma=0.5, all tokens",all,10,consensus_r_precision,16,0.4622193404380728,0.05323626489237173
+dev_g05_pa_all,"gamma=0.5, all tokens",all,10,true_union_recall,16,0.7136106561999989,0.047966430137803016
+dev_g05_pa_all,"gamma=0.5, all tokens",all,10,mean_pairwise_jaccard,16,0.2928059459009428,0.04699908386515634
+dev_g05_pa_all,"gamma=0.5, all tokens",all,20,validity_gated_oracle_r_precision,16,0.4732792734851504,0.04501639943327839
+dev_g05_pa_all,"gamma=0.5, all tokens",all,20,consensus_r_precision,16,0.48416977088274193,0.05129764583225569
+dev_g05_pa_all,"gamma=0.5, all tokens",all,20,true_union_recall,16,0.7869606875662558,0.04183184210056443
+dev_g05_pa_all,"gamma=0.5, all tokens",all,20,mean_pairwise_jaccard,16,0.296745190729982,0.04702594683513986
+dev_g05_pa_all,"gamma=0.5, all tokens",long,1,validity_gated_oracle_r_precision,16,0.35068369435754304,0.050527121905010096
+dev_g05_pa_all,"gamma=0.5, all tokens",long,1,consensus_r_precision,16,0.3358735213191811,0.053857636293707205
+dev_g05_pa_all,"gamma=0.5, all tokens",long,1,true_union_recall,16,0.36195741449613406,0.05223302229141952
+dev_g05_pa_all,"gamma=0.5, all tokens",long,1,mean_pairwise_jaccard,16,,
+dev_g05_pa_all,"gamma=0.5, all tokens",long,2,validity_gated_oracle_r_precision,16,0.36760622461049797,0.05161554469790929
+dev_g05_pa_all,"gamma=0.5, all tokens",long,2,consensus_r_precision,16,0.33438991191492756,0.0567692121113937
+dev_g05_pa_all,"gamma=0.5, all tokens",long,2,true_union_recall,16,0.4385758105084494,0.061174924856140754
+dev_g05_pa_all,"gamma=0.5, all tokens",long,2,mean_pairwise_jaccard,16,0.26004240034499193,0.0488824872896787
+dev_g05_pa_all,"gamma=0.5, all tokens",long,5,validity_gated_oracle_r_precision,16,0.40868216759489884,0.0480180105869441
+dev_g05_pa_all,"gamma=0.5, all tokens",long,5,consensus_r_precision,16,0.4107353640856799,0.055968309460188735
+dev_g05_pa_all,"gamma=0.5, all tokens",long,5,true_union_recall,16,0.5874409449106249,0.05777928373320174
+dev_g05_pa_all,"gamma=0.5, all tokens",long,5,mean_pairwise_jaccard,16,0.2659883863064547,0.04840796543599639
+dev_g05_pa_all,"gamma=0.5, all tokens",long,10,validity_gated_oracle_r_precision,16,0.4393833542161462,0.045386493891621055
+dev_g05_pa_all,"gamma=0.5, all tokens",long,10,consensus_r_precision,16,0.44028214447341096,0.05543040980156557
+dev_g05_pa_all,"gamma=0.5, all tokens",long,10,true_union_recall,16,0.6826708608431369,0.054145614563980635
+dev_g05_pa_all,"gamma=0.5, all tokens",long,10,mean_pairwise_jaccard,16,0.27005347042776207,0.048456157231496835
+dev_g05_pa_all,"gamma=0.5, all tokens",long,20,validity_gated_oracle_r_precision,16,0.46597311884218773,0.04462319800332841
+dev_g05_pa_all,"gamma=0.5, all tokens",long,20,consensus_r_precision,16,0.465177578057944,0.05458252379370736
+dev_g05_pa_all,"gamma=0.5, all tokens",long,20,true_union_recall,16,0.7566631190109633,0.05065872256955949
+dev_g05_pa_all,"gamma=0.5, all tokens",long,20,mean_pairwise_jaccard,16,0.2731332573201406,0.04846327030178493
+dev_t11_pa_pos,ordinary T=1.1,all,1,validity_gated_oracle_r_precision,16,0.3393179092248201,0.05399597941247634
+dev_t11_pa_pos,ordinary T=1.1,all,1,consensus_r_precision,16,0.3271206397165513,0.05234413059460866
+dev_t11_pa_pos,ordinary T=1.1,all,1,true_union_recall,16,0.3703497739440361,0.059853035459516785
+dev_t11_pa_pos,ordinary T=1.1,all,1,mean_pairwise_jaccard,16,,
+dev_t11_pa_pos,ordinary T=1.1,all,2,validity_gated_oracle_r_precision,16,0.3510822764024581,0.05627566976034816
+dev_t11_pa_pos,ordinary T=1.1,all,2,consensus_r_precision,16,0.32478957516238716,0.061507826668630354
+dev_t11_pa_pos,ordinary T=1.1,all,2,true_union_recall,16,0.45831882691574466,0.06634005417141611
+dev_t11_pa_pos,ordinary T=1.1,all,2,mean_pairwise_jaccard,16,0.2388090515268029,0.04327770331837264
+dev_t11_pa_pos,ordinary T=1.1,all,5,validity_gated_oracle_r_precision,16,0.39504613906745956,0.0505199795645686
+dev_t11_pa_pos,ordinary T=1.1,all,5,consensus_r_precision,16,0.4042543168789299,0.06109071519324131
+dev_t11_pa_pos,ordinary T=1.1,all,5,true_union_recall,16,0.602405495421863,0.05947032960699078
+dev_t11_pa_pos,ordinary T=1.1,all,5,mean_pairwise_jaccard,16,0.23739028817111998,0.0444299289807532
+dev_t11_pa_pos,ordinary T=1.1,all,10,validity_gated_oracle_r_precision,16,0.40841496071129435,0.05062366775524645
+dev_t11_pa_pos,ordinary T=1.1,all,10,consensus_r_precision,16,0.44107169085513137,0.05458921225141644
+dev_t11_pa_pos,ordinary T=1.1,all,10,true_union_recall,16,0.7156182206556875,0.050867071744755986
+dev_t11_pa_pos,ordinary T=1.1,all,10,mean_pairwise_jaccard,16,0.22519912369354023,0.0434472906054892
+dev_t11_pa_pos,ordinary T=1.1,all,20,validity_gated_oracle_r_precision,16,0.4294742841608431,0.04741588379147317
+dev_t11_pa_pos,ordinary T=1.1,all,20,consensus_r_precision,16,0.46819782445845687,0.051707712037216275
+dev_t11_pa_pos,ordinary T=1.1,all,20,true_union_recall,16,0.8228652570404321,0.036995424062661875
+dev_t11_pa_pos,ordinary T=1.1,all,20,mean_pairwise_jaccard,16,0.22427160957061765,0.043131878533659386
+dev_t11_pa_pos,ordinary T=1.1,long,1,validity_gated_oracle_r_precision,16,0.30279426769451045,0.057065906473662664
+dev_t11_pa_pos,ordinary T=1.1,long,1,consensus_r_precision,16,0.28920913038914264,0.055337530670166196
+dev_t11_pa_pos,ordinary T=1.1,long,1,true_union_recall,16,0.33180789608015104,0.06320243471636922
+dev_t11_pa_pos,ordinary T=1.1,long,1,mean_pairwise_jaccard,16,,
+dev_t11_pa_pos,ordinary T=1.1,long,2,validity_gated_oracle_r_precision,16,0.3181431132230995,0.059811610354591836
+dev_t11_pa_pos,ordinary T=1.1,long,2,consensus_r_precision,16,0.3128203505528786,0.05938761676816159
+dev_t11_pa_pos,ordinary T=1.1,long,2,true_union_recall,16,0.4073587237490519,0.07342679639093128
+dev_t11_pa_pos,ordinary T=1.1,long,2,mean_pairwise_jaccard,16,0.21667413992853565,0.046170474286402016
+dev_t11_pa_pos,ordinary T=1.1,long,5,validity_gated_oracle_r_precision,16,0.36879755300747236,0.05273167771820216
+dev_t11_pa_pos,ordinary T=1.1,long,5,consensus_r_precision,16,0.37682722385658296,0.06355145658976602
+dev_t11_pa_pos,ordinary T=1.1,long,5,true_union_recall,16,0.5505386479729224,0.06961493661353763
+dev_t11_pa_pos,ordinary T=1.1,long,5,mean_pairwise_jaccard,16,0.22405061959410322,0.044128297576386886
+dev_t11_pa_pos,ordinary T=1.1,long,10,validity_gated_oracle_r_precision,16,0.38660058687482335,0.050896701864115206
+dev_t11_pa_pos,ordinary T=1.1,long,10,consensus_r_precision,16,0.4133102294666855,0.05971684062508475
+dev_t11_pa_pos,ordinary T=1.1,long,10,true_union_recall,16,0.6840798742097529,0.0566559381719311
+dev_t11_pa_pos,ordinary T=1.1,long,10,mean_pairwise_jaccard,16,0.20991796791942138,0.042709427993412846
+dev_t11_pa_pos,ordinary T=1.1,long,20,validity_gated_oracle_r_precision,16,0.4030312632568097,0.04850830067903684
+dev_t11_pa_pos,ordinary T=1.1,long,20,consensus_r_precision,16,0.44012517431259335,0.057847709538929246
+dev_t11_pa_pos,ordinary T=1.1,long,20,true_union_recall,16,0.7739073913681789,0.05069476101631812
+dev_t11_pa_pos,ordinary T=1.1,long,20,mean_pairwise_jaccard,16,0.2075522462468282,0.04210094999790789

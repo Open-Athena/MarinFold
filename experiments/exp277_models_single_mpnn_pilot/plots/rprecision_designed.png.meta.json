@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "De novo FoldBench \u00b7 eval-denovo (19). Identical proteins for all predictors; 10,000 bootstrap resamples. The KNN uses the native decontaminated corpus and does not index redesigns."
+}

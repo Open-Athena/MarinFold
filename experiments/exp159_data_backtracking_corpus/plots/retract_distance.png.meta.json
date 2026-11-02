@@ -1,0 +1,8 @@
+{
+  "script": "make_plots.py",
+  "args": [
+    "--shards",
+    "2"
+  ],
+  "caption": "Emit-to-retract distance (mean 17.9, median 9); only 0.2% are immediate. This spread is the long-range self-correction signal the corpus exists to teach."
+}
