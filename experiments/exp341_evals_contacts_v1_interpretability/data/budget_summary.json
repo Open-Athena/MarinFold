@@ -1,0 +1,20 @@
+{
+  "native-afdb": {
+    "documents": 3963003,
+    "tokens": 4428977835,
+    "share_docs_truncated": 5.7784462943883716e-05,
+    "share_tokens_in_truncated_docs": 0.0004235211983173088,
+    "eligible_contacts": 782625673,
+    "share_eligible_contacts_dropped": 7.031714125738109e-05,
+    "median_lowest_included_degree_truncated": 0.004080269179637115
+  },
+  "native-esm": {
+    "documents": 65553178,
+    "tokens": 69977369987,
+    "share_docs_truncated": 0.0,
+    "share_tokens_in_truncated_docs": 0.0,
+    "eligible_contacts": 12802113801,
+    "share_eligible_contacts_dropped": 0.0,
+    "median_lowest_included_degree_truncated": null
+  }
+}

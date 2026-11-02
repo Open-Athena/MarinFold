@@ -1,0 +1,31 @@
+{
+  "identity_quartiles": [
+    {
+      "identity": "(0.299, 0.33]",
+      "n": 252,
+      "exp232_removed_r_precision": 0.6090349722689551
+    },
+    {
+      "identity": "(0.33, 0.377]",
+      "n": 251,
+      "exp232_removed_r_precision": 0.5898427496149202
+    },
+    {
+      "identity": "(0.377, 0.441]",
+      "n": 248,
+      "exp232_removed_r_precision": 0.5699327252962308
+    },
+    {
+      "identity": "(0.441, 0.993]",
+      "n": 249,
+      "exp232_removed_r_precision": 0.5413469392717251
+    }
+  ],
+  "identity_coef_adjusted": -0.14808426984010203,
+  "identity_spearman": -0.12217963672076665,
+  "pairs": 998,
+  "mean_gap": 0.11159653395351278,
+  "mean_density_difference": 0.020622008517182495,
+  "mean_long_share_difference": -0.03024229297732842,
+  "gap_after_density_and_long_share": 0.10278771661631482
+}

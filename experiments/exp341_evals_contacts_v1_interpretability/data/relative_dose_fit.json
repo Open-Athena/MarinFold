@@ -1,0 +1,32 @@
+{
+  "r_precision": {
+    "n": 1000,
+    "breakpoint_relatives": 6.999999999999998,
+    "breakpoint_ci_relatives": [
+      1.9999999999999996,
+      435.05562809550156
+    ],
+    "adjusted_slope_per_log1p_relative": 0.03311463342931543,
+    "adjusted_slope_ci": [
+      0.02729842527192229,
+      0.03916599286246417
+    ],
+    "adjusted_coef_log_length": 0.0696551791152676,
+    "adjusted_coef_plddt": -0.0005880083881899048
+  },
+  "r_precision_long": {
+    "n": 992,
+    "breakpoint_relatives": 10.000000000000002,
+    "breakpoint_ci_relatives": [
+      1.9999999999999996,
+      258.7425069065854
+    ],
+    "adjusted_slope_per_log1p_relative": 0.03667826031066706,
+    "adjusted_slope_ci": [
+      0.029637516181958028,
+      0.043598869409248536
+    ],
+    "adjusted_coef_log_length": 0.08112791087920802,
+    "adjusted_coef_plddt": 0.0002622477219172345
+  }
+}

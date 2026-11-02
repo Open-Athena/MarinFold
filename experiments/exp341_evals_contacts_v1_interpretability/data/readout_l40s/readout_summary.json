@@ -1,0 +1,18 @@
+{
+  "model": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+  "n_proteins": 116,
+  "seeds": 4,
+  "tail_batch_size": 256,
+  "model_load_seconds": 1.8,
+  "pass_seconds": 121.0,
+  "forward_tokens": 710640,
+  "tokens_per_second": 5932.8,
+  "plan_assumed_tokens_per_second": 50000,
+  "mean_r_precision_by_set": {
+    "eval-denovo": 0.6163,
+    "eval-val": 0.5051
+  },
+  "gpu_name": "NVIDIA L40S",
+  "gpu_total_memory_gb": 44.4,
+  "gpu_compute_capability": "8.9"
+}

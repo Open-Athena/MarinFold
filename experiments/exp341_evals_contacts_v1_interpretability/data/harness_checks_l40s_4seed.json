@@ -1,0 +1,64 @@
+{
+  "model": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+  "dtype": "bfloat16",
+  "seeds": 4,
+  "model_load_seconds": 95.2,
+  "unrepaired_rope_theta": 10000.0,
+  "checks": {
+    "check1_hooked_matches_clean": true,
+    "check1_unrepaired_diverges": true,
+    "check2_empty_ablation_is_clean": true
+  },
+  "criteria": {
+    "hooked_tolerance": 0.0,
+    "divergence_floor_nats": 0.1,
+    "layer_boundaries": 25
+  },
+  "proteins": [
+    {
+      "stem": "7t9r_A",
+      "n_residues": 38,
+      "clean_seconds": 4.38,
+      "r_precision_clean": 0.20833333333333334,
+      "r_precision_long_clean": 0.14285714285714285,
+      "hooked_max_abs_diff": 0.0,
+      "captured_boundaries": 25,
+      "r_precision_empty_ablation": 0.20833333333333334,
+      "r_precision_unrepaired": 0.08333333333333333,
+      "unrepaired_mean_abs_log_diff": 0.9817526360056363
+    },
+    {
+      "stem": "7yhr_A",
+      "n_residues": 60,
+      "clean_seconds": 0.42,
+      "r_precision_clean": 0.3902439024390244,
+      "r_precision_long_clean": 0.21739130434782608,
+      "hooked_max_abs_diff": 0.0,
+      "captured_boundaries": 25,
+      "r_precision_empty_ablation": 0.3902439024390244,
+      "r_precision_unrepaired": 0.24390243902439024,
+      "unrepaired_mean_abs_log_diff": 2.1204907321590585
+    },
+    {
+      "stem": "7xi5_A",
+      "n_residues": 65,
+      "clean_seconds": 0.52,
+      "r_precision_clean": 0.7857142857142857,
+      "r_precision_long_clean": 0.6956521739130435,
+      "hooked_max_abs_diff": 0.0,
+      "captured_boundaries": 25,
+      "r_precision_empty_ablation": 0.7857142857142857,
+      "r_precision_unrepaired": 0.21428571428571427,
+      "unrepaired_mean_abs_log_diff": 4.948815196188534
+    }
+  ],
+  "worker": {
+    "hostname": "ip-172-31-4-114",
+    "platform": "Linux-6.8.0-1066-aws-x86_64-with-glibc2.35",
+    "torch_version": "2.14.1+cu130",
+    "device": "cuda",
+    "timestamp_utc": "2026-10-10T14:27:30+00:00",
+    "gpu_name": "NVIDIA L40S",
+    "gpu_total_memory_gb": 44.4
+  }
+}

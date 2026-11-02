@@ -60,3 +60,23 @@ def test_sample_minimum_suppresses_preferred_eos_only_for_new_tokens(tmp_path) -
     assert all(stop_id not in row for row in constrained)
     with pytest.raises(ValueError, match="min_new_tokens"):
         backend.sample_completions(prompts, min_new_tokens=9, **common)
+
+
+def test_from_model_scores_like_the_path_constructed_backend(tmp_path) -> None:
+    tokenizer = build_tokenizer(["<a>", "<b>", "<c>", "<d>"])
+    torch.manual_seed(0)
+    model = GPT2LMHeadModel(GPT2Config(
+        vocab_size=len(tokenizer), n_positions=32, n_embd=32, n_layer=2, n_head=2,
+        bos_token_id=None, eos_token_id=None,
+    ))
+    model.save_pretrained(tmp_path)
+    tokenizer.save_pretrained(tmp_path)
+    ids = [tokenizer.convert_tokens_to_ids(t) for t in ("<a>", "<b>", "<c>", "<d>")]
+    args = (ids[:3], [[ids[0]], [ids[3]]], ids)
+
+    from_path = TransformersBackend(tmp_path, device="cpu", dtype="float32")
+    wrapped = TransformersBackend.from_model(from_path.model, from_path.tokenizer)
+
+    assert wrapped.device == "cpu"
+    assert wrapped.model is from_path.model
+    assert (wrapped.next_token_probs(*args) == from_path.next_token_probs(*args)).all()
