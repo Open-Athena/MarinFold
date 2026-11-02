@@ -20,7 +20,7 @@ Generating incrementally and, after every retraction, **rebuilding the base mode
 
 ## Background
 
-Depends on #158 (`<retract>` token + `read.py` fold). Feeds #160 (train + eval). Generator = `contacts-v1-exp120-1.5B` (#120). Reuses the #102 HF rollout path (emission order + teacher-forced scoring) and `inference._fwd_matrix` / `_pcontact_from_fwd` for the posterior signal. See the issue for the full method and the twin-corpus/publishing conventions (#53/#105/#126/#132).
+Depends on #158 (`<retract>` token + `read.py` fold). Feeds #160 (train + eval). Generator = `contacts-v1-exp120-1.5B` (#120). Reuses the #102 HF rollout path (emission order + teacher-forced scoring) and `inference.fwd_matrix` / `pcontact_from_fwd` for the posterior signal. See the issue for the full method and the twin-corpus/publishing conventions (#53/#105/#126/#132).
 
 ## Approach
 
@@ -36,7 +36,7 @@ Depends on #158 (`<retract>` token + `read.py` fold). Feeds #160 (train + eval).
 
 **The two model-backed callables (implemented in `backtrack_adapter.py`):**
 - `Proposer.propose(live)` — build the clean contacts-v1 prompt (sequence prefix + live contacts) and sample the next `<contact>` from `contacts-v1-exp120-1.5B` (HF transformers, T=1.0/p=0.95/k=50), returning its canonical position pair or `None` on `<end>`.
-- `Scorer.score(committed, targets)` — one `_fwd_matrix` pass over the committed-set prompt → `s(c)` for every target pair at once.
+- `Scorer.score(committed, targets)` — one `fwd_matrix` pass over the committed-set prompt → `s(c)` for every target pair at once.
 
 **GPU adapter + pilot (done).** `backtrack_adapter.py` wraps exp120 into `Proposer`/`Scorer` (unit-tested GPU-free in `test_backtrack_adapter.py`); `run_pilot.py` runs the engine on real proteins from exp98's `targets.parquet` (GT + sequences, no pyconfind) and reports the gating numbers. Pilot ran on an RTX A5000 — see Results.
 
@@ -62,7 +62,7 @@ Profiling the single-protein loop attributed **~86%** of the time to `propose`
 - **Targeted score.** `score` ran one tail per residue (L) to fill the whole
   [L, L] map when only the queued pairs' entries are ever read; it now runs
   tails only for residues appearing in the targets. Numerically identical
-  (asserted by an equivalence test vs `_pcontact_from_fwd(_fwd_matrix(...))`),
+  (asserted by an equivalence test vs `pcontact_from_fwd(fwd_matrix(...))`),
   and it removed the serial bottleneck that remained after propose was batched.
 
 | batch | s/doc | folds→GT |

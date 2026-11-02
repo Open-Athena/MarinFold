@@ -88,7 +88,7 @@ class Scorer(Protocol):
     ``score(committed, targets)`` returns ``{pair: s}`` for each target pair,
     where ``s`` is the model's probability of asserting that pair conditioned
     on ``committed`` (the live set with the queue removed) — one teacher-forced
-    ``_fwd_matrix`` pass in the real adapter.
+    ``fwd_matrix`` pass in the real adapter.
     """
 
     def score(

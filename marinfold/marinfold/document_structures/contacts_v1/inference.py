@@ -255,19 +255,20 @@ def structure_from_sequence(
 # --------------------------------------------------------------------------
 
 
-def _prefix_and_positions(
+def prefix_and_positions(
     structure: ContactStructure, *, entry_id: str
 ) -> tuple[str, list[int], int] | None:
     """Deterministic contacts-v1 sequence prefix + per-seq-index position ids.
 
-    Returns ``(prefix, seq_positions, L)`` where ``prefix`` is the document
-    text up to and including ``<begin_statements>``, ``seq_positions[k]`` is
-    the position index assigned to residue ``k`` (0-based, sequence order),
-    and ``L`` is the residue count. ``None`` when the chain can't be
-    serialized (fewer than 2 residues, or more than the position-token
-    space — see :func:`build_document`). ``entry_id`` is the deterministic
-    RNG seed: changing it resamples the start index + statement order
-    (test-time augmentation).
+    Args:
+        structure: Residues to serialize in sequence order.
+        entry_id: Deterministic RNG seed for the start index and statement order.
+
+    Returns:
+        ``(prefix, seq_positions, L)``: text through ``<begin_statements>``,
+        position-token indices in sequence order, and residue count. Returns
+        None if fewer than two residues or too many for the position-token
+        space prevent serialization; see :func:`build_document`.
     """
     result = build_document(
         entry_id, structure.residues, [], config=GenerationConfig()
@@ -281,16 +282,20 @@ def _prefix_and_positions(
     return prefix, seq_positions, result.seq_len
 
 
-def _fwd_matrix(
+def fwd_matrix(
     backend: Backend, prefix: str, seq_positions: list[int]
 ) -> np.ndarray:
     """``log P(i)·P(j|i)`` over all residue pairs for one sequence realization.
 
-    Returns ``fwd[i, j] = lp1[i] + lp2[i, j]`` with
-    ``lp1[i] = log P(<p_i> | prefix, <contact>)`` and
-    ``lp2[i, j] = log P(<p_j> | prefix, <contact>, <p_i>)`` — the two
-    conditional distributions the pairwise readout needs, restricted to this
-    protein's position tokens. Not symmetric; callers symmetrize.
+    Args:
+        backend: Model backend providing token probabilities and tokenizer.
+        prefix: Serialized sequence ending where contact statements begin.
+        seq_positions: Position-token indices in sequence order.
+
+    Returns:
+        Asymmetric ``[L, L]`` log probabilities in sequence coordinates:
+        ``fwd[i, j] = log P(<p_i> | prefix, <contact>) +
+        log P(<p_j> | prefix, <contact>, <p_i>)``. Callers symmetrize.
     """
     tokenizer = backend.tokenizer
     prefix_ids = list(tokenizer.encode(prefix, add_special_tokens=False))
@@ -307,8 +312,15 @@ def _fwd_matrix(
     return lp1[:, None] + lp2  # log P(i)·P(j|i)
 
 
-def _pcontact_from_fwd(fwd: np.ndarray) -> np.ndarray:
-    """Unordered ``P(contact)``: ``exp(fwd) + exp(fwd.T)`` (symmetric)."""
+def pcontact_from_fwd(fwd: np.ndarray) -> np.ndarray:
+    """Compute unordered contact probabilities from directed log probabilities.
+
+    Args:
+        fwd: Square log-probability matrix returned by :func:`fwd_matrix`.
+
+    Returns:
+        Symmetric ``exp(fwd) + exp(fwd.T)`` in the input coordinates.
+    """
     return np.exp(fwd) + np.exp(fwd.T)
 
 
@@ -316,14 +328,14 @@ def _sym_from_fwd(fwd: np.ndarray) -> np.ndarray:
     """Symmetrized geo-mean log-score ``0.5·(fwd + fwd.T)``.
 
     Used only as the key that breaks rollout's large zero-vote mass. The
-    pairwise readout ranks by ``P(contact)`` (:func:`_pcontact_from_fwd`)
+    pairwise readout ranks by ``P(contact)`` (:func:`pcontact_from_fwd`)
     instead; the two orderings differ for orientation-asymmetric pairs but
     agree with the exp82/exp89 sym-ranked numbers within backend noise.
     """
     return 0.5 * (fwd + fwd.T)
 
 
-def _pcontact_matrix(
+def pcontact_matrix(
     backend: Backend, prefix: str, seq_positions: list[int]
 ) -> np.ndarray:
     """``P(contact)`` over all residue pairs for one sequence realization.
@@ -331,8 +343,16 @@ def _pcontact_matrix(
     Entry (i, j) is the model's probability of emitting {i, j} as its next
     contact statement, unordered. The diagonal / near-diagonal band is
     meaningless here; callers mask it.
+
+    Args:
+        backend: Model backend providing token probabilities and tokenizer.
+        prefix: Serialized sequence ending where contact statements begin.
+        seq_positions: Position-token indices in sequence order.
+
+    Returns:
+        Symmetric ``[L, L]`` contact probabilities in sequence coordinates.
     """
-    return _pcontact_from_fwd(_fwd_matrix(backend, prefix, seq_positions))
+    return pcontact_from_fwd(fwd_matrix(backend, prefix, seq_positions))
 
 
 # --------------------------------------------------------------------------
@@ -340,15 +360,23 @@ def _pcontact_matrix(
 # --------------------------------------------------------------------------
 
 
-def _pairwise_score_matrix(
+def pairwise_score_matrix(
     backend: Backend, structure: ContactStructure, cfg: "InferenceConfig"
 ) -> tuple[np.ndarray, int] | None:
     """Mean ``P(contact)`` over ``cfg.ensemble_k`` sequence-definition resamples.
 
     Each draw uses a different deterministic ``entry_id`` salt, so the
     contacts-v1 start index + statement order differ; the resulting matrices
-    are all in sequence coordinates, so averaging is element-wise. Returns
-    ``(score, L)`` or ``None`` if the structure can't be serialized.
+    are all in sequence coordinates, so averaging is element-wise.
+
+    Args:
+        backend: Model backend providing token probabilities and tokenizer.
+        structure: Residues and entry ID defining the input protein.
+        cfg: Inference settings; ``ensemble_k`` must be at least one.
+
+    Returns:
+        ``(score, L)`` containing a symmetric ``[L, L]`` mean probability
+        matrix and residue count, or None if serialization fails.
     """
     acc: np.ndarray | None = None
     seq_len = 0
@@ -358,11 +386,11 @@ def _pairwise_score_matrix(
             if cfg.ensemble_k == 1
             else f"{structure.entry_id}#cv1ens{k}"
         )
-        built = _prefix_and_positions(structure, entry_id=entry_id)
+        built = prefix_and_positions(structure, entry_id=entry_id)
         if built is None:
             return None
         prefix, seq_positions, seq_len = built
-        matrix = _pcontact_from_fwd(_fwd_matrix(backend, prefix, seq_positions))
+        matrix = pcontact_from_fwd(fwd_matrix(backend, prefix, seq_positions))
         acc = matrix if acc is None else acc + matrix
     assert acc is not None  # ensemble_k >= 1
     return acc / cfg.ensemble_k, seq_len
@@ -412,7 +440,7 @@ def _rollout_score_matrix(
     position_maps: list[dict[int, int]] = []
     seq_len = 0
     for r in range(cfg.n_rollouts):
-        built = _prefix_and_positions(structure, entry_id=f"{structure.entry_id}:r{r}")
+        built = prefix_and_positions(structure, entry_id=f"{structure.entry_id}:r{r}")
         if built is None:
             return None
         prefix, seq_positions, seq_len = built
@@ -457,10 +485,10 @@ def _rollout_score_matrix(
                 votes[hi, lo] += 1.0
 
     # Pairwise log-prob (one canonical realization) breaks the vote ties.
-    built = _prefix_and_positions(structure, entry_id=structure.entry_id)
+    built = prefix_and_positions(structure, entry_id=structure.entry_id)
     assert built is not None  # the rollout realizations already serialized
     prefix, seq_positions, _ = built
-    pairwise_sym = _sym_from_fwd(_fwd_matrix(backend, prefix, seq_positions))
+    pairwise_sym = _sym_from_fwd(fwd_matrix(backend, prefix, seq_positions))
     return _tiebreak(votes, pairwise_sym), seq_len
 
 
@@ -475,7 +503,7 @@ def _score_matrix(
     if cfg.method == "rollout":
         return _rollout_score_matrix(backend, structure, cfg)
     if cfg.method == "pairwise":
-        return _pairwise_score_matrix(backend, structure, cfg)
+        return pairwise_score_matrix(backend, structure, cfg)
     raise ValueError(
         f"Unknown method {cfg.method!r}. Expected 'pairwise' or 'rollout'."
     )
@@ -682,10 +710,20 @@ def predict(
 # --------------------------------------------------------------------------
 
 
-def _gt_contact_matrix(
+def gt_contact_matrix(
     gt_contacts: Iterable[RawContact], seq_len: int, min_seq_separation: int
 ) -> np.ndarray:
-    """Boolean ``[L, L]`` GT matrix: degree >= floor and separation in range."""
+    """Build a symmetric ground-truth matrix with contact degree at least 0.001.
+
+    Args:
+        gt_contacts: Contacts with zero-based ``seq_i < seq_j`` and degree.
+        seq_len: Number of residues defining the matrix dimensions.
+        min_seq_separation: Minimum inclusive sequence-index separation.
+
+    Returns:
+        Boolean ``[seq_len, seq_len]`` matrix. Out-of-range, reversed,
+        low-degree and insufficiently separated contacts are excluded.
+    """
     matrix = np.zeros((seq_len, seq_len), dtype=bool)
     for contact in gt_contacts:
         i, j = contact.seq_i, contact.seq_j
@@ -723,7 +761,7 @@ def _rank_auc(scores: np.ndarray, labels: np.ndarray) -> float:
     return float((rank_sum_pos - n_pos * (n_pos + 1) / 2.0) / (n_pos * n_neg))
 
 
-def _metric_rows(
+def metric_rows(
     pcontact: np.ndarray, gt: np.ndarray, seq_len: int, min_seq_separation: int
 ) -> dict[str, dict[str, float]]:
     """Per-range precision @ {L, L/2, L/5, R} + AUC for one structure.
@@ -731,6 +769,18 @@ def _metric_rows(
     Mirrors exp89's ``compute_metrics.metric_rows``: candidate pairs are
     every i < j with separation in the range; ``R`` is the number of true
     contacts in the range; precision is over the top-K ranked candidates.
+
+    Args:
+        pcontact: ``[seq_len, seq_len]`` prediction scores, larger being better.
+        gt: Boolean ground-truth matrix in the same sequence coordinates.
+        seq_len: Number of residues.
+        min_seq_separation: Minimum inclusive separation for candidate pairs.
+
+    Returns:
+        Range names (``short``, ``medium``, ``long``, ``all``) mapping to
+        ``auc``, ``precision_at_L``, ``precision_at_L2``, ``precision_at_L5``
+        and ``r_precision``. Undefined metrics are NaN; if no candidate pairs
+        exist, each range maps to an empty dict.
     """
     rows = np.array([i for (i, j) in _candidate_pairs(seq_len, min_seq_separation)])
     cols = np.array([j for (i, j) in _candidate_pairs(seq_len, min_seq_separation)])
@@ -842,10 +892,10 @@ def evaluate(
             )
             continue
         score, seq_len = built
-        gt = _gt_contact_matrix(structure.gt_contacts, seq_len, cfg.min_seq_separation)
+        gt = gt_contact_matrix(structure.gt_contacts, seq_len, cfg.min_seq_separation)
         per_structure_n_residues[structure.entry_id] = seq_len
 
-        rows = _metric_rows(score, gt, seq_len, cfg.min_seq_separation)
+        rows = metric_rows(score, gt, seq_len, cfg.min_seq_separation)
         for rng, rng_metrics in rows.items():
             for key, value in rng_metrics.items():
                 if math.isfinite(value):
