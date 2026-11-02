@@ -263,6 +263,21 @@ def test_truncation_while_seeking_a_record_boundary_is_fatal(
         )
 
 
+def test_truncated_record_cannot_escape_past_a_worker_boundary(
+    fasta_server, tmp_path: Path
+) -> None:
+    url, records = fasta_server
+    actual_size = content_length(url)
+    # The worker owns the last record even though its byte range ends inside
+    # that record. EOF must be checked before its partial body is accepted.
+    start = actual_size - len(records[-1][2].encode())
+    with pytest.raises(RuntimeError, match="record body.*truncated"):
+        _scan_range(
+            url, {records[-1][0].encode()}, 1, start, start + 1,
+            str(tmp_path / "seam.fasta.gz"), actual_size + 100,
+        )
+
+
 @pytest.mark.parametrize("shards", [1, 2])
 def test_fragment_duplicates_do_not_hide_missing_accessions(
     fasta_server, tmp_path: Path, shards: int

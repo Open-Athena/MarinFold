@@ -318,6 +318,12 @@ def _scan_range(
                 while True:
                     reader.fill(1)
                     if not reader._buffer and reader._eof:
+                        if reader.consumed != source_total:
+                            raise RuntimeError(
+                                f"range {index}: record body ended at byte "
+                                f"{reader.consumed:,}, but the source is "
+                                f"{source_total:,} bytes; the transfer was truncated"
+                            )
                         break
                     if reader._buffer[:1] == b">":
                         break

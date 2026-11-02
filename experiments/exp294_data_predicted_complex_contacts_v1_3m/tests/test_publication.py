@@ -24,5 +24,14 @@ def test_publication_requires_present_matching_sizes(tmp_path: Path, published: 
     artifact = tmp_path / "shard"
     artifact.write_bytes(b"abc")
     with pytest.raises(RuntimeError, match="did not verify"):
-        _verify_sizes([(artifact, "remote")], published)
-    _verify_sizes([(artifact, "remote")], {"remote": 3})
+        _verify_sizes([(artifact, "remote")], published, "data/test")
+    _verify_sizes([(artifact, "remote")], {"remote": 3}, "data/test")
+
+
+def test_remote_shards_from_an_older_release_are_rejected(tmp_path: Path) -> None:
+    artifact = tmp_path / "shard"
+    artifact.write_bytes(b"abc")
+    remote = "data/test/train/shard-00000-of-00001.parquet"
+    stale = "data/test/train/shard-00000-of-00002.parquet"
+    with pytest.raises(RuntimeError, match="unexpected training artifact"):
+        _verify_sizes([(artifact, remote)], {remote: 3, stale: 3}, "data/test")

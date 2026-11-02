@@ -106,12 +106,19 @@ def verify(items: list[tuple[Path, str]], token: str, prefix: str) -> None:
                                   recursive=True, token=token):
         if entry.type == "file":
             published[entry.path] = entry.size
-    _verify_sizes(items, published)
+    _verify_sizes(items, published, prefix)
     _log(f"verified {len(items)} files under {prefix}")
 
 
-def _verify_sizes(items: list[tuple[Path, str]], published: dict[str, int]) -> None:
+def _verify_sizes(
+    items: list[tuple[Path, str]], published: dict[str, int], prefix: str
+) -> None:
     problems = []
+    train = prefix.rstrip("/") + "/train/"
+    expected_shards = {remote for _, remote in items if remote.startswith(train)}
+    actual_shards = {remote for remote in published if remote.startswith(train)}
+    for stale in sorted(actual_shards - expected_shards):
+        problems.append(f"{stale}: unexpected training artifact; use a fresh release prefix")
     for local, remote in items:
         if remote not in published:
             problems.append(f"{remote}: absent")
