@@ -1,0 +1,32 @@
+{
+  "selection": "First, middle and last length-ranked structures of the frozen pilot; no accuracy used.",
+  "references": [
+    {
+      "entry_id": "6dsl_A",
+      "L": 33,
+      "uri": "s3://marinfold-exp368-rno2a/MarinFold/exp368/results/pilot-direct-scored/6dsl_A/pool-8.parquet",
+      "bytes": 9394,
+      "sha256": "3bb2659e19775836bff16863fe836dcc3f3566e5d2eb80d929e86042f6076aff"
+    },
+    {
+      "entry_id": "5gp9_A",
+      "L": 193,
+      "uri": "s3://marinfold-exp368-rno2a/MarinFold/exp368/results/pilot-direct-scored/5gp9_A/pool-8.parquet",
+      "bytes": 25136,
+      "sha256": "576ea07e4f9f3d3a7720fe6070d039add58ad8afc5781b444b559873aeded308"
+    },
+    {
+      "entry_id": "1q2l_A",
+      "L": 937,
+      "uri": "s3://marinfold-exp368-rno2a/MarinFold/exp368/results/pilot-direct-scored/1q2l_A/pool-8.parquet",
+      "bytes": 121842,
+      "sha256": "a8d5f2977a1125365393990743a73132a5fea792088ea0dea8c108ad2b6de6a0"
+    }
+  ],
+  "maximum_reference_bytes": 5000000,
+  "max_bf16_probability_error": 0.01,
+  "max_bf16_recall_error": 0.01,
+  "fp32_cache_tolerance": 1e-05,
+  "additional_cache_entries": ["6z0m_A"],
+  "note": "Cross-GPU BF16 replay guard fixed before measurement. Does not establish bitwise equivalence; FP32 cached/full equivalence retains the original stricter gate."
+}

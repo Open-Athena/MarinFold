@@ -1,0 +1,32 @@
+{
+  "at": "2026-10-21T17:51:14.560565+00:00",
+  "reason": "Score completed validation outputs on healthy East H100s after verified 404 MB result migration",
+  "jobs": [
+    {
+      "job_id": "/bizon/exp368-validation-score-rno-000",
+      "returncode": 0,
+      "output": "se `--active` to target the active environment instead\nI20261021 13:50:59 139932284409664 iris.cli.main Resolved cluster 'marin' to config: /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nI20261021 13:50:59 139932284409664 iris.cluster.config Loading config from /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nNot all requested scopes were granted by the authorization server, missing scopes email.\n"
+    },
+    {
+      "job_id": "/bizon/exp368-validation-score-rno-001",
+      "returncode": 0,
+      "output": "se `--active` to target the active environment instead\nI20261021 13:51:11 140218164168512 iris.cli.main Resolved cluster 'marin' to config: /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nI20261021 13:51:11 140218164168512 iris.cluster.config Loading config from /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nNot all requested scopes were granted by the authorization server, missing scopes email.\n"
+    },
+    {
+      "job_id": "/bizon/exp368-validation-score-rno-002",
+      "returncode": 0,
+      "output": "se `--active` to target the active environment instead\nI20261021 13:51:00 139626104047424 iris.cli.main Resolved cluster 'marin' to config: /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nI20261021 13:51:00 139626104047424 iris.cluster.config Loading config from /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nNot all requested scopes were granted by the authorization server, missing scopes email.\n"
+    },
+    {
+      "job_id": "/bizon/exp368-validation-score-rno-003",
+      "returncode": 0,
+      "output": "se `--active` to target the active environment instead\nI20261021 13:51:00 140357635077952 iris.cli.main Resolved cluster 'marin' to config: /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nI20261021 13:51:00 140357635077952 iris.cluster.config Loading config from /home/bizon/.codex/worktrees/43d6/MarinFold/scratch/exp368-iris-client/lib/iris/config/marin.yaml\nNot all requested scopes were granted by the authorization server, missing scopes email.\n"
+    }
+  ],
+  "confirmed_states": {
+    "/bizon/exp368-validation-score-rno-000": "JOB_STATE_KILLED",
+    "/bizon/exp368-validation-score-rno-001": "JOB_STATE_KILLED",
+    "/bizon/exp368-validation-score-rno-002": "JOB_STATE_KILLED",
+    "/bizon/exp368-validation-score-rno-003": "JOB_STATE_KILLED"
+  }
+}

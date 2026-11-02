@@ -1,0 +1,31 @@
+{
+  "status": "passed",
+  "source_sha256": "f5276763704076ccb8feab9645b5cdcdf391ee7d45685c09920e23105da21b74",
+  "verification": {
+    "max_probability_error": 5.960464477539063e-08,
+    "mean_probability_error": 3.725290298461914e-09,
+    "max_recall_error": 5.960464477539063e-08,
+    "fp32_vs_released_bf16_max_difference": 0.0004525184631347656
+  },
+  "timing": {
+    "stem": "synthetic-runtime-smoke",
+    "n_residues": 24,
+    "n_pairs": 2,
+    "mode": "cache-and-lookahead-runtime-check",
+    "elapsed_seconds": 1.3125801240094006,
+    "model_load_seconds": 0.19106068601831794,
+    "total_seconds": 1.505624330136925,
+    "model_nickname": "tiny-random-qwen3-proofreader",
+    "runner_tag": "iris",
+    "gpu_name": "NVIDIA GB200",
+    "gpu_total_memory_gb": 197.890015232,
+    "gpu_compute_capability": "10.0",
+    "hostname": "sjnsxs64",
+    "platform": "Linux-6.17.13-155-gdec5393c-coreweave-arm64-aarch64-with-glibc2.36",
+    "torch_version": "2.10.0+cu130",
+    "cuda_version": "13.0",
+    "timestamp_utc": "2026-10-21T18:33:23.740955+00:00"
+  },
+  "checkpoint_bytes_transferred": 0,
+  "limitation": "Synthetic runtime check only; production weights and outputs are not validated."
+}

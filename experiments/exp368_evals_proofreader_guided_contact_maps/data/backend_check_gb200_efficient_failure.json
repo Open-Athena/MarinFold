@@ -1,0 +1,9 @@
+{
+  "job": "/bizon/exp368-backend-efficient-gb200-v1",
+  "error": "RuntimeError: Invalid backend",
+  "stage": "FP32 cached generation in the forced memory-efficient SDPA backend",
+  "torch_version": "2.10.0+cu130",
+  "gpu": "GB200",
+  "status": "failed",
+  "retry": false
+}

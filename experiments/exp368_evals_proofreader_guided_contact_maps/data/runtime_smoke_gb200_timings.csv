@@ -1,0 +1,2 @@
+stem,n_residues,n_pairs,mode,elapsed_seconds,model_load_seconds,total_seconds,model_nickname,runner_tag,gpu_name,gpu_total_memory_gb,gpu_compute_capability,hostname,platform,torch_version,cuda_version,timestamp_utc
+synthetic-runtime-smoke,24,2,cache-and-lookahead-runtime-check,1.3125801240094006,0.19106068601831794,1.505624330136925,tiny-random-qwen3-proofreader,iris,NVIDIA GB200,197.890015232,10.0,sjnsxs64,Linux-6.17.13-155-gdec5393c-coreweave-arm64-aarch64-with-glibc2.36,2.10.0+cu130,13.0,2026-10-21T18:33:23.740955+00:00

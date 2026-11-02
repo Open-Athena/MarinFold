@@ -1,0 +1,18 @@
+{
+  "frozen_at": "2026-10-21T19:02:56.367552+00:00",
+  "hardware": "NVIDIA GB200",
+  "region": "US-EAST-08A",
+  "generator_backend": "vLLM 0.14.1-cu130 ARM",
+  "proofreader_runtime": "torch 2.10.0+cu128 ARM",
+  "plans": {
+    "pilot_direct.json": "b0a439f63eb93ba3d40a695e567dd6b3512777cdc626cf0c6f05bac9f6febb1e",
+    "pilot_large.json": "11399617021a69a1aff484ade53ea60c067b623f7995726380ec13e5bf5fc3a0",
+    "validation_pool.json": "7f0b373f397e5e33e7fb9160028927a3a53eb4bb1bf1a6c5343075b24b27e61f"
+  },
+  "cohorts": "Original complete 32-protein pilot and 1375-protein validation extension, separate from H100 cohorts.",
+  "guidance": "Not admitted yet: 6z0m_A cached/full FP32 check still exceeds original 1e-5 guard.",
+  "scoring": "Full-forward BF16 replay passed original .01 cross-H100 guard on three length-selected references. Maximum error .001523.",
+  "test": "No new reserved-test metrics computed or read. Validation settings frozen before GB200 cohort metrics are read.",
+  "comparison": "All timing comparisons within GB200 only. Same plans, seeds and model hashes; no claim of bitwise generator equivalence.",
+  "result_root": "s3://marin-us-east-08a/MarinFold/exp368/results"
+}

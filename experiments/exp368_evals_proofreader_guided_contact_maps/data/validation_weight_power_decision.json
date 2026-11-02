@@ -1,0 +1,17 @@
+{
+  "frozen_at": "2026-10-22T14:43:20.808557+00:00",
+  "original_guided_cohort_complete": true,
+  "trajectories": 1920,
+  "groups": 480,
+  "new_validation_configurations": [
+    "ordinary-direct:128:f1_power2"
+  ],
+  "remaining_new_configuration_budget_not_used": 2,
+  "reason": "Every guided configuration is dominated on the measured H100 pilot frontier. Stronger power-4/8 effects are mixed; advance only power 2, which improves the GB200 pilot point estimate at identical measured inference cost and has a positive H100 point estimate versus power 1.",
+  "cohort": "All 1375 validation structures outside all 32 pilot related groups. Both existing H100 and GB200 scored pools.",
+  "promotion_rule": "Choose power 2 for the one reserved-test comparison only if its paired all-contact R-precision interval versus power 1 has a positive lower bound on the primary H100 validation analysis, its GB200 all-contact point effect is positive, and its long-range point effects are nonnegative on both runtimes. Otherwise retain power 1. No other powers will be tested on the larger validation panel.",
+  "test_baseline": "ordinary-direct:128:frequency",
+  "test_pool_size": 128,
+  "test_runtime": "Verified GB200 ordinary generation and BF16 full-forward reader, unchanged from completed validation replication.",
+  "test_metrics_not_read": true
+}

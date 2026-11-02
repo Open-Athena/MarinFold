@@ -1,0 +1,8 @@
+{
+  "input_transfer_bytes": 6014167823,
+  "reader": "s3://marin-us-east-02a/MarinFold/exp356/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18000",
+  "generator": "s3://marin-us-east-02a/MarinFold/exp304/model/exp277-step-266344",
+  "targets_sha256": "d264c3784def4c2b2fdf0906643cd9114f9bdb012c4aa5ce99a29890ecd0b064",
+  "target_source": "s3://marin-us-east-02a/MarinFold/exp356/data/v1/targets.parquet",
+  "generator_weights_sha256": "ca293e56fd4c2ebbfa1d65cedece171103b31dc6b68a16620e6eb10779fb3bc4"
+}

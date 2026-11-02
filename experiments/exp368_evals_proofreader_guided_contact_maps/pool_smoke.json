@@ -1,0 +1,86 @@
+{
+  "split": "validation",
+  "entries": [
+    "6dsl_A",
+    "6z0m_A"
+  ],
+  "rollouts": 4,
+  "policies": [
+    {
+      "name": "control"
+    },
+    {
+      "name": "top10-k16",
+      "candidates": 16,
+      "fraction": 0.1
+    },
+    {
+      "name": "top25-k16",
+      "candidates": 16,
+      "fraction": 0.25
+    },
+    {
+      "name": "top50-k16",
+      "candidates": 16,
+      "fraction": 0.5
+    },
+    {
+      "name": "top10-k64",
+      "candidates": 64,
+      "fraction": 0.1
+    },
+    {
+      "name": "soft1-k16",
+      "candidates": 16,
+      "beta": 1
+    },
+    {
+      "name": "soft2-k16",
+      "candidates": 16,
+      "beta": 2
+    },
+    {
+      "name": "soft4-k16",
+      "candidates": 16,
+      "beta": 4
+    },
+    {
+      "name": "explore10-k16",
+      "candidates": 16,
+      "fraction": 0.1,
+      "exploration": 0.1
+    },
+    {
+      "name": "look8-k16",
+      "candidates": 16,
+      "fraction": 0.1,
+      "lookahead": 8,
+      "repeats": 2
+    },
+    {
+      "name": "look32-k16",
+      "candidates": 16,
+      "fraction": 0.1,
+      "lookahead": 32,
+      "repeats": 2
+    },
+    {
+      "name": "total-k16",
+      "candidates": 16,
+      "fraction": 0.1,
+      "objective": "total"
+    },
+    {
+      "name": "particles8-b8",
+      "particles": 8,
+      "block": 8
+    },
+    {
+      "name": "repair-k16",
+      "candidates": 16,
+      "fraction": 0.1,
+      "repair": true
+    }
+  ],
+  "selection": "one SHA256-selected representative per homology group, then 32 uniformly spaced length ranks; no quality labels used"
+}

@@ -1,0 +1,16 @@
+{
+  "checked_at": "2026-10-22T15:31:40.494596+00:00",
+  "reserved_structures": 1473,
+  "reserved_configurations": 2,
+  "reserved_paired_metrics": 9,
+  "contact_predictions_checked": 48030172,
+  "all_reader_probabilities_finite_and_in_unit_interval": true,
+  "paired_and_summary_metrics_reproduce_per_protein_table": true,
+  "tests": {
+    "command": "uv run --project experiments/exp356_models_pdb_rollout_proofreader --no-sync python -m pytest experiments/exp368_evals_proofreader_guided_contact_maps/test_analysis.py experiments/exp368_evals_proofreader_guided_contact_maps/test_metrics.py experiments/exp368_evals_proofreader_guided_contact_maps/test_engine.py experiments/exp368_evals_proofreader_guided_contact_maps/test_length_probe.py -q",
+    "passed": 11
+  },
+  "report_pdf_pages": 47,
+  "figures": 27,
+  "plan_file_sha256": "35a563b7c067b8eaf98b63e140d79f8bb7be58d2023989b01a6cd2beaa31a9e8"
+}

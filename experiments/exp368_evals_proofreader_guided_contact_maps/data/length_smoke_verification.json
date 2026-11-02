@@ -1,0 +1,49 @@
+{
+  "complete": {
+    "proteins": 2,
+    "plan_sha256": "608b298396cbe872a3aac24d5d7c2781fa33c8f457d4c59628133735e08e3f5e",
+    "code_sha256": "1fc8211a3a2bcf459a24f48217e12a877f080895fbc18122f2590947d982c5a5",
+    "generator": "s3://marin-us-east-02a/MarinFold/exp304/model/exp277-step-266344",
+    "reader": "s3://marin-us-east-02a/MarinFold/exp356/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18000",
+    "kind": "fixed-length-probe",
+    "shards": 1
+  },
+  "checks": [
+    {
+      "entry": "6dsl_A",
+      "sampler": "control",
+      "max_probability_error": 8.940696716308594e-07,
+      "mean_probability_error": 3.1944364309310913e-07,
+      "max_recall_error": 2.682209014892578e-07,
+      "fp32_vs_released_bf16_max_difference": 0.012085258960723877
+    },
+    {
+      "entry": "6dsl_A",
+      "sampler": "top10-k16",
+      "max_probability_error": 8.940696716308594e-07,
+      "mean_probability_error": 3.1944364309310913e-07,
+      "max_recall_error": 2.682209014892578e-07,
+      "fp32_vs_released_bf16_max_difference": 0.012085258960723877
+    },
+    {
+      "entry": "6z0m_A",
+      "sampler": "control",
+      "max_probability_error": 8.344650268554688e-07,
+      "mean_probability_error": 2.942979335784912e-07,
+      "max_recall_error": 1.1920928955078125e-07,
+      "fp32_vs_released_bf16_max_difference": 0.00449526309967041
+    },
+    {
+      "entry": "6z0m_A",
+      "sampler": "top10-k16",
+      "max_probability_error": 8.344650268554688e-07,
+      "mean_probability_error": 2.942979335784912e-07,
+      "max_recall_error": 1.1920928955078125e-07,
+      "fp32_vs_released_bf16_max_difference": 0.00449526309967041
+    }
+  ],
+  "prefix_maps": 8,
+  "exact_counts": true,
+  "nested_prefixes": true,
+  "distinct_pairs": true
+}
