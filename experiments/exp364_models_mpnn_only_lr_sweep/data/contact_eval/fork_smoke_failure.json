@@ -1,0 +1,34 @@
+{
+  "total_rollouts": 100,
+  "unfinished_details": [
+    {
+      "dataset": "foldbench_monomer",
+      "finish_reason": "length",
+      "generated_tokens": 308,
+      "max_tokens": 308,
+      "rollout": 34,
+      "sampling_seed": 34,
+      "stem": "5sbj_A"
+    },
+    {
+      "dataset": "foldbench_monomer",
+      "finish_reason": "length",
+      "generated_tokens": 308,
+      "max_tokens": 308,
+      "rollout": 67,
+      "sampling_seed": 67,
+      "stem": "5sbj_A"
+    }
+  ],
+  "unfinished_rollouts": 2,
+  "units": [
+    {
+      "L": 30,
+      "dataset": "foldbench_monomer",
+      "n_rollouts": 100,
+      "stem": "5sbj_A",
+      "unfinished_rollouts": 2,
+      "usable_rollouts": 98
+    }
+  ]
+}

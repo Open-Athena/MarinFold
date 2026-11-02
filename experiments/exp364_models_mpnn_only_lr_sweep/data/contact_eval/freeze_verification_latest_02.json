@@ -1,0 +1,33 @@
+{
+  "verified_at_utc": "2026-10-21T20:59:48.757936+00:00",
+  "checkpoints": [
+    {
+      "trial": "lr5e-4",
+      "step": 184314,
+      "files": 36,
+      "bytes": 17656739823,
+      "frozen": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-02/sources/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/step-184314"
+    },
+    {
+      "trial": "lr1e-3",
+      "step": 207865,
+      "files": 39,
+      "bytes": 17656762807,
+      "frozen": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-02/sources/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B/step-207865"
+    },
+    {
+      "trial": "lr2e-3",
+      "step": 105722,
+      "files": 22,
+      "bytes": 17656684350,
+      "frozen": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-02/sources/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B/step-105722"
+    },
+    {
+      "trial": "lr5e-4-cooldown",
+      "step": 146264,
+      "files": 27,
+      "bytes": 17656733636,
+      "frozen": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-02/sources/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B/step-146264"
+    }
+  ]
+}

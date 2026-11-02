@@ -1,0 +1,102 @@
+[
+  {
+    "run_id": "contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B",
+    "state": "running",
+    "step": 221581,
+    "epochs": 1.1856641406913344,
+    "progress": 0.5928314012130487,
+    "last_update": "2026-10-22T14:46:02.089702+00:00",
+    "latest_validation": {
+      "_step": 219856,
+      "_timestamp": 1792675217.0656857,
+      "eval/loss": 3.11922287940979
+    },
+    "throughput_tokens_per_second": 378443.6803853021,
+    "compute_hours_remaining": 117.13150168483631,
+    "compute_finish_utc": "2026-10-27T11:53:55.495767+00:00",
+    "url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B",
+    "snapshot_started_at": "2026-10-22T14:46:13.360617+00:00",
+    "snapshot_completed_at": "2026-10-22T14:49:47.926696+00:00",
+    "eta_caveat": "Current update throughput only; excludes validation, checkpointing, queueing and preemption delays."
+  },
+  {
+    "run_id": "contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
+    "state": "running",
+    "step": 200412,
+    "epochs": 1.0723908414418697,
+    "progress": 0.5361948155143953,
+    "last_update": "2026-10-22T14:46:55.329524+00:00",
+    "latest_validation": {
+      "eval/loss": 3.089449882507324,
+      "_step": 198716,
+      "_timestamp": 1792675655.604972
+    },
+    "throughput_tokens_per_second": 377342.89185508655,
+    "compute_hours_remaining": 133.81355745047176,
+    "compute_finish_utc": "2026-10-28T04:35:44.136346+00:00",
+    "url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
+    "snapshot_started_at": "2026-10-22T14:46:13.360617+00:00",
+    "snapshot_completed_at": "2026-10-22T14:49:47.926718+00:00",
+    "eta_caveat": "Current update throughput only; excludes validation, checkpointing, queueing and preemption delays."
+  },
+  {
+    "run_id": "contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B",
+    "state": "running",
+    "step": 115531,
+    "epochs": 0.6182007090032189,
+    "progress": 0.3091000056184435,
+    "last_update": "2026-10-22T14:47:07.498380+00:00",
+    "latest_validation": {
+      "_step": 114156,
+      "_timestamp": 1792673039.2708874,
+      "eval/loss": 3.161139965057373
+    },
+    "throughput_tokens_per_second": 197229.58012913147,
+    "compute_hours_remaining": 381.36763192799697,
+    "compute_finish_utc": "2026-11-07T12:09:10.973321+00:00",
+    "url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B",
+    "snapshot_started_at": "2026-10-22T14:46:13.360617+00:00",
+    "snapshot_completed_at": "2026-10-22T14:49:47.926724+00:00",
+    "eta_caveat": "Current update throughput only; excludes validation, checkpointing, queueing and preemption delays."
+  },
+  {
+    "run_id": "contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B",
+    "state": "running",
+    "step": 147751,
+    "epochs": 0.7906068548682927,
+    "progress": 0.7906038472857639,
+    "last_update": "2026-10-22T14:47:54.760421+00:00",
+    "latest_validation": {
+      "eval/loss": 3.103182077407837,
+      "_step": 145866,
+      "_timestamp": 1792593147.9426
+    },
+    "throughput_tokens_per_second": 100331.76984102985,
+    "compute_hours_remaining": 113.60621275963842,
+    "compute_finish_utc": "2026-10-27T08:24:17.126356+00:00",
+    "url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B",
+    "snapshot_started_at": "2026-10-22T14:46:13.360617+00:00",
+    "snapshot_completed_at": "2026-10-22T14:49:47.926728+00:00",
+    "eta_caveat": "Current update throughput only; excludes validation, checkpointing, queueing and preemption delays."
+  },
+  {
+    "run_id": "contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5",
+    "state": "running",
+    "step": 151147,
+    "epochs": 0.8087785268533265,
+    "progress": 0.8087754501431361,
+    "last_update": "2026-10-22T14:48:08.472353+00:00",
+    "latest_validation": {
+      "_step": 150094,
+      "_timestamp": 1792666642.381529,
+      "eval/loss": 3.100496530532837
+    },
+    "throughput_tokens_per_second": 244193.4199625366,
+    "compute_hours_remaining": 42.626683795880815,
+    "compute_finish_utc": "2026-10-24T09:25:44.534018+00:00",
+    "url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5",
+    "snapshot_started_at": "2026-10-22T14:46:13.360617+00:00",
+    "snapshot_completed_at": "2026-10-22T14:49:47.926732+00:00",
+    "eta_caveat": "Current update throughput only; excludes validation, checkpointing, queueing and preemption delays."
+  }
+]

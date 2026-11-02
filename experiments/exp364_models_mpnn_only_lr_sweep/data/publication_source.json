@@ -1,0 +1,202 @@
+{
+  "checkpoint": {
+    "trial": "lr5e-4-cooldown",
+    "run_id": "contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B",
+    "step": 186884,
+    "label": "contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-step-186884",
+    "source": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B/checkpoints/step-186884",
+    "frozen": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-29/latest-01/sources/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B/step-186884",
+    "hf_export": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-29/latest-01/models/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B/hf/step-186884",
+    "objects": [
+      {
+        "path": "d/0c3af3fc6d39c3896d69fa3ea0f792ab",
+        "size": 100667392,
+        "etag": "\"b92099aa54ac4c06318b559d4a3f6e40\""
+      },
+      {
+        "path": "d/1113a3e6f1ed94e6b52803994fe876ed",
+        "size": 2187792384,
+        "etag": "\"f4fbd12b507ade8266698cb6e131694a\""
+      },
+      {
+        "path": "d/1ea664411050f49635ba732686f72bff",
+        "size": 2214809600,
+        "etag": "\"9677e24619a2f0c48f53c0111e633ce2\""
+      },
+      {
+        "path": "d/2f73b340ff1279f795ccd61822538798",
+        "size": 2164297728,
+        "etag": "\"10d5b52e697d5b72ae81cdc4c2d5905e\""
+      },
+      {
+        "path": "d/332f48eafb6ee5c63caa2fc1516a3a95",
+        "size": 17286,
+        "etag": "\"4faabc3a96deca3317725e711b9218f2\""
+      },
+      {
+        "path": "d/3731a0b4eef23c51d51b42e791789c95",
+        "size": 2187583488,
+        "etag": "\"e7728766636346aa8a7d7e91e9a947d3\""
+      },
+      {
+        "path": "d/5fd1ef7f8731d27bba76b7a968e24ed5",
+        "size": 2254,
+        "etag": "\"4d7e527265b487171908969d17fa4210\""
+      },
+      {
+        "path": "d/8cc71ded31172f607966215f240797b6",
+        "size": 340,
+        "etag": "\"d25b272b8bd90e605043e1e337168d38\""
+      },
+      {
+        "path": "d/a1bc3dead813f8f84f39bb09e9c7186d",
+        "size": 805314560,
+        "etag": "\"a7d32f1a91c0f02239184e0867f7dc11\""
+      },
+      {
+        "path": "d/a6701e21e69730c6044b9b0bd32be38d",
+        "size": 23310336,
+        "etag": "\"92f54faeedc9b5e457286e9853c5929d\""
+      },
+      {
+        "path": "d/d6ad22f4eaa96d31a903b4e21e02f03d",
+        "size": 1533472768,
+        "etag": "\"9c3f89b60683c29d5075f4f46668cc87\""
+      },
+      {
+        "path": "d/d82aaf5c6a9fb74a119c24058a74385b",
+        "size": 1332142080,
+        "etag": "\"71809c509ca92279aa0bea9c2d2a56e8\""
+      },
+      {
+        "path": "d/d8a5ead89578d2aa9a018b63313fee07",
+        "size": 704651264,
+        "etag": "\"1f9487355f0e82ab187503925d4b0e7f\""
+      },
+      {
+        "path": "d/e6aa6d514d80f57b388260adc54a7f8c",
+        "size": 2164285440,
+        "etag": "\"104ab94a3cf5ef090f1546147b352290\""
+      },
+      {
+        "path": "d/ece97a889d110be9cf92bd89ec645663",
+        "size": 2238308352,
+        "etag": "\"983a70cdb87e8848aa54fe60297bea93\""
+      },
+      {
+        "path": "d/fe2039bbab4ae34812238a7544688bd5",
+        "size": 16496,
+        "etag": "\"9715c9731e8667d046c9270afe6d0f6a\""
+      },
+      {
+        "path": "manifest.json",
+        "size": 11214,
+        "etag": "\"244a750d7416a009fcf84c93f1041a19\""
+      },
+      {
+        "path": "manifest.ocdbt",
+        "size": 387,
+        "etag": "\"61ec51c226a5f1ae1fd0098852584295\""
+      },
+      {
+        "path": "metadata.json",
+        "size": 82,
+        "etag": "\"5abd50c85706ffc8c30b64b832909eba\""
+      }
+    ],
+    "source_bytes": 17656683451,
+    "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B",
+    "model_config": {
+      "rope": {
+        "theta": 500000,
+        "factor": 8,
+        "low_freq_factor": 1,
+        "high_freq_factor": 4,
+        "original_max_position_embeddings": 8192
+      },
+      "head_dim": null,
+      "use_bias": false,
+      "num_heads": 32,
+      "tokenizer": null,
+      "hidden_dim": 2048,
+      "num_layers": 24,
+      "hybrid_norm": false,
+      "max_seq_len": 8192,
+      "scan_layers": true,
+      "upcast_attn": false,
+      "use_qk_norm": true,
+      "attn_backend": "JAX_FLASH",
+      "num_kv_heads": 8,
+      "sliding_window": 4096,
+      "intermediate_dim": 8192,
+      "initializer_range": 0.02,
+      "layer_norm_epsilon": 1e-05,
+      "use_sliding_window": false,
+      "activation_function": "silu",
+      "tie_word_embeddings": false,
+      "input_embedding_norm": false,
+      "reference_checkpoint": "Qwen/Qwen3-0.6B",
+      "use_layer_norm_weight": true,
+      "gradient_checkpointing": true,
+      "flash_attention_block_size": null
+    },
+    "latest_logged_step": 186884,
+    "latest_eval_loss": 3.035719871520996
+  },
+  "files": [
+    {
+      "name": "config.json",
+      "size": 1726,
+      "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd"
+    },
+    {
+      "name": "model-00001-of-00002.safetensors",
+      "size": 4979485528,
+      "sha256": "13a4f9155c3512709cb7a1d974c9188668b38c8d3b93b7f85a338b4f1a146abb"
+    },
+    {
+      "name": "model-00002-of-00002.safetensors",
+      "size": 906042048,
+      "sha256": "d80f7365ce2bb9571dc18f4016c2e795f14f87f3db84f6a065f382a42f0e5830"
+    },
+    {
+      "name": "model.safetensors.index.json",
+      "size": 20882,
+      "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587"
+    },
+    {
+      "name": "tokenizer.json",
+      "size": 64407,
+      "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+    },
+    {
+      "name": "tokenizer_config.json",
+      "size": 296,
+      "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+    }
+  ],
+  "finite_verification": {
+    "verified_at": "2026-10-29T14:58:07.777803+00:00",
+    "export": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-29/latest-01/models/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B/hf/step-186884",
+    "all_parameters_finite": true,
+    "parameter_bytes": 5885497344,
+    "files": {
+      "model-00001-of-00002.safetensors": {
+        "parameter_bytes": 4979460096,
+        "sha256": "13a4f9155c3512709cb7a1d974c9188668b38c8d3b93b7f85a338b4f1a146abb"
+      },
+      "model-00002-of-00002.safetensors": {
+        "parameter_bytes": 906037248,
+        "sha256": "d80f7365ce2bb9571dc18f4016c2e795f14f87f3db84f6a065f382a42f0e5830"
+      }
+    }
+  },
+  "selection": {
+    "primary": "eval-val all-range R-precision",
+    "gpu": 0.46300678119010164,
+    "tpu": 0.46017707027495713,
+    "tie_threshold": 0.005,
+    "interpretation": "Practical tie; GPU selected by eval-val point estimate for the proposed eval-val analysis."
+  },
+  "default_model_unchanged": "contacts-v1-exp277-m2-p06-full-epoch-1.5B"
+}

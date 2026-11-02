@@ -1,0 +1,48 @@
+{
+  "observed_at_utc": "2026-10-21T14:36:57.738595+00:00",
+  "destination_region": "us-east5",
+  "destination_zone": "us-east5-a",
+  "source_step": 139053,
+  "total_transfer_bytes": 267730453188,
+  "artifacts": [
+    {
+      "name": "mpnn-afdb",
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/tokenized/mpnn-afdb/2026.09.09.1",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/input-mirrors/exp277/mpnn-afdb/2026.09.09.1",
+      "objects": 1800,
+      "bytes": 60773906131,
+      "inventory_sha256": "845dd7379ec685b9e883510a1b43d99266ed75dd486547a9e4826b1116ad748e"
+    },
+    {
+      "name": "mpnn-esm",
+      "source": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/tokenized/mpnn-esm/2026.09.09.1",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/input-mirrors/exp277/mpnn-esm/2026.09.09.1",
+      "objects": 20031,
+      "bytes": 189299410660,
+      "inventory_sha256": "2f664a215156de9889d18459b1deed223e38c245ec07cfa53f41fe1cffbc5eab"
+    },
+    {
+      "name": "checkpoint",
+      "source": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/fork-sources/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/checkpoints/step-139053",
+      "destination": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/fork-sources/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/checkpoints/step-139053",
+      "objects": 105,
+      "bytes": 17657136397,
+      "inventory_sha256": "eb6e805ecbcf718311b651e9cbec942eabb4835959c154d6a0a0df96b2659617"
+    }
+  ],
+  "existing_validation": {
+    "uri": "gs://marin-us-east5/protein-structure/MarinFold/exp232_train_trc/tokenized/contacts-v1-val/2026.07.25",
+    "objects": 17,
+    "bytes": 66618514,
+    "source_inventory_identical": true,
+    "documents": 41954,
+    "tokens": 47821958
+  },
+  "approval_status": "approved",
+  "planned_tpu": "v5p-64",
+  "actual_chips": 32,
+  "priority": "batch",
+  "planned_run_id": "contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5",
+  "approved_at_utc": "2026-10-21T15:43:27.449365+00:00",
+  "approval_source": "Human reply: Approve transfer and TPU launch"
+}

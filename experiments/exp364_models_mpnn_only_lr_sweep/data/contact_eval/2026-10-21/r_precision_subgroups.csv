@@ -1,0 +1,49 @@
+trial,step,eval_set,subgroup,range,n,r_precision,status
+lr5e-4,184314,eval-denovo,viral,all,0,,outside requested sets
+lr5e-4,184314,eval-denovo,viral,long,0,,outside requested sets
+lr5e-4,184314,eval-denovo,nonviral,all,19,0.5967055694249536,scored
+lr5e-4,184314,eval-denovo,nonviral,long,19,0.5409208290122856,scored
+lr5e-4,184314,eval-denovo,low_msa,all,13,0.5923275705919397,scored
+lr5e-4,184314,eval-denovo,low_msa,long,13,0.5137786309404432,scored
+lr5e-4,184314,eval-val,viral,all,6,0.3280294141156403,scored
+lr5e-4,184314,eval-val,viral,long,6,0.29508428979589785,scored
+lr5e-4,184314,eval-val,nonviral,all,91,0.4016589820187812,scored
+lr5e-4,184314,eval-val,nonviral,long,91,0.3833752373802095,scored
+lr5e-4,184314,eval-val,low_msa,all,0,,outside requested sets
+lr5e-4,184314,eval-val,low_msa,long,0,,outside requested sets
+lr1e-3,207865,eval-denovo,viral,all,0,,outside requested sets
+lr1e-3,207865,eval-denovo,viral,long,0,,outside requested sets
+lr1e-3,207865,eval-denovo,nonviral,all,19,0.5908699088122784,scored
+lr1e-3,207865,eval-denovo,nonviral,long,19,0.5383906183487723,scored
+lr1e-3,207865,eval-denovo,low_msa,all,13,0.5899359869848773,scored
+lr1e-3,207865,eval-denovo,low_msa,long,13,0.5103309169652513,scored
+lr1e-3,207865,eval-val,viral,all,6,0.30441617073147326,scored
+lr1e-3,207865,eval-val,viral,long,6,0.26360544600864316,scored
+lr1e-3,207865,eval-val,nonviral,all,91,0.4016354689025749,scored
+lr1e-3,207865,eval-val,nonviral,long,91,0.3810715073182353,scored
+lr1e-3,207865,eval-val,low_msa,all,0,,outside requested sets
+lr1e-3,207865,eval-val,low_msa,long,0,,outside requested sets
+lr2e-3,105722,eval-denovo,viral,all,0,,outside requested sets
+lr2e-3,105722,eval-denovo,viral,long,0,,outside requested sets
+lr2e-3,105722,eval-denovo,nonviral,all,19,0.5924171354791291,scored
+lr2e-3,105722,eval-denovo,nonviral,long,19,0.5371261757991719,scored
+lr2e-3,105722,eval-denovo,low_msa,all,13,0.6011352924292264,scored
+lr2e-3,105722,eval-denovo,low_msa,long,13,0.5244698490653176,scored
+lr2e-3,105722,eval-val,viral,all,6,0.3104034239252604,scored
+lr2e-3,105722,eval-val,viral,long,6,0.28074133842089555,scored
+lr2e-3,105722,eval-val,nonviral,all,91,0.3940098312103029,scored
+lr2e-3,105722,eval-val,nonviral,long,91,0.370180033531112,scored
+lr2e-3,105722,eval-val,low_msa,all,0,,outside requested sets
+lr2e-3,105722,eval-val,low_msa,long,0,,outside requested sets
+lr5e-4-cooldown,146264,eval-denovo,viral,all,0,,outside requested sets
+lr5e-4-cooldown,146264,eval-denovo,viral,long,0,,outside requested sets
+lr5e-4-cooldown,146264,eval-denovo,nonviral,all,19,0.5983408235807051,scored
+lr5e-4-cooldown,146264,eval-denovo,nonviral,long,19,0.5540760720474899,scored
+lr5e-4-cooldown,146264,eval-denovo,low_msa,all,13,0.602267431281726,scored
+lr5e-4-cooldown,146264,eval-denovo,low_msa,long,13,0.543172539752716,scored
+lr5e-4-cooldown,146264,eval-val,viral,all,6,0.2895643103844574,scored
+lr5e-4-cooldown,146264,eval-val,viral,long,6,0.2595810568541965,scored
+lr5e-4-cooldown,146264,eval-val,nonviral,all,91,0.3926173969047467,scored
+lr5e-4-cooldown,146264,eval-val,nonviral,long,91,0.3733053368733976,scored
+lr5e-4-cooldown,146264,eval-val,low_msa,all,0,,outside requested sets
+lr5e-4-cooldown,146264,eval-val,low_msa,long,0,,outside requested sets

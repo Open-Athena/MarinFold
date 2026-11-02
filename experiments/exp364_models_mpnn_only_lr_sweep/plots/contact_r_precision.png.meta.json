@@ -1,0 +1,5 @@
+{
+  "script": "plot_contact_results.py",
+  "args": [],
+  "caption": "October 29 all-range R-precision with 95% protein-bootstrap intervals, October 21 snapshots, and the completed full-data first epoch. Natural proteins and designs are separate. Training exposure and schedules differ; all five evaluations use the same CUDA rollout recipe."
+}

@@ -1,0 +1,137 @@
+{
+  "observed_at": "2026-10-26T16:54:34.474786+00:00",
+  "gpu_runs": [
+    {
+      "run_id": "contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B",
+      "state": "finished",
+      "last_update": "2026-10-22T22:10:15.848662+00:00",
+      "step": 230779,
+      "latest_validation": {
+        "_step": 230426,
+        "eval/loss": 3.11903977394104
+      },
+      "resume_checkpoint": "s3://marin-us-east-02a/tmp/ttl=14d/checkpoints-temp/marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B/checkpoints/step-230507",
+      "resume_metadata": {
+        "step": 230507,
+        "timestamp": "2026-10-22T21:57:46.302899",
+        "is_temporary": true
+      },
+      "old_executor_status": "SUCCESS",
+      "output": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B"
+    },
+    {
+      "run_id": "contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
+      "state": "finished",
+      "last_update": "2026-10-22T22:18:11.127606+00:00",
+      "step": 209984,
+      "latest_validation": {
+        "_step": 209286,
+        "eval/loss": 3.090575695037842
+      },
+      "resume_checkpoint": "s3://marin-us-east-02a/tmp/ttl=14d/checkpoints-temp/marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/checkpoints/step-209931",
+      "resume_metadata": {
+        "step": 209931,
+        "timestamp": "2026-10-22T22:15:50.950795",
+        "is_temporary": true
+      },
+      "old_executor_status": "SUCCESS",
+      "output": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B"
+    },
+    {
+      "run_id": "contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B",
+      "state": "finished",
+      "last_update": "2026-10-22T22:18:09.193107+00:00",
+      "step": 120182,
+      "latest_validation": {
+        "_step": 118384,
+        "eval/loss": 3.1562721729278564
+      },
+      "resume_checkpoint": "s3://marin-us-east-02a/tmp/ttl=14d/checkpoints-temp/marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B/checkpoints/step-120105",
+      "resume_metadata": {
+        "step": 120105,
+        "timestamp": "2026-10-22T22:11:23.328147",
+        "is_temporary": true
+      },
+      "old_executor_status": "SUCCESS",
+      "output": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr2e-3-1.5B"
+    },
+    {
+      "run_id": "contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B",
+      "state": "crashed",
+      "last_update": "2026-10-22T20:55:41.634741+00:00",
+      "step": 149800,
+      "latest_validation": {
+        "_step": 147980,
+        "eval/loss": 3.0999972820281982
+      },
+      "resume_checkpoint": "s3://marin-us-east-02a/tmp/ttl=14d/checkpoints-temp/marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B/checkpoints/step-149762",
+      "resume_metadata": {
+        "step": 149762,
+        "timestamp": "2026-10-22T20:49:10.124208",
+        "is_temporary": true
+      },
+      "old_executor_status": "FAILED",
+      "output": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B"
+    }
+  ],
+  "tpu_diagnostic": {
+    "186880": {
+      "model/transformer/norm/weight": {
+        "shape": [
+          2048
+        ],
+        "finite": 2048,
+        "size": 2048
+      },
+      "model/transformer/layers/stacked/self_attn/q_norm/weight": {
+        "shape": [
+          24,
+          64
+        ],
+        "finite": 1536,
+        "size": 1536
+      },
+      "opt_state/hyperparams/learning_rate": {
+        "shape": [],
+        "finite": 1,
+        "size": 1,
+        "value": 5.006018909625709e-05
+      },
+      "step": {
+        "shape": [],
+        "finite": 1,
+        "size": 1,
+        "value": 186881
+      }
+    },
+    "186884": {
+      "model/transformer/norm/weight": {
+        "shape": [
+          2048
+        ],
+        "finite": 0,
+        "size": 2048
+      },
+      "model/transformer/layers/stacked/self_attn/q_norm/weight": {
+        "shape": [
+          24,
+          64
+        ],
+        "finite": 0,
+        "size": 1536
+      },
+      "opt_state/hyperparams/learning_rate": {
+        "shape": [],
+        "finite": 1,
+        "size": 1,
+        "value": 5.001201498089358e-05
+      },
+      "step": {
+        "shape": [],
+        "finite": 1,
+        "size": 1,
+        "value": 186885
+      }
+    }
+  }
+}

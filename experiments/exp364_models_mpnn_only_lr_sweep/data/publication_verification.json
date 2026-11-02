@@ -1,0 +1,29 @@
+{
+  "verified_at_utc": "2026-10-30T16:13:18.101614+00:00",
+  "anonymous_access": true,
+  "all_public_sizes_and_xet_hashes_match": true,
+  "small_files_readback_sha256_verified": true,
+  "all_source_files_byte_identical": true,
+  "source_bytes": 5885614887,
+  "files": [
+    "README.md",
+    "config.json",
+    "model-00001-of-00002.safetensors",
+    "model-00002-of-00002.safetensors",
+    "model.safetensors.index.json",
+    "tokenizer.json",
+    "tokenizer_config.json"
+  ],
+  "default_unchanged": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+  "first_attempt": {
+    "job": "/bizon/exp364-publish-gpu-cooldown-step186884-a01",
+    "state": "failed",
+    "reason": "Anonymous fsspec directory cache was stale after config.json upload; only README.md and config.json were public. Resume verifies and reuses both files."
+  },
+  "completed_publication_job": "/bizon/exp364-publish-gpu-cooldown-step186884-a02",
+  "publication_job_state": "succeeded",
+  "publication_job_failures": 0,
+  "publication_job_preemptions": 0,
+  "transformers_config_and_tokenizer_load_passed": true,
+  "registry_tests_passed": 14
+}

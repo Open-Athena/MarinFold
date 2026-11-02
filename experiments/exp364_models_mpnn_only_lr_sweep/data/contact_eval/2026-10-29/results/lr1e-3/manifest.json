@@ -1,0 +1,486 @@
+{
+  "completed_at_utc": "2026-10-29T15:14:54.882661+00:00",
+  "checkpoint": {
+    "trial": "lr1e-3",
+    "run_id": "contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B",
+    "step": 314987,
+    "label": "contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B-step-314987",
+    "source": "s3://marin-us-east-02a/tmp/ttl=14d/checkpoints-temp/marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B/checkpoints/step-314987",
+    "frozen": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-29/latest-01/sources/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B/step-314987",
+    "hf_export": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-29/latest-01/models/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B/hf/step-314987",
+    "objects": [
+      {
+        "path": "d/01aa4378b2c2d62b3e3b79b01810328d",
+        "size": 150999040,
+        "etag": "\"47436987a20ac1784dfb379d1a3893d2\""
+      },
+      {
+        "path": "d/08f18615bbcb9e2949f06c6ba01ed9ab",
+        "size": 4269,
+        "etag": "\"4c5300b31decf0b5357dc0c5b38ad747\""
+      },
+      {
+        "path": "d/0a40a491c378c2186e3b81e9526fd2e9",
+        "size": 150999040,
+        "etag": "\"5b50c23832a2290acb1720b2f1a8d523\""
+      },
+      {
+        "path": "d/0de5fdc685446d02c91740d24bfb1a98",
+        "size": 33562624,
+        "etag": "\"07f3c7cc66092ff50fcd72fbb07fd0d5\""
+      },
+      {
+        "path": "d/1183e47cb421a3cb8979394d218a2ad2",
+        "size": 50339840,
+        "etag": "\"40d37bc06e98a375289b95ab445e4ebe\""
+      },
+      {
+        "path": "d/13f963a03311495147c13c2b45ac4afe",
+        "size": 3509,
+        "etag": "\"29c14878b76c04e2bb982ce80ddf310b\""
+      },
+      {
+        "path": "d/165204d88219192c5ec3ab8aec19a673",
+        "size": 704651264,
+        "etag": "\"db79a3fd40786ca2dfed72f64489ee7c\""
+      },
+      {
+        "path": "d/1818a00b6e14b56ea6aa768b9d5b380a",
+        "size": 50339840,
+        "etag": "\"b58b101ca33aa7707c1be286bae4f974\""
+      },
+      {
+        "path": "d/1ad2ac5602534df62c44f8579f9d0237",
+        "size": 16781312,
+        "etag": "\"03a4b3667fdb721c7431cb8e668e9c21\""
+      },
+      {
+        "path": "d/1c8eceaab809233a349028abc3af1d82",
+        "size": 16785408,
+        "etag": "\"b4b0332384ed34d403cdbb568e096e63\""
+      },
+      {
+        "path": "d/20b858ddf5b39622c29495d25c3a7e10",
+        "size": 822099968,
+        "etag": "\"0f1f2ef2a858a4803d8fc0381e43f50c\""
+      },
+      {
+        "path": "d/240032010e5a84c69688955c063dfa16",
+        "size": 50339840,
+        "etag": "\"3f110de8d92490495ea3be33e7555b6c\""
+      },
+      {
+        "path": "d/24a5e787c33f9cc823470f35d41fe922",
+        "size": 50536448,
+        "etag": "\"cfdbce0b47b5019a2ecd0e55c7ab2313\""
+      },
+      {
+        "path": "d/25d68a6789da85df80b85d03d8ceedf1",
+        "size": 4451,
+        "etag": "\"4e243fad4d2e0b129d639770ddfd8117\""
+      },
+      {
+        "path": "d/295e7bfbae88676b01af4f957793282f",
+        "size": 16466,
+        "etag": "\"85d422623255a6a7916f83d3c250db68\""
+      },
+      {
+        "path": "d/2fed61c7868b0b4a707e04dd37f4084f",
+        "size": 50339840,
+        "etag": "\"a8cae87074a099fb81f6ad7267587b4e\""
+      },
+      {
+        "path": "d/32ac75c47d13e0204ca63548c8854bd0",
+        "size": 33562624,
+        "etag": "\"811d4f001beea7f0a3c9ed9ae68803b1\""
+      },
+      {
+        "path": "d/331402ca09fc0a03adf24f9156475da8",
+        "size": 50339840,
+        "etag": "\"0169079b4934b959e853f5e65be0cff5\""
+      },
+      {
+        "path": "d/37b0f8f72829e51c310f6711c0973a22",
+        "size": 50339840,
+        "etag": "\"1d54e460b2d6a16a4b060a319681b42b\""
+      },
+      {
+        "path": "d/3a09fc65c0daa4a8c9072593f632ecdd",
+        "size": 16785408,
+        "etag": "\"27e2e1fdd5804b765132fc7787648645\""
+      },
+      {
+        "path": "d/3b0fd00e9af2dc1a63dbcaa66fea5bf8",
+        "size": 16720,
+        "etag": "\"e2eb65c1694ae8367a1deb7b804a5dd7\""
+      },
+      {
+        "path": "d/3b2d8c5b92f87c501859f7752d704eac",
+        "size": 603983872,
+        "etag": "\"bb01aa9e02f88a9cfa437d05b6baecde\""
+      },
+      {
+        "path": "d/3ccccb753a44ea5b27f6ca1327a72129",
+        "size": 50339840,
+        "etag": "\"da591c79123d146b1e3ed07ed33f25e9\""
+      },
+      {
+        "path": "d/441c2ab1c8d494d75047c717864fd826",
+        "size": 2914132,
+        "etag": "\"bb3c800c8c5f34987684f75090371057\""
+      },
+      {
+        "path": "d/451bfafc7f59db1827a8ef26091e6dc8",
+        "size": 100667392,
+        "etag": "\"d75fe552aa1f2318ce222abee2e89baa\""
+      },
+      {
+        "path": "d/4d244b6bafb9762d57da26307ef2eb01",
+        "size": 50339840,
+        "etag": "\"264bda203eb8070a079adcfb63d22b93\""
+      },
+      {
+        "path": "d/4f4c1ff7e1189256494f1fdd5e3e1442",
+        "size": 2187776000,
+        "etag": "\"550bc4cbda483a1d93b6f8f9a2444a56\""
+      },
+      {
+        "path": "d/4ffc83fc5616e1d088c8eea3c460fd19",
+        "size": 50339840,
+        "etag": "\"0b4d4bb49217f3e5f32fcb88e1a85ac7\""
+      },
+      {
+        "path": "d/51d0b07b4bd80be41d397127902e634f",
+        "size": 50335744,
+        "etag": "\"a71866152c3485d2893577b50f875c0c\""
+      },
+      {
+        "path": "d/54d344e5112036702314fcfab70ddde5",
+        "size": 100667392,
+        "etag": "\"0c81fc93dffd2dd01275e2d07f274913\""
+      },
+      {
+        "path": "d/58255ce82d8448f8b0dec25cec93df8e",
+        "size": 16720,
+        "etag": "\"b8df6e6e8021ba040da6915b3d0aefad\""
+      },
+      {
+        "path": "d/5c1b17c40df2fe0d1caabec158ea99db",
+        "size": 33558528,
+        "etag": "\"de7435db2d80d718e3f5f3c89ef04521\""
+      },
+      {
+        "path": "d/5ec93961bfea341881c93793dc279e67",
+        "size": 16781312,
+        "etag": "\"d9ca83fc44c83853f51dafd769d9dbd7\""
+      },
+      {
+        "path": "d/6c59ca047739eae5b634b3d8671d62d6",
+        "size": 50339840,
+        "etag": "\"85839de606c12537039fde984d3b075d\""
+      },
+      {
+        "path": "d/6cf5fce51dd11ed0b3293e43967e8f1b",
+        "size": 33562624,
+        "etag": "\"644cee01f67ba55503fbb5ad44ab557d\""
+      },
+      {
+        "path": "d/70c2b3028e1c62e806d6f27760d087e1",
+        "size": 4656,
+        "etag": "\"65d56f83bcdfe9fff536746991ca3fd7\""
+      },
+      {
+        "path": "d/723548277d6141719252b21376ac44f7",
+        "size": 3041,
+        "etag": "\"560df160319f28bae4004d7ac957d7d3\""
+      },
+      {
+        "path": "d/75473189db3fe3b36e28f78b80f30cf6",
+        "size": 3158,
+        "etag": "\"107a4db6950359c42df78444dcbdc8a6\""
+      },
+      {
+        "path": "d/7547da2e79c9ce205728c20e56e636af",
+        "size": 423055360,
+        "etag": "\"aefb478ad60ea619eee2da05daeac737\""
+      },
+      {
+        "path": "d/7ba93b341b5cb728bc084b708bdd8d6c",
+        "size": 4515,
+        "etag": "\"9c646554dc93843987cb5c77e5592ec6\""
+      },
+      {
+        "path": "d/7bced67e886c1e5e452a59e3d0648a2c",
+        "size": 3250,
+        "etag": "\"d46fcd868f78128e957dd561a7d9cf67\""
+      },
+      {
+        "path": "d/7c523bc1abb819af7a37b49fbe70f07a",
+        "size": 50339840,
+        "etag": "\"cf60f6ef1b285351739bced8ea8d9935\""
+      },
+      {
+        "path": "d/82d37ed1c0f92f609cb892749c938127",
+        "size": 50339840,
+        "etag": "\"a46c150a10c1c660fe90771026614907\""
+      },
+      {
+        "path": "d/8545bb70ac45f8fc81beea17ae06ba79",
+        "size": 16781312,
+        "etag": "\"c19a4abf281db70dae6ceebf31ddfc9d\""
+      },
+      {
+        "path": "d/87513f4baeb966bf040efe21ee63d377",
+        "size": 4239,
+        "etag": "\"414c974126463ad6da770feb392903ec\""
+      },
+      {
+        "path": "d/8a0eeb7d64b5e250c04bc1aa212e449b",
+        "size": 17256,
+        "etag": "\"4058a17182f325514ab669350aead9bc\""
+      },
+      {
+        "path": "d/8bc76ff11424f4a6c783249ab9cc1f6d",
+        "size": 805326848,
+        "etag": "\"e05d73bdc1f7694904911fc5f7a5fdf8\""
+      },
+      {
+        "path": "d/9379fca1a02f1a4fbf27601fbd4bc14d",
+        "size": 50339840,
+        "etag": "\"1041a31d4f56c5951bb2f971685a4936\""
+      },
+      {
+        "path": "d/940911f9367cf3a9230beca57d396a01",
+        "size": 33558528,
+        "etag": "\"b8d8967a63e959a757cfb808866d398c\""
+      },
+      {
+        "path": "d/9b5e326250ad2bb7be870a08019ea2ba",
+        "size": 50339840,
+        "etag": "\"9301d1e3527e50bac7bcf8a241c32d7e\""
+      },
+      {
+        "path": "d/a0ecdbd906a5c57e22251210c25ae15c",
+        "size": 1996902400,
+        "etag": "\"0f0ee9a1d90769fe3d2185c1a335ffe4\""
+      },
+      {
+        "path": "d/a1c8307065793d662626fd6955113d5a",
+        "size": 188747776,
+        "etag": "\"12e1a8cba7625dc6af7d7901dc25cad2\""
+      },
+      {
+        "path": "d/a919bfdef04d2fa76572d4cd8b0429bf",
+        "size": 50335744,
+        "etag": "\"71d75f5296748a6a96233da0d513a602\""
+      },
+      {
+        "path": "d/a965e62fcd9dc1a95a7fc02c6b33a53b",
+        "size": 1912614912,
+        "etag": "\"a6ec198b81716806d822547483beb2b8\""
+      },
+      {
+        "path": "d/acac747581c51734a76acc169415eabb",
+        "size": 340,
+        "etag": "\"e4f347839765e28797d19c75d6a2498a\""
+      },
+      {
+        "path": "d/b02100b342a1b3813a49c0874420d622",
+        "size": 50343936,
+        "etag": "\"f6141b1446abd277cb6a65af01c3948a\""
+      },
+      {
+        "path": "d/bcc105fe56febfda11bc98e1da023281",
+        "size": 50339840,
+        "etag": "\"921074ed5c2a061fe421a4098210d2c1\""
+      },
+      {
+        "path": "d/c2b3c112bce6a5d29c88c546466b9f37",
+        "size": 50339840,
+        "etag": "\"3d7e9ffc5a40df2c895e2c68ba9f5c3a\""
+      },
+      {
+        "path": "d/c3c889fc13e8545a002112e12a5bfa9c",
+        "size": 16781312,
+        "etag": "\"1d3063cdf25a48c4269e48b6e1d3b82a\""
+      },
+      {
+        "path": "d/c4f03b0ddf3fe746c4538b9c7a26d53b",
+        "size": 50339840,
+        "etag": "\"da72ae60094dcf48cc41f843cbe60fe5\""
+      },
+      {
+        "path": "d/c5191e7bee2efcfdeb6e4b94534de753",
+        "size": 50339840,
+        "etag": "\"929528b889fc4e442d124c644dde5d86\""
+      },
+      {
+        "path": "d/cb41fae40e0a99cc11f0570ad4e88ddc",
+        "size": 2160758784,
+        "etag": "\"03bfd18c8acd04fd49ab88d57b7c87c7\""
+      },
+      {
+        "path": "d/ce621820a4ede24d38e1ba61cb4354cd",
+        "size": 788537344,
+        "etag": "\"1fb6c6c6295fdae781ef1155276166e1\""
+      },
+      {
+        "path": "d/ce8262252774b19830eaa7ec6fdfc43e",
+        "size": 167776256,
+        "etag": "\"30454cf7e6aed766c48bee8ec1382ae3\""
+      },
+      {
+        "path": "d/d40374993549ed8eea3377805e484748",
+        "size": 50339840,
+        "etag": "\"a9e307258d9f4c84496ddd61a59bae59\""
+      },
+      {
+        "path": "d/dea462ebcee36da506aced28555c239c",
+        "size": 386093056,
+        "etag": "\"28dc71ec6e161b3edb12f998d2eee259\""
+      },
+      {
+        "path": "d/e114eb62ebe2eac5804665983b3b9aaf",
+        "size": 50335744,
+        "etag": "\"339c26f39092cb4e573eb0af2a7fbf40\""
+      },
+      {
+        "path": "d/e54c457322a49d72835767f9f69f3a70",
+        "size": 100667392,
+        "etag": "\"98d1b36401dfdc2d119bb991096c87d2\""
+      },
+      {
+        "path": "d/e7c1afe5e9a2f541a23465d0c41bc604",
+        "size": 150999040,
+        "etag": "\"c05c06f34c090dc9fa2483743d266a22\""
+      },
+      {
+        "path": "d/e9174abe4bac6f0b8dc4b1759a5bdb7c",
+        "size": 12587008,
+        "etag": "\"533421080210ed1bcc14d2d7acf70c08\""
+      },
+      {
+        "path": "d/ea4b6d7cd309981ec25ecfe6fdf2feb3",
+        "size": 50339840,
+        "etag": "\"72aeb7b3d31f2737e53432494ca5ec25\""
+      },
+      {
+        "path": "d/eb5ed3543e987d27416062e8326f1542",
+        "size": 700932096,
+        "etag": "\"65e1ebad60b6b9f74274a02556b1cef7\""
+      },
+      {
+        "path": "d/f27653fb7eab44773a8841fc1ef12270",
+        "size": 50339840,
+        "etag": "\"adfaf678c4168835c6948626f1e1bc5b\""
+      },
+      {
+        "path": "d/f29dfe386d0a334f33fbf587c504d4c4",
+        "size": 100667392,
+        "etag": "\"c37dfd7aad2aa068eda4affe002cd7c9\""
+      },
+      {
+        "path": "d/f39b46b87da89acbf70ba758c6997cc9",
+        "size": 805314560,
+        "etag": "\"362fc48f0814d2685c9b57aebb40aa96\""
+      },
+      {
+        "path": "d/f44bfd91accb3247f34b172c6b10e1b1",
+        "size": 50335744,
+        "etag": "\"ab6bdbbb004cecc41b51488aca46d38d\""
+      },
+      {
+        "path": "d/f837f8abe18b4b5aa9b41cd7552f83c9",
+        "size": 251662336,
+        "etag": "\"e9d995b57bf087498909258f2e0574e3\""
+      },
+      {
+        "path": "d/faafc356fc01254a8041b65a8b366f65",
+        "size": 201330688,
+        "etag": "\"4d9eee44fd8904d2580e678eeda49705\""
+      },
+      {
+        "path": "d/ff634bdc33a59115cece9ef9c4f4ad98",
+        "size": 50339840,
+        "etag": "\"20ce72e5b6cc35bd03956c4d231c89a9\""
+      },
+      {
+        "path": "manifest.json",
+        "size": 11199,
+        "etag": "\"2843b8ed83630613f174743d61e19e75\""
+      },
+      {
+        "path": "manifest.ocdbt",
+        "size": 544,
+        "etag": "\"b33e8105a38080ea148811ddcac5421c\""
+      },
+      {
+        "path": "metadata.json",
+        "size": 81,
+        "etag": "\"832b203d45715c19a6295a0c22a2350b\""
+      }
+    ],
+    "source_bytes": 17657046594,
+    "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B",
+    "model_config": {
+      "rope": {
+        "theta": 500000,
+        "factor": 8,
+        "low_freq_factor": 1,
+        "high_freq_factor": 4,
+        "original_max_position_embeddings": 8192
+      },
+      "head_dim": null,
+      "use_bias": false,
+      "num_heads": 32,
+      "tokenizer": null,
+      "hidden_dim": 2048,
+      "num_layers": 24,
+      "hybrid_norm": false,
+      "max_seq_len": 8192,
+      "scan_layers": true,
+      "upcast_attn": false,
+      "use_qk_norm": true,
+      "attn_backend": "JAX_FLASH",
+      "num_kv_heads": 8,
+      "sliding_window": 4096,
+      "intermediate_dim": 8192,
+      "initializer_range": 0.02,
+      "layer_norm_epsilon": 1e-05,
+      "use_sliding_window": false,
+      "activation_function": "silu",
+      "tie_word_embeddings": false,
+      "input_embedding_norm": false,
+      "reference_checkpoint": "Qwen/Qwen3-0.6B",
+      "use_layer_norm_weight": true,
+      "gradient_checkpointing": true,
+      "flash_attention_block_size": null
+    },
+    "latest_logged_step": 315010,
+    "latest_eval_loss": 3.1036880016326904
+  },
+  "git_commit": "8597185325e52c33133d4a92473cd83328731405",
+  "worker_sha256": "b317b127bd63c2ced14ed1428926bf44c3beaeee0b99d86d06e3cc6532012c52",
+  "base_worker_sha256": "dd2f76dd5d34d1549e0be1197d9053d6e3aa0ef909f062ff5355d65f31cd571c",
+  "extension_sha256": "6fc4bd158ede76ab6daef74f5d508c62f16eeffb594cc04a0e665ed1e69c454d",
+  "metric_sha256": "6cbaa1c555763df07cb94ee81accebef25a5565590d47a32470ade78e36d824a",
+  "marinfold_revision": "d1bea417a64cc042ad931422200c3edeb873f2e0",
+  "eval_set": "all",
+  "units": 116,
+  "rollouts": 11600,
+  "unfinished_rollouts": 0,
+  "extended_rollouts": 0,
+  "sampling": {
+    "rollouts": 100,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "top_k": -1,
+    "token_budget": "6L+128",
+    "seed": 0,
+    "capped_sample_policy": "continue exact prompt and generated prefix to the remaining 8192-token context; independent SHA256-derived continuation seed"
+  },
+  "model_egress": false,
+  "model_egress_bytes": 0,
+  "artifact_root": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-10-29/latest-01/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B-step-314987",
+  "runtime": "one regional H100; verified HF export in CoreWeave S3"
+}

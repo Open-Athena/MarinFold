@@ -1,0 +1,45 @@
+[project]
+name = "exp364-models-mpnn-only-tpu-cooldown"
+version = "0.1.0"
+description = "ProteinMPNN-only learning-rate sweep for MarinFold issue #364."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "click>=8.1,<9",
+    "fsspec",
+    "gcsfs",
+    "marin-dupekit==0.1.5.dev30957455498",
+    "marin-dupekit-native==0.1.5.dev30957455498",
+    "hf-xet",
+    "huggingface-hub>=1.5,<2",
+    "marin-core==0.2.86.dev32222909699",
+    "marin-iris[controller]==0.2.86.dev32222909699",
+    "marin-iris-native==0.1.6.dev31131847556",
+    "s3fs",
+]
+
+[project.optional-dependencies]
+tpu = [
+    "marin-core[tpu]==0.2.86.dev32222909699",
+    "torch==2.11.0+cpu",
+    "torchvision==0.26.0+cpu",
+]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", extra = "tpu", marker = "sys_platform == 'linux'" }]
+torchvision = [{ index = "pytorch-cpu", extra = "tpu", marker = "sys_platform == 'linux'" }]

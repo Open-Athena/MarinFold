@@ -1,0 +1,210 @@
+{
+  "completed_at_utc": "2026-10-21T22:40:55.342228+00:00",
+  "checkpoint": {
+    "trial": "lr5e-4-cooldown",
+    "run_id": "contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B",
+    "step": 146264,
+    "label": "contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-step-146264",
+    "source": "s3://marin-us-east-02a/tmp/ttl=14d/checkpoints-temp/marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B/checkpoints/step-146264",
+    "frozen": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-02/sources/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B/step-146264",
+    "hf_export": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-10-21/latest-02/models/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B/hf/step-146264",
+    "objects": [
+      {
+        "path": "d/1a5589cf43011b1717e23c50e64fc5cf",
+        "size": 201330688,
+        "etag": "\"528507d7f45acf85023396692542057a\""
+      },
+      {
+        "path": "d/1ca00cb2fa8c53c84cb460210a0be8c2",
+        "size": 2164490240,
+        "etag": "\"744695eb4260ca15dfb4861fb1f0c099\""
+      },
+      {
+        "path": "d/281b9c92c0eb07e9a3d24013e612ac8e",
+        "size": 1610633216,
+        "etag": "\"d760c35dbc3d853e7aa98fe384ca9089\""
+      },
+      {
+        "path": "d/2829c075b29688dba1603b9b3b63213f",
+        "size": 201330688,
+        "etag": "\"d96691120a932c211ea10dc71bea5faa\""
+      },
+      {
+        "path": "d/35f8cc1df480d66d348f337b70f71d0c",
+        "size": 201330688,
+        "etag": "\"887726a27bcabc861c03ea4623f17b5e\""
+      },
+      {
+        "path": "d/3c13608d97f784e5db706f7257d4326f",
+        "size": 2214625280,
+        "etag": "\"7fbd2366ffa20d3924850988831b4add\""
+      },
+      {
+        "path": "d/4922af3d1ffa8c80b4d7e200cee7ce18",
+        "size": 2264952832,
+        "etag": "\"b120dda9c255eb475878a8445cf44fd9\""
+      },
+      {
+        "path": "d/4b7cc5a698e4b1d2a3310d9f022c9d76",
+        "size": 2157244416,
+        "etag": "\"2725789bb38e14a230b6054bed832f66\""
+      },
+      {
+        "path": "d/6799448c8d46bb4d7ba8a42858017731",
+        "size": 17286,
+        "etag": "\"d624cff26996d268285873f40ee269ae\""
+      },
+      {
+        "path": "d/701b17e1978067e2deabb80b695f04b1",
+        "size": 201330688,
+        "etag": "\"6c15b36c446b114f5226c459cb3b5803\""
+      },
+      {
+        "path": "d/7fc34eb7ff56fa58e0bfa49392e91768",
+        "size": 2914005,
+        "etag": "\"2d6276eb742485f39c75aeb262525d45\""
+      },
+      {
+        "path": "d/85d17eb4a015d9facad5d9a90aa15be2",
+        "size": 23310336,
+        "etag": "\"cea943140beea91d5da76801162333cd\""
+      },
+      {
+        "path": "d/8926da7370040151ce52dbd9b5e5dcfd",
+        "size": 913,
+        "etag": "\"cb2f0654506014710577a27b66ab0140\""
+      },
+      {
+        "path": "d/99c999bf7918b515ffe4b51391d92b60",
+        "size": 58215,
+        "etag": "\"8c276c254e2dc8a2706b2b695a4b8a26\""
+      },
+      {
+        "path": "d/a92909a331726476067c6b171e81eb7b",
+        "size": 8740864,
+        "etag": "\"3f1d6da395c1d9b9489b7378347b5741\""
+      },
+      {
+        "path": "d/b249f7e618a658798ff725b240a5b6bd",
+        "size": 2595,
+        "etag": "\"7040c76433352e0049db42a50325796c\""
+      },
+      {
+        "path": "d/bf1c021ba8b1743fd115b5713f59e27a",
+        "size": 503324672,
+        "etag": "\"9b4e9e8d5608f73f8c899f46dfb8c748\""
+      },
+      {
+        "path": "d/c4cfac5dd382619943a46713ac0dbb42",
+        "size": 1107513344,
+        "etag": "\"6e152cef6ef52fa7ccf82b44a69970a8\""
+      },
+      {
+        "path": "d/ca74a4b9597c4dbc55d5bbb3a68c6a09",
+        "size": 2914030,
+        "etag": "\"d13c56711196f570b08e9e59eddfa1f9\""
+      },
+      {
+        "path": "d/cb77ae911abc198ad851cb029b6a8c4e",
+        "size": 2164490240,
+        "etag": "\"33cdc7d815f4e077a38ddd64c258052d\""
+      },
+      {
+        "path": "d/dcc5ee4fa64ae1b7f4897e99443f2f77",
+        "size": 2214617088,
+        "etag": "\"ae58b2295dac5463c30690923cd56078\""
+      },
+      {
+        "path": "d/e2573a6ff2577d91eef35294eb4133ad",
+        "size": 201330688,
+        "etag": "\"d002b738d570e0c2953b92f3ecaebca9\""
+      },
+      {
+        "path": "d/e6533cad1f5200a615bb4d6f4b1f5c1d",
+        "size": 8888320,
+        "etag": "\"b83683b10ca92c0e858e303b7a418297\""
+      },
+      {
+        "path": "d/e7acbc3fadc79c308956f9a40bf385d1",
+        "size": 201330688,
+        "etag": "\"cfdbed49312889a9c1bcf0266033d9c8\""
+      },
+      {
+        "path": "manifest.json",
+        "size": 11214,
+        "etag": "\"d3907eacae628c00a83c2985fde4fc9f\""
+      },
+      {
+        "path": "manifest.ocdbt",
+        "size": 321,
+        "etag": "\"ef9e01fd290c1611e6d76d51c2468011\""
+      },
+      {
+        "path": "metadata.json",
+        "size": 81,
+        "etag": "\"b8a21e27a8ec77f502cb36cd7fd1f7ba\""
+      }
+    ],
+    "source_bytes": 17656733636,
+    "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B",
+    "model_config": {
+      "rope": {
+        "theta": 500000,
+        "factor": 8,
+        "low_freq_factor": 1,
+        "high_freq_factor": 4,
+        "original_max_position_embeddings": 8192
+      },
+      "head_dim": null,
+      "use_bias": false,
+      "num_heads": 32,
+      "tokenizer": null,
+      "hidden_dim": 2048,
+      "num_layers": 24,
+      "hybrid_norm": false,
+      "max_seq_len": 8192,
+      "scan_layers": true,
+      "upcast_attn": false,
+      "use_qk_norm": true,
+      "attn_backend": "JAX_FLASH",
+      "num_kv_heads": 8,
+      "sliding_window": 4096,
+      "intermediate_dim": 8192,
+      "initializer_range": 0.02,
+      "layer_norm_epsilon": 1e-05,
+      "use_sliding_window": false,
+      "activation_function": "silu",
+      "tie_word_embeddings": false,
+      "input_embedding_norm": false,
+      "reference_checkpoint": "Qwen/Qwen3-0.6B",
+      "use_layer_norm_weight": true,
+      "gradient_checkpointing": true,
+      "flash_attention_block_size": null
+    },
+    "latest_logged_step": 146349,
+    "latest_eval_loss": 3.103182077407837
+  },
+  "git_commit": "dd87fca4667ad26c19f758d60c853c577059a486",
+  "worker_sha256": "791c6e67e4d60c290cd42c4afafb5e4b3e1489220e4f0f3ac2b951581b8a6587",
+  "base_worker_sha256": "dd2f76dd5d34d1549e0be1197d9053d6e3aa0ef909f062ff5355d65f31cd571c",
+  "extension_sha256": "6fc4bd158ede76ab6daef74f5d508c62f16eeffb594cc04a0e665ed1e69c454d",
+  "metric_sha256": "6cbaa1c555763df07cb94ee81accebef25a5565590d47a32470ade78e36d824a",
+  "marinfold_revision": "d1bea417a64cc042ad931422200c3edeb873f2e0",
+  "eval_set": "all",
+  "units": 116,
+  "rollouts": 11600,
+  "unfinished_rollouts": 0,
+  "extended_rollouts": 0,
+  "sampling": {
+    "rollouts": 100,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "top_k": -1,
+    "token_budget": "6L+128",
+    "seed": 0,
+    "capped_sample_policy": "continue exact prompt and generated prefix to the remaining 8192-token context; independent SHA256-derived continuation seed"
+  },
+  "model_egress": false,
+  "artifact_root": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-10-21/latest-02/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-step-146264",
+  "runtime": "one regional H100; frozen native checkpoint and reusable HF export in CoreWeave S3"
+}

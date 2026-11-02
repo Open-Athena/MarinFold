@@ -1,0 +1,28 @@
+{
+  "verified_at_utc": "2026-10-21T16:33:11.213912+00:00",
+  "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5-smoke-a02",
+  "run_id": "contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5-smoke-a02",
+  "devices": 4,
+  "first_step": 139054,
+  "final_step": 139063,
+  "updates": 10,
+  "run_progress": 1,
+  "eval_loss": 3.2190604209899902,
+  "eval_max_batches": 2,
+  "checkpoint": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5-smoke-a02/checkpoints/step-139063",
+  "checkpoint_scalars": {
+    "step": 139064,
+    "opt_state/count": 139064,
+    "opt_state/hyperparams_states/learning_rate/count": 139064,
+    "opt_state/inner_state/1/count": 139064
+  },
+  "hf_export": "gs://marin-us-east5/protein-structure/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B-tpu-us-east5-smoke-a02/hf/step-139063",
+  "hf_files": {
+    "config.json": 1726,
+    "model-00001-of-00002.safetensors": 4979485528,
+    "model-00002-of-00002.safetensors": 906042048,
+    "model.safetensors.index.json": 20882,
+    "tokenizer.json": 64407,
+    "tokenizer_config.json": 296
+  }
+}

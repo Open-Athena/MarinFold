@@ -1,0 +1,13 @@
+[project]
+name = "exp364-contact-eval-client"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "marin-iris[controller]==0.2.216.dev39673313762",
+    "marin-fray==0.2.216.dev39673313762",
+    "httpx==0.28.1",
+]
+
+[tool.uv]
+package = false
+prerelease = "allow"
