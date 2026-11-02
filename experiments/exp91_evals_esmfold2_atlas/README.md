@@ -3,12 +3,12 @@ marinfold_experiment:
   issue: 91
   title: "exp: evaluate the ESMFold2 / ESM Atlas for training-set expansion"
   kind: evals
-  branch: exp/91-evals-esmfold2-atlas
+  branch: main
 ---
 
 # exp91 — Evaluate the ESMFold2 / ESM Atlas for training-set expansion
 
-**Issue:** [#91](https://github.com/Open-Athena/MarinFold/issues/91) · **Kind:** `evals` · **Branch:** `exp/91-evals-esmfold2-atlas`
+**Issue:** [#91](https://github.com/Open-Athena/MarinFold/issues/91) · **Kind:** `evals` · **Branch:** `main`
 
 ## Question
 
