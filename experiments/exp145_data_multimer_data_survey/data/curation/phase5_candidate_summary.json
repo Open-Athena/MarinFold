@@ -1,0 +1,13 @@
+{
+  "per_pair": 3,
+  "n_pairs": 17083,
+  "n_candidates": 31956,
+  "n_labeled_complexes": 880247,
+  "n_without_confidence": 0,
+  "pairs_by_candidate_count": {
+    "1": 8621,
+    "2": 2051,
+    "3": 6411
+  },
+  "fraction_of_complexes_measured": 0.0363
+}

@@ -1,0 +1,14 @@
+{
+  "n_val_accessions": 41954,
+  "requested": 41954,
+  "resolved": 41954,
+  "from_uniprotkb": 15819,
+  "from_uniparc": 26135,
+  "unresolved": 0,
+  "unresolved_examples": [],
+  "n_distinct_seq_clusters": 41954,
+  "n_distinct_struct_clusters": 9558,
+  "fasta": "data/curation/val_monomers.fasta",
+  "fasta_records": 41954,
+  "fasta_bytes": 11719409
+}

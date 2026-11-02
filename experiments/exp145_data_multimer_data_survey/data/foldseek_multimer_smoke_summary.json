@@ -1,0 +1,22 @@
+{
+  "foldseek_version": "718d42176d2f67d36a60866fedfb881f8d5a7ebf",
+  "n_structures": 45,
+  "n_chains_ingested": 90,
+  "n_heterodimers": 30,
+  "n_homodimers": 15,
+  "n_clusters": 40,
+  "reduction_factor": 1.12,
+  "largest_cluster": 3,
+  "n_multi_member_clusters": 4,
+  "n_complex_pairs_reported": 650,
+  "n_pairs_multimer_tm_ge_0.5": 7,
+  "n_pairs_both_chains_aligned": 199,
+  "max_multimer_tm": 0.876,
+  "thresholds": {
+    "multimer_tm": 0.5,
+    "chain_tm": 0.0,
+    "interface_lddt": 0.0
+  },
+  "easy_multimercluster_seconds": 3.6,
+  "easy_multimersearch_seconds": 3.3
+}

@@ -1,0 +1,24 @@
+# Downloaded structures and Foldseek scratch. Regenerate with:
+#   python3 fetch_dimer_sample.py --n-hetero 30 --n-homo 15 --out sample
+# 45 structures is ~22 MB, which does not belong in git. The manifest and every
+# derived result live in data/ and are committed.
+sample/
+__pycache__/
+
+# Curation bulk artifacts. Regenerate with the curate_*.py scripts, or pull from
+# the HF bucket (data/multimer_curation/). Every summary JSON and log the scripts
+# emit is small and IS committed, so the numbers stay reviewable without the
+# multi-hundred-MB inputs.
+data/curation/subunit_shards/
+data/curation/mmseqs_work/
+data/curation/val_cluster_work/
+data/curation/structures/
+data/curation/confident_*.csv.gz
+data/curation/dimer_split_assignment*.csv.gz
+data/curation/val_monomers.fasta
+data/curation/val_monomers.csv
+
+# val_download_list_*.csv.gz is deliberately NOT ignored: it is the input to the
+# structure fetch, it is 0.7-2.2 MB, and the exact set of complexes we fetched is
+# part of the dataset definition.
+data/curation/fetch_timings.csv.gz

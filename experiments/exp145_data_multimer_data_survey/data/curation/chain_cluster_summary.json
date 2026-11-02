@@ -1,0 +1,30 @@
+{
+  "n_chains": 857599,
+  "n_clusters": 13478,
+  "representative_fraction": 0.015716,
+  "largest_cluster": 15861,
+  "median_cluster_size": 1,
+  "mean_cluster_size": 63.63,
+  "n_singletons": 6984,
+  "singleton_share_of_clusters": 0.5182,
+  "singleton_share_of_chains": 0.008144,
+  "n_clusters_ge_100": 1011,
+  "chains_in_clusters_ge_100": 775248,
+  "clusters_to_cover_0.50": 145,
+  "clusters_to_cover_0.80": 524,
+  "clusters_to_cover_0.90": 979,
+  "clusters_to_cover_0.99": 5699,
+  "pairs": {
+    "n_complexes": 881010,
+    "n_excluded_404": 762,
+    "n_unmapped_chain": 1,
+    "n_homodimers": 824125,
+    "n_labeled": 880247,
+    "n_distinct_pairs": 17083,
+    "n_same_cluster_pairs": 10151,
+    "n_pairs_seen_once": 8621,
+    "largest_pair": 15846,
+    "pairs_clusters_to_cover_0.50": 154,
+    "pairs_clusters_to_cover_0.90": 1144
+  }
+}

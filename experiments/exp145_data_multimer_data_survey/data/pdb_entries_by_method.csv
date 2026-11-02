@@ -1,0 +1,7 @@
+method,n_entries_protein,n_entries_multichain,n_entries_ge6_chains
+X-ray,202794,117860,15033
+EM,35608,32751,18942
+NMR,13174,1829,73
+Multiple methods,250,110,19
+Neutron,87,27,2
+Other,32,12,3

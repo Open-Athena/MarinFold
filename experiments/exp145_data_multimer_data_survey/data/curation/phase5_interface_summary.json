@@ -1,0 +1,12 @@
+{
+  "source": "s3://marinfold-exp91-usw2/MarinFold/exp145-afdb-dimers/val/",
+  "n_shards": 441,
+  "n_workers": 8,
+  "contact_angstroms": 5.0,
+  "min_interface": 7,
+  "n_candidates": 31956,
+  "n_measured": 31956,
+  "n_passing": 31929,
+  "n_absent": 0,
+  "elapsed_seconds": 486.2
+}

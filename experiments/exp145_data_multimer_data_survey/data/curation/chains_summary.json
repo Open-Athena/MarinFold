@@ -1,0 +1,15 @@
+{
+  "split": "val",
+  "source": "s3://marinfold-exp91-usw2/MarinFold/exp145-afdb-dimers/val/",
+  "shard_stride": 1,
+  "n_shards": 441,
+  "n_workers": 8,
+  "n_models_unfetchable": 762,
+  "n_chains_expected": 857600,
+  "n_written": 857599,
+  "n_duplicate_models": 2,
+  "n_on_disk": 857599,
+  "bytes_on_disk": 45294441724,
+  "mean_kb": 51.6,
+  "elapsed_seconds": 2227.6
+}

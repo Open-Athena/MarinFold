@@ -1,0 +1,63 @@
+{
+  "foldseek_version": "718d42176d2f67d36a60866fedfb881f8d5a7ebf",
+  "cpu_count": 8,
+  "n_chains_available": 3376,
+  "rows": [
+    {
+      "n_chains": 1600,
+      "threads": 8,
+      "createdb_seconds": 3.4,
+      "search_seconds": 159.9,
+      "total_seconds": 163.2,
+      "peak_rss_gb": 1.04,
+      "createdb_rss_gb": 0.1,
+      "db_bytes": 5942386,
+      "n_hits": 57322,
+      "hits_per_chain": 35.8,
+      "comparisons": 2560000,
+      "microseconds_per_comparison": 62.442
+    },
+    {
+      "n_chains": 1600,
+      "threads": 4,
+      "createdb_seconds": 4.2,
+      "search_seconds": 169.9,
+      "total_seconds": 174.0,
+      "peak_rss_gb": 1.04,
+      "createdb_rss_gb": 0.0,
+      "db_bytes": 5942386,
+      "n_hits": 57322,
+      "hits_per_chain": 35.8,
+      "comparisons": 2560000,
+      "microseconds_per_comparison": 66.359
+    },
+    {
+      "n_chains": 1600,
+      "threads": 2,
+      "createdb_seconds": 4.3,
+      "search_seconds": 292.9,
+      "total_seconds": 297.3,
+      "peak_rss_gb": 1.04,
+      "createdb_rss_gb": 0.0,
+      "db_bytes": 5942386,
+      "n_hits": 57322,
+      "hits_per_chain": 35.8,
+      "comparisons": 2560000,
+      "microseconds_per_comparison": 114.43
+    },
+    {
+      "n_chains": 1600,
+      "threads": 1,
+      "createdb_seconds": 5.1,
+      "search_seconds": 581.9,
+      "total_seconds": 587.0,
+      "peak_rss_gb": 1.04,
+      "createdb_rss_gb": 0.0,
+      "db_bytes": 5942386,
+      "n_hits": 57322,
+      "hits_per_chain": 35.8,
+      "comparisons": 2560000,
+      "microseconds_per_comparison": 227.302
+    }
+  ]
+}

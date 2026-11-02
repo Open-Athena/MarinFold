@@ -1,0 +1,33 @@
+{
+  "min_identity": 0.8,
+  "min_coverage": 0.5,
+  "coverage_definition": "max(qcov, tcov), i.e. fraction of the shorter sequence",
+  "rule": "complex -> val if EITHER subunit hits a validation monomer",
+  "n_query_subunits": 1979542,
+  "n_val_targets": 41954,
+  "n_subunits_with_val_hit": 26791,
+  "search_seconds": 0.0,
+  "sensitivity": 7.5,
+  "counts": {
+    "homodimer": {
+      "train": 1905199,
+      "val": 25353,
+      "val_via_subunit_1": 25353,
+      "val_via_subunit_2": 0,
+      "val_via_both": 0
+    },
+    "heterodimer": {
+      "train": 71342,
+      "val": 8906,
+      "val_via_subunit_1": 4465,
+      "val_via_subunit_2": 4165,
+      "val_via_both": 276
+    }
+  },
+  "totals": {
+    "train": 1976541,
+    "val": 34259
+  },
+  "alternate_thresholds": {},
+  "assignment": "data/curation/dimer_split_assignment_id80_cov50.csv.gz"
+}

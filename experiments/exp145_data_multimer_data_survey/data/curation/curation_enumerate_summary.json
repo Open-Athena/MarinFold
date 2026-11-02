@@ -1,0 +1,35 @@
+{
+  "gate": "ipSAE_max >= 0.6 and pDockQ2_max >= 0.23",
+  "sets": {
+    "heterodimer": {
+      "csv": "heterodimer_metadata.csv",
+      "csv_bytes": 2454028021,
+      "complete": true,
+      "rows_read": 7594357,
+      "rows_passing": 80248,
+      "pass_rate": 0.010567,
+      "declared_true": 80248,
+      "declared_vs_recomputed_disagreements": 0,
+      "elapsed_seconds": 2668.4,
+      "bytes_read": 2454028021,
+      "mb_per_second": 0.92,
+      "output": "data/curation/confident_heterodimers.csv.gz",
+      "output_bytes": 3467915
+    },
+    "homodimer": {
+      "csv": "homodimer_metadata.csv",
+      "csv_bytes": 5996430820,
+      "complete": true,
+      "rows_read": 21430663,
+      "rows_passing": 1930552,
+      "pass_rate": 0.090084,
+      "declared_true": null,
+      "declared_vs_recomputed_disagreements": 0,
+      "elapsed_seconds": 5205.1,
+      "bytes_read": 5996430820,
+      "mb_per_second": 1.15,
+      "output": "data/curation/confident_homodimers.csv.gz",
+      "output_bytes": 72903791
+    }
+  }
+}

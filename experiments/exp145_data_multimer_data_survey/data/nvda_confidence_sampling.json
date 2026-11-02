@@ -1,0 +1,47 @@
+{
+  "homodimer": {
+    "csv": "homodimer_metadata.csv",
+    "csv_bytes": 5996430820,
+    "windows": 200,
+    "window_bytes": 200000,
+    "rows_sampled": 143142,
+    "bytes_per_row": 279.0,
+    "estimated_total_rows": 21489407,
+    "sampled_fraction": 0.006661,
+    "redundancy": {
+      "n_rows": 143142,
+      "distinct_ids": 143142,
+      "distinct_genes": 107195,
+      "distinct_gene_taxon": 118157,
+      "distinct_organisms": 1200,
+      "max_gene_run": 767,
+      "rows_in_repeated_gene_runs": 0.1582,
+      "confident_rows": 13063,
+      "confident_distinct_genes": 9964,
+      "confident_distinct_gene_taxon": 11742
+    }
+  },
+  "heterodimer": {
+    "csv": "heterodimer_metadata.csv",
+    "csv_bytes": 2454028021,
+    "windows": 200,
+    "window_bytes": 200000,
+    "rows_sampled": 123597,
+    "bytes_per_row": 323.1,
+    "estimated_total_rows": 7595156,
+    "sampled_fraction": 0.016273,
+    "redundancy": {
+      "n_rows": 123597,
+      "distinct_ids": 123597,
+      "distinct_gene_pairs": 116284,
+      "confident_rows": 1141,
+      "confident_distinct_gene_pairs": 1079
+    },
+    "authors_gate_vs_declared": {
+      "n_compared": 123597,
+      "agree": 123597,
+      "declared_true_recomputed_false": 0,
+      "declared_false_recomputed_true": 0
+    }
+  }
+}

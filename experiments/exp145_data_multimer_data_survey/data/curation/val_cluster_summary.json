@@ -1,0 +1,50 @@
+[
+  {
+    "min_seq_id": 0.3,
+    "coverage": 0.8,
+    "cluster_seconds": 405.1,
+    "n_complexes": 881010,
+    "n_subunits": 858360,
+    "n_sequence_clusters": 58410,
+    "n_distinct_cluster_pairs": 63907,
+    "n_pairs_by_kind": {
+      "heterodimer": 14119,
+      "homodimer": 50368
+    },
+    "download_fraction": 0.0725,
+    "wire_gb_at_117kb": 7.5,
+    "discarded_complexes": 817103
+  },
+  {
+    "min_seq_id": 0.5,
+    "coverage": 0.8,
+    "cluster_seconds": 651.8,
+    "n_complexes": 881010,
+    "n_subunits": 858360,
+    "n_sequence_clusters": 138230,
+    "n_distinct_cluster_pairs": 146309,
+    "n_pairs_by_kind": {
+      "heterodimer": 21538,
+      "homodimer": 125322
+    },
+    "download_fraction": 0.1661,
+    "wire_gb_at_117kb": 17.1,
+    "discarded_complexes": 734701
+  },
+  {
+    "min_seq_id": 0.7,
+    "coverage": 0.8,
+    "cluster_seconds": 512.4,
+    "n_complexes": 881010,
+    "n_subunits": 858360,
+    "n_sequence_clusters": 281002,
+    "n_distinct_cluster_pairs": 291522,
+    "n_pairs_by_kind": {
+      "heterodimer": 29649,
+      "homodimer": 262260
+    },
+    "download_fraction": 0.3309,
+    "wire_gb_at_117kb": 34.1,
+    "discarded_complexes": 589488
+  }
+]

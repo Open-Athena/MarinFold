@@ -1,0 +1,7 @@
+category,n_assemblies
+all_protein_assemblies,359783
+single_chain,159411
+multi_chain,200372
+multi_chain_homomeric,117300
+multi_chain_heteromeric,83072
+multi_chain_with_nucleic_acid,12588

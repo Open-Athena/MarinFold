@@ -1,0 +1,67 @@
+{
+  "endpoint": "https://alphafold.ebi.ac.uk/files/",
+  "stride": 97,
+  "batches": [
+    {
+      "n_workers": 1,
+      "n_requested": 2000,
+      "n_ok": 2000,
+      "n_failed": 0,
+      "n_needing_retry": 0,
+      "total_retries": 0,
+      "elapsed_seconds": 1387.0,
+      "files_per_second": 1.44,
+      "wire_mb_per_second": 0.16,
+      "mean_wire_kb": 108.1,
+      "mean_decoded_kb": 468.7,
+      "compression_ratio": 4.33
+    },
+    {
+      "n_workers": 2,
+      "n_requested": 2000,
+      "n_ok": 2000,
+      "n_failed": 0,
+      "n_needing_retry": 0,
+      "total_retries": 0,
+      "elapsed_seconds": 701.2,
+      "files_per_second": 2.85,
+      "wire_mb_per_second": 0.34,
+      "mean_wire_kb": 119.4,
+      "mean_decoded_kb": 519.2,
+      "compression_ratio": 4.35
+    },
+    {
+      "n_workers": 4,
+      "n_requested": 2000,
+      "n_ok": 2000,
+      "n_failed": 0,
+      "n_needing_retry": 0,
+      "total_retries": 0,
+      "elapsed_seconds": 335.7,
+      "files_per_second": 5.96,
+      "wire_mb_per_second": 0.74,
+      "mean_wire_kb": 123.5,
+      "mean_decoded_kb": 537.7,
+      "compression_ratio": 4.35
+    },
+    {
+      "n_workers": 8,
+      "n_requested": 2000,
+      "n_ok": 1972,
+      "n_failed": 28,
+      "n_needing_retry": 0,
+      "total_retries": 0,
+      "elapsed_seconds": 170.8,
+      "files_per_second": 11.54,
+      "wire_mb_per_second": 1.35,
+      "mean_wire_kb": 116.7,
+      "mean_decoded_kb": 506.0,
+      "compression_ratio": 4.34
+    }
+  ],
+  "timings_csv": "data/curation/fetch_timings.csv",
+  "runner_tag": "local",
+  "hostname": "jacob-TP-X1",
+  "platform": "Linux-5.15.0-187-generic-x86_64-with-glibc2.35",
+  "timestamp_utc": "2026-09-02T23:14:23+00:00"
+}

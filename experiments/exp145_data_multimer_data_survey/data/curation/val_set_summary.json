@@ -1,0 +1,14 @@
+{
+  "n_cluster_pairs": 17083,
+  "n_drawn": 17067,
+  "n_homodimers_drawn": 10104,
+  "n_heterodimers_drawn": 6963,
+  "n_pairs_lost_to_interface": 16,
+  "n_candidates_failing_interface": 24,
+  "n_drawn_at_rank_1": 17064,
+  "n_labeled_complexes": 880247,
+  "n_discarded_sharing_a_pair": 863156,
+  "median_min_side": 37,
+  "median_iptm": 0.7679,
+  "lost_pairs_listed_in": "data/curation/val_set_pairs_lost.csv"
+}

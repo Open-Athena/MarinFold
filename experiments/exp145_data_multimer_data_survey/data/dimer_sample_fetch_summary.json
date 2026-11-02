@@ -1,0 +1,10 @@
+{
+  "n_heterodimers": 30,
+  "n_homodimers": 15,
+  "n_failed": 0,
+  "total_bytes": 21114454,
+  "download_seconds": 12.5,
+  "format": "cif",
+  "gate": "authors",
+  "gate_description": "ipSAE >= 0.6 and pDockQ2 >= 0.23"
+}

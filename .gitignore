@@ -222,6 +222,17 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+# Credential files. aws_keys.env holds short-lived STS credentials and must
+# never be committed; `git add -A` in an experiment directory will otherwise
+# sweep it in.
+aws_keys.env
+*.env
+!*.example.env
+
+# exp145 phase 4: the per-complex cluster-pair labels, 881,010 rows / 14 MB.
+# Regenerate with curate_label_pairs.py; the pair index and summary are committed.
+experiments/exp145_data_multimer_data_survey/data/curation/complex_cluster_pairs.csv.gz
+
 # exp200 reaper log (operational, not a result)
 experiments/exp200_models_rl_post_training_best_of_n/data/reap_sweep.log
 

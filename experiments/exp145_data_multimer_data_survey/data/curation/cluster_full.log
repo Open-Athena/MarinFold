@@ -1,0 +1,910 @@
++ B=marinfold-exp91-usw2
++ OUT=exp145/cluster-output
++ SRC=s3://marinfold-exp91-usw2/MarinFold/exp145-afdb-dimers/val/
++ CHAINS=/data/chains
++ cd /root
++ mkdir -p /data /data/chains data/curation
++ apt-get update -qq
++ apt-get install -y -qq python3-pip
+dpkg-preconfigure: unable to re-open stdin: No such file or directory
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 66021 files and directories currently installed.)
+Preparing to unpack .../libc6_2.35-0ubuntu3.15_amd64.deb ...
+Unpacking libc6:amd64 (2.35-0ubuntu3.15) over (2.35-0ubuntu3.14) ...
+Setting up libc6:amd64 (2.35-0ubuntu3.15) ...
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 66021 files and directories currently installed.)
+Preparing to unpack .../00-libpython3.10_3.10.12-1~22.04.18_amd64.deb ...
+Unpacking libpython3.10:amd64 (3.10.12-1~22.04.18) over (3.10.12-1~22.04.17) ...
+Preparing to unpack .../01-python3.10_3.10.12-1~22.04.18_amd64.deb ...
+Unpacking python3.10 (3.10.12-1~22.04.18) over (3.10.12-1~22.04.17) ...
+Preparing to unpack .../02-libpython3.10-stdlib_3.10.12-1~22.04.18_amd64.deb ...
+Unpacking libpython3.10-stdlib:amd64 (3.10.12-1~22.04.18) over (3.10.12-1~22.04.17) ...
+Preparing to unpack .../03-python3.10-minimal_3.10.12-1~22.04.18_amd64.deb ...
+Unpacking python3.10-minimal (3.10.12-1~22.04.18) over (3.10.12-1~22.04.17) ...
+Preparing to unpack .../04-libpython3.10-minimal_3.10.12-1~22.04.18_amd64.deb ...
+Unpacking libpython3.10-minimal:amd64 (3.10.12-1~22.04.18) over (3.10.12-1~22.04.17) ...
+Selecting previously unselected package libc-dev-bin.
+Preparing to unpack .../05-libc-dev-bin_2.35-0ubuntu3.15_amd64.deb ...
+Unpacking libc-dev-bin (2.35-0ubuntu3.15) ...
+Selecting previously unselected package linux-libc-dev:amd64.
+Preparing to unpack .../06-linux-libc-dev_5.15.0-191.201_amd64.deb ...
+Unpacking linux-libc-dev:amd64 (5.15.0-191.201) ...
+Selecting previously unselected package libcrypt-dev:amd64.
+Preparing to unpack .../07-libcrypt-dev_1%3a4.4.27-1_amd64.deb ...
+Unpacking libcrypt-dev:amd64 (1:4.4.27-1) ...
+Selecting previously unselected package rpcsvc-proto.
+Preparing to unpack .../08-rpcsvc-proto_1.4.2-0ubuntu6_amd64.deb ...
+Unpacking rpcsvc-proto (1.4.2-0ubuntu6) ...
+Selecting previously unselected package libtirpc-dev:amd64.
+Preparing to unpack .../09-libtirpc-dev_1.3.2-2ubuntu0.1_amd64.deb ...
+Unpacking libtirpc-dev:amd64 (1.3.2-2ubuntu0.1) ...
+Selecting previously unselected package libnsl-dev:amd64.
+Preparing to unpack .../10-libnsl-dev_1.3.0-2build2_amd64.deb ...
+Unpacking libnsl-dev:amd64 (1.3.0-2build2) ...
+Selecting previously unselected package libc6-dev:amd64.
+Preparing to unpack .../11-libc6-dev_2.35-0ubuntu3.15_amd64.deb ...
+Unpacking libc6-dev:amd64 (2.35-0ubuntu3.15) ...
+Selecting previously unselected package gcc-11-base:amd64.
+Preparing to unpack .../12-gcc-11-base_11.4.0-1ubuntu1~22.04.3_amd64.deb ...
+Unpacking gcc-11-base:amd64 (11.4.0-1ubuntu1~22.04.3) ...
+Selecting previously unselected package libisl23:amd64.
+Preparing to unpack .../13-libisl23_0.24-2build1_amd64.deb ...
+Unpacking libisl23:amd64 (0.24-2build1) ...
+Selecting previously unselected package libmpc3:amd64.
+Preparing to unpack .../14-libmpc3_1.2.1-2build1_amd64.deb ...
+Unpacking libmpc3:amd64 (1.2.1-2build1) ...
+Selecting previously unselected package cpp-11.
+Preparing to unpack .../15-cpp-11_11.4.0-1ubuntu1~22.04.3_amd64.deb ...
+Unpacking cpp-11 (11.4.0-1ubuntu1~22.04.3) ...
+Selecting previously unselected package cpp.
+Preparing to unpack .../16-cpp_4%3a11.2.0-1ubuntu1_amd64.deb ...
+Unpacking cpp (4:11.2.0-1ubuntu1) ...
+Selecting previously unselected package libcc1-0:amd64.
+Preparing to unpack .../17-libcc1-0_12.3.0-1ubuntu1~22.04.3_amd64.deb ...
+Unpacking libcc1-0:amd64 (12.3.0-1ubuntu1~22.04.3) ...
+Selecting previously unselected package libgomp1:amd64.
+Preparing to unpack .../18-libgomp1_12.3.0-1ubuntu1~22.04.3_amd64.deb ...
+Unpacking libgomp1:amd64 (12.3.0-1ubuntu1~22.04.3) ...
+Selecting previously unselected package libitm1:amd64.
+Preparing to unpack .../19-libitm1_12.3.0-1ubuntu1~22.04.3_amd64.deb ...
+Unpacking libitm1:amd64 (12.3.0-1ubuntu1~22.04.3) ...
+Selecting previously unselected package libatomic1:amd64.
+Preparing to unpack .../20-libatomic1_12.3.0-1ubuntu1~22.04.3_amd64.deb ...
+Unpacking libatomic1:amd64 (12.3.0-1ubuntu1~22.04.3) ...
+Selecting previously unselected package libasan6:amd64.
+Preparing to unpack .../21-libasan6_11.4.0-1ubuntu1~22.04.3_amd64.deb ...
+Unpacking libasan6:amd64 (11.4.0-1ubuntu1~22.04.3) ...
+Selecting previously unselected package liblsan0:amd64.
+Preparing to unpack .../22-liblsan0_12.3.0-1ubuntu1~22.04.3_amd64.deb ...
+Unpacking liblsan0:amd64 (12.3.0-1ubuntu1~22.04.3) ...
+Selecting previously unselected package libtsan0:amd64.
+Preparing to unpack .../23-libtsan0_11.4.0-1ubuntu1~22.04.3_amd64.deb ...
+Unpacking libtsan0:amd64 (11.4.0-1ubuntu1~22.04.3) ...
+Selecting previously unselected package libubsan1:amd64.
+Preparing to unpack .../24-libubsan1_12.3.0-1ubuntu1~22.04.3_amd64.deb ...
+Unpacking libubsan1:amd64 (12.3.0-1ubuntu1~22.04.3) ...
+Selecting previously unselected package libquadmath0:amd64.
+Preparing to unpack .../25-libquadmath0_12.3.0-1ubuntu1~22.04.3_amd64.deb ...
+Unpacking libquadmath0:amd64 (12.3.0-1ubuntu1~22.04.3) ...
+Selecting previously unselected package libgcc-11-dev:amd64.
+Preparing to unpack .../26-libgcc-11-dev_11.4.0-1ubuntu1~22.04.3_amd64.deb ...
+Unpacking libgcc-11-dev:amd64 (11.4.0-1ubuntu1~22.04.3) ...
+Selecting previously unselected package gcc-11.
+Preparing to unpack .../27-gcc-11_11.4.0-1ubuntu1~22.04.3_amd64.deb ...
+Unpacking gcc-11 (11.4.0-1ubuntu1~22.04.3) ...
+Selecting previously unselected package gcc.
+Preparing to unpack .../28-gcc_4%3a11.2.0-1ubuntu1_amd64.deb ...
+Unpacking gcc (4:11.2.0-1ubuntu1) ...
+Selecting previously unselected package libstdc++-11-dev:amd64.
+Preparing to unpack .../29-libstdc++-11-dev_11.4.0-1ubuntu1~22.04.3_amd64.deb ...
+Unpacking libstdc++-11-dev:amd64 (11.4.0-1ubuntu1~22.04.3) ...
+Selecting previously unselected package g++-11.
+Preparing to unpack .../30-g++-11_11.4.0-1ubuntu1~22.04.3_amd64.deb ...
+Unpacking g++-11 (11.4.0-1ubuntu1~22.04.3) ...
+Selecting previously unselected package g++.
+Preparing to unpack .../31-g++_4%3a11.2.0-1ubuntu1_amd64.deb ...
+Unpacking g++ (4:11.2.0-1ubuntu1) ...
+Selecting previously unselected package make.
+Preparing to unpack .../32-make_4.3-4.1build1_amd64.deb ...
+Unpacking make (4.3-4.1build1) ...
+Selecting previously unselected package libdpkg-perl.
+Preparing to unpack .../33-libdpkg-perl_1.21.1ubuntu2.6_all.deb ...
+Unpacking libdpkg-perl (1.21.1ubuntu2.6) ...
+Selecting previously unselected package bzip2.
+Preparing to unpack .../34-bzip2_1.0.8-5ubuntu0.1_amd64.deb ...
+Unpacking bzip2 (1.0.8-5ubuntu0.1) ...
+Selecting previously unselected package lto-disabled-list.
+Preparing to unpack .../35-lto-disabled-list_24_all.deb ...
+Unpacking lto-disabled-list (24) ...
+Selecting previously unselected package dpkg-dev.
+Preparing to unpack .../36-dpkg-dev_1.21.1ubuntu2.6_all.deb ...
+Unpacking dpkg-dev (1.21.1ubuntu2.6) ...
+Selecting previously unselected package build-essential.
+Preparing to unpack .../37-build-essential_12.9ubuntu3_amd64.deb ...
+Unpacking build-essential (12.9ubuntu3) ...
+Selecting previously unselected package libfakeroot:amd64.
+Preparing to unpack .../38-libfakeroot_1.28-1ubuntu1_amd64.deb ...
+Unpacking libfakeroot:amd64 (1.28-1ubuntu1) ...
+Selecting previously unselected package fakeroot.
+Preparing to unpack .../39-fakeroot_1.28-1ubuntu1_amd64.deb ...
+Unpacking fakeroot (1.28-1ubuntu1) ...
+Selecting previously unselected package fonts-dejavu-core.
+Preparing to unpack .../40-fonts-dejavu-core_2.37-2build1_all.deb ...
+Unpacking fonts-dejavu-core (2.37-2build1) ...
+Selecting previously unselected package fontconfig-config.
+Preparing to unpack .../41-fontconfig-config_2.13.1-4.2ubuntu5_all.deb ...
+Unpacking fontconfig-config (2.13.1-4.2ubuntu5) ...
+Selecting previously unselected package javascript-common.
+Preparing to unpack .../42-javascript-common_11+nmu1_all.deb ...
+Unpacking javascript-common (11+nmu1) ...
+Selecting previously unselected package libalgorithm-diff-perl.
+Preparing to unpack .../43-libalgorithm-diff-perl_1.201-1_all.deb ...
+Unpacking libalgorithm-diff-perl (1.201-1) ...
+Selecting previously unselected package libalgorithm-diff-xs-perl.
+Preparing to unpack .../44-libalgorithm-diff-xs-perl_0.04-6build3_amd64.deb ...
+Unpacking libalgorithm-diff-xs-perl (0.04-6build3) ...
+Selecting previously unselected package libalgorithm-merge-perl.
+Preparing to unpack .../45-libalgorithm-merge-perl_0.08-3_all.deb ...
+Unpacking libalgorithm-merge-perl (0.08-3) ...
+Selecting previously unselected package libfontconfig1:amd64.
+Preparing to unpack .../46-libfontconfig1_2.13.1-4.2ubuntu5_amd64.deb ...
+Unpacking libfontconfig1:amd64 (2.13.1-4.2ubuntu5) ...
+Selecting previously unselected package libjpeg-turbo8:amd64.
+Preparing to unpack .../47-libjpeg-turbo8_2.1.2-0ubuntu1_amd64.deb ...
+Unpacking libjpeg-turbo8:amd64 (2.1.2-0ubuntu1) ...
+Selecting previously unselected package libjpeg8:amd64.
+Preparing to unpack .../48-libjpeg8_8c-2ubuntu10_amd64.deb ...
+Unpacking libjpeg8:amd64 (8c-2ubuntu10) ...
+Selecting previously unselected package libdeflate0:amd64.
+Preparing to unpack .../49-libdeflate0_1.10-2_amd64.deb ...
+Unpacking libdeflate0:amd64 (1.10-2) ...
+Selecting previously unselected package libjbig0:amd64.
+Preparing to unpack .../50-libjbig0_2.1-3.1ubuntu0.22.04.1_amd64.deb ...
+Unpacking libjbig0:amd64 (2.1-3.1ubuntu0.22.04.1) ...
+Selecting previously unselected package libwebp7:amd64.
+Preparing to unpack .../51-libwebp7_1.2.2-2ubuntu0.22.04.2_amd64.deb ...
+Unpacking libwebp7:amd64 (1.2.2-2ubuntu0.22.04.2) ...
+Selecting previously unselected package libtiff5:amd64.
+Preparing to unpack .../52-libtiff5_4.3.0-6ubuntu0.13_amd64.deb ...
+Unpacking libtiff5:amd64 (4.3.0-6ubuntu0.13) ...
+Selecting previously unselected package libxpm4:amd64.
+Preparing to unpack .../53-libxpm4_1%3a3.5.12-1ubuntu0.22.04.3_amd64.deb ...
+Unpacking libxpm4:amd64 (1:3.5.12-1ubuntu0.22.04.3) ...
+Selecting previously unselected package libgd3:amd64.
+Preparing to unpack .../54-libgd3_2.3.0-2ubuntu2.3_amd64.deb ...
+Unpacking libgd3:amd64 (2.3.0-2ubuntu2.3) ...
+Selecting previously unselected package libc-devtools.
+Preparing to unpack .../55-libc-devtools_2.35-0ubuntu3.15_amd64.deb ...
+Unpacking libc-devtools (2.35-0ubuntu3.15) ...
+Selecting previously unselected package libexpat1-dev:amd64.
+Preparing to unpack .../56-libexpat1-dev_2.4.7-1ubuntu0.7_amd64.deb ...
+Unpacking libexpat1-dev:amd64 (2.4.7-1ubuntu0.7) ...
+Selecting previously unselected package libfile-fcntllock-perl.
+Preparing to unpack .../57-libfile-fcntllock-perl_0.22-3build7_amd64.deb ...
+Unpacking libfile-fcntllock-perl (0.22-3build7) ...
+Selecting previously unselected package libjs-jquery.
+Preparing to unpack .../58-libjs-jquery_3.6.0+dfsg+~3.5.13-1_all.deb ...
+Unpacking libjs-jquery (3.6.0+dfsg+~3.5.13-1) ...
+Selecting previously unselected package libjs-underscore.
+Preparing to unpack .../59-libjs-underscore_1.13.2~dfsg-2_all.deb ...
+Unpacking libjs-underscore (1.13.2~dfsg-2) ...
+Selecting previously unselected package libjs-sphinxdoc.
+Preparing to unpack .../60-libjs-sphinxdoc_4.3.2-1_all.deb ...
+Unpacking libjs-sphinxdoc (4.3.2-1) ...
+Selecting previously unselected package zlib1g-dev:amd64.
+Preparing to unpack .../61-zlib1g-dev_1%3a1.2.11.dfsg-2ubuntu9.2_amd64.deb ...
+Unpacking zlib1g-dev:amd64 (1:1.2.11.dfsg-2ubuntu9.2) ...
+Selecting previously unselected package libpython3.10-dev:amd64.
+Preparing to unpack .../62-libpython3.10-dev_3.10.12-1~22.04.18_amd64.deb ...
+Unpacking libpython3.10-dev:amd64 (3.10.12-1~22.04.18) ...
+Selecting previously unselected package libpython3-dev:amd64.
+Preparing to unpack .../63-libpython3-dev_3.10.6-1~22.04.1_amd64.deb ...
+Unpacking libpython3-dev:amd64 (3.10.6-1~22.04.1) ...
+Selecting previously unselected package manpages-dev.
+Preparing to unpack .../64-manpages-dev_5.10-1ubuntu1_all.deb ...
+Unpacking manpages-dev (5.10-1ubuntu1) ...
+Selecting previously unselected package python3.10-dev.
+Preparing to unpack .../65-python3.10-dev_3.10.12-1~22.04.18_amd64.deb ...
+Unpacking python3.10-dev (3.10.12-1~22.04.18) ...
+Selecting previously unselected package python3-dev.
+Preparing to unpack .../66-python3-dev_3.10.6-1~22.04.1_amd64.deb ...
+Unpacking python3-dev (3.10.6-1~22.04.1) ...
+Selecting previously unselected package python3-wheel.
+Preparing to unpack .../67-python3-wheel_0.37.1-2ubuntu0.22.04.1_all.deb ...
+Unpacking python3-wheel (0.37.1-2ubuntu0.22.04.1) ...
+Selecting previously unselected package python3-pip.
+Preparing to unpack .../68-python3-pip_22.0.2+dfsg-1ubuntu0.7_all.deb ...
+Unpacking python3-pip (22.0.2+dfsg-1ubuntu0.7) ...
+Setting up javascript-common (11+nmu1) ...
+Setting up gcc-11-base:amd64 (11.4.0-1ubuntu1~22.04.3) ...
+Setting up manpages-dev (5.10-1ubuntu1) ...
+Setting up lto-disabled-list (24) ...
+Setting up libxpm4:amd64 (1:3.5.12-1ubuntu0.22.04.3) ...
+Setting up libfile-fcntllock-perl (0.22-3build7) ...
+Setting up libalgorithm-diff-perl (1.201-1) ...
+Setting up libdeflate0:amd64 (1.10-2) ...
+Setting up linux-libc-dev:amd64 (5.15.0-191.201) ...
+Setting up libgomp1:amd64 (12.3.0-1ubuntu1~22.04.3) ...
+Setting up bzip2 (1.0.8-5ubuntu0.1) ...
+Setting up python3-wheel (0.37.1-2ubuntu0.22.04.1) ...
+Setting up libjbig0:amd64 (2.1-3.1ubuntu0.22.04.1) ...
+Setting up libfakeroot:amd64 (1.28-1ubuntu1) ...
+Setting up libasan6:amd64 (11.4.0-1ubuntu1~22.04.3) ...
+Setting up fakeroot (1.28-1ubuntu1) ...
+update-alternatives: using /usr/bin/fakeroot-sysv to provide /usr/bin/fakeroot (fakeroot) in auto mode
+Setting up libtirpc-dev:amd64 (1.3.2-2ubuntu0.1) ...
+Setting up rpcsvc-proto (1.4.2-0ubuntu6) ...
+Setting up make (4.3-4.1build1) ...
+Setting up libquadmath0:amd64 (12.3.0-1ubuntu1~22.04.3) ...
+Setting up libmpc3:amd64 (1.2.1-2build1) ...
+Setting up libatomic1:amd64 (12.3.0-1ubuntu1~22.04.3) ...
+Setting up libpython3.10-minimal:amd64 (3.10.12-1~22.04.18) ...
+Setting up fonts-dejavu-core (2.37-2build1) ...
+Setting up python3-pip (22.0.2+dfsg-1ubuntu0.7) ...
+Setting up libjpeg-turbo8:amd64 (2.1.2-0ubuntu1) ...
+Setting up libdpkg-perl (1.21.1ubuntu2.6) ...
+Setting up libwebp7:amd64 (1.2.2-2ubuntu0.22.04.2) ...
+Setting up libubsan1:amd64 (12.3.0-1ubuntu1~22.04.3) ...
+Setting up libnsl-dev:amd64 (1.3.0-2build2) ...
+Setting up libcrypt-dev:amd64 (1:4.4.27-1) ...
+Setting up libjs-jquery (3.6.0+dfsg+~3.5.13-1) ...
+Setting up libisl23:amd64 (0.24-2build1) ...
+Setting up libc-dev-bin (2.35-0ubuntu3.15) ...
+Setting up libalgorithm-diff-xs-perl (0.04-6build3) ...
+Setting up libcc1-0:amd64 (12.3.0-1ubuntu1~22.04.3) ...
+Setting up liblsan0:amd64 (12.3.0-1ubuntu1~22.04.3) ...
+Setting up libitm1:amd64 (12.3.0-1ubuntu1~22.04.3) ...
+Setting up libjs-underscore (1.13.2~dfsg-2) ...
+Setting up libalgorithm-merge-perl (0.08-3) ...
+Setting up libtsan0:amd64 (11.4.0-1ubuntu1~22.04.3) ...
+Setting up libjpeg8:amd64 (8c-2ubuntu10) ...
+Setting up cpp-11 (11.4.0-1ubuntu1~22.04.3) ...
+Setting up fontconfig-config (2.13.1-4.2ubuntu5) ...
+Setting up python3.10-minimal (3.10.12-1~22.04.18) ...
+Setting up dpkg-dev (1.21.1ubuntu2.6) ...
+Setting up libpython3.10-stdlib:amd64 (3.10.12-1~22.04.18) ...
+Setting up libjs-sphinxdoc (4.3.2-1) ...
+Setting up libgcc-11-dev:amd64 (11.4.0-1ubuntu1~22.04.3) ...
+Setting up gcc-11 (11.4.0-1ubuntu1~22.04.3) ...
+Setting up cpp (4:11.2.0-1ubuntu1) ...
+Setting up libc6-dev:amd64 (2.35-0ubuntu3.15) ...
+Setting up libtiff5:amd64 (4.3.0-6ubuntu0.13) ...
+Setting up libfontconfig1:amd64 (2.13.1-4.2ubuntu5) ...
+Setting up libpython3.10:amd64 (3.10.12-1~22.04.18) ...
+Setting up python3.10 (3.10.12-1~22.04.18) ...
+Setting up gcc (4:11.2.0-1ubuntu1) ...
+Setting up libexpat1-dev:amd64 (2.4.7-1ubuntu0.7) ...
+Setting up libgd3:amd64 (2.3.0-2ubuntu2.3) ...
+Setting up libstdc++-11-dev:amd64 (11.4.0-1ubuntu1~22.04.3) ...
+Setting up zlib1g-dev:amd64 (1:1.2.11.dfsg-2ubuntu9.2) ...
+Setting up libc-devtools (2.35-0ubuntu3.15) ...
+Setting up g++-11 (11.4.0-1ubuntu1~22.04.3) ...
+Setting up libpython3.10-dev:amd64 (3.10.12-1~22.04.18) ...
+Setting up python3.10-dev (3.10.12-1~22.04.18) ...
+Setting up g++ (4:11.2.0-1ubuntu1) ...
+update-alternatives: using /usr/bin/g++ to provide /usr/bin/c++ (c++) in auto mode
+Setting up build-essential (12.9ubuntu3) ...
+Setting up libpython3-dev:amd64 (3.10.6-1~22.04.1) ...
+Setting up python3-dev (3.10.6-1~22.04.1) ...
+Processing triggers for man-db (2.10.2-1) ...
+Processing triggers for libc-bin (2.35-0ubuntu3.14) ...
+
+Running kernel seems to be up-to-date.
+
+Services to be restarted:
+ systemctl restart acpid.service
+ systemctl restart chrony.service
+ systemctl restart cloud-final.service
+ systemctl restart cron.service
+ systemctl restart irqbalance.service
+ systemctl restart multipathd.service
+ systemctl restart packagekit.service
+ systemctl restart polkit.service
+ systemctl restart rsyslog.service
+ systemctl restart serial-getty@ttyS0.service
+ systemctl restart snapd.service
+ systemctl restart ssh.service
+ systemctl restart systemd-hostnamed.service
+ systemctl restart systemd-journald.service
+ systemctl restart systemd-networkd.service
+ systemctl restart systemd-resolved.service
+ systemctl restart systemd-timedated.service
+ systemctl restart systemd-udevd.service
+
+Service restarts being deferred:
+ /etc/needrestart/restart.d/dbus.service
+ systemctl restart getty@tty1.service
+ systemctl restart networkd-dispatcher.service
+ systemctl restart systemd-logind.service
+ systemctl restart unattended-upgrades.service
+
+No containers need to be restarted.
+
+No user sessions are running outdated binaries.
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
++ pip3 install --quiet pyarrow
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
++ python3 -
+staged 26051165 bytes
++ tar xzf scripts.tar.gz
++ for f in curate_extract_chains.py curate_foldseek_scaling.py foldseek_env.py data/curation/dimer_split_assignment_id30_cov50.csv.gz data/curation/fetch_missing_404.csv
++ '[' -f curate_extract_chains.py ']'
++ for f in curate_extract_chains.py curate_foldseek_scaling.py foldseek_env.py data/curation/dimer_split_assignment_id30_cov50.csv.gz data/curation/fetch_missing_404.csv
++ '[' -f curate_foldseek_scaling.py ']'
++ for f in curate_extract_chains.py curate_foldseek_scaling.py foldseek_env.py data/curation/dimer_split_assignment_id30_cov50.csv.gz data/curation/fetch_missing_404.csv
++ '[' -f foldseek_env.py ']'
++ for f in curate_extract_chains.py curate_foldseek_scaling.py foldseek_env.py data/curation/dimer_split_assignment_id30_cov50.csv.gz data/curation/fetch_missing_404.csv
++ '[' -f data/curation/dimer_split_assignment_id30_cov50.csv.gz ']'
++ for f in curate_extract_chains.py curate_foldseek_scaling.py foldseek_env.py data/curation/dimer_split_assignment_id30_cov50.csv.gz data/curation/fetch_missing_404.csv
++ '[' -f data/curation/fetch_missing_404.csv ']'
++ HEARTBEAT=2796
++ true
++ sleep 300
+++ nproc
++ python3 curate_extract_chains.py --source s3://marinfold-exp91-usw2/MarinFold/exp145-afdb-dimers/val/ --split val --assignment data/curation/dimer_split_assignment_id30_cov50.csv.gz --missing data/curation/fetch_missing_404.csv --workers 8 --out /data/chains
+762 models excluded as unfetchable (data/curation/fetch_missing_404.csv)
+857,600 distinct chains expected in split 'val'
+441 tar shards from s3://marinfold-exp91-usw2/MarinFold/exp145-afdb-dimers/val/ (stride 1), 8 workers
+[      40s] 1/441 shard_000_00004.tar +2000 (2,000 written, 0 duplicate)
+[      41s] 2/441 shard_000_00006.tar +2000 (4,000 written, 0 duplicate)
+[      43s] 3/441 shard_000_00007.tar +2000 (6,000 written, 0 duplicate)
+[      44s] 4/441 shard_000_00003.tar +2000 (8,000 written, 0 duplicate)
+[      46s] 5/441 shard_000_00005.tar +2000 (10,000 written, 0 duplicate)
+[      46s] 6/441 shard_000_00001.tar +2000 (12,000 written, 0 duplicate)
+[      50s] 7/441 shard_000_00002.tar +2000 (14,000 written, 0 duplicate)
+[      52s] 8/441 shard_000_00000.tar +2000 (16,000 written, 0 duplicate)
+[      73s] 9/441 shard_000_00009.tar +2000 (18,000 written, 0 duplicate)
+[      74s] 10/441 shard_000_00011.tar +2000 (20,000 written, 0 duplicate)
+[      77s] 11/441 shard_000_00013.tar +2000 (22,000 written, 0 duplicate)
+[      79s] 12/441 shard_000_00010.tar +2000 (24,000 written, 0 duplicate)
+[      79s] 13/441 shard_000_00012.tar +2000 (26,000 written, 0 duplicate)
+[      88s] 14/441 shard_000_00008.tar +2000 (28,000 written, 0 duplicate)
+[      89s] 15/441 shard_000_00015.tar +2000 (30,000 written, 0 duplicate)
+[      91s] 16/441 shard_000_00014.tar +2000 (32,000 written, 0 duplicate)
+[     104s] 17/441 shard_000_00020.tar +2000 (34,000 written, 0 duplicate)
+[     105s] 18/441 shard_000_00016.tar +2000 (36,000 written, 0 duplicate)
+[     109s] 19/441 shard_000_00017.tar +2000 (38,000 written, 0 duplicate)
+[     112s] 20/441 shard_000_00018.tar +2000 (40,000 written, 0 duplicate)
+[     114s] 21/441 shard_000_00019.tar +2000 (42,000 written, 0 duplicate)
+[     117s] 22/441 shard_000_00021.tar +2000 (44,000 written, 0 duplicate)
+[     135s] 23/441 shard_000_00022.tar +2000 (46,000 written, 0 duplicate)
+[     135s] 24/441 shard_000_00025.tar +2000 (48,000 written, 0 duplicate)
+[     139s] 25/441 shard_000_00026.tar +2000 (50,000 written, 0 duplicate)
+[     140s] 26/441 shard_000_00027.tar +2000 (52,000 written, 0 duplicate)
+[     142s] 27/441 shard_000_00023.tar +2000 (54,000 written, 0 duplicate)
+[     150s] 28/441 shard_000_00028.tar +2000 (56,000 written, 0 duplicate)
+[     150s] 29/441 shard_000_00024.tar +2000 (58,000 written, 0 duplicate)
+[     160s] 30/441 shard_000_00029.tar +2000 (60,000 written, 0 duplicate)
+[     178s] 31/441 shard_000_00031.tar +2000 (62,000 written, 0 duplicate)
+[     178s] 32/441 shard_000_00030.tar +2000 (64,000 written, 0 duplicate)
+[     178s] 33/441 shard_000_00032.tar +2000 (66,000 written, 0 duplicate)
+[     180s] 34/441 shard_000_00033.tar +2000 (68,000 written, 0 duplicate)
+[     182s] 35/441 shard_000_00034.tar +2000 (70,000 written, 0 duplicate)
+[     189s] 36/441 shard_000_00036.tar +1999 (71,999 written, 0 duplicate)
+[     192s] 37/441 shard_000_00035.tar +2000 (73,999 written, 0 duplicate)
+[     201s] 38/441 shard_000_00037.tar +1997 (75,996 written, 0 duplicate)
+[     220s] 39/441 shard_000_00038.tar +1999 (77,995 written, 0 duplicate)
+[     222s] 40/441 shard_000_00041.tar +2000 (79,995 written, 0 duplicate)
+[     225s] 41/441 shard_000_00039.tar +1996 (81,991 written, 0 duplicate)
+[     229s] 42/441 shard_000_00043.tar +1997 (83,988 written, 0 duplicate)
+[     229s] 43/441 shard_000_00044.tar +1999 (85,987 written, 0 duplicate)
+[     229s] 44/441 shard_000_00040.tar +1995 (87,982 written, 0 duplicate)
+[     230s] 45/441 shard_000_00042.tar +1994 (89,976 written, 0 duplicate)
+[     247s] 46/441 shard_000_00045.tar +1999 (91,975 written, 0 duplicate)
+[     259s] 47/441 shard_000_00047.tar +2000 (93,975 written, 0 duplicate)
+[     265s] 48/441 shard_000_00046.tar +1999 (95,974 written, 0 duplicate)
+[     266s] 49/441 shard_000_00048.tar +1998 (97,972 written, 0 duplicate)
+[     269s] 50/441 shard_000_00052.tar +2000 (99,972 written, 0 duplicate)
+[     272s] 51/441 shard_000_00051.tar +2000 (101,972 written, 0 duplicate)
+[     278s] 52/441 shard_000_00049.tar +2000 (103,972 written, 0 duplicate)
+[     280s] 53/441 shard_000_00050.tar +2000 (105,972 written, 0 duplicate)
+[     291s] 54/441 shard_000_00053.tar +2000 (107,972 written, 0 duplicate)
+[     295s] 55/441 shard_000_00054.tar +2000 (109,972 written, 0 duplicate)
++ publish /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ python3 - /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ true
++ sleep 300
+[     304s] 56/441 shard_000_00056.tar +2000 (111,972 written, 0 duplicate)
+[     305s] 57/441 shard_000_00055.tar +2000 (113,972 written, 0 duplicate)
+[     310s] 58/441 shard_000_00057.tar +2000 (115,972 written, 0 duplicate)
+[     315s] 59/441 shard_000_00058.tar +2000 (117,972 written, 0 duplicate)
+[     321s] 60/441 shard_000_00059.tar +1990 (119,962 written, 0 duplicate)
+[     322s] 61/441 shard_000_00060.tar +2000 (121,962 written, 0 duplicate)
+[     328s] 62/441 shard_000_00061.tar +2000 (123,962 written, 0 duplicate)
+[     343s] 63/441 shard_000_00063.tar +2000 (125,962 written, 0 duplicate)
+[     343s] 64/441 shard_000_00062.tar +1997 (127,959 written, 0 duplicate)
+[     348s] 65/441 shard_000_00064.tar +2000 (129,959 written, 0 duplicate)
+[     349s] 66/441 shard_000_00065.tar +2000 (131,959 written, 0 duplicate)
+[     359s] 67/441 shard_000_00066.tar +2000 (133,959 written, 0 duplicate)
+[     363s] 68/441 shard_000_00067.tar +2000 (135,959 written, 0 duplicate)
+[     372s] 69/441 shard_000_00068.tar +1998 (137,957 written, 0 duplicate)
+[     384s] 70/441 shard_000_00069.tar +2000 (139,957 written, 0 duplicate)
+[     387s] 71/441 shard_000_00071.tar +2000 (141,957 written, 0 duplicate)
+[     389s] 72/441 shard_000_00070.tar +2000 (143,957 written, 0 duplicate)
+[     389s] 73/441 shard_000_00073.tar +2000 (145,957 written, 0 duplicate)
+[     393s] 74/441 shard_000_00074.tar +2000 (147,957 written, 0 duplicate)
+[     396s] 75/441 shard_000_00072.tar +2000 (149,957 written, 0 duplicate)
+[     398s] 76/441 shard_000_00075.tar +2000 (151,957 written, 0 duplicate)
+[     416s] 77/441 shard_000_00076.tar +2000 (153,957 written, 0 duplicate)
+[     428s] 78/441 shard_000_00079.tar +2000 (155,957 written, 0 duplicate)
+[     430s] 79/441 shard_000_00077.tar +2000 (157,957 written, 0 duplicate)
+[     430s] 80/441 shard_000_00083.tar +2000 (159,957 written, 0 duplicate)
+[     434s] 81/441 shard_000_00082.tar +2000 (161,957 written, 0 duplicate)
+[     435s] 82/441 shard_000_00080.tar +2000 (163,957 written, 0 duplicate)
+[     436s] 83/441 shard_000_00081.tar +2000 (165,957 written, 0 duplicate)
+[     439s] 84/441 shard_000_00078.tar +2000 (167,957 written, 0 duplicate)
+[     448s] 85/441 shard_000_00084.tar +2000 (169,957 written, 0 duplicate)
+[     467s] 86/441 shard_000_00087.tar +2000 (171,957 written, 0 duplicate)
+[     470s] 87/441 shard_000_00086.tar +2000 (173,957 written, 0 duplicate)
+[     473s] 88/441 shard_000_00085.tar +2000 (175,957 written, 0 duplicate)
+[     478s] 89/441 shard_000_00089.tar +2000 (177,957 written, 0 duplicate)
+[     481s] 90/441 shard_000_00088.tar +2000 (179,957 written, 0 duplicate)
+[     482s] 91/441 shard_000_00091.tar +2000 (181,957 written, 0 duplicate)
+[     484s] 92/441 shard_000_00090.tar +2000 (183,957 written, 0 duplicate)
+[     489s] 93/441 shard_000_00092.tar +2000 (185,957 written, 0 duplicate)
+[     509s] 94/441 shard_000_00093.tar +2000 (187,957 written, 0 duplicate)
+[     510s] 95/441 shard_000_00094.tar +2000 (189,957 written, 0 duplicate)
+[     513s] 96/441 shard_000_00095.tar +2000 (191,957 written, 0 duplicate)
+[     523s] 97/441 shard_000_00096.tar +2000 (193,957 written, 0 duplicate)
+[     523s] 98/441 shard_000_00099.tar +2000 (195,957 written, 0 duplicate)
+[     526s] 99/441 shard_000_00097.tar +2000 (197,957 written, 0 duplicate)
+[     527s] 100/441 shard_000_00098.tar +2000 (199,957 written, 0 duplicate)
+[     528s] 101/441 shard_000_00100.tar +2000 (201,957 written, 0 duplicate)
+[     550s] 102/441 shard_000_00103.tar +2000 (203,957 written, 0 duplicate)
+[     554s] 103/441 shard_000_00102.tar +2000 (205,957 written, 0 duplicate)
+[     554s] 104/441 shard_000_00101.tar +2000 (207,957 written, 0 duplicate)
+[     563s] 105/441 shard_000_00105.tar +2000 (209,957 written, 0 duplicate)
+[     566s] 106/441 shard_000_00104.tar +2000 (211,957 written, 0 duplicate)
+[     572s] 107/441 shard_000_00106.tar +2000 (213,957 written, 0 duplicate)
+[     574s] 108/441 shard_000_00107.tar +2000 (215,957 written, 0 duplicate)
+[     575s] 109/441 shard_000_00108.tar +2000 (217,957 written, 0 duplicate)
++ publish /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ python3 - /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ true
++ sleep 300
+[     601s] 110/441 shard_000_00111.tar +2000 (219,957 written, 0 duplicate)
+[     604s] 111/441 shard_000_00109.tar +2000 (221,957 written, 0 duplicate)
+[     609s] 112/441 shard_000_00110.tar +2000 (223,957 written, 0 duplicate)
+[     612s] 113/441 shard_000_00113.tar +2000 (225,957 written, 0 duplicate)
+[     614s] 114/441 shard_000_00112.tar +2000 (227,957 written, 0 duplicate)
+[     614s] 115/441 shard_000_00115.tar +2000 (229,957 written, 0 duplicate)
+[     616s] 116/441 shard_000_00116.tar +2000 (231,957 written, 0 duplicate)
+[     617s] 117/441 shard_000_00114.tar +2000 (233,957 written, 0 duplicate)
+[     649s] 118/441 shard_000_00117.tar +2000 (235,957 written, 0 duplicate)
+[     651s] 119/441 shard_000_00119.tar +2000 (237,957 written, 0 duplicate)
+[     652s] 120/441 shard_000_00118.tar +2000 (239,957 written, 0 duplicate)
+[     654s] 121/441 shard_000_00121.tar +2000 (241,957 written, 0 duplicate)
+[     655s] 122/441 shard_000_00123.tar +2000 (243,957 written, 0 duplicate)
+[     657s] 123/441 shard_000_00122.tar +1998 (245,955 written, 0 duplicate)
+[     658s] 124/441 shard_000_00124.tar +2000 (247,955 written, 0 duplicate)
+[     661s] 125/441 shard_000_00120.tar +2000 (249,955 written, 0 duplicate)
+[     688s] 126/441 shard_000_00126.tar +2000 (251,955 written, 0 duplicate)
+[     689s] 127/441 shard_000_00125.tar +2000 (253,955 written, 0 duplicate)
+[     690s] 128/441 shard_000_00127.tar +2000 (255,955 written, 0 duplicate)
+[     696s] 129/441 shard_000_00131.tar +2000 (257,955 written, 0 duplicate)
+[     699s] 130/441 shard_000_00132.tar +2000 (259,955 written, 0 duplicate)
+[     700s] 131/441 shard_000_00128.tar +2000 (261,955 written, 0 duplicate)
+[     702s] 132/441 shard_000_00129.tar +2000 (263,955 written, 0 duplicate)
+[     702s] 133/441 shard_000_00130.tar +2000 (265,955 written, 0 duplicate)
+[     726s] 134/441 shard_000_00133.tar +2000 (267,955 written, 0 duplicate)
+[     728s] 135/441 shard_000_00134.tar +2000 (269,955 written, 0 duplicate)
+[     735s] 136/441 shard_000_00135.tar +2000 (271,955 written, 0 duplicate)
+[     737s] 137/441 shard_000_00137.tar +2000 (273,955 written, 0 duplicate)
+[     737s] 138/441 shard_000_00136.tar +2000 (275,955 written, 0 duplicate)
+[     739s] 139/441 shard_000_00139.tar +2000 (277,955 written, 0 duplicate)
+[     740s] 140/441 shard_000_00138.tar +2000 (279,955 written, 0 duplicate)
+[     752s] 141/441 shard_000_00140.tar +2000 (281,955 written, 0 duplicate)
+[     774s] 142/441 shard_000_00142.tar +2000 (283,955 written, 0 duplicate)
+[     775s] 143/441 shard_000_00144.tar +2000 (285,955 written, 0 duplicate)
+[     777s] 144/441 shard_000_00143.tar +2000 (287,955 written, 0 duplicate)
+[     778s] 145/441 shard_000_00145.tar +2000 (289,955 written, 0 duplicate)
+[     779s] 146/441 shard_000_00147.tar +2000 (291,955 written, 0 duplicate)
+[     779s] 147/441 shard_000_00146.tar +2000 (293,955 written, 0 duplicate)
+[     781s] 148/441 shard_000_00141.tar +1991 (295,946 written, 0 duplicate)
+[     793s] 149/441 shard_000_00148.tar +2000 (297,946 written, 0 duplicate)
+[     814s] 150/441 shard_000_00149.tar +2000 (299,946 written, 0 duplicate)
+[     818s] 151/441 shard_000_00150.tar +1998 (301,944 written, 0 duplicate)
+[     822s] 152/441 shard_000_00155.tar +2000 (303,944 written, 0 duplicate)
+[     825s] 153/441 shard_000_00152.tar +2000 (305,944 written, 0 duplicate)
+[     827s] 154/441 shard_000_00151.tar +1998 (307,942 written, 0 duplicate)
+[     828s] 155/441 shard_000_00153.tar +2000 (309,942 written, 0 duplicate)
+[     833s] 156/441 shard_000_00154.tar +2000 (311,942 written, 0 duplicate)
+[     837s] 157/441 shard_000_00156.tar +1985 (313,927 written, 0 duplicate)
+[     846s] 158/441 shard_000_00157.tar +1925 (315,852 written, 0 duplicate)
+[     856s] 159/441 shard_000_00158.tar +1883 (317,735 written, 0 duplicate)
+[     857s] 160/441 shard_000_00159.tar +1845 (319,580 written, 0 duplicate)
+[     864s] 161/441 shard_000_00160.tar +1821 (321,401 written, 0 duplicate)
+[     866s] 162/441 shard_000_00161.tar +1850 (323,251 written, 0 duplicate)
+[     869s] 163/441 shard_000_00162.tar +1996 (325,247 written, 0 duplicate)
+[     869s] 164/441 shard_000_00163.tar +2000 (327,247 written, 0 duplicate)
+[     880s] 165/441 shard_000_00164.tar +2000 (329,247 written, 0 duplicate)
+[     885s] 166/441 shard_000_00165.tar +2000 (331,247 written, 0 duplicate)
+[     897s] 167/441 shard_000_00166.tar +2000 (333,247 written, 0 duplicate)
+[     897s] 168/441 shard_000_00167.tar +2000 (335,247 written, 0 duplicate)
++ publish /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ python3 - /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ true
++ sleep 300
+[     905s] 169/441 shard_000_00169.tar +2000 (337,247 written, 0 duplicate)
+[     908s] 170/441 shard_000_00168.tar +2000 (339,247 written, 0 duplicate)
+[     915s] 171/441 shard_000_00171.tar +2000 (341,247 written, 0 duplicate)
+[     916s] 172/441 shard_000_00170.tar +2000 (343,247 written, 0 duplicate)
+[     928s] 173/441 shard_000_00172.tar +2000 (345,247 written, 0 duplicate)
+[     929s] 174/441 shard_000_00173.tar +2000 (347,247 written, 0 duplicate)
+[     934s] 175/441 shard_000_00175.tar +2000 (349,247 written, 0 duplicate)
+[     939s] 176/441 shard_000_00174.tar +2000 (351,247 written, 0 duplicate)
+[     945s] 177/441 shard_000_00177.tar +2000 (353,247 written, 0 duplicate)
+[     945s] 178/441 shard_000_00176.tar +2000 (355,247 written, 0 duplicate)
+[     958s] 179/441 shard_000_00179.tar +2000 (357,247 written, 0 duplicate)
+[     958s] 180/441 shard_000_00178.tar +2000 (359,247 written, 0 duplicate)
+[     969s] 181/441 shard_000_00180.tar +1998 (361,245 written, 0 duplicate)
+[     975s] 182/441 shard_000_00182.tar +2000 (363,245 written, 0 duplicate)
+[     976s] 183/441 shard_000_00181.tar +2000 (365,245 written, 0 duplicate)
+[     979s] 184/441 shard_000_00183.tar +1997 (367,242 written, 0 duplicate)
+[     983s] 185/441 shard_000_00184.tar +2000 (369,242 written, 0 duplicate)
+[     983s] 186/441 shard_000_00185.tar +2000 (371,242 written, 0 duplicate)
+[    1001s] 187/441 shard_000_00187.tar +2000 (373,242 written, 0 duplicate)
+[    1007s] 188/441 shard_000_00186.tar +2000 (375,242 written, 0 duplicate)
+[    1008s] 189/441 shard_000_00188.tar +2000 (377,242 written, 0 duplicate)
+[    1018s] 190/441 shard_000_00191.tar +2000 (379,242 written, 0 duplicate)
+[    1020s] 191/441 shard_000_00190.tar +2000 (381,242 written, 0 duplicate)
+[    1026s] 192/441 shard_000_00193.tar +2000 (383,242 written, 0 duplicate)
+[    1030s] 193/441 shard_000_00189.tar +2000 (385,242 written, 0 duplicate)
+[    1032s] 194/441 shard_000_00192.tar +2000 (387,242 written, 0 duplicate)
+[    1043s] 195/441 shard_000_00194.tar +2000 (389,242 written, 0 duplicate)
+[    1054s] 196/441 shard_000_00198.tar +2000 (391,242 written, 0 duplicate)
+[    1054s] 197/441 shard_000_00197.tar +2000 (393,242 written, 0 duplicate)
+[    1054s] 198/441 shard_000_00196.tar +2000 (395,242 written, 0 duplicate)
+[    1060s] 199/441 shard_000_00195.tar +2000 (397,242 written, 0 duplicate)
+[    1064s] 200/441 shard_000_00201.tar +2000 (399,242 written, 0 duplicate)
+[    1067s] 201/441 shard_000_00199.tar +2000 (401,242 written, 0 duplicate)
+[    1068s] 202/441 shard_000_00200.tar +2000 (403,242 written, 0 duplicate)
+[    1075s] 203/441 shard_000_00202.tar +2000 (405,242 written, 0 duplicate)
+[    1092s] 204/441 shard_000_00203.tar +2000 (407,242 written, 0 duplicate)
+[    1096s] 205/441 shard_000_00205.tar +2000 (409,242 written, 0 duplicate)
+[    1098s] 206/441 shard_000_00204.tar +2000 (411,242 written, 0 duplicate)
+[    1099s] 207/441 shard_000_00206.tar +2000 (413,242 written, 0 duplicate)
+[    1102s] 208/441 shard_000_00208.tar +2000 (415,242 written, 0 duplicate)
+[    1102s] 209/441 shard_000_00207.tar +2000 (417,242 written, 0 duplicate)
+[    1108s] 210/441 shard_000_00209.tar +2000 (419,242 written, 0 duplicate)
+[    1114s] 211/441 shard_000_00210.tar +2000 (421,242 written, 0 duplicate)
+[    1133s] 212/441 shard_000_00211.tar +2000 (423,242 written, 0 duplicate)
+[    1138s] 213/441 shard_000_00212.tar +2000 (425,242 written, 0 duplicate)
+[    1140s] 214/441 shard_000_00213.tar +2000 (427,242 written, 0 duplicate)
+[    1144s] 215/441 shard_000_00214.tar +2000 (429,242 written, 0 duplicate)
+[    1144s] 216/441 shard_000_00215.tar +2000 (431,242 written, 0 duplicate)
+[    1151s] 217/441 shard_000_00217.tar +2000 (433,242 written, 0 duplicate)
+[    1152s] 218/441 shard_000_00216.tar +2000 (435,242 written, 0 duplicate)
+[    1161s] 219/441 shard_000_00218.tar +2000 (437,242 written, 0 duplicate)
+[    1176s] 220/441 shard_000_00219.tar +2000 (439,242 written, 0 duplicate)
+[    1178s] 221/441 shard_000_00220.tar +2000 (441,242 written, 0 duplicate)
+[    1186s] 222/441 shard_000_00221.tar +2000 (443,242 written, 0 duplicate)
+[    1186s] 223/441 shard_000_00225.tar +2000 (445,242 written, 0 duplicate)
+[    1186s] 224/441 shard_000_00222.tar +2000 (447,242 written, 0 duplicate)
+[    1188s] 225/441 shard_000_00223.tar +2000 (449,242 written, 0 duplicate)
+[    1188s] 226/441 shard_000_00224.tar +2000 (451,242 written, 0 duplicate)
++ publish /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ python3 - /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ true
++ sleep 300
+[    1203s] 227/441 shard_000_00226.tar +2000 (453,242 written, 0 duplicate)
+[    1218s] 228/441 shard_000_00227.tar +2000 (455,242 written, 0 duplicate)
+[    1222s] 229/441 shard_000_00231.tar +2000 (457,242 written, 0 duplicate)
+[    1223s] 230/441 shard_000_00228.tar +2000 (459,242 written, 0 duplicate)
+[    1226s] 231/441 shard_000_00230.tar +2000 (461,242 written, 0 duplicate)
+[    1227s] 232/441 shard_000_00229.tar +2000 (463,242 written, 0 duplicate)
+[    1227s] 233/441 shard_000_00233.tar +2000 (465,242 written, 0 duplicate)
+[    1228s] 234/441 shard_000_00232.tar +2000 (467,242 written, 0 duplicate)
+[    1242s] 235/441 shard_000_00234.tar +2000 (469,242 written, 0 duplicate)
+[    1255s] 236/441 shard_000_00235.tar +2000 (471,242 written, 0 duplicate)
+[    1260s] 237/441 shard_000_00236.tar +2000 (473,242 written, 0 duplicate)
+[    1266s] 238/441 shard_000_00239.tar +2000 (475,242 written, 0 duplicate)
+[    1266s] 239/441 shard_000_00237.tar +2000 (477,242 written, 0 duplicate)
+[    1267s] 240/441 shard_000_00240.tar +2000 (479,242 written, 0 duplicate)
+[    1268s] 241/441 shard_000_00241.tar +2000 (481,242 written, 0 duplicate)
+[    1268s] 242/441 shard_000_00238.tar +2000 (483,242 written, 0 duplicate)
+[    1282s] 243/441 shard_000_00242.tar +2000 (485,242 written, 0 duplicate)
+[    1296s] 244/441 shard_000_00243.tar +2000 (487,242 written, 0 duplicate)
+[    1300s] 245/441 shard_000_00244.tar +2000 (489,242 written, 0 duplicate)
+[    1309s] 246/441 shard_000_00248.tar +1998 (491,240 written, 0 duplicate)
+[    1310s] 247/441 shard_000_00249.tar +2000 (493,240 written, 0 duplicate)
+[    1311s] 248/441 shard_000_00247.tar +1999 (495,239 written, 0 duplicate)
+[    1311s] 249/441 shard_000_00246.tar +1999 (497,238 written, 0 duplicate)
+[    1314s] 250/441 shard_000_00245.tar +2000 (499,238 written, 0 duplicate)
+[    1320s] 251/441 shard_000_00250.tar +2000 (501,238 written, 0 duplicate)
+[    1333s] 252/441 shard_000_00252.tar +2000 (503,238 written, 0 duplicate)
+[    1334s] 253/441 shard_000_00251.tar +2000 (505,238 written, 0 duplicate)
+[    1346s] 254/441 shard_000_00253.tar +2000 (507,238 written, 0 duplicate)
+[    1349s] 255/441 shard_000_00256.tar +2000 (509,238 written, 0 duplicate)
+[    1354s] 256/441 shard_000_00255.tar +2000 (511,238 written, 0 duplicate)
+[    1355s] 257/441 shard_000_00254.tar +2000 (513,238 written, 0 duplicate)
+[    1359s] 258/441 shard_000_00257.tar +2000 (515,238 written, 0 duplicate)
+[    1363s] 259/441 shard_000_00258.tar +2000 (517,238 written, 0 duplicate)
+[    1366s] 260/441 shard_000_00260.tar +2000 (519,238 written, 0 duplicate)
+[    1379s] 261/441 shard_000_00259.tar +2000 (521,238 written, 0 duplicate)
+[    1387s] 262/441 shard_000_00261.tar +2000 (523,238 written, 0 duplicate)
+[    1388s] 263/441 shard_000_00262.tar +2000 (525,238 written, 0 duplicate)
+[    1389s] 264/441 shard_000_00263.tar +2000 (527,238 written, 0 duplicate)
+[    1392s] 265/441 shard_000_00264.tar +2000 (529,238 written, 0 duplicate)
+[    1397s] 266/441 shard_000_00265.tar +2000 (531,238 written, 0 duplicate)
+[    1399s] 267/441 shard_000_00266.tar +2000 (533,238 written, 0 duplicate)
+[    1406s] 268/441 shard_000_00267.tar +2000 (535,238 written, 0 duplicate)
+[    1418s] 269/441 shard_000_00268.tar +2000 (537,238 written, 0 duplicate)
+[    1424s] 270/441 shard_000_00271.tar +2000 (539,238 written, 0 duplicate)
+[    1427s] 271/441 shard_000_00270.tar +2000 (541,238 written, 0 duplicate)
+[    1428s] 272/441 shard_000_00269.tar +2000 (543,238 written, 0 duplicate)
+[    1429s] 273/441 shard_000_00272.tar +2000 (545,238 written, 0 duplicate)
+[    1432s] 274/441 shard_000_00274.tar +2000 (547,238 written, 0 duplicate)
+[    1435s] 275/441 shard_000_00273.tar +2000 (549,238 written, 0 duplicate)
+[    1441s] 276/441 shard_000_00275.tar +2000 (551,238 written, 0 duplicate)
+[    1463s] 277/441 shard_000_00276.tar +2000 (553,238 written, 0 duplicate)
+[    1465s] 278/441 shard_000_00277.tar +2000 (555,238 written, 0 duplicate)
+[    1472s] 279/441 shard_000_00279.tar +2000 (557,238 written, 0 duplicate)
+[    1473s] 280/441 shard_000_00278.tar +2000 (559,238 written, 0 duplicate)
+[    1476s] 281/441 shard_000_00280.tar +2000 (561,238 written, 0 duplicate)
+[    1476s] 282/441 shard_000_00281.tar +2000 (563,238 written, 0 duplicate)
+[    1476s] 283/441 shard_000_00283.tar +2000 (565,238 written, 0 duplicate)
+[    1479s] 284/441 shard_000_00282.tar +2000 (567,238 written, 0 duplicate)
++ publish /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ python3 - /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ true
++ sleep 300
+[    1500s] 285/441 shard_000_00285.tar +2000 (569,238 written, 0 duplicate)
+[    1504s] 286/441 shard_000_00284.tar +2000 (571,238 written, 0 duplicate)
+[    1512s] 287/441 shard_000_00286.tar +2000 (573,238 written, 0 duplicate)
+[    1514s] 288/441 shard_000_00287.tar +2000 (575,238 written, 0 duplicate)
+[    1519s] 289/441 shard_000_00288.tar +2000 (577,238 written, 0 duplicate)
+[    1519s] 290/441 shard_000_00289.tar +2000 (579,238 written, 0 duplicate)
+[    1520s] 291/441 shard_000_00290.tar +2000 (581,238 written, 0 duplicate)
+[    1525s] 292/441 shard_000_00291.tar +2000 (583,238 written, 0 duplicate)
+[    1547s] 293/441 shard_000_00292.tar +2000 (585,238 written, 0 duplicate)
+[    1560s] 294/441 shard_000_00294.tar +2000 (587,238 written, 0 duplicate)
+[    1560s] 295/441 shard_000_00293.tar +2000 (589,238 written, 0 duplicate)
+[    1561s] 296/441 shard_000_00295.tar +2000 (591,238 written, 0 duplicate)
+[    1566s] 297/441 shard_000_00296.tar +2000 (593,238 written, 0 duplicate)
+[    1567s] 298/441 shard_000_00297.tar +2000 (595,238 written, 0 duplicate)
+[    1570s] 299/441 shard_000_00298.tar +2000 (597,238 written, 0 duplicate)
+[    1573s] 300/441 shard_000_00299.tar +2000 (599,238 written, 0 duplicate)
+[    1591s] 301/441 shard_000_00300.tar +2000 (601,238 written, 0 duplicate)
+[    1601s] 302/441 shard_000_00303.tar +2000 (603,238 written, 0 duplicate)
+[    1601s] 303/441 shard_000_00302.tar +2000 (605,238 written, 0 duplicate)
+[    1604s] 304/441 shard_000_00301.tar +2000 (607,238 written, 0 duplicate)
+[    1605s] 305/441 shard_000_00304.tar +2000 (609,238 written, 0 duplicate)
+[    1605s] 306/441 shard_000_00305.tar +2000 (611,238 written, 0 duplicate)
+[    1610s] 307/441 shard_000_00306.tar +2000 (613,238 written, 0 duplicate)
+[    1616s] 308/441 shard_000_00307.tar +2000 (615,238 written, 0 duplicate)
+[    1637s] 309/441 shard_000_00308.tar +2000 (617,238 written, 0 duplicate)
+[    1639s] 310/441 shard_000_00310.tar +2000 (619,238 written, 0 duplicate)
+[    1642s] 311/441 shard_000_00312.tar +2000 (621,238 written, 0 duplicate)
+[    1646s] 312/441 shard_000_00309.tar +2000 (623,238 written, 0 duplicate)
+[    1649s] 313/441 shard_000_00311.tar +2000 (625,238 written, 0 duplicate)
+[    1658s] 314/441 shard_000_00315.tar +2000 (627,238 written, 0 duplicate)
+[    1659s] 315/441 shard_000_00313.tar +2000 (629,238 written, 0 duplicate)
+[    1661s] 316/441 shard_000_00314.tar +2000 (631,238 written, 0 duplicate)
+[    1670s] 317/441 shard_000_00316.tar +2000 (633,238 written, 0 duplicate)
+[    1676s] 318/441 shard_000_00317.tar +2000 (635,238 written, 0 duplicate)
+[    1681s] 319/441 shard_000_00318.tar +2000 (637,238 written, 0 duplicate)
+[    1685s] 320/441 shard_000_00319.tar +2000 (639,238 written, 0 duplicate)
+[    1687s] 321/441 shard_000_00320.tar +2000 (641,238 written, 0 duplicate)
+[    1699s] 322/441 shard_000_00321.tar +2000 (643,238 written, 0 duplicate)
+[    1704s] 323/441 shard_000_00322.tar +2000 (645,238 written, 0 duplicate)
+[    1704s] 324/441 shard_000_00323.tar +2000 (647,238 written, 0 duplicate)
+[    1707s] 325/441 shard_000_00325.tar +2000 (649,238 written, 0 duplicate)
+[    1708s] 326/441 shard_000_00324.tar +2000 (651,238 written, 0 duplicate)
+[    1733s] 327/441 shard_000_00326.tar +2000 (653,238 written, 0 duplicate)
+[    1734s] 328/441 shard_000_00328.tar +2000 (655,238 written, 0 duplicate)
+[    1739s] 329/441 shard_000_00327.tar +2000 (657,238 written, 0 duplicate)
+[    1742s] 330/441 shard_000_00331.tar +2000 (659,238 written, 0 duplicate)
+[    1742s] 331/441 shard_000_00332.tar +2000 (661,238 written, 0 duplicate)
+[    1743s] 332/441 shard_000_00329.tar +2000 (663,238 written, 0 duplicate)
+[    1745s] 333/441 shard_000_00333.tar +2000 (665,238 written, 0 duplicate)
+[    1746s] 334/441 shard_000_00330.tar +2000 (667,238 written, 0 duplicate)
+[    1769s] 335/441 shard_000_00334.tar +2000 (669,238 written, 0 duplicate)
+[    1774s] 336/441 shard_000_00335.tar +2000 (671,238 written, 0 duplicate)
+[    1776s] 337/441 shard_000_00338.tar +2000 (673,238 written, 0 duplicate)
+[    1778s] 338/441 shard_000_00337.tar +2000 (675,238 written, 0 duplicate)
+[    1778s] 339/441 shard_000_00340.tar +2000 (677,238 written, 0 duplicate)
+[    1779s] 340/441 shard_000_00339.tar +2000 (679,238 written, 0 duplicate)
+[    1780s] 341/441 shard_000_00336.tar +2000 (681,238 written, 0 duplicate)
+[    1780s] 342/441 shard_000_00341.tar +2000 (683,238 written, 0 duplicate)
++ publish /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ python3 - /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ true
++ sleep 300
+[    1807s] 343/441 shard_000_00342.tar +2000 (685,238 written, 0 duplicate)
+[    1814s] 344/441 shard_000_00347.tar +2000 (687,238 written, 0 duplicate)
+[    1815s] 345/441 shard_000_00346.tar +2000 (689,238 written, 0 duplicate)
+[    1816s] 346/441 shard_000_00343.tar +2000 (691,238 written, 0 duplicate)
+[    1817s] 347/441 shard_000_00348.tar +2000 (693,238 written, 0 duplicate)
+[    1817s] 348/441 shard_000_00344.tar +2000 (695,238 written, 0 duplicate)
+[    1819s] 349/441 shard_000_00349.tar +2000 (697,238 written, 0 duplicate)
+[    1819s] 350/441 shard_000_00345.tar +2000 (699,238 written, 0 duplicate)
+[    1840s] 351/441 shard_000_00350.tar +2000 (701,238 written, 0 duplicate)
+[    1850s] 352/441 shard_000_00352.tar +2000 (703,238 written, 0 duplicate)
+[    1852s] 353/441 shard_000_00351.tar +2000 (705,238 written, 0 duplicate)
+[    1854s] 354/441 shard_000_00353.tar +2000 (707,238 written, 0 duplicate)
+[    1855s] 355/441 shard_000_00357.tar +2000 (709,238 written, 0 duplicate)
+[    1858s] 356/441 shard_000_00354.tar +2000 (711,238 written, 0 duplicate)
+[    1860s] 357/441 shard_000_00356.tar +2000 (713,238 written, 0 duplicate)
+[    1862s] 358/441 shard_000_00355.tar +2000 (715,238 written, 0 duplicate)
+[    1878s] 359/441 shard_000_00358.tar +2000 (717,238 written, 0 duplicate)
+[    1880s] 360/441 shard_000_00359.tar +2000 (719,238 written, 0 duplicate)
+[    1890s] 361/441 shard_000_00360.tar +2000 (721,238 written, 0 duplicate)
+[    1891s] 362/441 shard_000_00361.tar +2000 (723,238 written, 0 duplicate)
+[    1892s] 363/441 shard_000_00362.tar +2000 (725,238 written, 0 duplicate)
+[    1893s] 364/441 shard_000_00363.tar +2000 (727,238 written, 0 duplicate)
+[    1896s] 365/441 shard_000_00365.tar +2000 (729,238 written, 0 duplicate)
+[    1896s] 366/441 shard_000_00364.tar +2000 (731,238 written, 0 duplicate)
+[    1911s] 367/441 shard_000_00366.tar +2000 (733,238 written, 0 duplicate)
+[    1933s] 368/441 shard_000_00367.tar +2000 (735,238 written, 0 duplicate)
+[    1935s] 369/441 shard_000_00371.tar +2000 (737,238 written, 0 duplicate)
+[    1935s] 370/441 shard_000_00370.tar +2000 (739,238 written, 0 duplicate)
+[    1937s] 371/441 shard_000_00372.tar +2000 (741,238 written, 0 duplicate)
+[    1938s] 372/441 shard_000_00369.tar +2000 (743,238 written, 0 duplicate)
+[    1938s] 373/441 shard_000_00368.tar +2000 (745,238 written, 0 duplicate)
+[    1938s] 374/441 shard_000_00373.tar +2000 (747,238 written, 0 duplicate)
+[    1955s] 375/441 shard_000_00374.tar +2000 (749,238 written, 0 duplicate)
+[    1975s] 376/441 shard_000_00375.tar +2000 (751,238 written, 0 duplicate)
+[    1976s] 377/441 shard_000_00380.tar +2000 (753,238 written, 0 duplicate)
+[    1978s] 378/441 shard_000_00379.tar +2000 (755,238 written, 0 duplicate)
+[    1980s] 379/441 shard_000_00381.tar +2000 (757,238 written, 0 duplicate)
+[    1982s] 380/441 shard_000_00376.tar +2000 (759,238 written, 0 duplicate)
+[    1988s] 381/441 shard_000_00378.tar +2000 (761,238 written, 0 duplicate)
+[    1992s] 382/441 shard_000_00377.tar +2000 (763,238 written, 0 duplicate)
+[    1996s] 383/441 shard_000_00382.tar +2000 (765,238 written, 0 duplicate)
+[    2019s] 384/441 shard_000_00384.tar +2000 (767,238 written, 0 duplicate)
+[    2019s] 385/441 shard_000_00383.tar +2000 (769,238 written, 0 duplicate)
+[    2021s] 386/441 shard_000_00386.tar +2000 (771,238 written, 0 duplicate)
+[    2028s] 387/441 shard_000_00388.tar +2000 (773,238 written, 0 duplicate)
+[    2029s] 388/441 shard_000_00387.tar +2000 (775,238 written, 0 duplicate)
+[    2032s] 389/441 shard_000_00385.tar +2000 (777,238 written, 0 duplicate)
+[    2032s] 390/441 shard_000_00389.tar +2000 (779,238 written, 0 duplicate)
+[    2037s] 391/441 shard_000_00390.tar +2000 (781,238 written, 0 duplicate)
+[    2055s] 392/441 shard_000_00392.tar +2000 (783,238 written, 0 duplicate)
+[    2057s] 393/441 shard_000_00393.tar +2000 (785,238 written, 0 duplicate)
+[    2058s] 394/441 shard_000_00391.tar +2000 (787,238 written, 0 duplicate)
+[    2070s] 395/441 shard_000_00395.tar +2000 (789,238 written, 0 duplicate)
+[    2071s] 396/441 shard_000_00394.tar +2000 (791,238 written, 0 duplicate)
+[    2072s] 397/441 shard_000_00397.tar +2000 (793,238 written, 0 duplicate)
+[    2076s] 398/441 shard_000_00398.tar +2000 (795,238 written, 0 duplicate)
+[    2076s] 399/441 shard_000_00396.tar +2000 (797,238 written, 0 duplicate)
+[    2091s] 400/441 shard_000_00399.tar +2000 (799,238 written, 0 duplicate)
+[    2096s] 401/441 shard_000_00400.tar +2000 (801,238 written, 0 duplicate)
++ publish /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ python3 - /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ true
++ sleep 300
+[    2102s] 402/441 shard_000_00401.tar +2000 (803,238 written, 0 duplicate)
+[    2107s] 403/441 shard_000_00404.tar +2000 (805,238 written, 0 duplicate)
+[    2112s] 404/441 shard_000_00403.tar +2000 (807,238 written, 0 duplicate)
+[    2114s] 405/441 shard_000_00406.tar +2000 (809,238 written, 0 duplicate)
+[    2117s] 406/441 shard_000_00402.tar +2000 (811,238 written, 0 duplicate)
+[    2123s] 407/441 shard_000_00405.tar +2000 (813,238 written, 0 duplicate)
+[    2126s] 408/441 shard_000_00407.tar +2000 (815,238 written, 0 duplicate)
+[    2133s] 409/441 shard_000_00413.tar +872 (816,110 written, 0 duplicate)
+[    2135s] 410/441 shard_000_00408.tar +2000 (818,110 written, 0 duplicate)
+[    2138s] 411/441 shard_000_00412.tar +1427 (819,537 written, 0 duplicate)
+[    2141s] 412/441 shard_000_00414.tar +801 (820,338 written, 0 duplicate)
+[    2142s] 413/441 shard_000_00410.tar +2000 (822,338 written, 0 duplicate)
+[    2143s] 414/441 shard_000_00409.tar +2000 (824,338 written, 0 duplicate)
+[    2145s] 415/441 shard_000_00415.tar +779 (825,117 written, 0 duplicate)
+[    2146s] 416/441 shard_000_00416.tar +624 (825,741 written, 0 duplicate)
+[    2147s] 417/441 shard_000_00417.tar +964 (826,705 written, 0 duplicate)
+[    2149s] 418/441 shard_000_00418.tar +898 (827,603 written, 0 duplicate)
+[    2154s] 419/441 shard_000_00411.tar +2000 (829,603 written, 0 duplicate)
+[    2158s] 420/441 shard_000_00419.tar +942 (830,545 written, 0 duplicate)
+[    2160s] 421/441 shard_000_00423.tar +1225 (831,770 written, 2 duplicate)
+[    2163s] 422/441 shard_000_00420.tar +1138 (832,908 written, 2 duplicate)
+[    2165s] 423/441 shard_000_00422.tar +1256 (834,164 written, 2 duplicate)
+[    2166s] 424/441 shard_000_00424.tar +1435 (835,599 written, 2 duplicate)
+[    2167s] 425/441 shard_000_00421.tar +1232 (836,831 written, 2 duplicate)
+[    2170s] 426/441 shard_000_00425.tar +1510 (838,341 written, 2 duplicate)
+[    2177s] 427/441 shard_000_00426.tar +1473 (839,814 written, 2 duplicate)
+[    2183s] 428/441 shard_000_00433.tar +1083 (840,897 written, 2 duplicate)
+[    2193s] 429/441 shard_000_00434.tar +1058 (841,955 written, 2 duplicate)
+[    2194s] 430/441 shard_000_00427.tar +1905 (843,860 written, 2 duplicate)
+[    2197s] 431/441 shard_000_00432.tar +1016 (844,876 written, 2 duplicate)
+[    2202s] 432/441 shard_000_00428.tar +1876 (846,752 written, 2 duplicate)
+[    2203s] 433/441 shard_000_00435.tar +1030 (847,782 written, 2 duplicate)
+[    2209s] 434/441 shard_000_00440.tar +400 (848,182 written, 2 duplicate)
+[    2214s] 435/441 shard_000_00430.tar +1378 (849,560 written, 2 duplicate)
+[    2215s] 436/441 shard_000_00431.tar +1396 (850,956 written, 2 duplicate)
+[    2218s] 437/441 shard_000_00436.tar +1319 (852,275 written, 2 duplicate)
+[    2222s] 438/441 shard_000_00439.tar +791 (853,066 written, 2 duplicate)
+[    2223s] 439/441 shard_000_00437.tar +1238 (854,304 written, 2 duplicate)
+[    2224s] 440/441 shard_000_00429.tar +2027 (856,331 written, 2 duplicate)
+[    2228s] 441/441 shard_000_00438.tar +1268 (857,599 written, 2 duplicate)
+{
+  "split": "val",
+  "source": "s3://marinfold-exp91-usw2/MarinFold/exp145-afdb-dimers/val/",
+  "shard_stride": 1,
+  "n_shards": 441,
+  "n_workers": 8,
+  "n_models_unfetchable": 762,
+  "n_chains_expected": 857600,
+  "n_written": 857599,
+  "n_duplicate_models": 2,
+  "n_on_disk": 857599,
+  "bytes_on_disk": 45294441724,
+  "mean_kb": 51.6,
+  "elapsed_seconds": 2227.6
+}
+1 expected accessions absent, listed in /data/chains_absent.csv
+++ ls /data/chains
+++ wc -l
++ N=857599
++ echo 'extracted 857599 chains'
+extracted 857599 chains
++ publish /data/chains_absent.csv marinfold-exp91-usw2/exp145/cluster-output/chains_absent.csv
++ python3 - /data/chains_absent.csv marinfold-exp91-usw2/exp145/cluster-output/chains_absent.csv
+++ nproc
++ python3 curate_foldseek_scaling.py --chains /data/chains --op cluster --sizes 857599 --threads 8 --work /data/cluster_work --out data/curation --tag _full
++ publish /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ python3 - /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ true
++ sleep 300
++ publish /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ python3 - /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ true
++ sleep 300
++ publish /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ python3 - /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ true
++ sleep 300
++ publish /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ python3 - /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ true
++ sleep 300
++ publish /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ python3 - /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ true
++ sleep 300
++ publish /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ python3 - /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ true
++ sleep 300
++ publish /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ python3 - /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ true
++ sleep 300
++ publish /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ python3 - /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ true
++ sleep 300
++ publish /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ python3 - /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ true
++ sleep 300
++ publish /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ python3 - /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ true
++ sleep 300
++ publish /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ python3 - /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ true
++ sleep 300
++ publish /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ python3 - /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ true
++ sleep 300
+[foldseek_env] downloading https://mmseqs.com/foldseek/foldseek-linux-avx2.tar.gz
+[foldseek_env] extracting foldseek-linux-avx2.tar.gz
+foldseek 463739e0014a1549a527de589102cde98f802f37, 857,599 chains available, threads [8], sizes [857599]
+{"op": "easy-cluster", "n_chains": 857599, "threads": 8, "tm_threshold": 0.5, "seconds": 3478.0, "peak_rss_gb": 4.12, "n_clusters": 13478, "representative_fraction": 0.0157, "largest_cluster": 15861, "singletons": 6984}
+
+wrote data/curation/foldseek_scaling_full.json
+++ ls /data/cluster_work/n857599_t8/res_cluster.tsv
+++ head -1
++ TSV=/data/cluster_work/n857599_t8/res_cluster.tsv
++ '[' -n /data/cluster_work/n857599_t8/res_cluster.tsv ']'
++ '[' -s /data/cluster_work/n857599_t8/res_cluster.tsv ']'
++ gzip -9 -c /data/cluster_work/n857599_t8/res_cluster.tsv
++ kill 2796
++ publish /root/chain_cluster.tsv.gz marinfold-exp91-usw2/exp145/cluster-output/chain_cluster.tsv.gz
++ python3 - /root/chain_cluster.tsv.gz marinfold-exp91-usw2/exp145/cluster-output/chain_cluster.tsv.gz
++ publish data/curation/foldseek_scaling_full.json marinfold-exp91-usw2/exp145/cluster-output/foldseek_scaling_full.json
++ python3 - data/curation/foldseek_scaling_full.json marinfold-exp91-usw2/exp145/cluster-output/foldseek_scaling_full.json
++ publish /data/chains_summary.json marinfold-exp91-usw2/exp145/cluster-output/chains_summary.json
++ python3 - /data/chains_summary.json marinfold-exp91-usw2/exp145/cluster-output/chains_summary.json
++ publish /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log
++ python3 - /var/log/exp145-cluster.log marinfold-exp91-usw2/exp145/cluster-output/cluster.log

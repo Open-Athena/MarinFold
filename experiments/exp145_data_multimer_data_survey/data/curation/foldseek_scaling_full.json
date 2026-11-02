@@ -1,0 +1,19 @@
+{
+  "foldseek_version": "463739e0014a1549a527de589102cde98f802f37",
+  "cpu_count": 8,
+  "n_chains_available": 857599,
+  "rows": [
+    {
+      "op": "easy-cluster",
+      "n_chains": 857599,
+      "threads": 8,
+      "tm_threshold": 0.5,
+      "seconds": 3478.0,
+      "peak_rss_gb": 4.12,
+      "n_clusters": 13478,
+      "representative_fraction": 0.0157,
+      "largest_cluster": 15861,
+      "singletons": 6984
+    }
+  ]
+}

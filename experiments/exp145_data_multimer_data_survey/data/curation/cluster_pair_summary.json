@@ -1,0 +1,15 @@
+{
+  "split": "val",
+  "n_rows": 881010,
+  "n_duplicate_model_ids": 1,
+  "n_labeled": 880247,
+  "n_unfetchable": 762,
+  "n_unmapped_chain": 1,
+  "n_homodimers": 824125,
+  "n_heterodimers": 56122,
+  "n_distinct_pairs": 17083,
+  "n_same_cluster_pairs": 10151,
+  "n_pairs_seen_once": 8621,
+  "largest_pair": 15846,
+  "median_complexes_per_pair": 1
+}
