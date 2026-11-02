@@ -16,6 +16,37 @@ marinfold_run:
   iris_job_ids:
   - /zack/delta-v2-exp277-cooldown40-s126294-v6e16-a01
   - /zack/delta-v2-exp277-cooldown40-s126294-v6e8-a02
+  - /zack/exp299-cooldown40-export-step147250-a03
+  - /zack/exp299-cooldown40-export-step147250-a04
+  - /zack/exp299-cooldown40-export-step147343-a05
+  - /zack/exp299-cooldown40-export-step147343-v6e8-a09
+  - /zack/exp299-cooldown40-gcs-s3-export-step147343-a01
+  - /zack/exp299-cooldown40-gcs-s3-export-step147343-a02
+  - /zack/exp299-cooldown40-rprec-s147343-smoke-a01
+  - /zack/exp299-cooldown40-rprec-s147343-0of8-a01
+  - /zack/exp299-cooldown40-rprec-s147343-1of8-a01
+  - /zack/exp299-cooldown40-rprec-s147343-2of8-a01
+  - /zack/exp299-cooldown40-rprec-s147343-3of8-a01
+  - /zack/exp299-cooldown40-rprec-s147343-4of8-a01
+  - /zack/exp299-cooldown40-rprec-s147343-5of8-a01
+  - /zack/exp299-cooldown40-rprec-s147343-6of8-a01
+  - /zack/exp299-cooldown40-rprec-s147343-7of8-a01
+  - /zack/exp299-cooldown-interim-aggregate-a02
+  - /zack/exp299-cooldown-interim-bootstrap-a01
+  - /zack/exp299-cooldown40-export-bf16-step177838-v6e8-a10
+  - /zack/exp299-cooldown40-gcs-s3-export-step177838-a04
+  - /zack/exp299-cooldown40-gcs-s3-export-step177838-a05
+  - /zack/exp299-cooldown40-rprec-s177838-smoke-a02
+  - /zack/exp299-cooldown40-rprec-s177838-0of8-a02
+  - /zack/exp299-cooldown40-rprec-s177838-1of8-a02
+  - /zack/exp299-cooldown40-rprec-s177838-2of8-a02
+  - /zack/exp299-cooldown40-rprec-s177838-3of8-a02
+  - /zack/exp299-cooldown40-rprec-s177838-4of8-a02
+  - /zack/exp299-cooldown40-rprec-s177838-5of8-a02
+  - /zack/exp299-cooldown40-rprec-s177838-6of8-a02
+  - /zack/exp299-cooldown40-rprec-s177838-7of8-a02
+  - /zack/exp299-cooldown-latest-aggregate-a01
+  - /zack/exp299-cooldown-latest-bootstrap-a01
 ---
 # 2026-10-05 · exp299_models_delta_stream_contacts · delta-v2-exp277-cooldown40-s126294-v6e16-a01
 
@@ -39,4 +70,9 @@ _(Bullet list of differences from the last run of this kind.)_
 
 ## Notes
 
-_(Anything else worth remembering — preemptions, midway tweaks, etc.)_
+The arm remained in progress on 2026-11-02. Its durable step-177838 snapshot was
+exported as bf16 and evaluated on the canonical 670-protein, 100-rollout suite:
+R/all 0.5785 and R/long 0.5268 overall; `eval-val` 0.4909 / 0.4674. All 67,000
+generations parsed successfully. This is an interim checkpoint, substantially
+earlier than the other evaluated arms, and is not a matched-endpoint schedule
+comparison.

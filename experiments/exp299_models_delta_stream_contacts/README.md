@@ -412,14 +412,43 @@ The initial `v6e-32` request is capacity-queued; direct `v6e-64` placement was
 cancelled because the provisioned workers register as smaller slices that do
 not match Iris's requested `v6e-64` device variant.
 
+## Cooldown rollout check (2026-11-02)
+
+The 30%-cooldown arm completed at step 210,491. While the 20% and 40% TPU arms
+continued training, their latest durable checkpoints at steps 205,710 and
+177,838 were also evaluated. All three used the same canonical 100-rollout,
+670-protein protocol; all 201,000 generations parsed successfully.
+
+| Checkpoint | All 670 R/all · R/long | `legacy_554` | `eval-val` | `eval-denovo` |
+|---|---:|---:|---:|---:|
+| 20% step 205,710 (interim) | 0.5979 · 0.5477 | 0.6073 · 0.5517 | 0.5272 · 0.5037 | 0.6850 · 0.6545 |
+| **30% step 210,491 (final)** | **0.6136 · 0.5668** | **0.6224 · 0.5716** | **0.5469 · 0.5249** | **0.6948 · 0.6396** |
+| 40% step 177,838 (interim) | 0.5785 · 0.5268 | 0.5917 · 0.5349 | 0.4909 · 0.4674 | 0.6438 · 0.5935 |
+
+The final 30% arm is statistically tied with the completed CoreWeave 20%
+control at the same endpoint: the paired all-670 differences are -0.00054
+R/all (95% CI [-0.00509, 0.00367]) and +0.00010 R/long
+([-0.00523, 0.00528]). No reported subset resolves a difference. It is also
+not a new leader over promoted exp277 contacts-v1. Its all-670 R/all is tied
+(+0.00092, [-0.00627, 0.00810]), while its point estimates remain lower on
+`eval-val` (-0.00680 R/all and -0.01316 R/long) and all-670 long range
+(-0.00744). Thus extending cooldown from 20% to 30% has not produced a
+measurable final-endpoint gain.
+
+The interim 20% and 40% rows are progress checks, not a matched-endpoint
+schedule comparison. Final evaluation of those TPU arms remains necessary.
+Notebook-ready aggregate, per-protein, and paired-bootstrap files are under
+`data/exp277_cooldown_rprecision_20261102_*`; rollout votes and timing records
+are under `s3://rhoarnet-us-east-08a/protein-structure/MarinFold/exp299_contacts_delta_stream_v2_sequence_prefix/eval/cooldown_rollout_votes/`.
+
 ## Next steps
 
-1. Complete the 20%, 30%, and 40% TPU cooldown continuations while preserving
-   their full-state checkpoint and W&B identities across preemptions.
-2. Evaluate the final 30% and 40% checkpoints with the same canonical rollout
-   protocol and compare them pairwise with the completed 20% control.
-3. Use the cooldown comparison to decide whether the remaining natural-protein
-   gap warrants a controlled data-composition or serialization follow-up.
+1. Complete the 20% and 40% TPU cooldown continuations while preserving their
+   full-state checkpoint and W&B identities across preemptions.
+2. Evaluate both final checkpoints with the same canonical rollout protocol.
+3. Use the final matched-endpoint comparison to decide whether the remaining
+   natural-protein gap warrants a controlled data-composition or serialization
+   follow-up.
 
 ## Files
 
