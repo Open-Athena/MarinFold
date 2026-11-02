@@ -1,0 +1,15 @@
+{
+  "sources": [
+    {
+      "path": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-11-02/final-01/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B-step-373768/contact_precision_all.csv",
+      "sha256": "8d4344d74a11724122d2ca9a1fd850f88e09cee06346ec94d68569c9af7d92c5"
+    },
+    {
+      "path": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-11-02/final-01/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B-step-373768/contact_precision_all.csv",
+      "sha256": "0478c8ce05101fe5ff97e31cd84a3a4aceec9c2df965f30e26c0048da2bdaf99"
+    }
+  ],
+  "metric_rows_verified": 4640,
+  "scoring_universes_identical": true,
+  "note": "Exp364 uses seed 0; exp373 uses its frozen paired SHA256 seeds. Intervals resample proteins conditional on these two sets of draws, not repeated independent evaluations."
+}

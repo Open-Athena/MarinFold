@@ -139,13 +139,21 @@ def generate(
 def main() -> None:
     """Generate resumable per-protein files, retaining all malformed/capped samples."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--model", choices=["mpnn", "default"], required=True)
+    parser.add_argument("--model", required=True)
     parser.add_argument("--shard", type=int, default=0)
     parser.add_argument("--shards", type=int, default=6)
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument("--extend", action="store_true")
+    parser.add_argument("--two-epoch", action="store_true")
     args = parser.parse_args()
-    plan = json.loads((HERE / "data/plan.json").read_text())
+    assert not (args.extend and args.two_epoch)
+    plan_name = "two_epoch_plan.json" if args.two_epoch else "plan.json"
+    plan = json.loads((HERE / "data" / plan_name).read_text())
+    if args.two_epoch:
+        assert (
+            hashlib.sha256((HERE / "inputs/targets.json").read_bytes()).hexdigest()
+            == plan["input_hashes"]["inputs/targets.json"]
+        )
     extension = (
         json.loads((HERE / "data/extension_plan.json").read_text())
         if args.extend
@@ -266,6 +274,8 @@ def main() -> None:
                 )
                 if args.smoke:
                     end_index = start_index + 100
+                elif args.two_epoch and mode == "fixed" and temperature == 1:
+                    end_index = sum(plan["fixed_t1_batches"])
                 indices = list(range(start_index, end_index))
                 count = len(indices)
                 prompt_ids = [
@@ -300,7 +310,11 @@ def main() -> None:
                     for k, n in zip(indices, token_lengths, strict=True)
                 ]
                 inference_start = time.monotonic()
-                records = generate(model, tokenizer, prompts, params)
+                if args.two_epoch and count == 1000:
+                    records = generate(model, tokenizer, prompts[:300], params[:300])
+                    records += generate(model, tokenizer, prompts[300:], params[300:])
+                else:
+                    records = generate(model, tokenizer, prompts, params)
                 elapsed = time.monotonic() - inference_start
                 for position, (k, record) in enumerate(
                     zip(indices, records, strict=True)

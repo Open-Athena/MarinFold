@@ -2,6 +2,7 @@
 
 import argparse
 from concurrent.futures import ThreadPoolExecutor
+import hashlib
 import json
 from pathlib import Path
 
@@ -15,14 +16,21 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument("--extend", action="store_true")
+    parser.add_argument("--two-epoch", action="store_true")
     parser.add_argument("--metadata-only", action="store_true")
     args = parser.parse_args()
-    plan_name = "extension_plan.json" if args.extend else "plan.json"
+    assert not (args.extend and args.two_epoch)
+    plan_name = (
+        "two_epoch_plan.json"
+        if args.two_epoch
+        else ("extension_plan.json" if args.extend else "plan.json")
+    )
     plan = json.loads((HERE / "data" / plan_name).read_text())
     phase = "smoke" if args.smoke else "raw"
     root = plan["artifact_root"].removeprefix("hf://") + "/" + phase
     fs = HfFileSystem(token=False)
-    destination = HERE / "scratch" / (phase + ("_1000" if args.extend else ""))
+    suffix = "_two_epoch" if args.two_epoch else ("_1000" if args.extend else "")
+    destination = HERE / "scratch" / (phase + suffix)
     destination.mkdir(exist_ok=True, parents=True)
     markers = fs.glob(root + "/*/*.complete.json")
     tasks = []
@@ -62,6 +70,16 @@ def main() -> None:
         path = destination / worker.removeprefix(root + "/")
         path.parent.mkdir(exist_ok=True)
         path.write_text(fs.read_text(worker))
+    if args.two_epoch:
+        launches = json.loads((HERE / "data/launches_two_epoch.json").read_text())
+        for remote, sha in sorted(
+            {(r["source_uri"], r["source_sha256"]) for r in launches}
+        ):
+            assert remote == plan["artifact_root"] + f"/source/{sha}.zip"
+            path = HERE / "scratch" / (sha + ".zip")
+            if not path.exists():
+                fetch_one((remote.removeprefix("hf://"), path))
+            assert hashlib.sha256(path.read_bytes()).hexdigest() == sha
     print(
         json.dumps(
             {

@@ -1,5 +1,6 @@
 """Check both real-weight smoke outputs before the 12-worker production run."""
 
+import argparse
 import json
 from pathlib import Path
 
@@ -10,14 +11,20 @@ HERE = Path(__file__).resolve().parent
 
 def main() -> None:
     """Enforce paired prompt/tokenizer identity, completion and valid scoring."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--two-epoch", action="store_true")
+    args = parser.parse_args()
+    suffix = "_two_epoch" if args.two_epoch else ""
+    plan_name = "two_epoch_plan.json" if args.two_epoch else "plan.json"
+    plan = json.loads((HERE / "data" / plan_name).read_text())
     truth = {
         r["stem"]: r
         for r in json.loads((HERE / "inputs/ground_truth.json").read_text())
     }
     results = {}
     records = []
-    for model in ["default", "mpnn"]:
-        paths = list((HERE / "scratch/smoke" / model).glob("*.json.gz"))
+    for model in plan["models"]:
+        paths = list((HERE / "scratch" / ("smoke" + suffix) / model).glob("*.json.gz"))
         assert len(paths) == 1
         record = load(paths[0])
         records.append(record)
@@ -47,7 +54,7 @@ def main() -> None:
             for m in results
         ]
         assert len(set(hashes)) == 1
-    (HERE / "data/smoke_validation.json").write_text(
+    (HERE / "data" / f"smoke_validation{suffix}.json").write_text(
         json.dumps(results, indent=2) + "\n"
     )
     print(

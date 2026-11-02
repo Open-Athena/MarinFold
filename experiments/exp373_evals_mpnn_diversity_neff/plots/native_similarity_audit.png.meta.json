@@ -1,5 +1,5 @@
 {
-  "script": "plot.py",
+  "script": "two_epoch_plot.py",
   "args": [],
-  "caption": "Exploratory exp245 native AFDB/ESM-Atlas alignment evidence. The 50% coverage filter restricts identity; 40% exposes local matches. Redesign sequences were not searched."
+  "caption": "Exploratory native-sequence alignment evidence from exp245, with all three redesign checkpoints. The 50% coverage filter restricts identity. The redesign corpus remains unsearched."
 }

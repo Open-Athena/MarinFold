@@ -1,0 +1,5 @@
+{
+  "script": "two_epoch_plot.py",
+  "args": [],
+  "caption": "Primary randomized-prompt condition. Negative slope means a shallower Neff dependence than default. Length/viral adjustment and nonviral restriction are sensitivity checks; intervals are unadjusted."
+}

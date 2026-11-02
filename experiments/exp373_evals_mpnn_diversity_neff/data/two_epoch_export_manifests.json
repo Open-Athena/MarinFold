@@ -1,0 +1,236 @@
+{
+  "lr5e-4": {
+    "checkpoint": {
+      "trial": "lr5e-4",
+      "run_id": "contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
+      "step": 373768,
+      "label": "contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B-step-373768",
+      "source_format": "huggingface",
+      "source": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/hf/step-373768",
+      "native_checkpoint": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/checkpoints/step-373768",
+      "hf_export": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/hf/step-373768",
+      "source_bytes": 5885614887,
+      "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
+      "model_config": {
+        "rope": {
+          "theta": 500000,
+          "factor": 8,
+          "low_freq_factor": 1,
+          "high_freq_factor": 4,
+          "original_max_position_embeddings": 8192
+        },
+        "head_dim": null,
+        "use_bias": false,
+        "num_heads": 32,
+        "tokenizer": null,
+        "hidden_dim": 2048,
+        "num_layers": 24,
+        "hybrid_norm": false,
+        "max_seq_len": 8192,
+        "scan_layers": true,
+        "upcast_attn": false,
+        "use_qk_norm": true,
+        "attn_backend": "JAX_FLASH",
+        "num_kv_heads": 8,
+        "sliding_window": 4096,
+        "intermediate_dim": 8192,
+        "initializer_range": 0.02,
+        "layer_norm_epsilon": 1e-05,
+        "use_sliding_window": false,
+        "activation_function": "silu",
+        "tie_word_embeddings": false,
+        "input_embedding_norm": false,
+        "reference_checkpoint": "Qwen/Qwen3-0.6B",
+        "use_layer_norm_weight": true,
+        "gradient_checkpointing": true,
+        "flash_attention_block_size": null
+      },
+      "latest_logged_step": 373768,
+      "latest_eval_loss": 3.01328706741333,
+      "model_egress_bytes": 0,
+      "evaluation_cluster": "cw-us-east-02a",
+      "export_manifest": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-11-02/final-01/manifests/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B-step-373768.json"
+    },
+    "files": [
+      {
+        "name": "config.json",
+        "size": 1726,
+        "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd"
+      },
+      {
+        "name": "model-00001-of-00002.safetensors",
+        "size": 4979485528,
+        "sha256": "1c4a014d602dc071dd678537a73dd8e19ed1536a62074b034fac205e0e7c90af"
+      },
+      {
+        "name": "model-00002-of-00002.safetensors",
+        "size": 906042048,
+        "sha256": "43b10ec6460b48168b71e4b90a392e918fbd67fa6bfe88ef705b108a974d4634"
+      },
+      {
+        "name": "model.safetensors.index.json",
+        "size": 20882,
+        "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587"
+      },
+      {
+        "name": "tokenizer.json",
+        "size": 64407,
+        "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+      },
+      {
+        "name": "tokenizer_config.json",
+        "size": 296,
+        "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+      }
+    ],
+    "dtype": "float32",
+    "inference_dtype": "bfloat16",
+    "verification": {
+      "verified_at": "2026-11-02T18:40:04.731470+00:00",
+      "export": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/hf/step-373768",
+      "all_parameters_finite": true,
+      "parameter_bytes": 5885497344,
+      "files": {
+        "model-00001-of-00002.safetensors": {
+          "parameter_bytes": 4979460096,
+          "sha256": "1c4a014d602dc071dd678537a73dd8e19ed1536a62074b034fac205e0e7c90af"
+        },
+        "model-00002-of-00002.safetensors": {
+          "parameter_bytes": 906037248,
+          "sha256": "43b10ec6460b48168b71e4b90a392e918fbd67fa6bfe88ef705b108a974d4634"
+        }
+      }
+    },
+    "native_verification": {
+      "metadata": {
+        "step": 373768,
+        "timestamp": "2026-11-01T20:31:14.951709",
+        "is_temporary": false
+      },
+      "scalar_counters": {
+        "step": 373769,
+        "opt_state/count": 373769,
+        "opt_state/hyperparams_states/learning_rate/count": 373769,
+        "opt_state/inner_state/1/count": 373769
+      }
+    },
+    "source_verification_sha256": "f2e38619c825f99ed09d59a2540a51de3b8a962038f278ec9c62c936b3e45a25"
+  },
+  "lr1e-3": {
+    "checkpoint": {
+      "trial": "lr1e-3",
+      "run_id": "contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B",
+      "step": 373768,
+      "label": "contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B-step-373768",
+      "source_format": "huggingface",
+      "source": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B/hf/step-373768",
+      "native_checkpoint": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B/checkpoints/step-373768",
+      "hf_export": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B/hf/step-373768",
+      "source_bytes": 5885614887,
+      "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B",
+      "model_config": {
+        "rope": {
+          "theta": 500000,
+          "factor": 8,
+          "low_freq_factor": 1,
+          "high_freq_factor": 4,
+          "original_max_position_embeddings": 8192
+        },
+        "head_dim": null,
+        "use_bias": false,
+        "num_heads": 32,
+        "tokenizer": null,
+        "hidden_dim": 2048,
+        "num_layers": 24,
+        "hybrid_norm": false,
+        "max_seq_len": 8192,
+        "scan_layers": true,
+        "upcast_attn": false,
+        "use_qk_norm": true,
+        "attn_backend": "JAX_FLASH",
+        "num_kv_heads": 8,
+        "sliding_window": 4096,
+        "intermediate_dim": 8192,
+        "initializer_range": 0.02,
+        "layer_norm_epsilon": 1e-05,
+        "use_sliding_window": false,
+        "activation_function": "silu",
+        "tie_word_embeddings": false,
+        "input_embedding_norm": false,
+        "reference_checkpoint": "Qwen/Qwen3-0.6B",
+        "use_layer_norm_weight": true,
+        "gradient_checkpointing": true,
+        "flash_attention_block_size": null
+      },
+      "latest_logged_step": 373768,
+      "latest_eval_loss": 3.0415663719177246,
+      "model_egress_bytes": 0,
+      "evaluation_cluster": "cw-us-east-02a",
+      "export_manifest": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-11-02/final-01/manifests/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B-step-373768.json"
+    },
+    "files": [
+      {
+        "name": "config.json",
+        "size": 1726,
+        "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd"
+      },
+      {
+        "name": "model-00001-of-00002.safetensors",
+        "size": 4979485528,
+        "sha256": "64b253994e4d274e047852d950e05991274c4afb3494949ab4446a692a406fe8"
+      },
+      {
+        "name": "model-00002-of-00002.safetensors",
+        "size": 906042048,
+        "sha256": "67c4093b805d5fa5cc8d6132117381f1dc0f3b64a275c541e64e87f963788a4c"
+      },
+      {
+        "name": "model.safetensors.index.json",
+        "size": 20882,
+        "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587"
+      },
+      {
+        "name": "tokenizer.json",
+        "size": 64407,
+        "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+      },
+      {
+        "name": "tokenizer_config.json",
+        "size": 296,
+        "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+      }
+    ],
+    "dtype": "float32",
+    "inference_dtype": "bfloat16",
+    "verification": {
+      "verified_at": "2026-11-02T18:40:24.150118+00:00",
+      "export": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr1e-3-1.5B/hf/step-373768",
+      "all_parameters_finite": true,
+      "parameter_bytes": 5885497344,
+      "files": {
+        "model-00001-of-00002.safetensors": {
+          "parameter_bytes": 4979460096,
+          "sha256": "64b253994e4d274e047852d950e05991274c4afb3494949ab4446a692a406fe8"
+        },
+        "model-00002-of-00002.safetensors": {
+          "parameter_bytes": 906037248,
+          "sha256": "67c4093b805d5fa5cc8d6132117381f1dc0f3b64a275c541e64e87f963788a4c"
+        }
+      }
+    },
+    "native_verification": {
+      "metadata": {
+        "step": 373768,
+        "timestamp": "2026-10-31T17:22:43.487390",
+        "is_temporary": false
+      },
+      "scalar_counters": {
+        "step": 373769,
+        "opt_state/count": 373769,
+        "opt_state/hyperparams_states/learning_rate/count": 373769,
+        "opt_state/inner_state/1/count": 373769
+      }
+    },
+    "source_verification_sha256": "f2e38619c825f99ed09d59a2540a51de3b8a962038f278ec9c62c936b3e45a25"
+  }
+}

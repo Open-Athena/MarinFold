@@ -1,5 +1,5 @@
 {
-  "script": "plot.py",
+  "script": "two_epoch_plot.py",
   "args": [],
-  "caption": "Eight proteins preselected by Neff rank; two shown per page. Resolved-pair truth and frequencies from 300 fixed-prompt samples, T=1. Frequencies use 0\u20131 and signed differences \u22121 to +1."
+  "caption": "Eight proteins were selected by Neff rank before inference. Same 300-sample frequency scale for all four models; resolved contacts only. Examples are illustrative, not selected for effect size."
 }

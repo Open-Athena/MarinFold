@@ -58,14 +58,19 @@ def reduce_condition(task: tuple[str, str, dict, list[int]]) -> tuple[list, list
     original = load(HERE / "scratch/raw" / model / name)
     extension = load(HERE / "scratch/raw_1000" / model / name)
     record = {**original, "samples": original["samples"] + extension["samples"]}
+    return reduce_record(record, truth, grid)
+
+
+def reduce_record(record: dict, truth: dict, grid: list[int]) -> tuple[list, list]:
+    """Score one complete 1000-sample record with the established definitions."""
     assert [s["rollout"] for s in record["samples"]] == list(range(1000))
     sets, true, ids, labels = candidate_sets(record, truth)
     length = truth["L"]
     curves, singles = [], []
     base = {
-        "stem": stem,
-        "model": model,
-        "eval_set": original["target"]["eval_set"],
+        "stem": record["target"]["stem"],
+        "model": record["model"],
+        "eval_set": record["target"]["eval_set"],
         "temperature": 1.0,
         "mode": "fixed",
     }
@@ -75,7 +80,7 @@ def reduce_condition(task: tuple[str, str, dict, list[int]]) -> tuple[list, list
         true_range = {x for x in true if x % length - x // length >= minimum}
         if not true_range:
             raise ValueError(
-                f"Empty truth: {stem}, {region}; report before aggregation"
+                f"Empty truth: {base['stem']}, {region}; report before aggregation"
             )
         ranged = [
             {x for x in sample if x % length - x // length >= minimum}
