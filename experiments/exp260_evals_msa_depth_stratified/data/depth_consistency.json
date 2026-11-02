@@ -1,0 +1,95 @@
+{
+  "across_volumes": {
+    "depth_ratio_max": 1.1764705882352942,
+    "depth_ratio_median": 1.0,
+    "depth_ratio_min": 0.4542857142857143,
+    "neff_ratio_median": 1.0,
+    "per_stem": [
+      {
+        "exp74_n_eff": 1.0,
+        "exp74_n_seqs": 1,
+        "foldbench_n_eff": 1.0,
+        "foldbench_n_seqs": 1,
+        "stem": "7ur7_A"
+      },
+      {
+        "exp74_n_eff": 4.416666666666667,
+        "exp74_n_seqs": 7,
+        "foldbench_n_eff": 4.416666666666667,
+        "foldbench_n_seqs": 7,
+        "stem": "8ah9_A"
+      },
+      {
+        "exp74_n_eff": 1.0,
+        "exp74_n_seqs": 1,
+        "foldbench_n_eff": 1.0,
+        "foldbench_n_seqs": 1,
+        "stem": "8eov_A"
+      },
+      {
+        "exp74_n_eff": 1.0,
+        "exp74_n_seqs": 1,
+        "foldbench_n_eff": 1.0,
+        "foldbench_n_seqs": 1,
+        "stem": "8fjf_A"
+      },
+      {
+        "exp74_n_eff": 1.0,
+        "exp74_n_seqs": 1,
+        "foldbench_n_eff": 1.0,
+        "foldbench_n_seqs": 1,
+        "stem": "8k7z_A"
+      },
+      {
+        "exp74_n_eff": 1.0,
+        "exp74_n_seqs": 1,
+        "foldbench_n_eff": 1.0,
+        "foldbench_n_seqs": 1,
+        "stem": "8ka7_A"
+      },
+      {
+        "exp74_n_eff": 173.27210934552488,
+        "exp74_n_seqs": 350,
+        "foldbench_n_eff": 92.60425194931774,
+        "foldbench_n_seqs": 159,
+        "stem": "8kac_A"
+      },
+      {
+        "exp74_n_eff": 1.0,
+        "exp74_n_seqs": 1,
+        "foldbench_n_eff": 1.0,
+        "foldbench_n_seqs": 1,
+        "stem": "8kcj_A"
+      },
+      {
+        "exp74_n_eff": 1.0,
+        "exp74_n_seqs": 1,
+        "foldbench_n_eff": 1.0,
+        "foldbench_n_seqs": 1,
+        "stem": "8qkd_A"
+      },
+      {
+        "exp74_n_eff": 24.20715948591008,
+        "exp74_n_seqs": 187,
+        "foldbench_n_eff": 24.2074486945996,
+        "foldbench_n_seqs": 220,
+        "stem": "8qup_A"
+      },
+      {
+        "exp74_n_eff": 1.0,
+        "exp74_n_seqs": 1,
+        "foldbench_n_eff": 1.0,
+        "foldbench_n_seqs": 1,
+        "stem": "8vc8_A"
+      }
+    ],
+    "same_depth_tier": 11,
+    "stems_compared": 11
+  },
+  "vs_exp247": {
+    "disagreeing_stems": [],
+    "exact_matches": 314,
+    "largest_absolute_difference": 0,
+    "proteins_compared": 314
+  }
+}

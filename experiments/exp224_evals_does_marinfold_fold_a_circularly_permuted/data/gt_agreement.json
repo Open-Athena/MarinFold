@@ -1,0 +1,10 @@
+{
+ "n_residues_both_resolved": 185,
+ "n_cp_contacts": 170,
+ "n_wt_contacts": 156,
+ "n_shared": 138,
+ "jaccard": 0.7340425531914894,
+ "wt_recovered_in_cp": 0.8846153846153846,
+ "wt_1dsb_jaccard_vs_1fvk": 0.877906976744186,
+ "wt_1a2j_jaccard_vs_1fvk": 0.8488372093023255
+}

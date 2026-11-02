@@ -1,0 +1,34 @@
+[project]
+name = "exp224-evals-circular-permutation"
+version = "0.1.0"
+description = "Does MarinFold predict contacts for a circularly permuted protein (1UN2 CPDsbA-Q100T99) as well as for wild-type DsbA? — issue #224."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # Input prep + pyconfind ground truth, run exactly like contacts_v1
+    # (native_only=True). The extra pulls pyconfind>=0.5.
+    "marinfold[contacts-v1]",
+    "gemmi>=0.6",          # mmCIF parsing / chain extraction
+    "numpy",
+    "pandas",
+    "matplotlib",
+    "scikit-learn",        # roc_auc_score, as exp89's compute_metrics uses
+    "requests",            # RCSB fetch fallback when the local mirror misses
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[dependency-groups]
+dev = []
+
+[tool.uv.sources]
+marinfold = { path = "../../marinfold" }
+
+[tool.uv]
+# Scripts, not a packaged library.
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'linux'",
+]

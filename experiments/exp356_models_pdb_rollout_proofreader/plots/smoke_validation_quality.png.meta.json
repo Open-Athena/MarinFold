@@ -1,0 +1,9 @@
+{
+  "script": "analyze.py",
+  "args": [
+    "--label",
+    "smoke_validation",
+    "--replot-only"
+  ],
+  "caption": "smoke_validation, debug-exp356-eight-h100-v1/step-4. Protein means; calibration bins pool contacts. Confidence intervals in metrics JSON resample related groups."
+}

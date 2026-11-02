@@ -1,0 +1,16 @@
+{
+  "sources": {
+    "exp277_models_single_mpnn_pilot/data/eval_rollout_v2/contact_precision_all.csv": "f8dba35fc697e37e5a383567946efee613948e736607ce7d01486243d0c079c5",
+    "exp232_sweep_cv1_decontam/evals/2026-08-24_rollout_v2/data/coreweave_results/marinfold_precision.csv.gz": "1709007bb591bc61593d1638173a9a968df2be78490a5a884a0592f04e7516f4",
+    "exp250_evals_exploration_notebook/figures/data/2_rprecision/per_protein.csv": "93dc1efdc52924e473b6a3dfaf860b95d960e1fc9a7453c7498be22485a8bbbf",
+    "exp245_evals_foldbench_held_out_monomers/data/eval_sets.csv": "b13d060a091240921bc8466acecc9fa6ccbb45a56de4efda02cd903f6abf9861"
+  },
+  "bootstrap_seed": 277,
+  "bootstrap_replicates": 10000,
+  "evaluation_sets": [
+    "legacy_554",
+    "eval-val",
+    "eval-denovo"
+  ],
+  "eval_test_scored": false
+}

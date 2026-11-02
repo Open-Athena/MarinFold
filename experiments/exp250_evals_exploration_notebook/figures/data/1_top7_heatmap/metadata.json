@@ -1,0 +1,176 @@
+{
+  "dataset": "1_top7_heatmap",
+  "notebook": "1_make_top7_heatmap_data.ipynb",
+  "generated_utc": "2026-08-31T18:07:49+00:00",
+  "parameters": {
+    "protein": "denovo_pdb__1qys_A",
+    "model": "contacts-v1-exp232-m2-p06-train-1.5B",
+    "n_rollouts": 100,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "top_k": -1,
+    "backend": "auto",
+    "dtype": "auto",
+    "gpu_memory_utilization": 0.85
+  },
+  "git": {
+    "commit": "ab7a50770a85eb55991ec81b50f376e85a9379bc",
+    "branch": "exp250/evals-exploration-notebook",
+    "dirty": true,
+    "dirty_files": [
+      "M experiments/exp250_evals_exploration_notebook/figures/2_make_rprecision_data.ipynb",
+      " M experiments/exp250_evals_exploration_notebook/figures/2_plot_rprecision.ipynb",
+      " M experiments/exp250_evals_exploration_notebook/figures/data/1_top7_heatmap/metrics.csv",
+      " M experiments/exp250_evals_exploration_notebook/figures/data/1_top7_heatmap/score.npy",
+      " M experiments/exp250_evals_exploration_notebook/figures/data/1_top7_heatmap/votes.npy",
+      " M experiments/exp250_evals_exploration_notebook/figures/data/2_rprecision/metadata.json",
+      " M experiments/exp250_evals_exploration_notebook/figures/data/2_rprecision/per_protein.csv",
+      " M experiments/exp250_evals_exploration_notebook/figures/data/2_rprecision/summary.csv",
+      " M experiments/exp250_evals_exploration_notebook/figures/output/rprecision_designed.pdf",
+      " M experiments/exp250_evals_exploration_notebook/figures/output/rprecision_designed.png",
+      " M experiments/exp250_evals_exploration_notebook/figures/output/rprecision_designed.svg",
+      " M experiments/exp250_evals_exploration_notebook/figures/output/rprecision_natural.pdf",
+      " M experiments/exp250_evals_exploration_notebook/figures/output/rprecision_natural.png",
+      " M experiments/exp250_evals_exploration_notebook/figures/output/rprecision_natural.svg"
+    ]
+  },
+  "machine": {
+    "hostname": "8xA100 node",
+    "hostname_overridden": true,
+    "user": "ubuntu",
+    "platform": "Linux-6.8.0-1046-nvidia-x86_64-with-glibc2.35",
+    "python": "3.12.14",
+    "gpu": {
+      "name": "NVIDIA A100-SXM4-80GB",
+      "compute_capability": "8.0",
+      "memory_gib": 79.3,
+      "count": 8
+    }
+  },
+  "packages": {
+    "marinfold": "0.1.0",
+    "torch": "2.11.0+cu129",
+    "transformers": "4.57.6",
+    "vllm": "0.20.2+cu129",
+    "numpy": "2.3.5",
+    "pandas": "3.0.5",
+    "matplotlib": "3.11.1"
+  },
+  "inputs": [
+    {
+      "path": "/home/ubuntu/MarinFold/experiments/exp94_evals_sequence_knn_baseline/data/eval_queries.fasta",
+      "bytes": 114366,
+      "sha256": "17336c8bcfdcc024ddda5d7c1383181620658aa02c2ca78bd3d1da1509a3566a"
+    },
+    {
+      "url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-model-eval-exp89/gt_universe.jsonl",
+      "bytes": 7956102,
+      "sha256": "3ff6eb4e383582595ad6f9811c77e2839ebcc0030a050b9c1f15d020163331c9"
+    },
+    {
+      "url": "https://files.rcsb.org/download/1QYS-assembly1.cif",
+      "bytes": 83013,
+      "sha256": "2b335fc22d09b5ed09571cd29e2582c0bef3fd935a0310540e552ada855f8a25"
+    }
+  ],
+  "outputs": {
+    "score.npy": {
+      "bytes": 33984,
+      "sha256": "0481082347608f43a6d6aec67160e74ad6afb54653e46498098dbce2135f1e8b"
+    },
+    "votes.npy": {
+      "bytes": 17056,
+      "sha256": "03e7131555a0c99a1cf2e91f15748872e55d4fdc7b2e9b9e4ff245b3aba8961e"
+    },
+    "ground_truth.json": {
+      "bytes": 12744,
+      "sha256": "b63c46f5754fc3eb29e24a5006d2c3e489f2ba192bb5fce8ea90e11449f1ad89"
+    },
+    "metrics.csv": {
+      "bytes": 739,
+      "sha256": "1f5f5181bc7944d503c4c839e41bee86df17db89457804de4fcf65d505f6a536"
+    },
+    "ca_coords.npy": {
+      "bytes": 1232,
+      "sha256": "6eeabfd753940d350cdb61b323080ca3f0126987b5dd8cba6498f6eee3e7c966"
+    },
+    "structure.cif": {
+      "bytes": 83013,
+      "sha256": "2b335fc22d09b5ed09571cd29e2582c0bef3fd935a0310540e552ada855f8a25"
+    },
+    "residue_numbers.npy": {
+      "bytes": 864,
+      "sha256": "54a055d5f0c77cf20f2db911d39de823269b10ff662b65dd3787ff0f305d3966"
+    },
+    "document.txt": {
+      "bytes": 2832,
+      "sha256": "c2113d84477d4c49c494bc0d2fc5d1fd8545e1bcd9fdbdb1dfe0b1a2f9543b85"
+    }
+  },
+  "model": {
+    "nickname": "contacts-v1-exp232-m2-p06-train-1.5B",
+    "path": "/home/ubuntu/.cache/huggingface/hub/buckets/open-athena/MarinFold/checkpoints/prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1/hf/step-363000",
+    "files": [
+      "config.json",
+      "config.json.lock",
+      "model-00001-of-00002.safetensors",
+      "model-00001-of-00002.safetensors.lock",
+      "model-00002-of-00002.safetensors",
+      "model-00002-of-00002.safetensors.lock",
+      "model.safetensors.index.json",
+      "model.safetensors.index.json.lock",
+      "tokenizer.json",
+      "tokenizer.json.lock",
+      "tokenizer_config.json",
+      "tokenizer_config.json.lock"
+    ],
+    "config_sha256": "03cd68867df12e95cb18cb689c0cbfc3adc96acd9b6eb8b344a28e7ab4e5fc0f",
+    "tokenizer_sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24",
+    "rope_theta": 500000,
+    "rope_scaling": {
+      "factor": 8.0,
+      "low_freq_factor": 1.0,
+      "high_freq_factor": 4.0,
+      "original_max_position_embeddings": 8192,
+      "rope_type": "llama3"
+    },
+    "vocab_size": 2845,
+    "num_hidden_layers": 24,
+    "weight_bytes": 5885527576
+  },
+  "recipe": {
+    "method": "rollout+resample+tiebreak",
+    "backend": "vllm",
+    "dtype": "bfloat16",
+    "n_rollouts": 100,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "top_k": -1,
+    "min_seq_separation": 6
+  },
+  "protein": {
+    "dataset": "denovo_pdb",
+    "stem": "1qys_A",
+    "L": 92,
+    "sequence_sha256": "66479a8c204936ae9efb3db388bcaf401a3a09aef482c6c942da888f2eefb2ad",
+    "n_true_contacts": 76,
+    "n_candidate_pairs": 3741
+  },
+  "structure": {
+    "pdb_id": "1QYS",
+    "chain": "A",
+    "source": "https://files.rcsb.org/download/1QYS-assembly1.cif",
+    "n_ca": 92,
+    "note": "CA coordinates in input-sequence index order; NaN where the residue is unresolved. Same indexing as the contact map."
+  },
+  "votes": {
+    "max": 99,
+    "n_rollouts": 100,
+    "pairs_with_any_vote": 535,
+    "note": "score.npy = votes.npy + a pairwise tie-break in [0, 0.5); the metric ranks score, the figure shows votes / n_rollouts"
+  },
+  "result": {
+    "r_precision_all": 0.6447368421052632,
+    "auc_all": 0.9905220076111152
+  }
+}

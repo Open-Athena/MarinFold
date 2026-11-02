@@ -1,0 +1,5 @@
+{
+  "script": "single.py",
+  "args": [],
+  "caption": "M-F's reward over both runs. It peaks at step 48 and is at 0.006 by step 120: the policy found the unconstrained direction (259 sections of 1.4 contacts each) and took the reward down with it."
+}

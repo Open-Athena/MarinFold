@@ -1,0 +1,5 @@
+{
+  "script": "plot_phase0.py",
+  "args": [],
+  "caption": "Left: for heads that retrieve earlier mentions of the query's own residue index, their attention on those co-referents relative to chance, by distance. Lift is computed against each document's own co-referent density, which falls as ~1/L and would otherwise make a raw share incomparable across distances. It never decays with distance, so RoPE costs us no reach and the mechanistic case for dropping it fails. Right: where the attention goes."
+}

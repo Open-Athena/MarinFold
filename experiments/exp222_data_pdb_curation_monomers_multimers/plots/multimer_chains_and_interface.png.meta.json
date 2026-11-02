@@ -1,0 +1,5 @@
+{
+  "script": "qc.py",
+  "args": [],
+  "caption": "How many chains a multimer document carries, and how much of its contact budget is spent on interfaces rather than intra-chain structure."
+}

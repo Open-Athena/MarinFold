@@ -1,0 +1,8 @@
+{
+  "script": "plot_learning.py",
+  "args": [
+    "--run",
+    "exp356-exp277-frozen-contact-pdb50k-v2"
+  ],
+  "caption": "Fixed 256-rollout validation sample at prefixes 1, 4, 16 and full. These training diagnostics are separate from the complete held-out evaluation."
+}

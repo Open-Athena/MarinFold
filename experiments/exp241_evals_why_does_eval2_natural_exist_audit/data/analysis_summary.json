@@ -1,0 +1,20 @@
+{
+ "eval2_natural_published": 78,
+ "eval2_natural_audited": 63,
+ "eval2_reclassified_designed": 15,
+ "natural_after_audit": 63,
+ "natural_with_uniprot_xref": 60,
+ "natural_with_afdb_model": 45,
+ "natural_in_afdb_arm": 0,
+ "uniref50_reported": 56,
+ "uniref50_singletons": 14,
+ "uniref50_median_size": 6,
+ "uniref50_total_relatives": 3651,
+ "uniref50_relatives_in_arm": 0,
+ "afdb_n_with_hit": 467,
+ "afdb_share_in_040_055": 0.3105,
+ "afdb_share_above_090": 0.0985,
+ "esm_atlas_n_with_hit": 488,
+ "esm_atlas_share_in_040_055": 0.4406,
+ "esm_atlas_share_above_090": 0.0451
+}

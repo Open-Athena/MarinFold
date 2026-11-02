@@ -1,0 +1,12 @@
+{
+  "script": "plot_properties.py",
+  "args": [],
+  "caption": "Left: mean all-range R-precision over three nested regimes \u2014 all 314 natural monomers, the shallowest MSA-depth quartile (\u2264784 sequences, n=79), and the six proteins with \u226410 sequences. Right: those six individually. Protenix-v2 + MSA falls from 0.791 on the quartile to 0.410 with no alignment to condition on, while ESMFold2 holds at 0.694 and MarinFold falls to 0.317.",
+  "plot": "near_orphan.png",
+  "sha256": "beb6d4c3024ae47cde5b268a34c06f4bab1db62b475e1b02d3829d8058220c7a",
+  "sources": {
+    "features": "experiments/exp247_evals_protein_property_analysis/data/protein_features.csv",
+    "associations": "experiments/exp247_evals_protein_property_analysis/data/associations.csv",
+    "scores": "experiments/exp245_evals_foldbench_held_out_monomers/data/per_protein.csv.gz"
+  }
+}

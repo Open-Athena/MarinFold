@@ -1,0 +1,9 @@
+{
+  "script": "analyze.py",
+  "args": [
+    "--label",
+    "frozen_validation_step7000",
+    "--replot-only"
+  ],
+  "caption": "frozen_validation_step7000, exp356-exp277-frozen-contact-pdb50k-v2/step-7000. Protein means; calibration bins pool contacts. Confidence intervals in metrics JSON resample related groups."
+}

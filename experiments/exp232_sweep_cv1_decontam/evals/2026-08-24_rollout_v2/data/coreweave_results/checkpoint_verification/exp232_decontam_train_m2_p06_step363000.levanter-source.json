@@ -1,0 +1,12 @@
+{
+  "bytes": 17659722031,
+  "manifest_sha256": "7e0c6f650fe6c76a5570695c24e447ddad4ae0def6662371c17b3ad1fd656b37",
+  "metadata": {
+    "etag": "03c0c74ea6958f60ec468edcc3309e98",
+    "name": "metadata.json",
+    "size": 82
+  },
+  "objects": 175,
+  "source_uri": "s3://marin-us-east-02a/MarinFold/exp232_sweep_cv1_decontam/checkpoints/protein/prot-exp232-trc-cv1-decontam-train-s01-m2-p06-srcpeak-augcont-lr005-us-east1/2026.08.21.1/checkpoints/step-363000",
+  "verified_at": "2026-08-24T14:29:52.810746+00:00"
+}

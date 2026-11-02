@@ -1,0 +1,63 @@
+{
+  "n_rollouts": 8,
+  "n_groups": 4,
+  "elapsed_s": 68.6550886631012,
+  "max_best_f1_delta": 0.0,
+  "max_section_f1_delta": 0.0,
+  "n_section_mismatch": 0,
+  "n_prompt_bad": 0,
+  "observed": {
+    "best_f1": 0.2724494937562517,
+    "last_f1": 0.24955670906829316,
+    "first_f1": 0.19376894926936428,
+    "n_sections": 6.25,
+    "mean_jaccard": 0.03557777021820154
+  },
+  "published": {
+    "best_f1": 0.3025,
+    "last_f1": 0.2493,
+    "first_f1": 0.184,
+    "n_sections": 14.99,
+    "mean_jaccard": 0.071
+  },
+  "env_metrics": {
+    "contacts_multi/precision_baseline": 0.2821457489878543,
+    "contacts_multi/n_rollouts": 8.0,
+    "contacts_multi/n_empty_responses": 0.0,
+    "contacts_multi/n_ragged_groups_dropped": 0.0,
+    "contacts_multi/max_output_tokens": 5344.0,
+    "contacts_multi/best_f1": 0.2724494937562517,
+    "contacts_multi/first_f1": 0.19376894926936428,
+    "contacts_multi/last_f1": 0.24955670906829316,
+    "contacts_multi/mean_f1": 0.20985068431597936,
+    "contacts_multi/precision": 0.24388972416091467,
+    "contacts_multi/n_sections": 6.25,
+    "contacts_multi/n_sections_raw": 9.25,
+    "contacts_multi/n_pred": 524.0,
+    "contacts_multi/n_gt": 167.25,
+    "contacts_multi/mean_jaccard": 0.03557777021820154,
+    "contacts_multi/frac_improving": 0.5238095238095237,
+    "contacts_multi/n_duplicate": 2.5,
+    "contacts_multi/n_malformed": 0.0,
+    "contacts_multi/n_unmapped": 0.0,
+    "contacts_multi/n_too_close": 0.625,
+    "contacts_multi/n_truncated": 0.25,
+    "contacts_multi/n_pred_per_section": 83.84
+  },
+  "args": {
+    "model": "gs://marin-us-east5/MarinFold/exp163/tpu/tpuF-bf16/step-404",
+    "targets": "gs://marin-us-east5/MarinFold/exp163/eval554/targets.parquet",
+    "prompts": "gs://marin-us-east5/MarinFold/exp163/eval554/prompts",
+    "out": "gs://marin-us-east5/MarinFold/exp200/phase1",
+    "limit": 4,
+    "n_generations": 2,
+    "max_sections": 8,
+    "section_contacts": 220,
+    "tensor_parallel_size": 4,
+    "max_model_len": 8192,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "seed": 0
+  },
+  "_note": "smoke: 4 proteins x 2 generations, --max-sections 8 (capped). Job /bizon/exp200-parity-smoke4."
+}

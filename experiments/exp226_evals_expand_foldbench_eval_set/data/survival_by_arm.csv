@@ -1,0 +1,9 @@
+subset,n,threshold,survive_afdb_only,natural_afdb_only,survive_esm_atlas_only,natural_esm_atlas_only,survive_union,natural_union,esm_atlas_removes_beyond_afdb,afdb_removes_beyond_esm_atlas
+net_new222,222,<40%,76,72,62,62,23,23,53,39
+net_new222,222,<30%,40,36,29,29,11,11,29,18
+foldbench100,100,<40%,31,28,28,25,15,12,16,13
+foldbench100,100,<30%,18,15,16,14,11,9,7,5
+orig554,554,<40%,311,72,344,73,284,55,27,60
+orig554,554,<30%,286,58,291,60,264,50,22,27
+expanded776,776,<40%,387,144,406,135,307,78,80,99
+expanded776,776,<30%,326,94,320,89,275,61,51,45

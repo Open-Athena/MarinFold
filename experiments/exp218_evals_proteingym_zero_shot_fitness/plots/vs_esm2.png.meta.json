@@ -1,0 +1,5 @@
+{
+  "script": "analyze.py",
+  "args": [],
+  "caption": "Per-assay Spearman, MarinFold vs ESM-2 650M, on the 212 shared assays. Points below the diagonal are assays ESM-2 wins. A low correlation would mean the two models fail on different assays \u2014 which is what would make a structure-objective model useful in an ensemble even at a lower overall level."
+}

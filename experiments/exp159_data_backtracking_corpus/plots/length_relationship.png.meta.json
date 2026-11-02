@@ -1,0 +1,8 @@
+{
+  "script": "make_plots.py",
+  "args": [
+    "--shards",
+    "2"
+  ],
+  "caption": "Retractions per document rise with protein length, and so does the fraction of false positives the trigger catches \u2014 a bigger committed set gives the posterior more to lean on."
+}

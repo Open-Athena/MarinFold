@@ -1,0 +1,53 @@
+{
+  "checkpoint": {
+    "label": "trc_cont_srcbase_aug100_step145199",
+    "run_name": "prot-exp199-cv1-cont-s03-m1-p03-srcbase-aug100-us-east1",
+    "step": 145199
+  },
+  "destination": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/contbase-v2-20260812-01/models/prot-exp199-cv1-cont-s03-m1-p03-srcbase-aug100-us-east1/hf/step-145199",
+  "files": [
+    {
+      "digest": "e17a7f2ae8b396a707784940570a4908c359e6fa",
+      "digest_kind": "git-sha1",
+      "name": "config.json",
+      "size": 1557
+    },
+    {
+      "digest": "3aaa2198ccf399813da9d68a8d08355354be4f7b60eced074bcc8209d69b0cf0",
+      "digest_kind": "sha256",
+      "name": "model-00001-of-00002.safetensors",
+      "size": 4979485528
+    },
+    {
+      "digest": "bbfaad34189c5292970255395e1566f4f9a6f83b528085e7ff1b3b58dcfd9d34",
+      "digest_kind": "sha256",
+      "name": "model-00002-of-00002.safetensors",
+      "size": 906042048
+    },
+    {
+      "digest": "9880be895e6d9c514b62ed263640d46f67d01a29",
+      "digest_kind": "git-sha1",
+      "name": "model.safetensors.index.json",
+      "size": 20882
+    },
+    {
+      "digest": "8b40b35c6dca9a4d0090b975a007599eabf72eff",
+      "digest_kind": "git-sha1",
+      "name": "tokenizer.json",
+      "size": 64407
+    },
+    {
+      "digest": "e242116d9a12a666749ec722845b6d012250ea94",
+      "digest_kind": "git-sha1",
+      "name": "tokenizer_config.json",
+      "size": 290
+    }
+  ],
+  "source": {
+    "repo_id": "open-athena/marinfold-exp199",
+    "revision": "00eddb761fd028f07ce7bc088930271516da9866",
+    "subfolder": "prot-exp199-cv1-cont-s03-m1-p03-srcbase-aug100-us-east1/hf/step-145199"
+  },
+  "transfer": "pinned Hugging Face snapshot download inside CoreWeave, then CoreWeave S3 upload",
+  "verified_from_huggingface": true
+}

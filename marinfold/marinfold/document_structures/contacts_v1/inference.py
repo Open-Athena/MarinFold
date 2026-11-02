@@ -58,8 +58,8 @@ The model forward pass goes through :mod:`marinfold.inference`; this module
 is backend-agnostic (vLLM / transformers / MLX).
 """
 
+import argparse
 import math
-import re
 import warnings
 from collections import defaultdict
 from collections.abc import Iterable, Iterator
@@ -72,17 +72,20 @@ import numpy as np
 from marinfold import Backend, EvalResult, load_backend
 
 from .generate import GenerationConfig, build_document
+from .read import live_contacts
+from .sampling import _token_id, sample_contacts
 from .parse import (
     RawContact,
     ResidueInfo,
+    _parquet_paths,
     iter_analyzed_structures,
+    iter_structure_paths,
     residues_from_sequence,
 )
 from .vocab import (
     BEGIN_STRUCTURE_TOKEN,
     CONTACT_TOKEN,
     CONTEXT_LENGTH,
-    END_TOKEN,
     NAME,
     NUM_POSITION_INDICES,
     position_token,
@@ -115,9 +118,8 @@ _RANGES: dict[str, tuple[int, int | None]] = {
 # log finite (such pairs simply rank last).
 _PROB_FLOOR = 1e-30
 
-# Parses `<contact> <p_i> <p_j>` triples out of a sampled rollout completion
-# (one contacts-v1 contact statement). Mirrors exp82's CONTACT_RE.
-_CONTACT_RE = re.compile(r"<contact>\s+<p(\d+)>\s+<p(\d+)>")
+# Parsing a rollout completion's structure section back into contacts (with
+# retraction honoured) lives in ``read.py`` (``live_contacts``).
 
 # Rollout generation budget: 4·L + 64 tokens. A contacts-v1 protein emits well
 # under L contacts (sep >= 6), each a 3-token statement, so this is generous
@@ -158,6 +160,12 @@ class InferenceConfig:
     fan-out backends batch internally (pairwise tails / rollout completions).
     ``keep_matrix`` adds the dense per-structure score matrix to each
     ``predict`` record.
+
+    ``min_new_contacts`` (rollout only) blocks end until each completion
+    emits this many complete contact statements. None keeps normal stopping.
+    Duplicates count and retractions do not undo the emitted count. A token
+    budget that cannot reach the minimum raises instead of returning a short
+    completion. See :func:`sample_contacts` for sampling prompted contacts.
     """
 
     model: str | None
@@ -176,6 +184,33 @@ class InferenceConfig:
     temperature: float = 1.0
     top_p: float = 0.95
     top_k: int = 50
+    min_new_contacts: int | None = None
+
+    def __post_init__(self) -> None:
+        if self.min_new_contacts is None:
+            return
+        if not isinstance(self.min_new_contacts, int) or self.min_new_contacts < 0:
+            raise ValueError("min_new_contacts must be a non-negative integer or None.")
+        if self.method != "rollout":
+            raise ValueError("min_new_contacts requires method='rollout'.")
+
+
+def add_inference_arguments(parser: argparse.ArgumentParser) -> None:
+    """Register contacts-v1 sampling options for either CLI entry point."""
+    parser.add_argument(
+        "--method", choices=("pairwise", "rollout"), default="pairwise",
+        help="Contact readout (default pairwise). Rollout samples completions.",
+    )
+    parser.add_argument(
+        "--n-rollouts", type=int, default=100,
+        help="Number of rollout completions (default 100).",
+    )
+    parser.add_argument(
+        "--min-new-contacts", type=int, default=None,
+        help="With --method rollout, block <end> until each completion emits "
+             "this many complete new contact statements. Omit for normal "
+             "stopping; token limits still apply.",
+    )
 
 
 @dataclass(frozen=True)
@@ -220,19 +255,20 @@ def structure_from_sequence(
 # --------------------------------------------------------------------------
 
 
-def _prefix_and_positions(
+def prefix_and_positions(
     structure: ContactStructure, *, entry_id: str
 ) -> tuple[str, list[int], int] | None:
     """Deterministic contacts-v1 sequence prefix + per-seq-index position ids.
 
-    Returns ``(prefix, seq_positions, L)`` where ``prefix`` is the document
-    text up to and including ``<begin_statements>``, ``seq_positions[k]`` is
-    the position index assigned to residue ``k`` (0-based, sequence order),
-    and ``L`` is the residue count. ``None`` when the chain can't be
-    serialized (fewer than 2 residues, or more than the position-token
-    space — see :func:`build_document`). ``entry_id`` is the deterministic
-    RNG seed: changing it resamples the start index + statement order
-    (test-time augmentation).
+    Args:
+        structure: Residues to serialize in sequence order.
+        entry_id: Deterministic RNG seed for the start index and statement order.
+
+    Returns:
+        ``(prefix, seq_positions, L)``: text through ``<begin_statements>``,
+        position-token indices in sequence order, and residue count. Returns
+        None if fewer than two residues or too many for the position-token
+        space prevent serialization; see :func:`build_document`.
     """
     result = build_document(
         entry_id, structure.residues, [], config=GenerationConfig()
@@ -246,35 +282,20 @@ def _prefix_and_positions(
     return prefix, seq_positions, result.seq_len
 
 
-def _token_id(tokenizer, token: str) -> int:
-    """Resolve one domain token to its id; fail loudly on an UNK collapse.
-
-    A wrong / missing contacts-v1 tokenizer maps every ``<pX>`` / ``<contact>``
-    to the UNK id, which would otherwise silently produce a garbage contact
-    map. Catch it here, the way the contacts-and-distances-v1 distance-bin
-    resolver does.
-    """
-    tid = tokenizer.convert_tokens_to_ids(token)
-    unk_id = getattr(tokenizer, "unk_token_id", None)
-    if tid is None or (unk_id is not None and tid == unk_id):
-        raise ValueError(
-            f"Tokenizer has no dedicated id for {token!r} (got {tid}). The "
-            f"tokenizer is missing the contacts-v1 vocabulary — make sure it "
-            f"is co-located with the model."
-        )
-    return int(tid)
-
-
-def _fwd_matrix(
+def fwd_matrix(
     backend: Backend, prefix: str, seq_positions: list[int]
 ) -> np.ndarray:
     """``log P(i)·P(j|i)`` over all residue pairs for one sequence realization.
 
-    Returns ``fwd[i, j] = lp1[i] + lp2[i, j]`` with
-    ``lp1[i] = log P(<p_i> | prefix, <contact>)`` and
-    ``lp2[i, j] = log P(<p_j> | prefix, <contact>, <p_i>)`` — the two
-    conditional distributions the pairwise readout needs, restricted to this
-    protein's position tokens. Not symmetric; callers symmetrize.
+    Args:
+        backend: Model backend providing token probabilities and tokenizer.
+        prefix: Serialized sequence ending where contact statements begin.
+        seq_positions: Position-token indices in sequence order.
+
+    Returns:
+        Asymmetric ``[L, L]`` log probabilities in sequence coordinates:
+        ``fwd[i, j] = log P(<p_i> | prefix, <contact>) +
+        log P(<p_j> | prefix, <contact>, <p_i>)``. Callers symmetrize.
     """
     tokenizer = backend.tokenizer
     prefix_ids = list(tokenizer.encode(prefix, add_special_tokens=False))
@@ -291,8 +312,15 @@ def _fwd_matrix(
     return lp1[:, None] + lp2  # log P(i)·P(j|i)
 
 
-def _pcontact_from_fwd(fwd: np.ndarray) -> np.ndarray:
-    """Unordered ``P(contact)``: ``exp(fwd) + exp(fwd.T)`` (symmetric)."""
+def pcontact_from_fwd(fwd: np.ndarray) -> np.ndarray:
+    """Compute unordered contact probabilities from directed log probabilities.
+
+    Args:
+        fwd: Square log-probability matrix returned by :func:`fwd_matrix`.
+
+    Returns:
+        Symmetric ``exp(fwd) + exp(fwd.T)`` in the input coordinates.
+    """
     return np.exp(fwd) + np.exp(fwd.T)
 
 
@@ -300,14 +328,14 @@ def _sym_from_fwd(fwd: np.ndarray) -> np.ndarray:
     """Symmetrized geo-mean log-score ``0.5·(fwd + fwd.T)``.
 
     Used only as the key that breaks rollout's large zero-vote mass. The
-    pairwise readout ranks by ``P(contact)`` (:func:`_pcontact_from_fwd`)
+    pairwise readout ranks by ``P(contact)`` (:func:`pcontact_from_fwd`)
     instead; the two orderings differ for orientation-asymmetric pairs but
     agree with the exp82/exp89 sym-ranked numbers within backend noise.
     """
     return 0.5 * (fwd + fwd.T)
 
 
-def _pcontact_matrix(
+def pcontact_matrix(
     backend: Backend, prefix: str, seq_positions: list[int]
 ) -> np.ndarray:
     """``P(contact)`` over all residue pairs for one sequence realization.
@@ -315,8 +343,16 @@ def _pcontact_matrix(
     Entry (i, j) is the model's probability of emitting {i, j} as its next
     contact statement, unordered. The diagonal / near-diagonal band is
     meaningless here; callers mask it.
+
+    Args:
+        backend: Model backend providing token probabilities and tokenizer.
+        prefix: Serialized sequence ending where contact statements begin.
+        seq_positions: Position-token indices in sequence order.
+
+    Returns:
+        Symmetric ``[L, L]`` contact probabilities in sequence coordinates.
     """
-    return _pcontact_from_fwd(_fwd_matrix(backend, prefix, seq_positions))
+    return pcontact_from_fwd(fwd_matrix(backend, prefix, seq_positions))
 
 
 # --------------------------------------------------------------------------
@@ -324,15 +360,23 @@ def _pcontact_matrix(
 # --------------------------------------------------------------------------
 
 
-def _pairwise_score_matrix(
+def pairwise_score_matrix(
     backend: Backend, structure: ContactStructure, cfg: "InferenceConfig"
 ) -> tuple[np.ndarray, int] | None:
     """Mean ``P(contact)`` over ``cfg.ensemble_k`` sequence-definition resamples.
 
     Each draw uses a different deterministic ``entry_id`` salt, so the
     contacts-v1 start index + statement order differ; the resulting matrices
-    are all in sequence coordinates, so averaging is element-wise. Returns
-    ``(score, L)`` or ``None`` if the structure can't be serialized.
+    are all in sequence coordinates, so averaging is element-wise.
+
+    Args:
+        backend: Model backend providing token probabilities and tokenizer.
+        structure: Residues and entry ID defining the input protein.
+        cfg: Inference settings; ``ensemble_k`` must be at least one.
+
+    Returns:
+        ``(score, L)`` containing a symmetric ``[L, L]`` mean probability
+        matrix and residue count, or None if serialization fails.
     """
     acc: np.ndarray | None = None
     seq_len = 0
@@ -342,11 +386,11 @@ def _pairwise_score_matrix(
             if cfg.ensemble_k == 1
             else f"{structure.entry_id}#cv1ens{k}"
         )
-        built = _prefix_and_positions(structure, entry_id=entry_id)
+        built = prefix_and_positions(structure, entry_id=entry_id)
         if built is None:
             return None
         prefix, seq_positions, seq_len = built
-        matrix = _pcontact_from_fwd(_fwd_matrix(backend, prefix, seq_positions))
+        matrix = pcontact_from_fwd(fwd_matrix(backend, prefix, seq_positions))
         acc = matrix if acc is None else acc + matrix
     assert acc is not None  # ensemble_k >= 1
     return acc / cfg.ensemble_k, seq_len
@@ -391,13 +435,12 @@ def _rollout_score_matrix(
     ``NotImplementedError`` from :meth:`Backend.sample_completions`.
     """
     tokenizer = backend.tokenizer
-    stop_id = _token_id(tokenizer, END_TOKEN)
 
     prefixes: list[list[int]] = []
     position_maps: list[dict[int, int]] = []
     seq_len = 0
     for r in range(cfg.n_rollouts):
-        built = _prefix_and_positions(structure, entry_id=f"{structure.entry_id}:r{r}")
+        built = prefix_and_positions(structure, entry_id=f"{structure.entry_id}:r{r}")
         if built is None:
             return None
         prefix, seq_positions, seq_len = built
@@ -406,24 +449,33 @@ def _rollout_score_matrix(
 
     max_new = min(
         CONTEXT_LENGTH - len(prefixes[0]),
-        _ROLLOUT_TOKENS_PER_RESIDUE * seq_len + _ROLLOUT_TOKENS_CONSTANT,
+        max(
+            _ROLLOUT_TOKENS_PER_RESIDUE * seq_len + _ROLLOUT_TOKENS_CONSTANT,
+            3 * (cfg.min_new_contacts or 0) + 1,
+        ),
     )
-    completions = backend.sample_completions(
+    completions = sample_contacts(
+        backend,
         prefixes,
         max_new_tokens=max_new,
+        min_new_contacts=cfg.min_new_contacts,
         temperature=cfg.temperature,
         top_p=cfg.top_p,
         top_k=cfg.top_k,
-        stop_token_id=stop_id,
         batch_size=_adaptive_sample_batch(seq_len, cfg.batch_size),
     )
 
     votes = np.zeros((seq_len, seq_len), dtype=np.float64)
     for token_ids, pos_to_seq in zip(completions, position_maps, strict=True):
         text = tokenizer.decode(token_ids, skip_special_tokens=False)
+        # Vote only the contacts still LIVE at the end of the rollout: a
+        # <retract> takes its pair back out (read.py folds the edit list).
+        # Today's models never emit <retract>, so this is exactly the set of
+        # emitted pairs — byte-identical to the old scan — and is ready for
+        # retraction-trained models (issue #158).
         seen: set[tuple[int, int]] = set()
-        for a, b in _CONTACT_RE.findall(text):
-            ia, ib = pos_to_seq.get(int(a)), pos_to_seq.get(int(b))
+        for a, b in live_contacts(text):
+            ia, ib = pos_to_seq.get(a), pos_to_seq.get(b)
             if ia is None or ib is None or ia == ib:
                 continue
             lo, hi = (ia, ib) if ia < ib else (ib, ia)
@@ -433,10 +485,10 @@ def _rollout_score_matrix(
                 votes[hi, lo] += 1.0
 
     # Pairwise log-prob (one canonical realization) breaks the vote ties.
-    built = _prefix_and_positions(structure, entry_id=structure.entry_id)
+    built = prefix_and_positions(structure, entry_id=structure.entry_id)
     assert built is not None  # the rollout realizations already serialized
     prefix, seq_positions, _ = built
-    pairwise_sym = _sym_from_fwd(_fwd_matrix(backend, prefix, seq_positions))
+    pairwise_sym = _sym_from_fwd(fwd_matrix(backend, prefix, seq_positions))
     return _tiebreak(votes, pairwise_sym), seq_len
 
 
@@ -451,7 +503,7 @@ def _score_matrix(
     if cfg.method == "rollout":
         return _rollout_score_matrix(backend, structure, cfg)
     if cfg.method == "pairwise":
-        return _pairwise_score_matrix(backend, structure, cfg)
+        return pairwise_score_matrix(backend, structure, cfg)
     raise ValueError(
         f"Unknown method {cfg.method!r}. Expected 'pairwise' or 'rollout'."
     )
@@ -467,7 +519,19 @@ def _candidate_pairs(seq_len: int, min_seq_separation: int) -> list[tuple[int, i
 
 
 def _make_backend(cfg: InferenceConfig) -> Backend:
-    """Construct the requested backend, passing through backend-specific kwargs."""
+    """Construct the requested backend, passing through backend-specific kwargs.
+
+    Rejects ``--method rollout --backend mlx`` here rather than letting
+    :meth:`Backend.sample_completions` raise it: the checkpoint is several
+    GB, and the download + load happen before the first rollout is drawn.
+    """
+    if cfg.method == "rollout" and cfg.backend == "mlx":
+        raise ValueError(
+            "method='rollout' is not supported by the MLX backend "
+            "(Backend.sample_completions is unimplemented there). Use "
+            "backend='vllm' or backend='transformers' for rollouts, or "
+            "method='pairwise' on MLX."
+        )
     if cfg.backend == "vllm":
         return load_backend(
             "vllm",
@@ -530,6 +594,31 @@ def _structures_for_predict(
             )
         )
     return out
+
+
+def _has_evaluate_inputs(input_path: Path) -> bool:
+    """Whether ``input_path`` holds anything :func:`iter_analyzed_structures`
+    would read — decided cheaply, without parsing or running pyconfind.
+
+    :func:`evaluate` builds the backend before it computes ground truth (see
+    the note there), so both no-work cases have to be settled here or they
+    cost a multi-GB download and a model load first: a path that does not
+    exist, and a path that exists but holds nothing readable (an empty
+    directory, or one with no supported files).
+
+    Mirrors :func:`iter_analyzed_structures`'s own precedence — parquet
+    shards win over loose structure files — so this accepts exactly what the
+    analysis accepts. Checking :func:`iter_structure_paths` alone would
+    reject a valid parquet directory, since ``.parquet`` is not in
+    ``_STRUCTURE_EXTS``.
+
+    Raises:
+        FileNotFoundError: ``input_path`` is neither a file nor a directory.
+    """
+    path = Path(input_path)
+    if _parquet_paths(path):
+        return True
+    return next(iter_structure_paths(path), None) is not None
 
 
 def _structures_for_evaluate(
@@ -607,6 +696,8 @@ def predict(
         record["n_rollouts" if cfg.method == "rollout" else "ensemble_k"] = (
             cfg.n_rollouts if cfg.method == "rollout" else cfg.ensemble_k
         )
+        if cfg.min_new_contacts is not None:
+            record["min_new_contacts"] = cfg.min_new_contacts
         if cfg.keep_matrix:
             record["score_matrix"] = _band_masked(
                 score, seq_len, cfg.min_seq_separation
@@ -619,10 +710,20 @@ def predict(
 # --------------------------------------------------------------------------
 
 
-def _gt_contact_matrix(
+def gt_contact_matrix(
     gt_contacts: Iterable[RawContact], seq_len: int, min_seq_separation: int
 ) -> np.ndarray:
-    """Boolean ``[L, L]`` GT matrix: degree >= floor and separation in range."""
+    """Build a symmetric ground-truth matrix with contact degree at least 0.001.
+
+    Args:
+        gt_contacts: Contacts with zero-based ``seq_i < seq_j`` and degree.
+        seq_len: Number of residues defining the matrix dimensions.
+        min_seq_separation: Minimum inclusive sequence-index separation.
+
+    Returns:
+        Boolean ``[seq_len, seq_len]`` matrix. Out-of-range, reversed,
+        low-degree and insufficiently separated contacts are excluded.
+    """
     matrix = np.zeros((seq_len, seq_len), dtype=bool)
     for contact in gt_contacts:
         i, j = contact.seq_i, contact.seq_j
@@ -660,7 +761,7 @@ def _rank_auc(scores: np.ndarray, labels: np.ndarray) -> float:
     return float((rank_sum_pos - n_pos * (n_pos + 1) / 2.0) / (n_pos * n_neg))
 
 
-def _metric_rows(
+def metric_rows(
     pcontact: np.ndarray, gt: np.ndarray, seq_len: int, min_seq_separation: int
 ) -> dict[str, dict[str, float]]:
     """Per-range precision @ {L, L/2, L/5, R} + AUC for one structure.
@@ -668,6 +769,18 @@ def _metric_rows(
     Mirrors exp89's ``compute_metrics.metric_rows``: candidate pairs are
     every i < j with separation in the range; ``R`` is the number of true
     contacts in the range; precision is over the top-K ranked candidates.
+
+    Args:
+        pcontact: ``[seq_len, seq_len]`` prediction scores, larger being better.
+        gt: Boolean ground-truth matrix in the same sequence coordinates.
+        seq_len: Number of residues.
+        min_seq_separation: Minimum inclusive separation for candidate pairs.
+
+    Returns:
+        Range names (``short``, ``medium``, ``long``, ``all``) mapping to
+        ``auc``, ``precision_at_L``, ``precision_at_L2``, ``precision_at_L5``
+        and ``r_precision``. Undefined metrics are NaN; if no candidate pairs
+        exist, each range maps to an empty dict.
     """
     rows = np.array([i for (i, j) in _candidate_pairs(seq_len, min_seq_separation)])
     cols = np.array([j for (i, j) in _candidate_pairs(seq_len, min_seq_separation)])
@@ -724,14 +837,39 @@ def evaluate(
     may be passed directly (carrying ``gt_contacts``); otherwise they are
     analyzed from ``cfg.input_path`` (needs the ``contacts-v1`` extra).
     """
-    resolved = _structures_for_evaluate(cfg, structures)
-    if not resolved:
+    def _nothing_to_do() -> EvalResult:
         return EvalResult(
             metrics={},
             per_example=[],
             extras={"structure": NAME, "warning": "no input structures", "model": cfg.model},
         )
-    backend = _make_backend(cfg)
+
+    if structures is not None:
+        # Caller-supplied: reading the list is free, so keep the early exit
+        # ahead of the model load. (Such a caller has already run whatever
+        # produced `gt_contacts`; if that was pyconfind and the backend is
+        # vLLM, see the fork note in marinfold/inference/_vllm.py.)
+        resolved = list(structures)
+        if not resolved:
+            return _nothing_to_do()
+        backend = _make_backend(cfg)
+    else:
+        # Backend FIRST, ground truth second — load-bearing, not cosmetic.
+        # vLLM starts its EngineCore with fork, and forking a parent that has
+        # already run pyconfind deadlocks the child inside `_init_executor`:
+        # silently, engine at ~500 MiB, GPU at 0%, forever. Measured on
+        # 8xA100 / driver 580.105, same process otherwise: backend-then-GT
+        # completes in 17.3 s, GT-then-backend never returns. `predict`
+        # touches no pyconfind, which is why only this path was hit.
+        if cfg.input_path is None:
+            raise ValueError("evaluate requires cfg.input_path or structures=")
+        if not _has_evaluate_inputs(cfg.input_path):
+            return _nothing_to_do()
+        backend = _make_backend(cfg)
+        # Files can still all fail to parse, which only the analysis knows.
+        resolved = _structures_for_evaluate(cfg, None)
+        if not resolved:
+            return _nothing_to_do()
 
     agg: dict[str, list[float]] = defaultdict(list)
     per_example: list[dict] = []
@@ -754,10 +892,10 @@ def evaluate(
             )
             continue
         score, seq_len = built
-        gt = _gt_contact_matrix(structure.gt_contacts, seq_len, cfg.min_seq_separation)
+        gt = gt_contact_matrix(structure.gt_contacts, seq_len, cfg.min_seq_separation)
         per_structure_n_residues[structure.entry_id] = seq_len
 
-        rows = _metric_rows(score, gt, seq_len, cfg.min_seq_separation)
+        rows = metric_rows(score, gt, seq_len, cfg.min_seq_separation)
         for rng, rng_metrics in rows.items():
             for key, value in rng_metrics.items():
                 if math.isfinite(value):
@@ -787,6 +925,8 @@ def evaluate(
             "n_rollouts": cfg.n_rollouts,
             "n_structures": n_scored,
             "per_structure_n_residues": per_structure_n_residues,
+            **({"min_new_contacts": cfg.min_new_contacts}
+               if cfg.min_new_contacts is not None else {}),
         },
     )
 

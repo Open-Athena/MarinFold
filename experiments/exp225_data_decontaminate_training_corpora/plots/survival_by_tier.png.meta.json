@@ -1,0 +1,5 @@
+{
+  "script": "plot_decontam.py",
+  "args": [],
+  "caption": "Share of each published train corpus removed at each tier. ESM-Atlas has no structural database, so its Tier B/C cells are unmeasured rather than zero \u2014 building one is the job this table gates."
+}

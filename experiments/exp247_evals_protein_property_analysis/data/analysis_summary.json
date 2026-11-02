@@ -1,0 +1,318 @@
+{
+  "n_proteins": 314,
+  "n_features": 60,
+  "cv_r2": {
+    "gbm": {
+      "#199 cooldown (contaminated)": 0.477,
+      "#232 m1-p02 (decontaminated)": 0.335,
+      "#232 m2-p06 (decontaminated)": 0.341,
+      "ESMFold": 0.24,
+      "ESMFold2": 0.124,
+      "Protenix-v2 + MSA": -0.345,
+      "Protenix-v2 single-seq": 0.228,
+      "seq-KNN (decontaminated corpus)": 0.569,
+      "seq-KNN (unfiltered corpus)": 0.859
+    },
+    "ridge": {
+      "#199 cooldown (contaminated)": 0.488,
+      "#232 m1-p02 (decontaminated)": 0.326,
+      "#232 m2-p06 (decontaminated)": 0.314,
+      "ESMFold": 0.292,
+      "ESMFold2": 0.24,
+      "Protenix-v2 + MSA": -0.152,
+      "Protenix-v2 single-seq": 0.051,
+      "seq-KNN (decontaminated corpus)": 0.463,
+      "seq-KNN (unfiltered corpus)": 0.634
+    }
+  },
+  "top_associations": {
+    "#199 cooldown (contaminated)": [
+      {
+        "feature": "msa_log_depth",
+        "rho": 0.665,
+        "q": 0.0
+      },
+      {
+        "feature": "msa_depth",
+        "rho": 0.665,
+        "q": 0.0
+      },
+      {
+        "feature": "knn_n_hits",
+        "rho": 0.639,
+        "q": 0.0
+      },
+      {
+        "feature": "train_n_hits_significant",
+        "rho": 0.574,
+        "q": 0.0
+      },
+      {
+        "feature": "train_log_n_hits",
+        "rho": 0.574,
+        "q": 0.0
+      },
+      {
+        "feature": "n_surviving_alignments",
+        "rho": 0.557,
+        "q": 0.0
+      }
+    ],
+    "#232 m1-p02 (decontaminated)": [
+      {
+        "feature": "n_surviving_alignments",
+        "rho": 0.569,
+        "q": 0.0
+      },
+      {
+        "feature": "knn_n_hits",
+        "rho": 0.5,
+        "q": 0.0
+      },
+      {
+        "feature": "msa_log_depth",
+        "rho": 0.491,
+        "q": 0.0
+      },
+      {
+        "feature": "msa_depth",
+        "rho": 0.491,
+        "q": 0.0
+      },
+      {
+        "feature": "train_log_n_hits",
+        "rho": 0.472,
+        "q": 0.0
+      },
+      {
+        "feature": "train_n_hits_significant",
+        "rho": 0.472,
+        "q": 0.0
+      }
+    ],
+    "#232 m2-p06 (decontaminated)": [
+      {
+        "feature": "n_surviving_alignments",
+        "rho": 0.559,
+        "q": 0.0
+      },
+      {
+        "feature": "train_esm_n_hits",
+        "rho": 0.512,
+        "q": 0.0
+      },
+      {
+        "feature": "train_log_n_hits",
+        "rho": 0.504,
+        "q": 0.0
+      },
+      {
+        "feature": "train_n_hits_significant",
+        "rho": 0.504,
+        "q": 0.0
+      },
+      {
+        "feature": "msa_log_depth",
+        "rho": 0.495,
+        "q": 0.0
+      },
+      {
+        "feature": "msa_depth",
+        "rho": 0.495,
+        "q": 0.0
+      }
+    ],
+    "ESMFold": [
+      {
+        "feature": "msa_log_depth",
+        "rho": 0.464,
+        "q": 0.0
+      },
+      {
+        "feature": "msa_depth",
+        "rho": 0.464,
+        "q": 0.0
+      },
+      {
+        "feature": "train_log_n_hits",
+        "rho": 0.416,
+        "q": 0.0
+      },
+      {
+        "feature": "train_n_hits_significant",
+        "rho": 0.416,
+        "q": 0.0
+      },
+      {
+        "feature": "train_esm_n_hits",
+        "rho": 0.414,
+        "q": 0.0
+      },
+      {
+        "feature": "knn_n_hits",
+        "rho": 0.391,
+        "q": 0.0
+      }
+    ],
+    "ESMFold2": [
+      {
+        "feature": "train_esm_n_hits",
+        "rho": 0.424,
+        "q": 0.0
+      },
+      {
+        "feature": "train_n_hits_significant",
+        "rho": 0.421,
+        "q": 0.0
+      },
+      {
+        "feature": "train_log_n_hits",
+        "rho": 0.421,
+        "q": 0.0
+      },
+      {
+        "feature": "msa_depth",
+        "rho": 0.412,
+        "q": 0.0
+      },
+      {
+        "feature": "msa_log_depth",
+        "rho": 0.412,
+        "q": 0.0
+      },
+      {
+        "feature": "knn_n_hits",
+        "rho": 0.378,
+        "q": 0.0
+      }
+    ],
+    "Protenix-v2 + MSA": [
+      {
+        "feature": "train_log_n_hits",
+        "rho": 0.318,
+        "q": 0.0
+      },
+      {
+        "feature": "train_n_hits_significant",
+        "rho": 0.318,
+        "q": 0.0
+      },
+      {
+        "feature": "train_afdb_n_hits",
+        "rho": 0.312,
+        "q": 0.0
+      },
+      {
+        "feature": "train_esm_n_hits",
+        "rho": 0.31,
+        "q": 0.0
+      },
+      {
+        "feature": "knn_n_hits",
+        "rho": 0.304,
+        "q": 0.0
+      },
+      {
+        "feature": "msa_depth",
+        "rho": 0.302,
+        "q": 0.0
+      }
+    ],
+    "Protenix-v2 single-seq": [
+      {
+        "feature": "mean_contact_order",
+        "rho": -0.285,
+        "q": 0.0
+      },
+      {
+        "feature": "n_long_contacts",
+        "rho": -0.234,
+        "q": 0.0
+      },
+      {
+        "feature": "n_contacts",
+        "rho": -0.234,
+        "q": 0.0
+      },
+      {
+        "feature": "long_contacts_per_residue",
+        "rho": -0.231,
+        "q": 0.0
+      },
+      {
+        "feature": "n_sse",
+        "rho": -0.226,
+        "q": 0.0
+      },
+      {
+        "feature": "rg_over_length",
+        "rho": 0.215,
+        "q": 0.001
+      }
+    ],
+    "seq-KNN (decontaminated corpus)": [
+      {
+        "feature": "train_afdb_n_hits",
+        "rho": 0.636,
+        "q": 0.0
+      },
+      {
+        "feature": "knn_n_hits",
+        "rho": 0.607,
+        "q": 0.0
+      },
+      {
+        "feature": "msa_log_depth",
+        "rho": 0.597,
+        "q": 0.0
+      },
+      {
+        "feature": "msa_depth",
+        "rho": 0.597,
+        "q": 0.0
+      },
+      {
+        "feature": "train_log_n_hits",
+        "rho": 0.588,
+        "q": 0.0
+      },
+      {
+        "feature": "train_n_hits_significant",
+        "rho": 0.588,
+        "q": 0.0
+      }
+    ],
+    "seq-KNN (unfiltered corpus)": [
+      {
+        "feature": "exp199_afdb_best_identity",
+        "rho": 0.721,
+        "q": 0.0
+      },
+      {
+        "feature": "knn_best_identity",
+        "rho": 0.712,
+        "q": 0.0
+      },
+      {
+        "feature": "knn_best_bits",
+        "rho": 0.583,
+        "q": 0.0
+      },
+      {
+        "feature": "knn_best_qcov",
+        "rho": 0.557,
+        "q": 0.0
+      },
+      {
+        "feature": "train_afdb_n_hits",
+        "rho": 0.435,
+        "q": 0.0
+      },
+      {
+        "feature": "msa_depth",
+        "rho": 0.372,
+        "q": 0.0
+      }
+    ]
+  }
+}

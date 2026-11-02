@@ -1,0 +1,13 @@
+{
+  "anonymous_download_verified": true,
+  "archive_sha256": "827d8b4ed738d8194490e091540c20089423c3bf2ac215ca067eba5d80996589",
+  "n_verified_archive_files": 468,
+  "analysis_outputs_byte_identical": {
+    "conditioning_conclusion.json": "bf16491b15989cd72bf6e7d4c8bd8bdf7ff4e71e868e0eb9df63d93186b08a1d",
+    "conditioning_per_repeat.csv": "cfd705495f6acbce6be438e37c9c7b38565be5c23eb88dfe9421fa7107e08a28",
+    "conditioning_per_protein.csv": "dd3fe6551d32c4a8fb995ec2c268c6b71895b3e92d87904ea76fa799d0753bd6",
+    "conditioning_summary.csv": "395a12394e89527cda471f497bf3b958cc701d0b12b9629a903bcd96b3b743a4",
+    "conditioning_changes.csv": "ac8346c0788b1bc3e27b7af4ccc89313be6a940a8ca8dce565cda5aeda86555c"
+  },
+  "analysis_script_sha256": "71e4b68b9961b56e04a45cddac78c1ef1f0a777bdd87db2d67cf316a1740c36f"
+}

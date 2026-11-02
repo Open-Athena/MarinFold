@@ -1,0 +1,123 @@
+{
+  "observed_at": "2026-10-22T14:40:58.739787+00:00",
+  "trajectories": 1920,
+  "policy_groups": 480,
+  "active_jobs": 0,
+  "queued_jobs": 0,
+  "final_jobs": [
+    {
+      "job": "exp368-native-guided-v1-001",
+      "uid": "ac49cce2-87ce-4ced-8b6f-a1b938a1605d",
+      "status": {
+        "completionTime": "2026-10-21T23:06:41Z",
+        "conditions": [
+          {
+            "lastProbeTime": "2026-10-21T21:36:14Z",
+            "lastTransitionTime": "2026-10-21T21:36:14Z",
+            "message": "Job resumed",
+            "reason": "JobResumed",
+            "status": "False",
+            "type": "Suspended"
+          },
+          {
+            "lastProbeTime": "2026-10-21T23:06:41Z",
+            "lastTransitionTime": "2026-10-21T23:06:41Z",
+            "message": "Reached expected number of succeeded pods",
+            "reason": "CompletionsReached",
+            "status": "True",
+            "type": "SuccessCriteriaMet"
+          },
+          {
+            "lastProbeTime": "2026-10-21T23:06:41Z",
+            "lastTransitionTime": "2026-10-21T23:06:41Z",
+            "message": "Reached expected number of succeeded pods",
+            "reason": "CompletionsReached",
+            "status": "True",
+            "type": "Complete"
+          }
+        ],
+        "ready": 0,
+        "startTime": "2026-10-21T21:36:14Z",
+        "succeeded": 1,
+        "terminating": 0,
+        "uncountedTerminatedPods": {}
+      }
+    },
+    {
+      "job": "exp368-native-guided-v1-002",
+      "uid": "83159375-50e0-4363-9723-90de1e0e69cb",
+      "status": {
+        "completionTime": "2026-10-22T01:38:31Z",
+        "conditions": [
+          {
+            "lastProbeTime": "2026-10-22T00:01:01Z",
+            "lastTransitionTime": "2026-10-22T00:01:01Z",
+            "message": "Job resumed",
+            "reason": "JobResumed",
+            "status": "False",
+            "type": "Suspended"
+          },
+          {
+            "lastProbeTime": "2026-10-22T01:38:31Z",
+            "lastTransitionTime": "2026-10-22T01:38:31Z",
+            "message": "Reached expected number of succeeded pods",
+            "reason": "CompletionsReached",
+            "status": "True",
+            "type": "SuccessCriteriaMet"
+          },
+          {
+            "lastProbeTime": "2026-10-22T01:38:31Z",
+            "lastTransitionTime": "2026-10-22T01:38:31Z",
+            "message": "Reached expected number of succeeded pods",
+            "reason": "CompletionsReached",
+            "status": "True",
+            "type": "Complete"
+          }
+        ],
+        "ready": 0,
+        "startTime": "2026-10-22T00:01:01Z",
+        "succeeded": 1,
+        "terminating": 0,
+        "uncountedTerminatedPods": {}
+      }
+    },
+    {
+      "job": "exp368-native-guided-v1-003",
+      "uid": "aa3739b3-e0ac-463a-8784-9c15bb6085b1",
+      "status": {
+        "completionTime": "2026-10-22T01:49:17Z",
+        "conditions": [
+          {
+            "lastProbeTime": "2026-10-22T00:01:01Z",
+            "lastTransitionTime": "2026-10-22T00:01:01Z",
+            "message": "Job resumed",
+            "reason": "JobResumed",
+            "status": "False",
+            "type": "Suspended"
+          },
+          {
+            "lastProbeTime": "2026-10-22T01:49:17Z",
+            "lastTransitionTime": "2026-10-22T01:49:17Z",
+            "message": "Reached expected number of succeeded pods",
+            "reason": "CompletionsReached",
+            "status": "True",
+            "type": "SuccessCriteriaMet"
+          },
+          {
+            "lastProbeTime": "2026-10-22T01:49:17Z",
+            "lastTransitionTime": "2026-10-22T01:49:17Z",
+            "message": "Reached expected number of succeeded pods",
+            "reason": "CompletionsReached",
+            "status": "True",
+            "type": "Complete"
+          }
+        ],
+        "ready": 0,
+        "startTime": "2026-10-22T00:01:01Z",
+        "succeeded": 1,
+        "terminating": 0,
+        "uncountedTerminatedPods": {}
+      }
+    }
+  ]
+}

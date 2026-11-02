@@ -1,0 +1,3 @@
+tier,tm_field,tm_threshold,n_clusters_hit,n_clusters_present_in_corpus,n_documents_purged,median_cluster_size,max_cluster_size
+B,best_qtm,0.9,10284,8034,37242,5.0,5
+C,best_qtm,0.5,487969,337726,1518281,5.0,5

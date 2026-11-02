@@ -1,0 +1,136 @@
+{
+  "artifacts": {
+    "candidate_vs_control_rprecision.png": {
+      "bytes": 86472,
+      "sha256": "bcd4f85ba77fe6d98908d03146c57d24a34277f93390a851f89ba35e769ec5ba"
+    },
+    "candidate_vs_control_rprecision.png.meta.json": {
+      "bytes": 526,
+      "sha256": "8c490e12fcb5c6b4bd5f8b0a4dbe21eabd0620e2a0b1ac80cde6c8ecf59a65b3"
+    },
+    "exp166_paired.csv": {
+      "bytes": 3581,
+      "sha256": "0e80c020ac0e1318897c1b81ef31686f1f6ecaae1a57766425582dda4eb82881"
+    },
+    "exp166_rows.csv.gz": {
+      "bytes": 291933,
+      "sha256": "51789f4eba28c6d5a0ced1d269d7b7b80b6b1649aed7cb02121e2c83d5f75095"
+    },
+    "exp166_summary.csv": {
+      "bytes": 2443,
+      "sha256": "468aca93a47c1179f2ef39dd99e7326a70de56006db9375bc5028c3cf8baea30"
+    },
+    "exp166_timings.csv.gz": {
+      "bytes": 54540,
+      "sha256": "8e03ac4470f0b6cb5b3f03d2160aa1328b89648dead58ac56086b495b3e9e2e2"
+    },
+    "historical_exp146_rprecision.csv.gz": {
+      "bytes": 6269,
+      "sha256": "daf8b31cddae3898bee11b6c7214daa83e29630626718f886654689c97b6e1f0"
+    },
+    "score-matrices-exp117_control_step35679.tar": {
+      "bytes": 5099520,
+      "sha256": "1be5d2d2cabe37dfc309a5605302ea2190428bbba8321e948255fedcdd0f85e4"
+    },
+    "score-matrices-exp166_aaaug_step35679.tar": {
+      "bytes": 4741120,
+      "sha256": "3e4bd32b00a21f1e72346dfb59758992cee1e12a3102cd5c81af50085547097e"
+    },
+    "where_we_stand_rprecision.png": {
+      "bytes": 228869,
+      "sha256": "1db4a78df911984f1beb19611c55f70e9626ca945f01c7ad9ab82e7ba5481dc2"
+    },
+    "where_we_stand_rprecision.png.meta.json": {
+      "bytes": 4666,
+      "sha256": "56676253ffff0818152784ed07e5b2195d065b9cc1880904d18608d900f0d24d"
+    }
+  },
+  "control_check_passed": true,
+  "control_observed_r_precision": 0.5335961341539802,
+  "control_reference_r_precision": 0.5344,
+  "control_tolerance": 0.006,
+  "runs": [
+    {
+      "manifest": {
+        "checkpoint": {
+          "key": "exp117-control",
+          "output_name": "exp117-control-step-35679",
+          "repo_id": "open-athena/marinfold-exp117",
+          "subfolder": "prot-exp117-cv1-s02-1_5b-e16-lr3p162e-3-wd0p2-bs256-europe-west4/hf/step-35679"
+        },
+        "ground_truth_sha256": "3ff6eb4e383582595ad6f9811c77e2839ebcc0030a050b9c1f15d020163331c9",
+        "ground_truth_url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-model-eval-exp169/gt_universe.jsonl",
+        "marinfold_revision": "0dcb7f56b1ea03ebd38e2337d69c1fff5203b426",
+        "max_num_seqs": 128,
+        "max_tokens": "min(8192-prompt_tokens, 6*L+128)",
+        "min_sequence_separation": 6,
+        "n_rollouts": 100,
+        "n_targets": 554,
+        "schema_version": 1,
+        "targets_sha256": "9de9bc1b99b7e7ab6d2b17a985f9e22bc7decd2b25e1b16be30dea921431c111",
+        "targets_url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-model-eval-exp169/eval_targets.parquet",
+        "temperature": 1.0,
+        "tensor_parallel_size": 4,
+        "top_k": -1,
+        "top_p": 0.95,
+        "versions": {
+          "marinfold": "0.1.0",
+          "torch": "2.11.0+cpu",
+          "tpu-inference": "0.23.0",
+          "transformers": "5.12.1",
+          "vllm": "1+tpu"
+        }
+      },
+      "matrix_archive": "score-matrices-exp117_control_step35679.tar",
+      "matrix_archive_bytes": 5099520,
+      "matrix_archive_sha256": "1be5d2d2cabe37dfc309a5605302ea2190428bbba8321e948255fedcdd0f85e4",
+      "model": "exp117_control_step35679",
+      "n_rollouts": 55400,
+      "n_stopped_rollouts": 55400,
+      "n_timing_rows": 554,
+      "n_vote_rows": 1900486,
+      "output_prefix": "buckets/open-athena/MarinFold/data/contacts-v1-model-eval-exp166/scores/exp117-control-step-35679"
+    },
+    {
+      "manifest": {
+        "checkpoint": {
+          "key": "exp166",
+          "output_name": "exp166-aaaug-step-35679",
+          "repo_id": "open-athena/marinfold-exp166",
+          "subfolder": "prot-exp166-cv1-aaaug-1_5b-e8-lr3p162e-3-wd0p1-bs128-exp117-init-us-east1/hf/step-35679"
+        },
+        "ground_truth_sha256": "3ff6eb4e383582595ad6f9811c77e2839ebcc0030a050b9c1f15d020163331c9",
+        "ground_truth_url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-model-eval-exp169/gt_universe.jsonl",
+        "marinfold_revision": "0dcb7f56b1ea03ebd38e2337d69c1fff5203b426",
+        "max_num_seqs": 128,
+        "max_tokens": "min(8192-prompt_tokens, 6*L+128)",
+        "min_sequence_separation": 6,
+        "n_rollouts": 100,
+        "n_targets": 554,
+        "schema_version": 1,
+        "targets_sha256": "9de9bc1b99b7e7ab6d2b17a985f9e22bc7decd2b25e1b16be30dea921431c111",
+        "targets_url": "https://huggingface.co/buckets/open-athena/MarinFold/resolve/data/contacts-v1-model-eval-exp169/eval_targets.parquet",
+        "temperature": 1.0,
+        "tensor_parallel_size": 4,
+        "top_k": -1,
+        "top_p": 0.95,
+        "versions": {
+          "marinfold": "0.1.0",
+          "torch": "2.11.0+cpu",
+          "tpu-inference": "0.23.0",
+          "transformers": "5.12.1",
+          "vllm": "1+tpu"
+        }
+      },
+      "matrix_archive": "score-matrices-exp166_aaaug_step35679.tar",
+      "matrix_archive_bytes": 4741120,
+      "matrix_archive_sha256": "3e4bd32b00a21f1e72346dfb59758992cee1e12a3102cd5c81af50085547097e",
+      "model": "exp166_aaaug_step35679",
+      "n_rollouts": 55400,
+      "n_stopped_rollouts": 55373,
+      "n_timing_rows": 554,
+      "n_vote_rows": 1684030,
+      "output_prefix": "buckets/open-athena/MarinFold/data/contacts-v1-model-eval-exp166/scores/exp166-aaaug-step-35679"
+    }
+  ]
+}

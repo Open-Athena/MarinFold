@@ -1,0 +1,32 @@
+{
+  "frozen_at_utc": "2026-09-23T02:09:13Z",
+  "reason": "The user changed the primary objective from consensus/coverage to oracle best-of-100 accuracy after the original full arms were launched.",
+  "primary_metric": "Mean across proteins of validity_gated_oracle_r_precision at N=100, reported separately for all-range and long-range contacts.",
+  "validity_policy": "A rollout is assigned zero accuracy if it is unfinished or contains any malformed contact statement. All other rollouts are scored by emission-order precision at exp89's R cutoff; duplicate contacts occupy only their first rank.",
+  "existing_full_arms": [
+    "full_g05_pa_all",
+    "full_g0_pa_pos",
+    "full_iid_single",
+    "full_t08_single"
+  ],
+  "new_full_arms": [
+    {
+      "mode": "full_ratio_pa_pos",
+      "purpose": "Direct test of the user's pure native/null likelihood-ratio proposal.",
+      "rollouts": 100
+    },
+    {
+      "mode": "full_t11_single",
+      "purpose": "Ordinary high-temperature diversity control, including up to 200 rollouts for equal-time comparisons.",
+      "rollouts": 200
+    }
+  ],
+  "development_observation_at_n20": {
+    "dev_g0_pa_pos_all": 0.448991,
+    "dev_g05_pa_all_all": 0.473279,
+    "dev_g2_pa_pos_all": 0.474166,
+    "dev_ratio_pa_pos_all": 0.392256,
+    "dev_t11_pa_pos_all": 0.429474
+  },
+  "selection_note": "The frozen gamma=0.5 all-token arm was retained because it was already running on the untouched split and was essentially tied with gamma=2 on dev oracle accuracy. The pure-ratio and T=1.1 arms are confirmatory controls, not a post-hoc replacement of the frozen arm."
+}

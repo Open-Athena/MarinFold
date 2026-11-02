@@ -1,0 +1,14 @@
+{
+  "arm": "esm_atlas",
+  "prefix": "data/document_structures/contacts_v1_esm_atlas_decontam/train",
+  "reference_version": "v1",
+  "shards_expected": 3338,
+  "shards_missing": [],
+  "rows_expected": 65553178,
+  "rows_found": 65553178,
+  "rows_match": true,
+  "contaminated_rows_surviving": 0,
+  "contaminated_examples": [],
+  "entry_id_unique": true,
+  "documents_removed": 1206744
+}

@@ -2,3 +2,8 @@ description,r_precision_all,source
 "#61/#75 E8, K=10 document-resampling ensemble of pairwise",0.375595,exp89 data/marinfold_precision.csv (marinfold-cv1-ens10)
 "#61/#75 E8, rollout with the old top_k=50 (pre-#142)",0.4130525,exp82 data/where_we_stand_summary.csv (marinfold-cv1-exp75-rollout-topk50)
 "#117 E16 final, rollout with the old top_k=50 (pre-#142)",0.5279264,exp82 data/where_we_stand_summary.csv (marinfold-cv1-exp117-rollout-topk50)
+"#117 E16 final, fresh rollout replicate r1 (#204)",0.5347972614575084,exp199 data/contact_eval_pr_comparison_summary.csv (control-r1)
+"#117 E16 final, fresh rollout replicate r2 (#204)",0.535215598085612,"exp199 data/contact_eval_pr_comparison_summary.csv (control-r2, rerun02-20260809)"
+"#117 E16 final, fresh rollout replicate r3 (#204)",0.5328883690891095,"exp199 data/contact_eval_pr_comparison_summary.csv (control-r3, finals03-20260810)"
+"#199 CW p06-aug step-145199, #204's pipeline (superseded)",0.5873483777949621,exp199 data/contact_eval_final_checkpoint_summary.csv (finals03-20260810); issue #204
+"#199 CW p06-aug step-145199, exp82's own worker (#208)",0.6103,exp208 RPRECISION_PIPELINE_DISCREPANCY.md; score_rollout_worker.py on H100 + v5p

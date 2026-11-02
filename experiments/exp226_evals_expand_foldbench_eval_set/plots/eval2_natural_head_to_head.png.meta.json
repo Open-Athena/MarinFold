@@ -1,0 +1,5 @@
+{
+  "script": "plot_survival.py",
+  "args": [],
+  "caption": "Each point is one natural eval2 protein. The tie is a cancellation, not a per-protein match: they agree only weakly (r=0.40) and the mean absolute difference is 0.192, 17x the +0.011 mean."
+}

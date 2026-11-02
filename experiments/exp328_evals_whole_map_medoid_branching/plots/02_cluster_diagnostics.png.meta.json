@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "Silhouette of the deterministic k-medoids choice for each protein; the two seed sizes share the same clustering."
+}

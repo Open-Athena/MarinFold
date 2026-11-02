@@ -1,0 +1,40 @@
+[project]
+name = "exp245-evals-foldbench-held-out-monomers"
+version = "0.1.0"
+description = "FoldBench held-out monomer eval sets (eval-val / eval-test / eval-denovo) and their scoring for the decontaminated #232 checkpoints — issue #245."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # RCSB annotation and the set partition are stdlib urllib + pandas; the
+    # decontamination check reads #225's parquet drop list with pyarrow.
+    "numpy",
+    "pandas>=2.0",
+    "pyarrow>=15",
+    "matplotlib>=3.8",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+# Ground truth: #89's pyconfind contact definition over RCSB assembly mmCIFs.
+# Kept out of the base install because it drags in marinfold and the pyconfind
+# extension, which the set construction and the analysis do not need. Same
+# extra, and the same reason, as exp226 declares.
+gt = [
+    "marinfold[contacts-v1]",
+    "gemmi>=0.6",
+    "modal>=1.5.5.dev5",
+]
+
+[tool.uv.sources]
+marinfold = { path = "../../marinfold" }
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+# Scripts, not a packaged library.
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'linux'",
+]

@@ -1,0 +1,5 @@
+{
+  "script": "analyze.py",
+  "args": [],
+  "caption": "Each protein's best GDT-TS in the full sweep versus the structure Helico confidence ranks first."
+}

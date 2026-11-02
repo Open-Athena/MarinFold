@@ -1,0 +1,32 @@
+{
+  "n_rows": 51890,
+  "n_proteins": 554,
+  "min_length": 100,
+  "main__rollout_vs_chimera_marginal": {
+    "n": 394,
+    "mean_delta": 0.06545594205194712,
+    "ci_lo": 0.05608512969592093,
+    "ci_hi": 0.07521601505142668,
+    "frac_rollout_better": 0.8984771573604061,
+    "wilcoxon_p": 1.394869516732237e-58
+  },
+  "main__rollout_vs_chimera_splice": {
+    "n": 394,
+    "mean_delta": 0.03386860716542441,
+    "ci_lo": 0.030384068158758007,
+    "ci_hi": 0.0373313372646938,
+    "frac_rollout_better": 0.9314720812182741,
+    "wilcoxon_p": 2.418341794011236e-62
+  },
+  "main__selection": {
+    "n": 394,
+    "mean_rho": -0.017508853752848517,
+    "frac_useful": 0.5177664974619289,
+    "selection_gain": 0.010990904212657053,
+    "gain_ci": [
+      0.003228640218927906,
+      0.018821780182613927
+    ],
+    "oracle_gain": 0.12985965567615765
+  }
+}

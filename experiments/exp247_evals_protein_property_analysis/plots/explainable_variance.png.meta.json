@@ -1,0 +1,12 @@
+{
+  "script": "plot_properties.py",
+  "args": [],
+  "caption": "Cross-validated R\u00b2 of the best of a ridge and a gradient-boosted model predicting each predictor's per-protein R-precision from 60 protein properties, 5-fold CV over 314 proteins. Negative values are clipped to zero.",
+  "plot": "explainable_variance.png",
+  "sha256": "b939808060615aa238cce23e25f27c65d4209094a7cebc2289b381389fe9806d",
+  "sources": {
+    "features": "experiments/exp247_evals_protein_property_analysis/data/protein_features.csv",
+    "associations": "experiments/exp247_evals_protein_property_analysis/data/associations.csv",
+    "scores": "experiments/exp245_evals_foldbench_held_out_monomers/data/per_protein.csv.gz"
+  }
+}

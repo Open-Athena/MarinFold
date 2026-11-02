@@ -1,0 +1,5 @@
+{
+  "script": "analyze_pilot.py",
+  "args": [],
+  "caption": "Left: final validation loss per arm, one point per seed, with the across-seed mean and spread. Right: each arm's gap to the control split by document section, against the pooled seed spread \u2014 the band is the pilot's resolution, and a bar inside it shows nothing."
+}

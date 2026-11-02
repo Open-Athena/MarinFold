@@ -1,0 +1,1022 @@
+{
+  "n_compared": 100,
+  "n_matching": 100,
+  "compared_fields": [
+    "L",
+    "n_resolved",
+    "gt_chain",
+    "gt_align_identity",
+    "resolved",
+    "contacts"
+  ],
+  "label_chain_cases": [
+    "5sbj_A",
+    "8bgb_A",
+    "8bke_A",
+    "8c4y_A",
+    "8ci9_A",
+    "8gmy_A"
+  ],
+  "results": [
+    {
+      "stem": "5sbj_A",
+      "match": true,
+      "n_contacts": 41,
+      "published_chain": "C",
+      "rebuilt_chain": "C",
+      "foldbench_chain": "A",
+      "chain_axis": "label",
+      "differences": []
+    },
+    {
+      "stem": "7pv5_A",
+      "match": true,
+      "n_contacts": 177,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7qp5_A",
+      "match": true,
+      "n_contacts": 568,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7qsj_A",
+      "match": true,
+      "n_contacts": 758,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7t9r_A",
+      "match": true,
+      "n_contacts": 75,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7tjb_A",
+      "match": true,
+      "n_contacts": 504,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7tlh_A",
+      "match": true,
+      "n_contacts": 238,
+      "published_chain": "B",
+      "rebuilt_chain": "B",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7uba_A",
+      "match": true,
+      "n_contacts": 489,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7uk8_A",
+      "match": true,
+      "n_contacts": 1070,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7ur2_A",
+      "match": true,
+      "n_contacts": 360,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7ur7_A",
+      "match": true,
+      "n_contacts": 161,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7urp_A",
+      "match": true,
+      "n_contacts": 269,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7uvg_A",
+      "match": true,
+      "n_contacts": 353,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7uww_A",
+      "match": true,
+      "n_contacts": 1284,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7v3o_A",
+      "match": true,
+      "n_contacts": 591,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7w15_A",
+      "match": true,
+      "n_contacts": 768,
+      "published_chain": "B",
+      "rebuilt_chain": "B",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7wz5_A",
+      "match": true,
+      "n_contacts": 317,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7wzm_A",
+      "match": true,
+      "n_contacts": 1011,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7x3h_A",
+      "match": true,
+      "n_contacts": 688,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7x4p_A",
+      "match": true,
+      "n_contacts": 772,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7x8l_A",
+      "match": true,
+      "n_contacts": 1170,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7xcd_A",
+      "match": true,
+      "n_contacts": 397,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7xg9_A",
+      "match": true,
+      "n_contacts": 592,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7xi5_A",
+      "match": true,
+      "n_contacts": 128,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7xjr_A",
+      "match": true,
+      "n_contacts": 769,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7xlz_A",
+      "match": true,
+      "n_contacts": 555,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7xp9_A",
+      "match": true,
+      "n_contacts": 170,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7xq4_A",
+      "match": true,
+      "n_contacts": 1000,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7xrx_A",
+      "match": true,
+      "n_contacts": 852,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7xyr_A",
+      "match": true,
+      "n_contacts": 1409,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7xz3_A",
+      "match": true,
+      "n_contacts": 709,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7y3h_A",
+      "match": true,
+      "n_contacts": 769,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7y4h_A",
+      "match": true,
+      "n_contacts": 714,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7y54_A",
+      "match": true,
+      "n_contacts": 198,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7y5j_A",
+      "match": true,
+      "n_contacts": 183,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7y5m_A",
+      "match": true,
+      "n_contacts": 339,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7y5r_A",
+      "match": true,
+      "n_contacts": 175,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7y8h_A",
+      "match": true,
+      "n_contacts": 163,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7y8i_A",
+      "match": true,
+      "n_contacts": 157,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7yd4_A",
+      "match": true,
+      "n_contacts": 305,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7yhr_A",
+      "match": true,
+      "n_contacts": 121,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7ykm_A",
+      "match": true,
+      "n_contacts": 163,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7ylr_A",
+      "match": true,
+      "n_contacts": 726,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7yug_A",
+      "match": true,
+      "n_contacts": 271,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7yyg_A",
+      "match": true,
+      "n_contacts": 547,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7z65_A",
+      "match": true,
+      "n_contacts": 693,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7znz_A",
+      "match": true,
+      "n_contacts": 1885,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7zoi_A",
+      "match": true,
+      "n_contacts": 226,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7zs2_A",
+      "match": true,
+      "n_contacts": 569,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7zu3_A",
+      "match": true,
+      "n_contacts": 234,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "7zv1_A",
+      "match": true,
+      "n_contacts": 205,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8adc_A",
+      "match": true,
+      "n_contacts": 426,
+      "published_chain": "B",
+      "rebuilt_chain": "B",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8add_A",
+      "match": true,
+      "n_contacts": 464,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8ah9_A",
+      "match": true,
+      "n_contacts": 255,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8ak2_A",
+      "match": true,
+      "n_contacts": 749,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8akh_A",
+      "match": true,
+      "n_contacts": 736,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8amo_A",
+      "match": true,
+      "n_contacts": 853,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8arl_A",
+      "match": true,
+      "n_contacts": 843,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8au6_A",
+      "match": true,
+      "n_contacts": 396,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8axj_A",
+      "match": true,
+      "n_contacts": 343,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8azb_A",
+      "match": true,
+      "n_contacts": 1295,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8b2e_A",
+      "match": true,
+      "n_contacts": 283,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8b2g_A",
+      "match": true,
+      "n_contacts": 98,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8b2s_A",
+      "match": true,
+      "n_contacts": 421,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8b4u_A",
+      "match": true,
+      "n_contacts": 625,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8b5w_A",
+      "match": true,
+      "n_contacts": 853,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8b61_A",
+      "match": true,
+      "n_contacts": 415,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8b6a_A",
+      "match": true,
+      "n_contacts": 327,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8b6e_A",
+      "match": true,
+      "n_contacts": 90,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8baq_A",
+      "match": true,
+      "n_contacts": 487,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8bau_A",
+      "match": true,
+      "n_contacts": 513,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8bfy_A",
+      "match": true,
+      "n_contacts": 826,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8bgb_A",
+      "match": true,
+      "n_contacts": 247,
+      "published_chain": "AAA",
+      "rebuilt_chain": "AAA",
+      "foldbench_chain": "A",
+      "chain_axis": "label",
+      "differences": []
+    },
+    {
+      "stem": "8bke_A",
+      "match": true,
+      "n_contacts": 834,
+      "published_chain": "AAA",
+      "rebuilt_chain": "AAA",
+      "foldbench_chain": "A",
+      "chain_axis": "label",
+      "differences": []
+    },
+    {
+      "stem": "8bsb_A",
+      "match": true,
+      "n_contacts": 382,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8bux_A",
+      "match": true,
+      "n_contacts": 585,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8c4d_A",
+      "match": true,
+      "n_contacts": 480,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8c4y_A",
+      "match": true,
+      "n_contacts": 816,
+      "published_chain": "AAA",
+      "rebuilt_chain": "AAA",
+      "foldbench_chain": "A",
+      "chain_axis": "label",
+      "differences": []
+    },
+    {
+      "stem": "8cba_A",
+      "match": true,
+      "n_contacts": 591,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8ci9_A",
+      "match": true,
+      "n_contacts": 718,
+      "published_chain": "C",
+      "rebuilt_chain": "C",
+      "foldbench_chain": "A",
+      "chain_axis": "label",
+      "differences": []
+    },
+    {
+      "stem": "8cih_A",
+      "match": true,
+      "n_contacts": 480,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8cpk_A",
+      "match": true,
+      "n_contacts": 624,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8cpn_A",
+      "match": true,
+      "n_contacts": 323,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8d2z_A",
+      "match": true,
+      "n_contacts": 687,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8daj_A",
+      "match": true,
+      "n_contacts": 605,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8dez_A",
+      "match": true,
+      "n_contacts": 309,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8dge_A",
+      "match": true,
+      "n_contacts": 1808,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8dhj_A",
+      "match": true,
+      "n_contacts": 659,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8dmu_A",
+      "match": true,
+      "n_contacts": 1259,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8dp9_A",
+      "match": true,
+      "n_contacts": 301,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8dqd_A",
+      "match": true,
+      "n_contacts": 901,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8dx0_A",
+      "match": true,
+      "n_contacts": 318,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8e0r_A",
+      "match": true,
+      "n_contacts": 922,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8e5h_A",
+      "match": true,
+      "n_contacts": 732,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8eb9_A",
+      "match": true,
+      "n_contacts": 136,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8ec3_A",
+      "match": true,
+      "n_contacts": 387,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8eo5_A",
+      "match": true,
+      "n_contacts": 579,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8gmy_A",
+      "match": true,
+      "n_contacts": 572,
+      "published_chain": "D",
+      "rebuilt_chain": "D",
+      "foldbench_chain": "A",
+      "chain_axis": "label",
+      "differences": []
+    },
+    {
+      "stem": "8q8i_A",
+      "match": true,
+      "n_contacts": 856,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    },
+    {
+      "stem": "8ycm_A",
+      "match": true,
+      "n_contacts": 482,
+      "published_chain": "A",
+      "rebuilt_chain": "A",
+      "foldbench_chain": "A",
+      "chain_axis": "auth",
+      "differences": []
+    }
+  ]
+}

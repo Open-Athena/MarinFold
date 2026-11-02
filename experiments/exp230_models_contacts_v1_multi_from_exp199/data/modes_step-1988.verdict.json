@@ -1,0 +1,14 @@
+{
+  "label": "step-1988",
+  "plain_mean_sections": 1.0075,
+  "plain_mean_sections_clipped": 1.0075,
+  "plain_frac_single_section": 0.9975,
+  "plain_max_sections_seen": 6,
+  "gate_b_pass": true,
+  "multi_mean_sections": 14.20375,
+  "multi_mean_sections_raw": 22.02125,
+  "multi_mean_jaccard": 0.3042793273925781,
+  "multi_best_minus_last": 0.08451765775680542,
+  "multi_best_minus_last_se": 0.0038598373625860264,
+  "diversity_collapse": true
+}

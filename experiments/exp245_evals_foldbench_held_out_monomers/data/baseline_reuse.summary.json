@@ -1,0 +1,20 @@
+{
+  "scored_units": 333,
+  "reused": 124,
+  "to_predict": 209,
+  "by_set": {
+    "eval-denovo": {
+      "new": 15,
+      "published": 4
+    },
+    "eval-test": {
+      "new": 194,
+      "published": 23
+    },
+    "eval-val": {
+      "published": 97
+    }
+  },
+  "residues_to_predict": 59202,
+  "longest_to_predict": 920
+}

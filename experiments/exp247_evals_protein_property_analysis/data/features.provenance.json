@@ -1,0 +1,14 @@
+{
+  "n_proteins": 314,
+  "n_columns": 75,
+  "sources": {
+    "contacts": "gt_universe_foldbench_monomers.jsonl",
+    "sequence": "eval_sets.csv",
+    "training_support": "exp226 identity table + exp245 residual + exp94 KNN",
+    "structure": "biotite annotate_sse over /data/exp245/cif",
+    "msa": "modal volume protenix-foldbench-msa",
+    "rcsb": "https://data.rcsb.org/graphql",
+    "uniprot": "https://rest.uniprot.org/uniprotkb"
+  },
+  "skipped": []
+}

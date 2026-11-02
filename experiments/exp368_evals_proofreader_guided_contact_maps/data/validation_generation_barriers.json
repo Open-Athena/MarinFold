@@ -1,0 +1,44 @@
+{
+  "verified_at": "2026-10-21T17:43:22.505140+00:00",
+  "result_root": "s3://marinfold-exp368-rno2a/MarinFold/exp368/results",
+  "expected_groups": 2750,
+  "barriers": [
+    {
+      "proteins": 344,
+      "plan_sha256": "0510cd8ef4a680e22fc6ebcc4f9b82d2ecd31d44fa79697e36ceffc061b21bce",
+      "code_sha256": "0b55e147ba2c27c95b0a5e9664e24889d2bb059cffc9e7c31e39a7564bfd730b",
+      "generator": "s3://marin-us-east-02a/MarinFold/exp304/model/exp277-step-266344",
+      "reader": "s3://marin-us-east-02a/MarinFold/exp356/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18000",
+      "kind": "ordinary-generation",
+      "shards": 4
+    },
+    {
+      "proteins": 344,
+      "plan_sha256": "0510cd8ef4a680e22fc6ebcc4f9b82d2ecd31d44fa79697e36ceffc061b21bce",
+      "code_sha256": "0b55e147ba2c27c95b0a5e9664e24889d2bb059cffc9e7c31e39a7564bfd730b",
+      "generator": "s3://marin-us-east-02a/MarinFold/exp304/model/exp277-step-266344",
+      "reader": "s3://marin-us-east-02a/MarinFold/exp356/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18000",
+      "kind": "ordinary-generation",
+      "shards": 4
+    },
+    {
+      "proteins": 344,
+      "plan_sha256": "0510cd8ef4a680e22fc6ebcc4f9b82d2ecd31d44fa79697e36ceffc061b21bce",
+      "code_sha256": "0b55e147ba2c27c95b0a5e9664e24889d2bb059cffc9e7c31e39a7564bfd730b",
+      "generator": "s3://marin-us-east-02a/MarinFold/exp304/model/exp277-step-266344",
+      "reader": "s3://marin-us-east-02a/MarinFold/exp356/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18000",
+      "kind": "ordinary-generation",
+      "shards": 4
+    },
+    {
+      "proteins": 343,
+      "plan_sha256": "0510cd8ef4a680e22fc6ebcc4f9b82d2ecd31d44fa79697e36ceffc061b21bce",
+      "code_sha256": "0b55e147ba2c27c95b0a5e9664e24889d2bb059cffc9e7c31e39a7564bfd730b",
+      "generator": "s3://marin-us-east-02a/MarinFold/exp304/model/exp277-step-266344",
+      "reader": "s3://marin-us-east-02a/MarinFold/exp356/checkpoints/exp356-exp277-frozen-contact-pdb50k-v2/step-18000",
+      "kind": "ordinary-generation",
+      "shards": 4
+    }
+  ],
+  "reason": "Central peer status stale during regional controller outage"
+}

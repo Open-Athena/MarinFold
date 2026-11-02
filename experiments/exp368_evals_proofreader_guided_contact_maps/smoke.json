@@ -1,0 +1,25 @@
+{
+  "split": "validation",
+  "entries": [
+    "6d0i_B",
+    "6f0k_A",
+    "6lod_B"
+  ],
+  "rollouts": 1,
+  "contact_limit": 16,
+  "policies": [
+    {
+      "name": "control"
+    },
+    {
+      "name": "top10-k16",
+      "candidates": 16,
+      "fraction": 0.1
+    },
+    {
+      "name": "top10-k64",
+      "candidates": 64,
+      "fraction": 0.1
+    }
+  ]
+}

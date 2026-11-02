@@ -1,0 +1,23 @@
+{#-
+  contacts-v1 has NO chat format.
+
+  A document is a raw token sequence -- `<contacts-v1> <begin_sequence> <pN> <AA>
+  ... <begin_statements>` -- and the vocabulary contains no role markers, no
+  `<|im_start|>`, and no `<|im_end|>`. Applying any real chat template would
+  prepend tokens the model has never seen in that position and shift every
+  `<pN>` off the position it was trained at.
+
+  So this template emits the message content verbatim and nothing else. exp200
+  solved the same problem on marin.rl by bypassing the renderer entirely and
+  calling `llm.generate` with `TokensPrompt`; SkyRL's supported equivalent is a
+  file-sourced template, which is strictly cleaner because it stays on the
+  documented path.
+
+  NOTE: setting a custom chat template makes SkyRL's stock
+  `_build_per_token_rewards` return a float instead of a per-token vector.
+  `DenseContactsGenerator` overrides that method precisely so both can coexist.
+  See RUN.md.
+-#}
+{%- for message in messages -%}
+{{- message['content'] -}}
+{%- endfor -%}

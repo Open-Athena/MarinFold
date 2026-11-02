@@ -1,0 +1,7 @@
+{
+  "independently_recomputed_scores": 3880,
+  "n_proteins": 97,
+  "method": "Explicit resolved residue pairs, truth-set intersection, Python stable sort; no analyzer imports",
+  "max_allowed_absolute_difference": 1e-12,
+  "runtime_scope": "Accepted final units only; excludes aborted attempts. Generation time excludes prompt construction and probing. Repeated model-load fields must not be summed."
+}

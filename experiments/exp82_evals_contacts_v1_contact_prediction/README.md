@@ -423,6 +423,18 @@ map about as well as a structure predictor; what it lacks is the ability to
 concentrate confidence into the top L / top R pairs. That is a different failure
 than "doesn't know the fold", and points at calibration rather than capacity.
 
+> **The committed figure now has a third MarinFold bar.** The table above is
+> this session's record and is left as written. `plot_where_we_stand.py` has
+> since been re-run with a second rows CSV to add
+> [#166](https://github.com/Open-Athena/MarinFold/issues/166) (R 0.562, AUC
+> 0.939 — the current best, and the project README's headline), whose
+> per-protein rows live in
+> [`../exp166_models_contacts_v1_aa_augmentation/data/exp166_rows.csv.gz`](../exp166_models_contacts_v1_aa_augmentation/data/exp166_rows.csv.gz).
+> `--rollout-csv` takes several paths for exactly this; the script's docstring
+> says what to do when a new model takes the frontier. The longitudinal version
+> of this comparison is
+> [exp180](../exp180_evals_contacts_v1_progress_over_time/README.md).
+
 **Pipeline** — [`score_rollout_vllm.py`](score_rollout_vllm.py) (single local GPU)
 or [`dispatch_rollout_eval_cw.py`](dispatch_rollout_eval_cw.py) +
 [`score_rollout_worker.py`](score_rollout_worker.py) (12 single-H100

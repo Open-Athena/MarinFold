@@ -1,0 +1,39 @@
+{
+  "comparisons": [
+    {
+      "absolute_difference": 0.00045997698605837467,
+      "actual": 0.9005033737540054,
+      "cut": "AUC",
+      "expected": 0.9009633507400637,
+      "range": "all",
+      "within_tolerance": true
+    },
+    {
+      "absolute_difference": 0.00016745008621465995,
+      "actual": 0.42469657144905226,
+      "cut": "R",
+      "expected": 0.4245291213628376,
+      "range": "all",
+      "within_tolerance": true
+    },
+    {
+      "absolute_difference": 0.0007445323465637976,
+      "actual": 0.873035842341235,
+      "cut": "AUC",
+      "expected": 0.8737803746877988,
+      "range": "long",
+      "within_tolerance": true
+    },
+    {
+      "absolute_difference": 0.0004381511407223204,
+      "actual": 0.36605333802632284,
+      "cut": "R",
+      "expected": 0.3656151868856005,
+      "range": "long",
+      "within_tolerance": true
+    }
+  ],
+  "passed": true,
+  "reference": "experiments/exp82_evals_contacts_v1_contact_prediction/data/where_we_stand_summary.csv:marinfold-cv1-exp75-rollout",
+  "tolerance": 0.005
+}

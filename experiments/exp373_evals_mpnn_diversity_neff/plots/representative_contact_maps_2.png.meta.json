@@ -1,0 +1,5 @@
+{
+  "script": "plot.py",
+  "args": [],
+  "caption": "Eight proteins preselected by Neff rank; two shown per page. Resolved-pair truth and frequencies from 300 fixed-prompt samples, T=1. Frequencies use 0\u20131 and signed differences \u22121 to +1."
+}

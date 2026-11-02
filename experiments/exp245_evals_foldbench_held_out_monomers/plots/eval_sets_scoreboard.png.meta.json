@@ -1,0 +1,17 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "All-range R-precision per predictor on each of the three FoldBench monomer eval sets, with 95 % bootstrap intervals over proteins. MarinFold checkpoints coloured (orange/amber = the decontaminated #232 pair, blue = the contaminated #199 cooldown reference), baselines grey.",
+  "plot": "eval_sets_scoreboard.png",
+  "sha256": "48a3737ed2cfac713b8cebb59892b84c135eb3fbb1cd6ba308e0f1cc5d1dc205",
+  "sources": {
+    "per_protein": {
+      "path": "experiments/exp245_evals_foldbench_held_out_monomers/data/per_protein.csv.gz",
+      "sha256": "b9670c3547212bf1b23de3247c1b2cba881e5e5abdc37cd905c70a96145449f2"
+    },
+    "eval_sets": {
+      "path": "experiments/exp245_evals_foldbench_held_out_monomers/data/eval_sets.csv",
+      "sha256": "b13d060a091240921bc8466acecc9fa6ccbb45a56de4efda02cd903f6abf9861"
+    }
+  }
+}

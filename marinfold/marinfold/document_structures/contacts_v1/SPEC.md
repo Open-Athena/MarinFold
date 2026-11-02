@@ -44,7 +44,7 @@ We support structures with up to 2000 residues
 
 Rather than numbering residues in a protein as e.g. 0 to 1999, each time we generate a document we pick a random number n in [0, 2000) to be the n-terminal residue. We start indexing from this residue. Residue indices "wrap around", so the residue after `<p1999>` is `<p0>`. The motivation here is that we want the model to be experienced in using all residue indices. Since most proteins are way less than 2000 residues, if we always started the protein chain off at `<p0>` the model would only rarely see the higher value indices.
 
-In the future we will support multiple protein chains, and we will just have multiple <n-term> and <c-term> statements for these. They will need to be spaced out enough to not overlap. For example we might have one protein that starts at index 1800 and continues until residue 100, and another that starts at residue 300 and continues until 800.
+Multiple protein chains share the same 2000-index clock. Each chain gets one unbroken run of indices, the runs are disjoint and separated by at least one unused index, and each chain contributes its own `<n-term>` and `<c-term>` statement. For example one chain might start at index 1800 and continue past the wrap to residue 100, and another start at 300 and continue to 800. See *Multiple protein chains* under the implementation notes for the exact layout procedure.
 
 ### Structure section
 The structure section consists of statements of the form `<contact>` `<pXXX>` `<pYYY>`, which indicates that residues at index XXX and YYY are in contact.
@@ -59,11 +59,13 @@ From the contacts that pass this threshold, we include the N with the highest co
 
 Note that the contact matrix is symmetric. We randomize the order that each contact pair is given in: if there is a contact between XXX and YYY, with 50% probability we output `<contact> <pXXX> <pYYY>` and the other half of the time we output `<contact> <pYYY> <pXXX>`. Each contact is only specified once, i.e. once we emit the contact between XXX and YYY we will never emit it again in either order.
 
+A statement may also be a **retraction**, `<retract> <pXXX> <pYYY>`, which takes back a previously emitted contact (see *Retraction* under Implementation notes). In documents that contain retractions the structure section is an **ordered edit list** rather than an order-free set — a retract refers to prior stream state — so the "random order" property above holds only for documents with no retractions (which is all documents the generator produces; retraction documents are synthesised separately).
+
 ### Document length
 Our max document length is 8192 tokens. N (the number of contacts included) is the number of the strongest *above-threshold* contacts whose `<contact>` statements fit in the budget remaining after the sequence section. If the protein has more above-threshold contacts than fit, the weakest of them are dropped (truncation); if it has fewer, all above-threshold contacts are included and the document is shorter than the budget.
 
 ### Additional tokens
-For the vocab, also include as additional tokens all the tokens in the contacts-and-distances-v1 [vocab](https://github.com/Open-Athena/MarinFold/blob/main/marinfold/marinfold/document_structures/contacts_and_distances_v1/vocab.py). We may fine tune on documents like that later. Also include this additional token: `<think>`
+For the vocab, also include as additional tokens all the tokens in the contacts-and-distances-v1 [vocab](https://github.com/Open-Athena/MarinFold/blob/main/marinfold/marinfold/document_structures/contacts_and_distances_v1/vocab.py). We may fine tune on documents like that later. Also include these additional tokens: `<think>` and `<retract>` (the latter appended last in the vocab; see *Retraction*).
 
 ---
 
@@ -100,14 +102,17 @@ overrides the spec's own token spellings:
   uppercase AAs shares amino-acid embeddings with contacts-and-distances-v1.
 - **`<end>` is the shared contacts-and-distances-v1 token** too.
 
-The only tokens contacts-v1 mints itself are `<contacts-v1>`, `<n-term>`,
-`<c-term>`, `<contact>`, and `<think>` — five tokens with no
-contacts-and-distances-v1 analog. `<think>` is a *pause* token that is
-emitted only under `GenerationConfig(think=True)` (see *Think (pause)
-tokens* below); the default generator does not emit it, but it has always
-been reserved in the vocab so no tokenizer change was needed to add the
-think path. (The original example's `<c-term> <pos 22>` space typo is
-emitted as `<c-term> <p22>`.)
+The tokens contacts-v1 mints itself are `<contacts-v1>`, `<n-term>`,
+`<c-term>`, `<contact>`, and `<think>` — five tokens (in `NATIVE_TOKENS`)
+with no contacts-and-distances-v1 analog — plus two trailing tokens
+appended after the shared block: `<contacts-v1.sequence_only>` (the
+sequence-only doc type) and `<retract>` (retraction; see *Retraction*).
+`<think>` is a *pause* token that is emitted only under
+`GenerationConfig(think=True)` (see *Think (pause) tokens* below); the
+default generator does not emit it, but it has always been reserved in the
+vocab so no tokenizer change was needed to add the think path. (The
+original example's `<c-term> <pos 22>` space typo is emitted as
+`<c-term> <p22>`.)
 
 ### Points the spec left open (implementation choices)
 
@@ -129,19 +134,30 @@ emitted as `<c-term> <p22>`.)
   SEC, CSO, SEP, TPO, PTR) are canonicalized to their parent amino acid
   (e.g. MSE→MET, HSD→HIS, SEP→SER). Anything unexpected maps to `<UNK>`
   (reused from the contacts-and-distances-v1 vocab).
-- **Single chain only.** Multi-chain support is future work per the spec.
-  Structures with more than one protein chain are skipped (with a
-  warning); exactly one `<n-term>` and one `<c-term>` are emitted.
-- **Residue-count bounds.** "Up to 2000 residues" is enforced: chains
-  with fewer than 2 residues or more than 2000 (can't be uniquely
-  indexed under wrap-around) are skipped with a warning.
+- **Chain count is opt-in.** `GenerationConfig.max_chains` (default **1**)
+  is how many protein chains an input structure may have before
+  `generate_document` rejects it. The default reproduces the original
+  single-chain behavior — every corpus before exp222 is monomeric, so a
+  multi-chain AFDB / ESM-Atlas input means something went wrong upstream and
+  should fail loudly. Multimer corpora raise it (see *Multiple protein
+  chains* below). It is an input-acceptance policy only: `build_document`
+  serializes whatever chains it is handed.
+- **Residue-count bounds.** "Up to 2000 residues" is enforced: structures
+  with fewer than 2 residues or more than 2000 in total (can't be uniquely
+  indexed under wrap-around) are skipped with a warning. For a multi-chain
+  structure the *inter-chain gaps* count against the same budget, so the
+  real cap is `sum(chain lengths) + k * min_chain_gap <= 2000`.
 - **Minimum sequence separation.** A pair counts as a contact only if its
   residues are at least `config.min_seq_separation` (default 6) positions
   apart in the primary sequence (`seq_j - seq_i >= min_seq_separation`).
   This is *definitional* — closer pairs are filtered before anything is
   counted, so `contacts_pre_filter` (and the degree statistics) already
   exclude them. (`contacts-and-distances-v1` used the same minimum of 6 via
-  its `short_range_sep`.)
+  its `short_range_sep`.) The rule is **intra-chain only**: a pair whose
+  residues sit on different chains is a candidate contact at any separation.
+  "How far apart in the chain" is undefined across a chain break, and
+  applying the rule there would delete most of an interface — the entire
+  content of a multimer document.
 - **Minimum degree filter.** Contacts with degree below
   `config.min_contact_degree` (default 0.001) are dropped before anything
   else and are never emitted, regardless of budget. pyconfind returns a
@@ -182,6 +198,63 @@ emitted as `<c-term> <p22>`.)
   re-minting — so no dedup is needed. The sequence-only token is appended
   **last**, so adding it left every pre-existing id unchanged. Total domain
   vocab = 2844 tokens (2846 with `<pad>`/`<eos>`).
+
+### Multiple protein chains (multimers, issue #222)
+
+A document may serialize a whole protein complex: *k* chains on one 2000-index
+ring, *k* `<n-term>` statements and *k* `<c-term>` statements. Nothing else
+about the format changes — same doc type, same statements, same vocabulary.
+
+- **Opt-in.** `GenerationConfig(max_chains=k)` is what lets a *k*-chain
+  structure through `analyze_structure`; the default of 1 keeps every
+  monomer pipeline rejecting complexes as before.
+- **Layout.** Given chains of lengths `L_1..L_k` in the residue list's order:
+  1. Shuffle the chains into a random **ring order**.
+  2. `slack = 2000 - sum(L) - k * min_chain_gap`. If `slack < 0` the structure
+     doesn't fit and `build_document` returns `None`.
+  3. Draw a uniformly random composition of `slack` into `k` non-negative
+     parts (stars and bars) and add `min_chain_gap` (default 1) to each — the
+     *k* gaps, one after each chain. Chains plus gaps tile the ring exactly.
+  4. Draw a global rotation `offset` in `[0, 2000)` and walk the ring from
+     there, laying down each chain's residues at consecutive indices
+     (wrapping past 1999 to 0 as usual) and skipping its gap before the next.
+  Every chain therefore occupies one **contiguous, disjoint** run of indices,
+  and no chain's N-terminus is adjacent to another chain's C-terminus.
+- **Residue order.** `residues` must be **grouped by chain** (pyconfind emits
+  positions that way). A chain split across two runs raises `ValueError` in
+  `chain_segments` rather than producing a document whose termini describe
+  chains that don't exist.
+- **Ring order is not structure order.** The chains are shuffled before
+  placement, so a chain's position in the residue list says nothing about
+  where it lands. Chain identity is recoverable from the termini and the
+  contiguity of the index runs, not from index order.
+- **No new doc type.** A multimer document is plain `<contacts-v1>`, and the
+  tokenizer is unchanged. Unlike the retraction mode of #175 there is nothing
+  to marginalize over: the whole sequence section — every `<n-term>` and
+  `<c-term>` — is in the prompt, so the chain count is known before a single
+  contact is generated.
+- **Single-chain output is byte-identical** to the pre-multimer generator.
+  With `k = 1` the ring order shuffle and the gap composition are both
+  skipped, the minimum gap is not applied (a lone chain may occupy the whole
+  ring, which is what keeps a 2000-residue chain serializable), and the only
+  RNG draw is the same single `rng.randrange(2000)` that used to pick the
+  n-terminal index. The terminus statements are appended in structure order,
+  so the pre-shuffle statement list is also unchanged. Pinned by
+  `tests/.../test_multimer.py::test_single_chain_layout_is_unchanged` and by a
+  180-case fingerprint diff against the pre-change generator.
+- **Sequence separation is intra-chain only** — see the note above.
+- **Contact selection is chain-blind.** Interface and intra-chain contacts
+  compete on contact degree alone for the same budget. A large complex whose
+  contacts don't all fit therefore keeps its *strongest* contacts, whichever
+  side of an interface they are on.
+- **Metadata.** `num_chains`, `chain_ids`, `chain_lengths`, `n_term_indices`,
+  `c_term_indices` (all in structure order), plus
+  `contacts_pre_filter_inter_chain` / `contacts_emitted_inter_chain`. The
+  scalar `n_term_index` / `c_term_index` remain the **first** chain's, so they
+  keep their meaning for monomers; `start_index` is the ring rotation offset,
+  which for a monomer is exactly the old random n-terminal index. Each
+  `EmittedContact` also carries `chain_i` / `chain_j` and an `inter_chain`
+  flag.
 
 ### Think (pause) tokens (`think=True`)
 
@@ -229,6 +302,79 @@ before this path existed (see *Determinism*). It is inert on the
 - **Metadata.** `think_tokens` records how many `<think>` tokens the
   document actually contains (0 when `think=False`).
 
+### Retraction (`<retract>`, issue #158)
+
+A `<retract> <pXXX> <pYYY>` statement takes back a previously emitted
+`<contact> <pXXX> <pYYY>`. It lets a document (and a model trained on such
+documents) revise an earlier decision partway through the structure section
+— the basis for the backtracking corpus (#159) and training (#160).
+
+- **Semantics — an ordered fold.** The structure section is read as an edit
+  list applied in stream order: `<contact>` adds a pair, `<retract>` removes
+  a currently-live pair, and the document's contact set is whatever is
+  **live at `<end>`**. This is the one place contacts-v1's "no meaningful
+  ordering" property is relaxed: a retract references prior state, so order
+  matters *within a retraction-bearing document*. Documents with no
+  retractions keep the original order-free semantics and fold to exactly the
+  set of pairs they emitted. The canonical implementation is `read.py`
+  (`live_contacts` / `fold_statements`); `inference.py`'s rollout readout
+  uses it, so a retraction-trained model is scored on its live set.
+- **Orientation.** Pairs are matched by their sorted `(min, max)` position
+  pair, so a retract matches its contact regardless of either statement's
+  coin-flipped orientation.
+- **Malformed edit lists.** `read.py` tolerates (for robustness to model
+  noise at inference) but *counts*: a retract of a non-live pair (never
+  emitted, or already retracted) is a no-op; a contact re-asserting a
+  previously retracted pair brings it back (a re-emit); a contact for an
+  already-live pair is a redundant restatement. Authored corpora are
+  expected to have none of these (all counters zero).
+- **Vocab.** `<retract>` is minted by contacts-v1 but, like
+  `<contacts-v1.sequence_only>`, kept out of `NATIVE_TOKENS` and **appended
+  last** so every pre-existing token id is unchanged (append-only); an
+  existing checkpoint only grows its embedding by one row. The
+  contacts-and-coordinates-v1 format freezes its inherited contacts-v1 block
+  at the pre-retraction 2844 tokens and does **not** carry `<retract>`, so
+  no coordinate-format id moves.
+- **Generation.** The `contacts-v1` generator (`generate.py`) never emits
+  `<retract>` — output is byte-identical to before this token existed.
+  Retraction documents are synthesised by the model-in-the-loop corpus job
+  (#159), not by `build_document`.
+
+### Retraction mode (`<contacts-v1.backtracking>`, issue #175)
+
+A **variant doc type**, swapped in as token 0, declaring that a document *may*
+contain `<retract>` statements. It changes nothing else — the statements,
+sections and fold are identical.
+
+- **Why.** #160 trained on a 50:50 mixture of retraction-bearing and clean
+  documents that began with the *identical* prefix, and 20.1% of the
+  retraction half happened to contain no `<retract>` at all, so a fifth of it
+  was indistinguishable in the body too. A model in that position must
+  marginalise over "may I take this back later?" at every step. Measured
+  consequences: it retracted on only 43% of rollouts, reached only 52% of the
+  achievable enrichment headroom, and — isolated by a readout ablation — lost
+  **0.0251 R-precision in emission quality alone**, before any retraction was
+  honoured. In retraction mode the optimal emission policy is more
+  speculative; with no marker that speculativeness leaks into clean
+  generation.
+- **Semantics.** The marker is a *mode declaration*, not a guarantee: a
+  `<contacts-v1.backtracking>` document may contain zero retractions. Corpora
+  should mark by **which generator produced the document**, not by whether it
+  happens to contain a `<retract>` — marking by content would instead teach
+  "this token implies a retraction follows", which is a different target and
+  destroys the token's use as a mode switch.
+- **Vocab.** Minted by contacts-v1 and, like `<contacts-v1.sequence_only>` and
+  `<retract>`, kept out of `NATIVE_TOKENS` and **appended last** — every
+  pre-existing id unchanged, one new embedding row (contacts-v1 2847 → 2848).
+  Both coordinate supersets exclude it from their inherited block and
+  re-append it after their own native block, exactly as they do for
+  `<retract>`: inheriting it inline would shove the whole xyz/crop block up by
+  one id and desync the two formats (crops 3849 → 3850).
+- **Generation.** `GenerationConfig(backtracking=True)` swaps token 0 and
+  nothing else; with the default `False` output is byte-identical to before.
+  Mutually exclusive with `sequence_only` (no structure section to retract
+  from).
+
 ### Metadata tracked (beyond the spec)
 
 The spec does not define output metadata; the issue asks to track
@@ -236,7 +382,10 @@ protein-docs-style metadata. Per document we record: `entry_id`,
 `seq_len`, `global_plddt` (mean CA B-factor), `start_index`,
 `n_term_index`, `c_term_index`, `min_seq_separation`, `num_tokens`,
 `think_tokens` (count of emitted `<think>` tokens; 0 unless `think=True`),
-`sha1` of the document, and the following contact statistics:
+`sha1` of the document, the multi-chain block (`num_chains`, `chain_ids`,
+`chain_lengths`, `n_term_indices`, `c_term_indices`,
+`contacts_pre_filter_inter_chain`, `contacts_emitted_inter_chain` — all
+trivial for a monomer), and the following contact statistics:
 
 - `min_seq_separation` — the minimum sequence separation used for this
   row's contact definition.
@@ -299,8 +448,7 @@ together under one tokenizer.
 
 ### Not yet implemented
 
-- Multiple protein chains (multiple `<n-term>`/`<c-term>`, spaced-out
-  index ranges) — see *Residue indexing* above.
-- Model inference / evaluation against this structure (there is no
-  trained contacts-v1 model yet); only `generate` / `view` / `tokenizer`
-  exist.
+- Model **inference** against a multi-chain document. Generation and
+  round-tripping work (see *Multiple protein chains* above), but
+  `inference.py`'s prompt builder still assumes one chain, so
+  `marinfold infer` / `evaluate` are monomer-only.

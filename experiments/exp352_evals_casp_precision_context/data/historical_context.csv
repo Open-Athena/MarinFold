@@ -1,0 +1,10 @@
+competition,year,statistic,precision,cut,range,cohort,n,comparable_cut,source,location,note
+CASP4,2000,CIRB all submitted contacts,0.10,approximately 2L,not standardized as >=24,submitted target cohort,22,False,https://doi.org/10.1002/prot.10056,Tables V-VI,Original paper transcription at https://doczz.net/doc/8621957/assessment-of-novel-fold-targets-in-casp4
+CASP4,2000,CIRB confidence >0.8 subset,0.20,variable confidence threshold,not standardized as >=24,submitted target cohort,22,False,https://doi.org/10.1002/prot.10056,Table VI,Not precision at L/5; selection varies by target
+CASP7,2006,Mean across specialist groups and targets,0.13,L/5,>=24,FM and FM/TBM domains,19,True,https://doi.org/10.1002/prot.21637,Results p154,Target-by-method mean; not a best-group mean
+CASP7,2006,SAM-T06 on FM-only subset,0.155,L/5,>=24,FM-only domains,15,True,https://doi.org/10.1002/prot.21637,Has there been progress p157,Best identified group on this particular FM-only subset
+CASP11,2014,Best group,0.267,L/5,>=24,FM domains,,True,https://escholarship.org/content/qt27n019dx/qt27n019dx_noSplash_72fd17ec94d1cb93d5e89edeb5edcc01.pdf,Improvement section p6,Historical value reported by CASP13 assessors
+CASP12,2016,Best group,0.471,L/5,>=24,FM domains,,True,https://escholarship.org/content/qt27n019dx/qt27n019dx_noSplash_72fd17ec94d1cb93d5e89edeb5edcc01.pdf,Improvement section p6,Historical value reported by CASP13 assessors
+CASP13,2018,Leading groups approximately,0.70,L/5,>=24,FM domains,31,True,https://escholarship.org/content/qt27n019dx/qt27n019dx_noSplash_72fd17ec94d1cb93d5e89edeb5edcc01.pdf,Improvement section and Fig4,Approximate published description; not a digitized best-group value
+CASP13,2018,Top-five group mean,0.65,L/5,>=24,FM domains,31,True,https://escholarship.org/content/qt90f572sq/qt90f572sq.pdf,Section 3.1,Comparable aggregation to next row; reported by CASP14 assessors
+CASP14,2020,Top-five group mean,0.64,L/5,>=24,FM domains,22,True,https://escholarship.org/content/qt90f572sq/qt90f572sq.pdf,Section 3.1,Harder target mix; not evidence of regression

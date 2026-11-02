@@ -1,0 +1,8 @@
+{
+  "script": "plot_results.py",
+  "args": [
+    "--scores",
+    "data/arm_scores.csv"
+  ],
+  "caption": "Left: per-protein rank correlation (negative = useful). Right: precision gained by selecting on consistency, against the oracle headroom."
+}

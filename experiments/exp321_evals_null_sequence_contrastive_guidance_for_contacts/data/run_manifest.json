@@ -1,0 +1,57 @@
+{
+  "issue": 321,
+  "checkpoint": "contacts-v1-exp277-m2-p06-full-epoch-1.5B-step-266344",
+  "checkpoint_source": "s3://marin-us-east-02a/MarinFold/exp304/model/exp277-step-266344",
+  "marinfold_dependency_revision": "359c3b72",
+  "experiment_branch": "exp/321-sequence-contrastive-guidance",
+  "oracle_analysis_revision": "20be3301931039d349d8a5afe890fed57048cc00",
+  "working_artifacts": "s3://marin-us-east-02a/MarinFold/exp321/null-sequence-guidance-v1",
+  "public_artifacts": "hf://buckets/open-athena/MarinFold/data/exp321/null-sequence-guidance-v1",
+  "cohorts": {
+    "natural_eval_val": 97,
+    "natural_development": 16,
+    "natural_untouched": 81,
+    "foldswitch_development": 15,
+    "foldswitch_test": 29
+  },
+  "development_modes": {
+    "dev_g0_pa_pos": 20,
+    "dev_g025_pa_pos": 20,
+    "dev_g05_pa_pos": 20,
+    "dev_g1_pa_pos": 20,
+    "dev_g2_pa_pos": 20,
+    "dev_ratio_pa_pos": 20,
+    "dev_g05_pa_all": 20,
+    "dev_g05_shuf_all": 20,
+    "dev_t08_pa_pos": 20,
+    "dev_t085_pa_pos": 20,
+    "dev_t09_pa_pos": 20,
+    "dev_t095_pa_pos": 20,
+    "dev_t11_pa_pos": 20
+  },
+  "full_modes": {
+    "full_g05_pa_all": 100,
+    "full_g0_pa_pos": 100,
+    "full_iid_single": 200,
+    "full_t08_single": 100,
+    "full_t11_single": 200,
+    "full_ratio_pa_pos": 100
+  },
+  "full_iris_jobs": 120,
+  "full_iris_outcome": "120 succeeded, 0 failed, 0 retried",
+  "total_predictor_rows": 1159,
+  "total_rollouts": 108860,
+  "total_generated_tokens": 98802882,
+  "summed_inference_hours": 45.14254837452116,
+  "summed_total_hours": 45.567265307987256,
+  "iris_cluster": "cw-rno2a",
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "job_prefixes": [
+    "/bizon/exp321-dev-",
+    "/bizon/exp321-fullnat-",
+    "/bizon/exp321-fullfold-"
+  ],
+  "first_prediction_utc": "2026-09-23T00:43:31.707272+00:00",
+  "last_prediction_utc": "2026-09-23T03:14:00.154259+00:00",
+  "wandb": null
+}

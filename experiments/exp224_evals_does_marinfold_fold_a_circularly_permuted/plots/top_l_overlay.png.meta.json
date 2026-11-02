@@ -1,0 +1,5 @@
+{
+  "script": "plot.py",
+  "args": [],
+  "caption": "The top-L predicted pairs, coloured by correctness, over the greyed-out truth. Precision 0.47 (CP) vs 0.57 (WT)."
+}

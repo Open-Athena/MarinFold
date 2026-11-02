@@ -1,0 +1,24 @@
+{
+  "reference_version": "v1",
+  "tm_field": "best_qtm",
+  "tm_thresholds": {
+    "A": null,
+    "B": 0.9,
+    "C": 0.5
+  },
+  "arms_with_a_structural_database": [
+    "afdb"
+  ],
+  "arms_without_one": [
+    "esm_atlas"
+  ],
+  "inputs": {
+    "corpus_index": "/data/exp225_decontam/index_afdb.parquet",
+    "sequence_droplist": "/data/exp225_decontam/droplist_sequence.parquet",
+    "structure_droplist": "/data/exp225_decontam/droplist_structure_afdb.parquet"
+  },
+  "corpus_documents": {
+    "afdb": 4129682,
+    "esm_atlas": 66759922
+  }
+}

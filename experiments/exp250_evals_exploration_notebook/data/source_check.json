@@ -1,0 +1,59 @@
+{
+  "checked_utc": "2026-08-21T13:36:37.966949+00:00",
+  "results": {
+    "exp245 targets": {
+      "rows": 333,
+      "expected_rows": 333,
+      "missing_columns": [],
+      "ok": true
+    },
+    "exp245 eval sets": {
+      "rows": 334,
+      "expected_rows": 334,
+      "missing_columns": [],
+      "ok": true
+    },
+    "exp245 ground truth": {
+      "rows": 333,
+      "expected_rows": 333,
+      "missing_columns": [],
+      "ok": true
+    },
+    "exp245 per-protein scores": {
+      "rows": 10316,
+      "expected_rows": 10316,
+      "missing_columns": [],
+      "ok": true
+    },
+    "exp89 ground truth": {
+      "rows": 554,
+      "expected_rows": 554,
+      "missing_columns": [],
+      "ok": true
+    },
+    "exp89 per-protein scores": {
+      "rows": 73128,
+      "expected_rows": 73128,
+      "missing_columns": [],
+      "ok": true
+    },
+    "exp199 cooldown rows": {
+      "rows": 11540,
+      "expected_rows": null,
+      "missing_columns": [],
+      "ok": true
+    },
+    "exp247 features": {
+      "rows": 314,
+      "expected_rows": 314,
+      "missing_columns": [],
+      "ok": true
+    },
+    "exp94 legacy sequences": {
+      "rows": 554,
+      "expected_rows": 554,
+      "missing_columns": [],
+      "ok": true
+    }
+  }
+}

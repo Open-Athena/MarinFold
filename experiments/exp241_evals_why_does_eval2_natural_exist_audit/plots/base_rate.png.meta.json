@@ -1,0 +1,5 @@
+{
+  "script": "plot_mechanisms.py",
+  "args": [],
+  "caption": "Random recent PDB protein chains put through eval2's own filter and target database, beside the eval-set slices. The unconditioned survival rate is the base rate eval2-natural has to be judged against."
+}

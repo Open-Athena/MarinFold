@@ -1,0 +1,22 @@
+{
+  "reference_version": "v1",
+  "rule": "identity >= 30% over >= 50% of the shorter sequence",
+  "min_identity": 0.3,
+  "min_coverage": 0.5,
+  "coverage_mode": "shorter",
+  "search_reported_to_evalue": 1000.0,
+  "evalue_arm": null,
+  "report_evalue_ceiling": Infinity,
+  "alignments": {
+    "eval554": "/data/exp225_decontam/aln_all_hits.m8",
+    "foldbench_all": "/data/exp225_decontam/foldbench_all/aln_all_hits.m8"
+  },
+  "totals": {
+    "eval554/afdb": 57482,
+    "eval554/esm_atlas": 782179,
+    "foldbench_all/afdb": 130409,
+    "foldbench_all/esm_atlas": 573382,
+    "eval554 + foldbench_all/afdb": 166679,
+    "eval554 + foldbench_all/esm_atlas": 1206744
+  }
+}

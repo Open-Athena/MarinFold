@@ -1,0 +1,153 @@
+---
+marinfold_experiment:
+  issue: 166
+  title: 'exp: contacts-v1 AA augmentation'
+  kind: models
+  branch: exp166/eval-checkpoints
+---
+
+# exp: contacts-v1 AA augmentation
+
+**Issue:** [#166](https://github.com/Open-Athena/MarinFold/issues/166) ·
+**Kind:** `models` · **Branch:** `exp166/eval-checkpoints`
+
+## Question
+
+Does the exp166 contacts-v1 amino-acid augmentation run improve contact
+R-precision over its exp117 initialization? This directory evaluates the final
+exp166 checkpoint and reruns the established exp117 control through the same
+pipeline.
+
+## Checkpoints
+
+| Role | Hugging Face checkpoint | Reference |
+|---|---|---|
+| Candidate | `open-athena/marinfold-exp166/.../hf/step-35679` | exp166 |
+| Control | `open-athena/marinfold-exp117/.../hf/step-35679` | validation loss 2.703709; prior R-precision 0.5344 |
+
+The exact immutable subfolders are defined in
+[`checkpoint_specs.py`](checkpoint_specs.py). Training code is provenance only;
+neither evaluation job needs a Marin source checkout.
+
+## Evaluation design
+
+Each checkpoint is submitted as a completely independent Iris job to the
+`marin-dev` cluster. A job requests one `v6e-4` without a location constraint,
+downloads
+only its selected HF subtree with one worker, converts floating tensors
+shard-by-shard to BF16 on local scratch, validates the export, and evaluates the
+fixed 554-target set. Prepared weights remain ephemeral.
+
+The scientific recipe matches the settled exp169 evaluation: 100 independently
+resampled contacts-v1 documents per protein, temperature 1.0, top-p 0.95, top-k
+disabled, and pure contact-vote ranking. Result parts and per-input timings are
+restartable and public under the `open-athena/MarinFold` HF bucket. Each full
+prefix also carries the exact prompt parquet and ground-truth universe used by
+the scorer.
+
+## Why this is smaller than PR #170
+
+PR #170 needed separate export, repair, verification, S3/GCS staging, launch,
+fetch, summary, plot, and upload programs, modified the shared exp82 worker, and
+submitted TPU jobs from a Marin source checkout so its workspace extras were
+available. The two checkpoints here already have usable HF exports, so one
+worker downloads one immutable subtree, converts it on ephemeral disk, validates
+it, evaluates it, and resumes from its own durable part markers. `submit.py`
+launches one checkpoint per job and `analyze.py` performs the complete local
+finalization; no shared experiment code or object-store staging scripts are
+needed.
+
+The experiment-local `pyproject.toml` is the deployment boundary that makes
+this possible. MarinFold's library project intentionally lacks Iris and the TPU
+vLLM stack, while reusing a Marin project would package an unrelated source tree
+and make the run depend on whichever sibling checkout happened to be present.
+This manifest instead installs the current published Marin Iris client locally,
+pins a `tpu` extra for the worker, pins MarinFold by Git revision, and keeps
+analysis dependencies optional. Iris can therefore bundle this small directory
+and recreate the proven environment from `uv.lock` without either source
+checkout.
+
+## Status
+
+Both independent four-target smoke jobs and both full 554-target jobs passed on
+`marin-dev`. The unattended full jobs each survived one preemption by resuming
+only their incomplete 16-target parts. Iris placed the first attempts in
+`us-east1-d` and replacement workers in `europe-west4-a`; no region or zone was
+specified by the submitter.
+
+See [`PLAN.md`](PLAN.md) for the probe record and rollout sequence.
+
+## Results
+
+| Checkpoint | All R | All L | All AUC | Long R |
+|---|---:|---:|---:|---:|
+| exp117 control | 0.5336 | 0.4801 | 0.9324 | 0.4826 |
+| exp166 AA augmentation | **0.5618** | **0.5070** | **0.9394** | **0.5133** |
+
+The paired all-range R-precision gain is **+0.02818** over 554 proteins (95%
+CI 0.02260–0.03375). The candidate wins on 66.6% of proteins and ties on
+12.6%. The control is within 0.0008 of its prior 0.5344 result, passing the
+declared 0.006 harness tolerance.
+
+The combined where-we-stand figure puts the five compact R-precision
+distributions first, ordered by increasing mean R-precision. Its box colors
+group #75/#146 in gray and #117/#166 in dark orange, with the same mapping in
+the simplified validation-loss scatter. The scatter shows
+the three 1.5B checkpoints #75, #117, and #166 plus historical exp146 3B
+(validation loss 2.702478, R = 0.511863). It retains 95% confidence bars. The
+best-fit line deliberately uses only the three 1.5B points, because issue #169
+showed that validation loss is not comparable across model sizes. That fit is
+extended to the historical Protenix-v2 single-sequence baseline (R = 0.6032);
+its crossing estimates that matching Protenix-v2 requires validation loss
+about 2.645.
+
+The candidate-versus-control diagnostic shows paired all-, short-, medium-, and
+long-range R-precision distributions from this evaluation.
+
+Only the exp117 and exp166 contact scores were generated by this evaluation.
+MarinFold #75 comes from exp82's historical rollout table, exp146 comes from
+exp169/PR #170, and Protenix-v2 single-sequence comes from exp89/exp74. The
+exp146 input is the exact 554-row all-range R subset of the public exp169 table
+(SHA-256
+`daf8b31cddae3898bee11b6c7214daa83e29630626718f886654689c97b6e1f0`).
+That provenance is kept in the shared footer and metadata instead of prefixed
+to labels. Protenix-v2 MSA, ESMFold, and ESMFold2 remain excluded, as does PR
+#170's separate paired-delta panel.
+
+The public
+[derived artifact directory](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/contacts-v1-model-eval-exp166/derived)
+contains the full per-protein table, all range/cut summaries, paired statistics,
+timings, all plots and their data, checksums, and one lossless float16 score
+matrix archive per checkpoint. The raw result prefixes retain all 35 sparse
+vote and timing parts plus exact inputs and run manifests.
+
+## Submission
+
+From this directory's locked environment, submit exactly one checkpoint at a
+time:
+
+```bash
+uv run --extra tpu --frozen python submit.py --checkpoint exp166 --smoke
+uv run --extra tpu --frozen python submit.py --checkpoint exp117-control --smoke
+```
+
+Omit `--smoke` only after both four-target jobs pass. `HF_TOKEN` must be the
+authorized `open-athena` write token. `submit.py` defaults to `marin-dev` and
+does not expose the production cluster as a default. Add `--job-suffix <name>`
+when resubmitting an existing job name; the output prefix remains resumable.
+
+## Finalization
+
+After both jobs have 554 unique completion rows:
+
+```bash
+uv run --extra analysis --frozen python analyze.py --upload
+```
+
+[`analyze.py`](analyze.py) streams the two result prefixes one file at a time,
+reconstructs the exact dense float16 vote matrices, applies the canonical
+exp89/PR #170 metric semantics, validates the control against R-precision
+0.5344, computes paired confidence intervals, and writes the comparison
+boxplots. It preserves one matrix archive per checkpoint plus per-protein
+metrics, timings, summary and paired tables, figures, metadata, and checksums
+under `data/contacts-v1-model-eval-exp166/derived/` in the public HF bucket.

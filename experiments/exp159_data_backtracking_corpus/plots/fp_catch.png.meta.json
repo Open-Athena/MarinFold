@@ -1,0 +1,8 @@
+{
+  "script": "make_plots.py",
+  "args": [
+    "--shards",
+    "2"
+  ],
+  "caption": "Of 4,143,614 false positives the base model emitted, 76.5% were retracted by its own collapsing posterior; the rest are removed by the correctness flush. The trigger wrongly retracted 0 true contacts."
+}

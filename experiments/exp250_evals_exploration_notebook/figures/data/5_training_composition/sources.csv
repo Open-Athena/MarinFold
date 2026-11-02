@@ -1,0 +1,3 @@
+source,label,description,documents_before,documents_dropped,documents,tokens,decontamination_rule,token_share,document_share
+afdb,AFDB,"AlphaFold DB predicted monomers (#53), decontaminated in #225",4129682,166679,3963003,4432940838,"identity >= 30% over >= 50% of the shorter sequence, no E-value threshold",0.059521845061393776,0.057008353206284446
+esm_atlas,ESM Atlas,"ESM Atlas predicted metagenomic structures (#139), decontaminated in #225",66759922,1206744,65553178,70042923165,"identity >= 30% over >= 50% of the shorter sequence, no E-value threshold",0.9404781549386062,0.9429916467937155

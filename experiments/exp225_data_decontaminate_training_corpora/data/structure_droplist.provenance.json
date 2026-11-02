@@ -1,0 +1,30 @@
+{
+  "reference_version": "v1",
+  "arm": "afdb",
+  "corpus_documents": 4129682,
+  "reps_db": "/data/exp225_decontam/afdb_reps_db",
+  "alignment_type": "1 (TM-align)",
+  "max_seqs": 1000000,
+  "reporting_evalue": 10.0,
+  "thresholds": {
+    "redundant_tm": 0.9,
+    "fold_tm": 0.5
+  },
+  "n_alignments": 15915243,
+  "n_alignments_vs_train_reps": 15602085,
+  "n_train_clusters_with_any_hit": 945861,
+  "n_eval_proteins_with_any_train_hit": 544,
+  "droplist": "/data/exp225_decontam/droplist_structure_afdb.parquet",
+  "purge_counts": {
+    "B_qtm": 10284,
+    "B_max_qt_tm": 11019,
+    "C_qtm": 487969,
+    "C_max_qt_tm": 543666
+  },
+  "nearest_eval_dataset_counts": {
+    "denovo_pdb": 666718,
+    "foldbench100": 183725,
+    "cameo_hard": 65130,
+    "casp_fm": 30288
+  }
+}

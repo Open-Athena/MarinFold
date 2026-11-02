@@ -1,0 +1,5 @@
+{
+  "script": "plot_survival.py",
+  "args": [],
+  "caption": "exp199 trained on both corpora, so the union is the filter that counts \u2014 but every prior overlap check (#41, #65, #94) looked at AFDB only. Left: AFDB alone would have left 76 of the 222 looking clean at <40 %; the union leaves 23. Right: for the net-new set the metagenomic ESM-Atlas arm is the *larger* sole contaminator (53 vs 39), reversing the pattern in the existing 554 (27 vs 60, which reproduces #213's split exactly)."
+}

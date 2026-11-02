@@ -1,0 +1,8 @@
+{
+  "script": "plot_overlap.py",
+  "args": [
+    "--data-dir=/home/bizon/git/MarinFold/.claude/worktrees/eval-sequence-overlap-analysis-33a77a/experiments/exp213_evals_train_sequence_overlap_audit/data",
+    "--out-dir=/home/bizon/git/MarinFold/.claude/worktrees/eval-sequence-overlap-analysis-33a77a/experiments/exp213_evals_train_sequence_overlap_audit/plots"
+  ],
+  "caption": "Left: eval proteins by best sequence identity to exp199's training set (MMseqs2 -s 7.5; identity measured over alignments covering \u226550% of the query), split on de novo designed vs natural. Right: which of the two training corpora contributes the homolog. 'neither' is the homology-free subset the re-eval uses."
+}

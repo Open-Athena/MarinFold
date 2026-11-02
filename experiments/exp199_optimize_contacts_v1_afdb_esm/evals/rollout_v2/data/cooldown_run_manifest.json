@@ -1,0 +1,282 @@
+{
+  "checkpoint_source": {
+    "checkpoint_copied": false,
+    "evaluated_dtype": "bfloat16",
+    "gcs_used": false,
+    "identities": [
+      {
+        "coreweave_uri": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_continue_contacts_v1_cw/checkpoints/protein/prot-exp199-cw-cv1-p06-cool-s01/2026.08.14.1/hf/step-290400",
+        "kind": "coreweave-s3",
+        "repo_id": null,
+        "revision": null
+      }
+    ],
+    "mirror_run_id": "cooldown-v2-20260815-01",
+    "source_dtypes": [
+      "float32"
+    ],
+    "transport": "pre-existing CoreWeave S3 checkpoint verified in place against its pinned file manifest"
+  },
+  "checkpoints": [
+    {
+      "coreweave_uri": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_continue_contacts_v1_cw/checkpoints/protein/prot-exp199-cw-cv1-p06-cool-s01/2026.08.14.1/hf/step-290400",
+      "eval_loss": 2.9396727085113525,
+      "hf_repo_id": null,
+      "hf_revision": null,
+      "label": "cw_p06_cool_step290400",
+      "run_name": "prot-exp199-cw-cv1-p06-cool-s01",
+      "source_dtype": "float32",
+      "step": 290400,
+      "train_loss": 2.86245059967041,
+      "wandb_metric_keys": {
+        "eval_loss": "eval/loss",
+        "train_loss": "train/loss"
+      },
+      "wandb_url": "https://wandb.ai/eric-czech/marin/runs/prot-exp199-cw-cv1-p06-cool-s01",
+      "weight_shard_digests": [
+        "c4685b3b45694c66418a6f1ff779af91-95",
+        "3788cd21299125acfe3e2d04e91e84e0-18"
+      ]
+    }
+  ],
+  "completed_at": "2026-08-15T12:52:41.027332+00:00",
+  "exp89_compute_metrics_sha256": "6cbaa1c555763df07cb94ee81accebef25a5565590d47a32470ade78e36d824a",
+  "headline_metrics": [
+    {
+      "cut": "AUC",
+      "model": "marinfold-cw-p06-cool-step290400",
+      "precision": 0.9511179370850402,
+      "range": "all",
+      "subset": "legacy_554",
+      "total_values": 554,
+      "valid_values": 554
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-cw-p06-cool-step290400",
+      "precision": 0.6306825167807124,
+      "range": "all",
+      "subset": "legacy_554",
+      "total_values": 554,
+      "valid_values": 554
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-cw-p06-cool-step290400",
+      "precision": 0.9382504848650003,
+      "range": "long",
+      "subset": "legacy_554",
+      "total_values": 554,
+      "valid_values": 553
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-cw-p06-cool-step290400",
+      "precision": 0.5837339531176962,
+      "range": "long",
+      "subset": "legacy_554",
+      "total_values": 554,
+      "valid_values": 553
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-cw-p06-cool-step290400",
+      "precision": 0.932789888940329,
+      "range": "all",
+      "subset": "eval2",
+      "total_values": 307,
+      "valid_values": 307
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-cw-p06-cool-step290400",
+      "precision": 0.5539192095757849,
+      "range": "all",
+      "subset": "eval2",
+      "total_values": 307,
+      "valid_values": 307
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-cw-p06-cool-step290400",
+      "precision": 0.9152312362645983,
+      "range": "long",
+      "subset": "eval2",
+      "total_values": 307,
+      "valid_values": 306
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-cw-p06-cool-step290400",
+      "precision": 0.49553720441848226,
+      "range": "long",
+      "subset": "eval2",
+      "total_values": 307,
+      "valid_values": 306
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-cw-p06-cool-step290400",
+      "precision": 0.8702094053450146,
+      "range": "all",
+      "subset": "eval2_natural",
+      "total_values": 78,
+      "valid_values": 78
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-cw-p06-cool-step290400",
+      "precision": 0.3579372153156387,
+      "range": "all",
+      "subset": "eval2_natural",
+      "total_values": 78,
+      "valid_values": 78
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-cw-p06-cool-step290400",
+      "precision": 0.8425514607338854,
+      "range": "long",
+      "subset": "eval2_natural",
+      "total_values": 78,
+      "valid_values": 78
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-cw-p06-cool-step290400",
+      "precision": 0.29983105912000513,
+      "range": "long",
+      "subset": "eval2_natural",
+      "total_values": 78,
+      "valid_values": 78
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-cw-p06-cool-step290400",
+      "precision": 0.9322449810386794,
+      "range": "all",
+      "subset": "eval2_30",
+      "total_values": 275,
+      "valid_values": 275
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-cw-p06-cool-step290400",
+      "precision": 0.5503397076814651,
+      "range": "all",
+      "subset": "eval2_30",
+      "total_values": 275,
+      "valid_values": 275
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-cw-p06-cool-step290400",
+      "precision": 0.914017598011829,
+      "range": "long",
+      "subset": "eval2_30",
+      "total_values": 275,
+      "valid_values": 274
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-cw-p06-cool-step290400",
+      "precision": 0.48961215597421104,
+      "range": "long",
+      "subset": "eval2_30",
+      "total_values": 275,
+      "valid_values": 274
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-cw-p06-cool-step290400",
+      "precision": 0.8567908226577315,
+      "range": "all",
+      "subset": "eval2_natural_30",
+      "total_values": 61,
+      "valid_values": 61
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-cw-p06-cool-step290400",
+      "precision": 0.32016620472401514,
+      "range": "all",
+      "subset": "eval2_natural_30",
+      "total_values": 61,
+      "valid_values": 61
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-cw-p06-cool-step290400",
+      "precision": 0.8252230527533869,
+      "range": "long",
+      "subset": "eval2_natural_30",
+      "total_values": 61,
+      "valid_values": 61
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-cw-p06-cool-step290400",
+      "precision": 0.2538178429644279,
+      "range": "long",
+      "subset": "eval2_natural_30",
+      "total_values": 61,
+      "valid_values": 61
+    }
+  ],
+  "job_ids": [
+    "/eczech/exp199-cooldown-rollout-cooldown-v2-20260815-01/e199v2-cooldown-v2-20260815-01-sm-p06cool-s00",
+    "/eczech/exp199-cooldown-rollout-cooldown-v2-20260815-01/e199v2-cooldown-v2-20260815-01-fu-p06cool-s00",
+    "/eczech/exp199-cooldown-rollout-cooldown-v2-20260815-01/e199v2-cooldown-v2-20260815-01-fu-p06cool-s01",
+    "/eczech/exp199-cooldown-rollout-cooldown-v2-20260815-01/e199v2-cooldown-v2-20260815-01-fu-p06cool-s02",
+    "/eczech/exp199-cooldown-rollout-cooldown-v2-20260815-01/e199v2-cooldown-v2-20260815-01-fu-p06cool-s03",
+    "/eczech/exp199-cooldown-rollout-cooldown-v2-20260815-01/e199v2-cooldown-v2-20260815-01-fu-p06cool-s04",
+    "/eczech/exp199-cooldown-rollout-cooldown-v2-20260815-01/e199v2-cooldown-v2-20260815-01-fu-p06cool-s05",
+    "/eczech/exp199-cooldown-rollout-cooldown-v2-20260815-01/e199v2-cooldown-v2-20260815-01-fu-p06cool-s06",
+    "/eczech/exp199-cooldown-rollout-cooldown-v2-20260815-01/e199v2-cooldown-v2-20260815-01-fu-p06cool-s07",
+    "/eczech/exp199-cooldown-rollout-cooldown-v2-20260815-01/e199v2-cooldown-v2-20260815-01-fu-p06cool-s08",
+    "/eczech/exp199-cooldown-rollout-cooldown-v2-20260815-01/e199v2-cooldown-v2-20260815-01-fu-p06cool-s09",
+    "/eczech/exp199-cooldown-rollout-cooldown-v2-20260815-01/e199v2-cooldown-v2-20260815-01-fu-p06cool-s10",
+    "/eczech/exp199-cooldown-rollout-cooldown-v2-20260815-01/e199v2-cooldown-v2-20260815-01-fu-p06cool-s11"
+  ],
+  "outputs": {
+    "aggregate_metrics": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/cooldown-v2-20260815-01/results/aggregate_metrics.csv",
+    "contact_precision_all": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/cooldown-v2-20260815-01/results/contact_precision_all.csv",
+    "dense_scores": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/cooldown-v2-20260815-01/dense_scores",
+    "marinfold_precision": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/cooldown-v2-20260815-01/results/marinfold_precision.csv",
+    "subset_aggregate_metrics": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/cooldown-v2-20260815-01/results/subset_aggregate_metrics.csv",
+    "timings": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/cooldown-v2-20260815-01/results/timings.csv"
+  },
+  "reference_validation": null,
+  "reporting_subset_units": {
+    "eval2": 307,
+    "eval2_30": 275,
+    "eval2_natural": 78,
+    "eval2_natural_30": 61,
+    "legacy_554": 554,
+    "universe_577": 577
+  },
+  "run_root": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp199_optimize_contacts_v1_afdb_esm/evals/rollout_v2/cooldown-v2-20260815-01",
+  "sampling": {
+    "n_rollouts": 100,
+    "recipe": "rollout_resample",
+    "seed": 1,
+    "temperature": 1.0,
+    "tie_break": null,
+    "token_budget": "min(8192-prompt_tokens, 6*L+128)",
+    "top_k": -1,
+    "top_p": 0.95
+  },
+  "schema_version": 1,
+  "started_at": "2026-08-15T12:41:52.934813+00:00",
+  "suite": "cooldown",
+  "validation": {
+    "cw_p06_cool_step290400": {
+      "dense_matrices": 577,
+      "rollouts": 57700,
+      "unfinished_rollouts": 0,
+      "unique_stems": 575,
+      "units": 577
+    }
+  },
+  "worker_sha256": "f28829f9826a7089f082cb55de45582c7cbc389ea3d700e5c5869ff29bb6bc82"
+}

@@ -1,0 +1,49 @@
+{
+  "n_monomers": 334,
+  "sets": {
+    "eval-denovo": {
+      "n": 19,
+      "n_viral": 0,
+      "n_nonviral": 19,
+      "median_length": 146.0,
+      "max_length": 284,
+      "kingdoms": {
+        "synthetic": 19
+      }
+    },
+    "eval-test": {
+      "n": 218,
+      "n_viral": 13,
+      "n_nonviral": 205,
+      "median_length": 258.0,
+      "max_length": 1596,
+      "kingdoms": {
+        "bacteria": 127,
+        "eukaryote": 69,
+        "virus": 13,
+        "archaea": 5,
+        "unclassified": 4
+      }
+    },
+    "eval-val": {
+      "n": 97,
+      "n_viral": 6,
+      "n_nonviral": 91,
+      "median_length": 245.0,
+      "max_length": 761,
+      "kingdoms": {
+        "bacteria": 56,
+        "eukaryote": 33,
+        "virus": 6,
+        "archaea": 1,
+        "unclassified": 1
+      }
+    }
+  },
+  "exp241_cross_check": {
+    "available": true,
+    "stems_compared": 334,
+    "disagreements": 0
+  },
+  "foldbench_targets_sha256": "1b34d1929ab91cc4253c5b803c0e5201bb5d45acbf5d113e81d5b21a1f57e221"
+}

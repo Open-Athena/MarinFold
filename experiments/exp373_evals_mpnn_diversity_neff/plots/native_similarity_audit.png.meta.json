@@ -1,0 +1,5 @@
+{
+  "script": "plot.py",
+  "args": [],
+  "caption": "Exploratory exp245 native AFDB/ESM-Atlas alignment evidence. The 50% coverage filter restricts identity; 40% exposes local matches. Redesign sequences were not searched."
+}

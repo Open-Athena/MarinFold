@@ -1,0 +1,4 @@
+arm,n,L_median,L_p90,n_gt_median,contaminated_dropped,usable_seen
+afdb,40000,170.0,368.0,118.0,930.0,41502.0
+esm_atlas,40000,204.0,383.0,172.0,1254.0,43374.0
+pdb,27110,182.0,380.0,155.0,2010.0,29120.0

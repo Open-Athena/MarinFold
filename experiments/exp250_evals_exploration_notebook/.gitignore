@@ -1,0 +1,5 @@
+# The rescoring job's dense contact maps: 333 [L, L] matrices, hundreds of MB, and
+# reproducible from the checkpoint. What the figures need — the per-protein metrics
+# — is aggregated into figures/data/ and committed there.
+data/foldbench_rescore/*/dense/
+data/foldbench_rescore/*/*.log

@@ -1,0 +1,5 @@
+{
+  "script": "plot.py",
+  "args": [],
+  "caption": "Prediction (upper triangle) vs pyconfind truth (lower), one shared colour scale. The permutant's map is fainter because the model is less confident."
+}

@@ -1,0 +1,3 @@
+predictor,source,sha256
+exp232 step363000 (previous default),experiments/exp232_sweep_cv1_decontam/evals/2026-08-24_rollout_v2/data/coreweave_results/marinfold_precision.csv.gz,1709007bb591bc61593d1638173a9a968df2be78490a5a884a0592f04e7516f4
+seq-KNN decontaminated native corpus,experiments/exp245_evals_foldbench_held_out_monomers/data/knn_precision_new.csv.gz,4afb33f2118d4d56580062a1d0282ec9e562a8f9308964aad99d2d1d1034360e

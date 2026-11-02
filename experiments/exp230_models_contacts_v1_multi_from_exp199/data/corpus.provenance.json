@@ -1,0 +1,16 @@
+{
+  "seed": 230,
+  "docs_per_protein": 7,
+  "mix_plain": 0.5,
+  "kmax": 12,
+  "n_cap": 250,
+  "stats": {
+    "multi": 349412,
+    "plain": 349412,
+    "skipped_no_rollouts": 57194,
+    "skipped_build": 0
+  },
+  "targets": "/data/exp230_multi/targets.parquet",
+  "rollouts": "gs://marin-us-east5/protein-structure/MarinFold/exp230_contacts_v1_multi/rollouts",
+  "multi_doc_token": "<contacts-v1.multi>"
+}

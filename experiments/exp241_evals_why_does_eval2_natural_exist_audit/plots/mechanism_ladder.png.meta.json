@@ -1,0 +1,5 @@
+{
+  "script": "plot_mechanisms.py",
+  "args": [],
+  "caption": "Each of the 78 proteins published as eval2-natural, charged to the earliest checked reason it escaped the 40% filter. Hatching marks the share drawn from the novelty-curated CASP-FM / CAMEO-hard sources."
+}

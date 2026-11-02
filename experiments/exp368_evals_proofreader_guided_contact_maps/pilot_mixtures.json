@@ -1,0 +1,77 @@
+{
+  "split": "validation",
+  "entries": [
+    "6dsl_A",
+    "6z0m_A",
+    "1k3h_A",
+    "1ilo_A",
+    "2jov_A",
+    "3lkl_A",
+    "4ofk_A",
+    "4g1r_A",
+    "2db2_A",
+    "6xxd_A",
+    "5fmu_A",
+    "6ejq_A",
+    "4d5r_A",
+    "4ftx_A",
+    "2g3t_A",
+    "5hjf_A",
+    "5gp9_A",
+    "5z6d_A",
+    "1em2_A",
+    "5ufm_A",
+    "4knw_A",
+    "4d8b_A",
+    "1i2l_A",
+    "1xxx_A",
+    "3cpx_A",
+    "6fnq_A",
+    "5a5l_A",
+    "6gkw_A",
+    "2y4e_A",
+    "4ler_A",
+    "4d1j_A",
+    "1q2l_A"
+  ],
+  "frozen_at": "2026-10-22T15:07:45.790084+00:00",
+  "motivation": "User asked whether mixtures of top-10%, top-20%, and other thresholds could improve maps. Reuse existing top-10%, top-25%, top-50% and ordinary constrained rollouts; top-20% itself was not generated.",
+  "mixtures": [
+    {
+      "name": "mix-thresholds",
+      "components": [
+        "top10-k16",
+        "top25-k16",
+        "top50-k16"
+      ]
+    },
+    {
+      "name": "mix-control-thresholds",
+      "components": [
+        "control",
+        "top10-k16",
+        "top25-k16",
+        "top50-k16"
+      ]
+    }
+  ],
+  "budgets": [
+    "four distinct sample identities, rotate policy assignments over all component offsets and average map metrics within each protein",
+    "full union of all four saved rollouts for every component (12 or 16 trajectories)"
+  ],
+  "methods": [
+    "frequency",
+    "sumq",
+    "f1_power2"
+  ],
+  "primary_contrasts": {
+    "mix-thresholds:4:sumq": "top50-k16:4:sumq",
+    "mix-control-thresholds:4:sumq": "control:4:sumq"
+  },
+  "practical_baseline": "ordinary-direct:128:frequency",
+  "uncertainty": "2000 paired related-group bootstrap draws after averaging assignment rotations within each protein. Rotations share rollouts and are not independent biological samples.",
+  "timing": "Sum contemporaneous inference costs of included trajectories; average across assignment rotations for four-rollout mixtures. No new GPU inference; CPU aggregation excluded.",
+  "reserved_test_is_unchanged": true,
+  "test_results_used": false,
+  "selection": "User-requested exploratory validation analysis while the separately frozen reserved comparison runs. No new test configurations will be added."
+}

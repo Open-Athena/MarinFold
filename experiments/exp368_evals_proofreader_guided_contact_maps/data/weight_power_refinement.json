@@ -1,0 +1,26 @@
+{
+  "frozen_at": "2026-10-21T21:15:24.230084+00:00",
+  "reason": "Predicted-F1 vote weighting improved complete 1,375-structure validation on H100 and GB200. Explore whether emphasizing high-quality rollouts more strongly helps, using existing complete pilot pools only.",
+  "plan": "pilot_weight_power.json",
+  "plan_sha256": "d487f65c95e624a4655fc046249ed7c7a843de4fd38c035138128917850205b7",
+  "powers": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "new_methods": [
+    "f1_power2",
+    "f1_power4",
+    "f1_power8"
+  ],
+  "inference": "No new model inference; fixed released scores and identical 128-rollout pools on 32 pilot proteins, in separate H100 and GB200 runtime cohorts.",
+  "decision": "Report all powers. No final selection until all 15 original guided pilot families complete. At most three promising frontier configurations in total advance to the remaining validation groups, then exactly one frozen reserved-test comparison.",
+  "primary": "All-contact R-precision; long-range R-precision must also support an improvement. Paired 2,000-replicate group bootstrap; exploratory intervals are unadjusted.",
+  "prior_hashes": {
+    "data/validation_pool/summary.csv": "b03c5c51362c655a49c19eb7537d4e9df4630de23128f5fe2327631a7d783660",
+    "data/validation_pool_gb200/summary.csv": "5857ed931627b2e7d8b2567ece0a5b2223231d0cdeec79570bbd000d67688ea4",
+    "data/pilot_direct/summary.csv": "587f0c6498f522422e76251e2563356aab952ba087ff6fd7088a322cef41f9af",
+    "data/pilot_direct_gb200/summary.csv": "83902be129fe625799b9bc2b0d971cef135d6d2a8e0fa60aae0b2b3191ff5acd"
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "contacts-and-crops-v1 structure prediction on the 554-protein eval set. Left: mean lDDT and TM-score by inference plan, with the oracle-document ceiling dashed. Middle: the same by length \u2014 coverage falls with length by construction. Right: per-protein coverage against lDDT, separating coverage-limited from accuracy-limited failure."
+}

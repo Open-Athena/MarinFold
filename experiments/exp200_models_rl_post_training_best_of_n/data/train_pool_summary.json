@@ -1,0 +1,28 @@
+{
+  "n_proteins": 10000,
+  "n_prompt_objects": 10000,
+  "realizations_per_protein": 16,
+  "source": "exp53 contacts-v1 train split, AFDB round 0 (highest pLDDT)",
+  "shards_read": 9,
+  "leaked_excluded": 0,
+  "exact_sequence_overlap_with_eval554": 0,
+  "distinct_struct_clusters": 10000,
+  "L": {
+    "min": 31,
+    "median": 159.0,
+    "p90": 359.0,
+    "max": 512
+  },
+  "n_gt": {
+    "min": 5,
+    "median": 105.0,
+    "mean": 138.7091
+  },
+  "global_plddt": {
+    "mean": 88.9540540230422,
+    "min": 70.54171048130905
+  },
+  "targets_uri": "gs://marin-us-east5/protein-structure/MarinFold/exp200/train/targets.parquet",
+  "prompts_uri": "gs://marin-us-east5/protein-structure/MarinFold/exp200/train/prompts",
+  "job": "/bizon/exp200-prep-pool"
+}

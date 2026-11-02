@@ -1,0 +1,31 @@
+[project]
+name = "exp241-evals-why-does-eval2-natural-exist-audit"
+version = "0.1.0"
+description = "Audit why 78 natural proteins survive eval2's 40% training-identity filter — issue #241. Analysis only: CPU, no cluster job, no model inference."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # No marinfold and no mmseqs: this experiment never decodes a training
+    # document and never runs a new search. It reuses exp226's committed
+    # per-protein table, exp213's arm FASTAs on /data/exp213_overlap, and
+    # exp65's source manifests. The only network I/O is RCSB, UniProt and the
+    # EBI AFDB API — all through urllib from the stdlib.
+    "numpy",
+    "pandas>=2.0",
+    "matplotlib>=3.8",
+    "scipy>=1.11",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+# Scripts, not a packaged library.
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'linux'",
+]

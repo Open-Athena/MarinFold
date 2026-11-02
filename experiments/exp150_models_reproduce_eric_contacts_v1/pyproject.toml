@@ -1,0 +1,109 @@
+[project]
+name = "exp150-models-reproduce-eric-contacts-v1"
+version = "0.1.0"
+description = "Reproduce Eric's best contacts-v1 1.5B run (exp117 e16-lr3p162e-3-wd0p2-bs128) on MarinFold's own training path — issue #150."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # Depend on the marin SOURCE dist names (marin-core == the `marin` module),
+    # resolved from PyPI — NOT the `marin-*-latest` GitHub find-links, which are
+    # FROZEN at the buggy 2026-05-29 build (`0.99.dev20260529`). PyPI carries the
+    # ongoing dev releases (`0.2.x.dev<date>`); the cache-ledger READER fix #6014
+    # landed in `0.2.5.dev202606020954` (2026-06-02). The `<0.3` upper bound is
+    # essential: the frozen `0.99.dev` wheels sort ABOVE the fixed `0.2.x.dev`
+    # ones, so without it uv (prerelease=allow) would prefer the frozen build.
+    "marin-core>=0.2.5.dev202606020954,<0.3",
+    "marin-levanter>=0.2.5.dev202606020954,<0.3",
+    "marin-iris>=0.2.5.dev202606020954,<0.3",
+    "marin-zephyr>=0.2.5.dev202606020954,<0.3",
+    "marin-rigging>=0.2.5.dev202606020954,<0.3",
+    "marinfold-models",
+    # marin.processing.tokenize -> marin.datakit.normalize imports `dupekit`
+    # unconditionally; the source dist name is `marin-dupekit` (on PyPI).
+    "marin-dupekit<0.3",
+    # levanter.tracker.helpers imports `git` (GitPython) unconditionally at
+    # import time; it arrives transitively in some resolutions but not this one,
+    # so pin it directly rather than depend on resolver luck.
+    "gitpython",
+    # verification scripts read the GCS token caches / corpus parquet:
+    "gcsfs",
+    "fsspec",
+    "numpy",
+    "pandas",
+    "pyarrow",
+    "transformers",
+    "tokenizers",
+]
+
+[project.optional-dependencies]
+tpu = ["marin-core[tpu]; sys_platform == 'linux'"]
+# The marin executor builds the CPU-only tokenize sub-job with `--extra cpu`
+# (default_tokenize -> remote(..., pip_dependency_groups=["cpu"])), so this
+# extra must exist in the experiment's pyproject. We tokenize two fresh corpora
+# (contacts-v1 train + val), so the tokenize step actually runs.
+# `marin[cpu]` pulls the CPU jax build used for tokenization; it also hard-requires
+# torch / torchvision (unused at runtime — tokenize sets USE_TORCH=0 — but they
+# must resolve). torch/torchvision are inlined here (NOT just left transitive)
+# because uv source maps don't propagate through transitive extras, so the
+# `pytorch-cpu` index routing below only applies to direct deps. Mirrors exp120.
+cpu = [
+    "marin-core[cpu]",
+    "torch==2.10.0",
+    "torchvision==0.25.0+cpu; sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+# This pyproject only exists so `uv sync` can resolve the venv — the
+# experiment itself is a collection of scripts, not a packaged library.
+package = false
+fork-strategy = "fewest"
+prerelease = "allow"
+environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+]
+override-dependencies = [
+    "omegaconf>=2.4.0.dev4",
+    "antlr4-python3-runtime==4.11",
+    "python-multipart>=0.0.22",
+    "wheel>=0.46.2",
+    "datasets>=3.1.0,<4.0.0",
+    "equinox>=0.11.10",
+]
+
+# marin-* now resolve from PyPI (fixed `0.2.x.dev` builds; see dependencies +
+# the `<0.3` bound). We deliberately DO NOT list the `marin-*-latest` GitHub
+# find-links here — they are frozen at the buggy `0.99.dev20260529` and would
+# win on version ordering. Only kitoken (a Rust wheel from a separate repo, not
+# on PyPI) is fetched as a prebuilt wheel.
+find-links = [
+    "https://github.com/marin-community/kitoken/releases/expanded_assets/kitoken-0.10.2-a3012f4",
+]
+
+[[tool.uv.index]]
+name = "marin-resiliparse"
+url = "https://marin-community.github.io/chatnoir-resiliparse/simple"
+
+# pytorch-cpu is where the `+cpu` local-version wheels live (torch and
+# torchvision), required by marin's `cpu` extra. `explicit = true` so it's
+# only consulted for packages routed to it below. Mirrors exp120.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+resiliparse = { index = "marin-resiliparse" }
+# Route torch / torchvision through pytorch-cpu for the `cpu` extra so the
+# `+cpu` local-version wheels resolve.
+torch = [{ index = "pytorch-cpu", extra = "cpu" }]
+torchvision = [{ index = "pytorch-cpu", extra = "cpu" }]
+# Resolve marinfold-models from git (the `models/` subdirectory), NOT a local
+# `path = "../../models"`. Iris bundles only this experiment dir (`git ls-files`
+# from cwd), so a relative path that escapes the dir fails on the worker. A git
+# source is fetched on the worker. Pinned to main tip cc1e478 — the defaults.py /
+# simple_train_config.py this experiment's code was written against (models/ is
+# unchanged from exp120's 0c2fd36 pin except docs). Bump if models/ changes.
+marinfold-models = { git = "https://github.com/Open-Athena/MarinFold.git", subdirectory = "models", rev = "cc1e478999a88eced8304b0cd76894dbf7618996" }

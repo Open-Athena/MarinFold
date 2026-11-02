@@ -1,0 +1,18 @@
+stage,device,detail,length,batch_backbones,effective_batch,seconds,ms_per_sequence,peak_gb,mb_per_padded_residue
+proteinmpnn,rtx_a5000,8-designs-folded-into-batch,46,8,64,1.57,24.49,1.49,0.505
+proteinmpnn,rtx_a5000,8-designs-folded-into-batch,46,32,256,1.62,6.31,5.88,0.500
+proteinmpnn,rtx_a5000,8-designs-folded-into-batch,154,2,16,1.43,89.33,1.31,0.531
+proteinmpnn,rtx_a5000,8-designs-folded-into-batch,154,8,64,2.11,32.95,5.15,0.523
+proteinmpnn,rtx_a5000,8-designs-folded-into-batch,153,2,16,1.42,88.81,1.30,0.530
+proteinmpnn,rtx_a5000,8-designs-folded-into-batch,153,8,64,2.13,33.31,5.12,0.522
+proteinmpnn,rtx_a5000,one-sample-call-per-design,154,1,8,10.38,1297.90,,
+proteinmpnn,rtx_a5000,one-sample-call-per-design,154,8,64,10.22,159.60,,
+proteinmpnn,rtx_a5000,one-sample-call-per-design,154,32,256,12.89,50.40,,
+proteinmpnn,rtx_a5000,one-sample-call-per-design,154,64,512,16.56,32.40,,
+proteinmpnn,cpu_1thread,8-designs-folded-into-batch,46,1,8,1.30,161.90,,
+proteinmpnn,cpu_1thread,8-designs-folded-into-batch,154,1,8,4.82,602.00,,
+proteinmpnn,cpu_1thread,8-designs-folded-into-batch,153,1,8,4.67,583.50,,
+pyconfind,cpu_1thread,contacts-v1 document generation,250,,,0.463,,,
+proteinmpnn,rtx_a5000,staged-path smoke (48 distinct lengths => mostly B=1),217,1,8,79.3,206.5,,
+pyconfind,cpu_1thread,staged-path contacts-v1 document generation,217,,,0.378,,,
+staging,cpu_1thread,mmCIF -> staged backbone row (11.2 KB/protein),217,,,0.177,,,

@@ -13,6 +13,8 @@ from pathlib import Path
 
 from transformers import AutoTokenizer, PreTrainedTokenizerFast
 
+from marinfold.inference._config import needs_rope_repair, read_config, repair_rope
+
 # Special-token / length keys we carry over from a checkpoint's
 # ``tokenizer_config.json`` when falling back to a raw
 # ``PreTrainedTokenizerFast`` (see :func:`load_tokenizer`). The
@@ -94,18 +96,38 @@ def tokenizer_source_path(model_path: Path) -> str:
 
 
 def model_source_path(model_path: Path) -> str:
-    """Return a model path whose tokenizer is loadable by a combined loader.
+    """Return a checkpoint directory a path-based loader can read as-is.
 
-    Some consumers — notably ``mlx_lm.load`` — insist on loading the model
-    and tokenizer from the same directory. If the checkpoint tokenizer loads
-    normally, return ``model_path`` unchanged. Otherwise, create the repaired
-    tokenizer directory from :func:`tokenizer_source_path` and symlink every
-    missing model artifact into it. This keeps large weights in place while
-    presenting the combined loader with one complete, loadable directory.
+    Some consumers — ``mlx_lm.load``, and vLLM's engine — load the model and
+    its tokenizer from a directory themselves, so they cannot be handed a
+    repaired Python object. This builds them one.
+
+    Two things may need repairing, both from the same transformers-5 exporter
+    and both silent rather than fatal:
+
+    * the tokenizer, whose ``tokenizer_class`` (``"TokenizersBackend"``)
+      ``AutoTokenizer`` cannot resolve — see :func:`tokenizer_source_path`;
+    * ``config.json``, whose ``rope_parameters`` block our pinned
+      transformers 4.x ignores, falling back to the architecture's default
+      rope — see :mod:`marinfold.inference._config`.
+
+    If neither needs repair, ``model_path`` is returned unchanged. Otherwise a
+    temp directory is populated with symlinks to every checkpoint artifact —
+    keeping the large weights in place — and the repaired files are written
+    over the corresponding links.
     """
-    source_path = Path(tokenizer_source_path(model_path))
-    if source_path == model_path:
+    tokenizer_path = Path(tokenizer_source_path(model_path))
+    raw_config = read_config(model_path)
+    repair_config = needs_rope_repair(raw_config)
+
+    if tokenizer_path == model_path and not repair_config:
         return str(model_path)
+
+    source_path = tokenizer_path
+    if source_path == model_path:
+        # Only the config is broken, so there is no repaired tokenizer dir to
+        # build on; start a fresh overlay.
+        source_path = Path(tempfile.mkdtemp(prefix="marinfold-checkpoint-"))
 
     for model_entry in model_path.iterdir():
         destination = source_path / model_entry.name
@@ -114,4 +136,11 @@ def model_source_path(model_path: Path) -> str:
         destination.symlink_to(
             model_entry.resolve(), target_is_directory=model_entry.is_dir()
         )
+
+    if repair_config:
+        # Replace the symlink rather than writing through it — that would
+        # rewrite the user's checkpoint in place.
+        destination = source_path / "config.json"
+        destination.unlink(missing_ok=True)
+        destination.write_text(json.dumps(repair_rope(raw_config), indent=2))
     return str(source_path)

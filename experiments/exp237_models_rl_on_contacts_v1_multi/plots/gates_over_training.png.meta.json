@@ -1,0 +1,10 @@
+{
+  "script": "make_plots.py",
+  "args": [
+    "--steps",
+    "data/training_steps.csv.gz",
+    "--out",
+    "plots/"
+  ],
+  "caption": "The diversity gates per batch, rolling median over 6. Jaccard separates the arms: M-B rises, M-C and M-F fall. Faint = raw batches, i.e. the protein draw."
+}

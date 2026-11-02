@@ -1,0 +1,110 @@
+{
+  "checkpoint": {
+    "label": "e8_reference_step35679",
+    "run_name": "prot-exp75-cv1-1_5b-e8-lr1e-3-wd0p2-v1-bc3084",
+    "step": 35679
+  },
+  "coreweave_uri": "s3://marin-us-east-02a/MarinFold/exp163/model/step-35679",
+  "files": [
+    {
+      "digest": "2c84e510f70f1e1265ade774eda02f0e6da21be0",
+      "digest_kind": "git-sha1",
+      "name": "config.json",
+      "size": 2498
+    },
+    {
+      "digest": "0be51806a5ecbcbd4a7e2824c2c687a56e4bf0d5861db40a6432714270ccf50a",
+      "digest_kind": "sha256",
+      "name": "model-00001-of-00002.safetensors",
+      "size": 4979485528
+    },
+    {
+      "digest": "67cf32f6959292aaea53de2082d83f39af87a829237660fdbc74ce9af960451e",
+      "digest_kind": "sha256",
+      "name": "model-00002-of-00002.safetensors",
+      "size": 906042048
+    },
+    {
+      "digest": "9880be895e6d9c514b62ed263640d46f67d01a29",
+      "digest_kind": "git-sha1",
+      "name": "model.safetensors.index.json",
+      "size": 20882
+    },
+    {
+      "digest": "d6a4b943a77aba8a2f7e51e6e174a6cf241cdd52",
+      "digest_kind": "git-sha1",
+      "name": "special_tokens_map.json",
+      "size": 417
+    },
+    {
+      "digest": "6e696c75de792ee564e93bfdc30871022a07ad75",
+      "digest_kind": "git-sha1",
+      "name": "tokenizer.json",
+      "size": 64026
+    },
+    {
+      "digest": "d2eb7b23f57945904b33a95341ba86122efea48f",
+      "digest_kind": "git-sha1",
+      "name": "tokenizer_config.json",
+      "size": 785
+    }
+  ],
+  "source": {
+    "repo_id": "open-athena/marinfold-exp75",
+    "revision": "4c9e7779635b585730180823e0ab4b3319b82f67",
+    "subfolder": "prot-exp75-cv1-1_5b-e8-lr1e-3-wd0p2-v1-bc3084/hf/step-35679"
+  },
+  "verification": "streamed and hashed inside CoreWeave; no checkpoint copy was created",
+  "verified_at": "2026-08-18T12:43:38.000611+00:00",
+  "verified_files": [
+    {
+      "digest": "2c84e510f70f1e1265ade774eda02f0e6da21be0",
+      "digest_kind": "git-sha1",
+      "elapsed_seconds": 0.018183785490691662,
+      "name": "config.json",
+      "size": 2498
+    },
+    {
+      "digest": "0be51806a5ecbcbd4a7e2824c2c687a56e4bf0d5861db40a6432714270ccf50a",
+      "digest_kind": "sha256",
+      "elapsed_seconds": 12.940268889069557,
+      "name": "model-00001-of-00002.safetensors",
+      "size": 4979485528
+    },
+    {
+      "digest": "67cf32f6959292aaea53de2082d83f39af87a829237660fdbc74ce9af960451e",
+      "digest_kind": "sha256",
+      "elapsed_seconds": 2.3557721124961972,
+      "name": "model-00002-of-00002.safetensors",
+      "size": 906042048
+    },
+    {
+      "digest": "9880be895e6d9c514b62ed263640d46f67d01a29",
+      "digest_kind": "git-sha1",
+      "elapsed_seconds": 0.011642255820333958,
+      "name": "model.safetensors.index.json",
+      "size": 20882
+    },
+    {
+      "digest": "d6a4b943a77aba8a2f7e51e6e174a6cf241cdd52",
+      "digest_kind": "git-sha1",
+      "elapsed_seconds": 0.011660459451377392,
+      "name": "special_tokens_map.json",
+      "size": 417
+    },
+    {
+      "digest": "6e696c75de792ee564e93bfdc30871022a07ad75",
+      "digest_kind": "git-sha1",
+      "elapsed_seconds": 0.011043901555240154,
+      "name": "tokenizer.json",
+      "size": 64026
+    },
+    {
+      "digest": "d2eb7b23f57945904b33a95341ba86122efea48f",
+      "digest_kind": "git-sha1",
+      "elapsed_seconds": 0.014375605620443821,
+      "name": "tokenizer_config.json",
+      "size": 785
+    }
+  ]
+}

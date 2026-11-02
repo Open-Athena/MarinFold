@@ -1,0 +1,5 @@
+{
+  "script": "plot_depth.py",
+  "args": [],
+  "caption": "The same cut on redundancy-weighted depth, which fills the shallow bins raw sequence count leaves nearly empty."
+}

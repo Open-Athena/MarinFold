@@ -1,0 +1,5 @@
+{
+  "script": "plot_results.py",
+  "args": [],
+  "caption": "Paired deltas against #321's published iid100 pool. Dashed lines mark the preregistered all-range improvement threshold (+0.005) and long-range safety threshold (-0.005). The two all-range-positive pools lose about two points long-range, so no policy advances."
+}

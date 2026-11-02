@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "run_root": "s3://marin-us-east-02a/marin/protein-structure/MarinFold/exp232_sweep_cv1_decontam/evals/rollout_v2/decontam-v2-20260818-01",
+  "attempts": [
+    {
+      "iris_job": "/eczech/exp232-exp232-rollout-decontam-v2-20260818-01",
+      "contact_multiplier": 6,
+      "status": "stopped after invariant failure",
+      "result": "Seven of 57,700 m1-p02 rollouts did not terminate; no affected score parts were committed."
+    },
+    {
+      "iris_job": "/eczech/exp232-exp232-rollout-decontam-v2-20260818-01-cap10",
+      "contact_multiplier": 10,
+      "status": "diagnostic only; stopped",
+      "result": "The same seven m1-p02 rollouts did not terminate; no diagnostic score parts were committed."
+    },
+    {
+      "iris_job": "/eczech/exp232-exp232-rollout-decontam-v2-20260818-01-cap50",
+      "contact_multiplier": 50,
+      "status": "diagnostic only; stopped",
+      "result": "Two m1-p02 rollouts still did not terminate after 2,978 generated tokens; no diagnostic score parts were committed."
+    },
+    {
+      "iris_job": "/eczech/exp232-exp232-rollout-decontam-v2-20260818-01-accept7",
+      "contact_multiplier": 6,
+      "status": "succeeded",
+      "result": "All 577 units were scored; the seven nonterminating m1-p02 samples were excluded from voting and recorded explicitly."
+    },
+    {
+      "iris_job": "/eczech/exp232-exp232-rollout-decontam-v2-20260818-01-manifest2",
+      "contact_multiplier": 6,
+      "status": "succeeded",
+      "result": "All completed score parts were reused; validation and metrics were rerun to publish complete mixed-worker provenance."
+    }
+  ]
+}

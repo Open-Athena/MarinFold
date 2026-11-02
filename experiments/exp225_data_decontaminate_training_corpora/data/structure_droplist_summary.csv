@@ -1,0 +1,5 @@
+tier,tm_field,tm_threshold,n_clusters_purged,n_eval_proteins_responsible,reference_version
+B,qtm,0.9,10284,179,v1
+B,max_qt_tm,0.9,11019,232,v1
+C,qtm,0.5,487969,523,v1
+C,max_qt_tm,0.5,543666,542,v1

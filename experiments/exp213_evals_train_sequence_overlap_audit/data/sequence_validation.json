@@ -1,0 +1,8 @@
+{
+  "fasta": "/data/exp213_overlap/train_afdb.fasta",
+  "sampled": 40,
+  "matched": 39,
+  "mismatched": 0,
+  "not_in_current_afdb_release": 1,
+  "mismatch_detail": []
+}

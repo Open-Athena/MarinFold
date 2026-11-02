@@ -1,0 +1,5 @@
+set,n,n_at_or_before_protenix_v2_cutoff,share_at_or_before_cutoff,median_deposit,earliest_deposit
+"exp65 denovo_pdb (designs, in the legacy 554)",396,200,0.5051,2021-06-20,2002-08-26
+eval-val,97,1,0.0103,2022-06-27,2021-08-10
+eval-test,218,0,0.0,2023-07-08,2022-01-26
+eval-denovo,19,1,0.0526,2023-07-27,2021-08-24

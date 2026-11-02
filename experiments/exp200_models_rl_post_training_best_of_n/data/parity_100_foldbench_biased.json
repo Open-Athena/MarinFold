@@ -1,0 +1,63 @@
+{
+  "n_rollouts": 400,
+  "n_groups": 100,
+  "elapsed_s": 710.6147482395172,
+  "max_best_f1_delta": 0.0,
+  "max_section_f1_delta": 0.0,
+  "n_section_mismatch": 0,
+  "n_prompt_bad": 0,
+  "observed": {
+    "best_f1": 0.1497817196837953,
+    "last_f1": 0.1033087688792324,
+    "first_f1": 0.0724100758451574,
+    "n_sections": 17.3575,
+    "mean_jaccard": 0.03693211796820781
+  },
+  "published": {
+    "best_f1": 0.3025,
+    "last_f1": 0.2493,
+    "first_f1": 0.184,
+    "n_sections": 14.99,
+    "mean_jaccard": 0.071
+  },
+  "env_metrics": {
+    "contacts_multi/precision_baseline": 0.2777172205135063,
+    "contacts_multi/n_rollouts": 400.0,
+    "contacts_multi/n_empty_responses": 0.0,
+    "contacts_multi/n_ragged_groups_dropped": 0.0,
+    "contacts_multi/max_output_tokens": 6663.0,
+    "contacts_multi/best_f1": 0.1497817196837953,
+    "contacts_multi/first_f1": 0.0724100758451574,
+    "contacts_multi/last_f1": 0.1033087688792324,
+    "contacts_multi/mean_f1": 0.08217208104553698,
+    "contacts_multi/precision": 0.11007727590254653,
+    "contacts_multi/n_sections": 17.3575,
+    "contacts_multi/n_sections_raw": 17.3575,
+    "contacts_multi/n_pred": 1790.2375,
+    "contacts_multi/n_gt": 252.71,
+    "contacts_multi/mean_jaccard": 0.03693211796820781,
+    "contacts_multi/frac_improving": 0.5182411799046744,
+    "contacts_multi/n_duplicate": 3.8025,
+    "contacts_multi/n_malformed": 0.0,
+    "contacts_multi/n_unmapped": 0.0575,
+    "contacts_multi/n_too_close": 0.6225,
+    "contacts_multi/n_truncated": 0.4475,
+    "contacts_multi/n_pred_per_section": 103.13913293965143
+  },
+  "args": {
+    "model": "gs://marin-us-east5/MarinFold/exp163/tpu/tpuF-bf16/step-404",
+    "targets": "gs://marin-us-east5/MarinFold/exp163/eval554/targets.parquet",
+    "prompts": "gs://marin-us-east5/MarinFold/exp163/eval554/prompts",
+    "out": "gs://marin-us-east5/MarinFold/exp200/phase1",
+    "limit": 100,
+    "n_generations": 4,
+    "max_sections": 0,
+    "section_contacts": 220,
+    "tensor_parallel_size": 4,
+    "max_model_len": 8192,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "seed": 0
+  },
+  "_note": "100 proteins x 4 generations, UNCAPPED. Job /bizon/exp200-parity-full. The sample was 100% foldbench100 because --limit truncated rather than sampled; kept as the record of that finding, not as a headline measurement."
+}

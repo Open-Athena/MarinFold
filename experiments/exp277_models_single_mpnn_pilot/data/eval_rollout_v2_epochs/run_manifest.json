@@ -1,0 +1,375 @@
+{
+  "checkpoint_source": {
+    "checkpoint_copied_outside_coreweave": false,
+    "evaluated_dtype": "bfloat16",
+    "gcs_used": false,
+    "identities": [
+      {
+        "coreweave_uri": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B/hf/step-266344",
+        "kind": "coreweave-s3",
+        "levanter_source_uri": null
+      },
+      {
+        "coreweave_uri": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/runs/contacts-v1-exp277-m2-p06-full-epoch2-from213072-1.5B/hf/step-479417",
+        "kind": "coreweave-s3",
+        "levanter_source_uri": null
+      }
+    ],
+    "mirror_run_id": "v2-02",
+    "source_dtypes": [
+      "float32"
+    ],
+    "transport": "pre-existing exp277 CoreWeave HF directory verified in place; no model weights moved"
+  },
+  "checkpoints": [
+    {
+      "coreweave_uri": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B/hf/step-266344",
+      "eval_loss": 2.984407424926758,
+      "eval_loss_step": 266344,
+      "label": "exp277_full_epoch_m2_p06_step266344",
+      "levanter_source_uri": null,
+      "run_name": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+      "source_dtype": "float32",
+      "step": 266344,
+      "train_loss": 3.1852176189422607,
+      "wandb_metric_keys": {
+        "eval_loss": "eval/loss",
+        "train_loss": "train/loss"
+      },
+      "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+      "weight_shard_digests": [
+        "c54c3d763a013dfb6fe5f6ea10b1142e-95",
+        "cc2e3173c80dbc8d080dbfd6ca7b23df-18"
+      ]
+    },
+    {
+      "coreweave_uri": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/runs/contacts-v1-exp277-m2-p06-full-epoch2-from213072-1.5B/hf/step-479417",
+      "eval_loss": 2.980989456176758,
+      "eval_loss_step": 479417,
+      "label": "exp277_full_epoch2_from213072_step479417",
+      "levanter_source_uri": null,
+      "run_name": "contacts-v1-exp277-m2-p06-full-epoch2-from213072-1.5B",
+      "source_dtype": "float32",
+      "step": 479417,
+      "train_loss": 3.183701753616333,
+      "wandb_metric_keys": {
+        "eval_loss": "eval/loss",
+        "train_loss": "train/loss"
+      },
+      "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp277-m2-p06-full-epoch2-from213072-1.5B",
+      "weight_shard_digests": [
+        "73410d564fa17fc29185e8f41eca6e7c-95",
+        "06da6a1d8f28a78ecdf1ef416cdaa032-18"
+      ]
+    }
+  ],
+  "completed_at": "2026-09-19T18:05:25.852349+00:00",
+  "exp89_compute_metrics_sha256": "6cbaa1c555763df07cb94ee81accebef25a5565590d47a32470ade78e36d824a",
+  "ground_truth_sha256": "6bfbfec602656720cf997903497677c13d5684be677bdcbf2f69b3ae279db126",
+  "headline_metrics": [
+    {
+      "cut": "AUC",
+      "model": "marinfold-exp277-full-epoch-m2-p06-step266344",
+      "precision": 0.953484921361888,
+      "range": "all",
+      "subset": "legacy_554",
+      "total_values": 554,
+      "valid_values": 554
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-exp277-full-epoch-m2-p06-step266344",
+      "precision": 0.620508474880663,
+      "range": "all",
+      "subset": "legacy_554",
+      "total_values": 554,
+      "valid_values": 554
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-exp277-full-epoch-m2-p06-step266344",
+      "precision": 0.9417703765433587,
+      "range": "long",
+      "subset": "legacy_554",
+      "total_values": 554,
+      "valid_values": 553
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-exp277-full-epoch-m2-p06-step266344",
+      "precision": 0.5771806719416392,
+      "range": "long",
+      "subset": "legacy_554",
+      "total_values": 554,
+      "valid_values": 553
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-exp277-full-epoch2-from213072-step479417",
+      "precision": 0.9521452815021547,
+      "range": "all",
+      "subset": "legacy_554",
+      "total_values": 554,
+      "valid_values": 554
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-exp277-full-epoch2-from213072-step479417",
+      "precision": 0.6220343552752198,
+      "range": "all",
+      "subset": "legacy_554",
+      "total_values": 554,
+      "valid_values": 554
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-exp277-full-epoch2-from213072-step479417",
+      "precision": 0.9389455979834584,
+      "range": "long",
+      "subset": "legacy_554",
+      "total_values": 554,
+      "valid_values": 553
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-exp277-full-epoch2-from213072-step479417",
+      "precision": 0.5779369775576982,
+      "range": "long",
+      "subset": "legacy_554",
+      "total_values": 554,
+      "valid_values": 553
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-exp277-full-epoch-m2-p06-step266344",
+      "precision": 0.9399209630086796,
+      "range": "all",
+      "subset": "eval-val",
+      "total_values": 97,
+      "valid_values": 97
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-exp277-full-epoch-m2-p06-step266344",
+      "precision": 0.5551037062767215,
+      "range": "all",
+      "subset": "eval-val",
+      "total_values": 97,
+      "valid_values": 97
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-exp277-full-epoch-m2-p06-step266344",
+      "precision": 0.9298894512391852,
+      "range": "long",
+      "subset": "eval-val",
+      "total_values": 97,
+      "valid_values": 97
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-exp277-full-epoch-m2-p06-step266344",
+      "precision": 0.5370580120747686,
+      "range": "long",
+      "subset": "eval-val",
+      "total_values": 97,
+      "valid_values": 97
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-exp277-full-epoch2-from213072-step479417",
+      "precision": 0.9419883252623816,
+      "range": "all",
+      "subset": "eval-val",
+      "total_values": 97,
+      "valid_values": 97
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-exp277-full-epoch2-from213072-step479417",
+      "precision": 0.5575016769471249,
+      "range": "all",
+      "subset": "eval-val",
+      "total_values": 97,
+      "valid_values": 97
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-exp277-full-epoch2-from213072-step479417",
+      "precision": 0.9316374206820766,
+      "range": "long",
+      "subset": "eval-val",
+      "total_values": 97,
+      "valid_values": 97
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-exp277-full-epoch2-from213072-step479417",
+      "precision": 0.5393517725896174,
+      "range": "long",
+      "subset": "eval-val",
+      "total_values": 97,
+      "valid_values": 97
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-exp277-full-epoch-m2-p06-step266344",
+      "precision": 0.9858768935422518,
+      "range": "all",
+      "subset": "eval-denovo",
+      "total_values": 19,
+      "valid_values": 19
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-exp277-full-epoch-m2-p06-step266344",
+      "precision": 0.6964017104238859,
+      "range": "all",
+      "subset": "eval-denovo",
+      "total_values": 19,
+      "valid_values": 19
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-exp277-full-epoch-m2-p06-step266344",
+      "precision": 0.9829341132590464,
+      "range": "long",
+      "subset": "eval-denovo",
+      "total_values": 19,
+      "valid_values": 19
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-exp277-full-epoch-m2-p06-step266344",
+      "precision": 0.6749693569462911,
+      "range": "long",
+      "subset": "eval-denovo",
+      "total_values": 19,
+      "valid_values": 19
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-exp277-full-epoch2-from213072-step479417",
+      "precision": 0.9839967432024195,
+      "range": "all",
+      "subset": "eval-denovo",
+      "total_values": 19,
+      "valid_values": 19
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-exp277-full-epoch2-from213072-step479417",
+      "precision": 0.6859994886562116,
+      "range": "all",
+      "subset": "eval-denovo",
+      "total_values": 19,
+      "valid_values": 19
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-exp277-full-epoch2-from213072-step479417",
+      "precision": 0.9780632382846092,
+      "range": "long",
+      "subset": "eval-denovo",
+      "total_values": 19,
+      "valid_values": 19
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-exp277-full-epoch2-from213072-step479417",
+      "precision": 0.6409452030420898,
+      "range": "long",
+      "subset": "eval-denovo",
+      "total_values": 19,
+      "valid_values": 19
+    }
+  ],
+  "job_ids": [
+    "/bizon/exp277-eval-v2-02/e277-v2-02-sm-exp277-s00",
+    "/bizon/exp277-eval-v2-02/e277-v2-02-sm-ep2-s00",
+    "/bizon/exp277-eval-v2-02/e277-v2-02-fu-exp277-s00",
+    "/bizon/exp277-eval-v2-02/e277-v2-02-fu-exp277-s01",
+    "/bizon/exp277-eval-v2-02/e277-v2-02-fu-exp277-s02",
+    "/bizon/exp277-eval-v2-02/e277-v2-02-fu-exp277-s03",
+    "/bizon/exp277-eval-v2-02/e277-v2-02-fu-exp277-s04",
+    "/bizon/exp277-eval-v2-02/e277-v2-02-fu-exp277-s05",
+    "/bizon/exp277-eval-v2-02/e277-v2-02-fu-exp277-s06",
+    "/bizon/exp277-eval-v2-02/e277-v2-02-fu-exp277-s07",
+    "/bizon/exp277-eval-v2-02/e277-v2-02-fu-exp277-s08",
+    "/bizon/exp277-eval-v2-02/e277-v2-02-fu-exp277-s09",
+    "/bizon/exp277-eval-v2-02/e277-v2-02-fu-exp277-s10",
+    "/bizon/exp277-eval-v2-02/e277-v2-02-fu-exp277-s11",
+    "/bizon/exp277-eval-v2-02/e277-v2-02-fu-ep2-s00",
+    "/bizon/exp277-eval-v2-02/e277-v2-02-fu-ep2-s01",
+    "/bizon/exp277-eval-v2-02/e277-v2-02-fu-ep2-s02",
+    "/bizon/exp277-eval-v2-02/e277-v2-02-fu-ep2-s03",
+    "/bizon/exp277-eval-v2-02/e277-v2-02-fu-ep2-s04",
+    "/bizon/exp277-eval-v2-02/e277-v2-02-fu-ep2-s05",
+    "/bizon/exp277-eval-v2-02/e277-v2-02-fu-ep2-s06",
+    "/bizon/exp277-eval-v2-02/e277-v2-02-fu-ep2-s07",
+    "/bizon/exp277-eval-v2-02/e277-v2-02-fu-ep2-s08",
+    "/bizon/exp277-eval-v2-02/e277-v2-02-fu-ep2-s09",
+    "/bizon/exp277-eval-v2-02/e277-v2-02-fu-ep2-s10",
+    "/bizon/exp277-eval-v2-02/e277-v2-02-fu-ep2-s11"
+  ],
+  "outputs": {
+    "aggregate_metrics": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/results/aggregate_metrics.csv",
+    "contact_precision_all": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/results/contact_precision_all.csv",
+    "dense_scores": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/dense_scores",
+    "marinfold_precision": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/results/marinfold_precision.csv",
+    "subset_aggregate_metrics": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/results/subset_aggregate_metrics.csv",
+    "timings": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02/results/timings.csv"
+  },
+  "reference_validation": null,
+  "reporting_subset_units": {
+    "eval-denovo": 19,
+    "eval-denovo-nonviral": 19,
+    "eval-val": 97,
+    "eval-val-nonviral": 91,
+    "eval-val-viral": 6,
+    "legacy_554": 554,
+    "universe_670": 670
+  },
+  "run_root": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/evals/rollout-v2/2026-09-13/v2-02",
+  "sampling": {
+    "contact_multiplier": 6,
+    "n_rollouts": 100,
+    "recipe": "rollout_resample",
+    "seed": 0,
+    "temperature": 1.0,
+    "tie_break": null,
+    "token_budget": "min(8192-prompt_tokens, 6*L+128)",
+    "top_k": -1,
+    "top_p": 0.95,
+    "unfinished_policy": "Nonterminating samples are excluded from contact voting. Every requested and usable rollout is counted per evaluation unit."
+  },
+  "schema_version": 1,
+  "score_worker_provenance": {
+    "behavior": "Nonterminating samples are excluded from voting and accounted for explicitly; terminating-sample voting matches PR #244.",
+    "matches_pr244_accepted_worker": true,
+    "pr244_accepted_worker_sha256": "dd2f76dd5d34d1549e0be1197d9053d6e3aa0ef909f062ff5355d65f31cd571c"
+  },
+  "started_at": "2026-09-19T17:59:27.869142+00:00",
+  "suite": "exp277-epochs",
+  "validation": {
+    "exp277_full_epoch2_from213072_step479417": {
+      "affected_units": 8,
+      "dense_matrices": 670,
+      "requested_rollouts": 67000,
+      "unfinished_rollouts": 44,
+      "unique_stems": 556,
+      "units": 670,
+      "usable_rollouts": 66956
+    },
+    "exp277_full_epoch_m2_p06_step266344": {
+      "affected_units": 1,
+      "dense_matrices": 670,
+      "requested_rollouts": 67000,
+      "unfinished_rollouts": 1,
+      "unique_stems": 556,
+      "units": 670,
+      "usable_rollouts": 66999
+    }
+  },
+  "worker_sha256": "dd2f76dd5d34d1549e0be1197d9053d6e3aa0ef909f062ff5355d65f31cd571c"
+}

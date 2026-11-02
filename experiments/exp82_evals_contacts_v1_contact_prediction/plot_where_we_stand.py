@@ -5,17 +5,25 @@
 
 A single aggregate boxplot panel (range = all, sep>=6) putting MarinFold's best
 inference — **rollout+resample**, n=100 — next to the structure predictors, for
-two checkpoints: the #61/#75 sweep winner the project has been quoting, and the
-current best model from Eric's #117 sweep.
+three checkpoints: the #61/#75 sweep winner the project quoted first, the #117
+sweep best, and #166's AA-augmentation continue-train of #117 (the current
+best). Three bars rather than one because the trajectory is the point.
 
-Reads exp89's committed per-protein table for the structure predictors and the
-rollout rows emitted by ``build_rollout_rows.py`` for the MarinFold bars; both
-are scored by exp89's metric implementation, so every bar is comparable.
+Reads exp89's committed per-protein table for the structure predictors and
+per-protein rollout rows for the MarinFold bars — from this experiment's
+``build_rollout_rows.py`` output and from whichever experiment scored a newer
+checkpoint (``--rollout-csv`` takes several). Everything is scored by exp89's
+metric implementation, so every bar is comparable.
 Style follows exp89 ``plot.py``'s ``plot_single_panel``.
+
+**When a new model takes the frontier**, add its rows CSV to ``--rollout-csv``
+and one entry to ``CONFIGS`` — the model string is a value inside that file.
+Keep the older bars: this figure is the project README's progress story.
 
     uv run python plot_where_we_stand.py \
         --exp89-csv <exp89>/data/contact_precision_all.csv \
         --rollout-csv data/where_we_stand_rows.csv.gz \
+                      <exp166>/data/exp166_rows.csv.gz \
         --out plots/where_we_stand_rprecision.png
 """
 from __future__ import annotations
@@ -38,7 +46,9 @@ CONFIGS = [
     ("marinfold-cv1-exp75-rollout", "single_seq", "lm",
      "MarinFold #61\nn=100 rollouts", "#7f2704"),
     ("marinfold-cv1-exp117-rollout", "single_seq", "lm",
-     "MarinFold #117 best\nn=100 rollouts", "#e6550d"),
+     "MarinFold #117\nn=100 rollouts", "#d94801"),
+    ("exp166_aaaug_step35679", "single_seq", "lm",
+     "MarinFold #166 best\nn=100 rollouts", "#fd8d3c"),
     ("protenix-v2", "single_seq", "structure", "Protenix-v2 · SS", "#9ecae1"),
     ("protenix-v2", "msa", "structure", "Protenix-v2 · MSA", "#2171b5"),
     ("esmfold", "single_seq", "structure", "ESMFold", "#74c476"),
@@ -51,8 +61,9 @@ def _vals(df, model, mode, predictor):
     return s["precision"].to_numpy(dtype=float)
 
 
-def main(exp89_csv: Path, rollout_csv: Path, out: Path) -> None:
-    df = pd.concat([pd.read_csv(exp89_csv), pd.read_csv(rollout_csv)], ignore_index=True)
+def main(exp89_csv: Path, rollout_csvs: list[Path], out: Path) -> None:
+    df = pd.concat([pd.read_csv(exp89_csv)] + [pd.read_csv(c) for c in rollout_csvs],
+                   ignore_index=True)
     sub = df[(df["cut"] == "R") & (df["range"] == "all")]
     labels = [c[3] for c in CONFIGS]
     palette = {c[3]: c[4] for c in CONFIGS}
@@ -93,11 +104,13 @@ def main(exp89_csv: Path, rollout_csv: Path, out: Path) -> None:
     fig.savefig(out, dpi=130, bbox_inches="tight")
     out.with_suffix(out.suffix + ".meta.json").write_text(json.dumps(
         {"script": "plot_where_we_stand.py",
-         "args": ["--exp89-csv", str(exp89_csv), "--rollout-csv", str(rollout_csv)],
+         "args": ["--exp89-csv", str(exp89_csv),
+                  "--rollout-csv", *[str(c) for c in rollout_csvs]],
          "means": means, "n": counts,
          "caption": ("Contact R-precision (all sep>=6, n=554): MarinFold rollout+resample "
-                     "(n=100, temperature 1.0 / top-p 0.95 / no top-k) for the #61/#75 model "
-                     "and the current #117 sweep best, vs Protenix-v2 / ESMFold / ESMFold2.")},
+                     "(n=100, temperature 1.0 / top-p 0.95 / no top-k) for the #61/#75 model, "
+                     "the #117 sweep best and the current best #166, vs "
+                     "Protenix-v2 / ESMFold / ESMFold2.")},
         indent=2))
     print(f"wrote {out}  means: " + ", ".join(f"{k.replace(chr(10), ' ')}={v:.3f}"
                                               for k, v in means.items()))
@@ -106,7 +119,8 @@ def main(exp89_csv: Path, rollout_csv: Path, out: Path) -> None:
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--exp89-csv", type=Path, required=True)
-    ap.add_argument("--rollout-csv", type=Path, required=True)
+    ap.add_argument("--rollout-csv", type=Path, nargs="+", required=True,
+                    help="one or more per-protein rollout rows CSVs (concatenated)")
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
     main(args.exp89_csv, args.rollout_csv, args.out)

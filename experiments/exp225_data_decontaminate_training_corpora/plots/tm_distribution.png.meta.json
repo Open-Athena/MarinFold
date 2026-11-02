@@ -1,0 +1,5 @@
+{
+  "script": "plot_decontam.py",
+  "args": [],
+  "caption": "945,861 of the 1,304,911 AFDB train representatives got a hit and are counted here; the other ~359k had none and are off the left edge."
+}

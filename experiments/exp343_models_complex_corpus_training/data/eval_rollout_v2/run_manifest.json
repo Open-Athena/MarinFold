@@ -1,0 +1,220 @@
+{
+  "checkpoint_source": {
+    "checkpoint_copied_outside_coreweave": false,
+    "evaluated_dtype": "bfloat16",
+    "gcs_used": false,
+    "identities": [
+      {
+        "coreweave_uri": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/runs/contacts-v1-exp343-m2-p06-complex-1.5B/hf/step-280154",
+        "kind": "coreweave-s3",
+        "levanter_source_uri": null
+      }
+    ],
+    "mirror_run_id": "v2-02",
+    "source_dtypes": [
+      "float32"
+    ],
+    "transport": "pre-existing exp343 CoreWeave HF directory verified in place; no model weights moved"
+  },
+  "checkpoints": [
+    {
+      "coreweave_uri": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/runs/contacts-v1-exp343-m2-p06-complex-1.5B/hf/step-280154",
+      "eval_loss": 2.9933910369873047,
+      "eval_loss_step": 280154,
+      "label": "contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+      "levanter_source_uri": null,
+      "run_name": "contacts-v1-exp343-m2-p06-complex-1.5B",
+      "source_dtype": "float32",
+      "step": 280154,
+      "train_loss": 3.043947458267212,
+      "wandb_metric_keys": {
+        "eval_loss": "eval/loss",
+        "train_loss": "train/loss"
+      },
+      "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp343-m2-p06-complex-1.5B",
+      "weight_shard_digests": [
+        "cc5bf7ca3e530e228df641082aec4f1c-95",
+        "ca53579137353d1c5d1a963892b2ab37-18"
+      ]
+    }
+  ],
+  "completed_at": "2026-10-05T15:45:33.860760+00:00",
+  "exp89_compute_metrics_sha256": "6cbaa1c555763df07cb94ee81accebef25a5565590d47a32470ade78e36d824a",
+  "ground_truth_sha256": "6bfbfec602656720cf997903497677c13d5684be677bdcbf2f69b3ae279db126",
+  "headline_metrics": [
+    {
+      "cut": "AUC",
+      "model": "marinfold-contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+      "precision": 0.9498862100355612,
+      "range": "all",
+      "subset": "legacy_554",
+      "total_values": 554,
+      "valid_values": 554
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+      "precision": 0.6042376900521413,
+      "range": "all",
+      "subset": "legacy_554",
+      "total_values": 554,
+      "valid_values": 554
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+      "precision": 0.9363460940393015,
+      "range": "long",
+      "subset": "legacy_554",
+      "total_values": 554,
+      "valid_values": 553
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+      "precision": 0.562764763080132,
+      "range": "long",
+      "subset": "legacy_554",
+      "total_values": 554,
+      "valid_values": 553
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+      "precision": 0.9363757163618007,
+      "range": "all",
+      "subset": "eval-val",
+      "total_values": 97,
+      "valid_values": 97
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+      "precision": 0.5273933136090824,
+      "range": "all",
+      "subset": "eval-val",
+      "total_values": 97,
+      "valid_values": 97
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+      "precision": 0.9247883444789619,
+      "range": "long",
+      "subset": "eval-val",
+      "total_values": 97,
+      "valid_values": 97
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+      "precision": 0.5099031896597678,
+      "range": "long",
+      "subset": "eval-val",
+      "total_values": 97,
+      "valid_values": 97
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+      "precision": 0.9832442609670258,
+      "range": "all",
+      "subset": "eval-denovo",
+      "total_values": 19,
+      "valid_values": 19
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+      "precision": 0.6852915749596271,
+      "range": "all",
+      "subset": "eval-denovo",
+      "total_values": 19,
+      "valid_values": 19
+    },
+    {
+      "cut": "AUC",
+      "model": "marinfold-contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+      "precision": 0.9773275970327024,
+      "range": "long",
+      "subset": "eval-denovo",
+      "total_values": 19,
+      "valid_values": 19
+    },
+    {
+      "cut": "R",
+      "model": "marinfold-contacts-v1-exp343-m2-p06-complex-1.5B-step-280154",
+      "precision": 0.6440099543899908,
+      "range": "long",
+      "subset": "eval-denovo",
+      "total_values": 19,
+      "valid_values": 19
+    }
+  ],
+  "job_ids": [
+    "/bizon/exp343-eval-v2-02/e277-v2-02-sm-exp343-s00",
+    "/bizon/exp343-eval-v2-02/e277-v2-02-fu-exp343-s00",
+    "/bizon/exp343-eval-v2-02/e277-v2-02-fu-exp343-s01",
+    "/bizon/exp343-eval-v2-02/e277-v2-02-fu-exp343-s02",
+    "/bizon/exp343-eval-v2-02/e277-v2-02-fu-exp343-s03",
+    "/bizon/exp343-eval-v2-02/e277-v2-02-fu-exp343-s04",
+    "/bizon/exp343-eval-v2-02/e277-v2-02-fu-exp343-s05",
+    "/bizon/exp343-eval-v2-02/e277-v2-02-fu-exp343-s06",
+    "/bizon/exp343-eval-v2-02/e277-v2-02-fu-exp343-s07",
+    "/bizon/exp343-eval-v2-02/e277-v2-02-fu-exp343-s08",
+    "/bizon/exp343-eval-v2-02/e277-v2-02-fu-exp343-s09",
+    "/bizon/exp343-eval-v2-02/e277-v2-02-fu-exp343-s10",
+    "/bizon/exp343-eval-v2-02/e277-v2-02-fu-exp343-s11"
+  ],
+  "outputs": {
+    "aggregate_metrics": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/evals/rollout-v2/2026-09-28/v2-02/results/aggregate_metrics.csv",
+    "contact_precision_all": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/evals/rollout-v2/2026-09-28/v2-02/results/contact_precision_all.csv",
+    "dense_scores": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/evals/rollout-v2/2026-09-28/v2-02/dense_scores",
+    "marinfold_precision": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/evals/rollout-v2/2026-09-28/v2-02/results/marinfold_precision.csv",
+    "subset_aggregate_metrics": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/evals/rollout-v2/2026-09-28/v2-02/results/subset_aggregate_metrics.csv",
+    "timings": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/evals/rollout-v2/2026-09-28/v2-02/results/timings.csv"
+  },
+  "reference_validation": null,
+  "reporting_subset_units": {
+    "eval-denovo": 19,
+    "eval-denovo-nonviral": 19,
+    "eval-val": 97,
+    "eval-val-nonviral": 91,
+    "eval-val-viral": 6,
+    "legacy_554": 554,
+    "universe_670": 670
+  },
+  "run_root": "s3://marin-us-east-02a/MarinFold/exp343_models_complex_corpus_training/evals/rollout-v2/2026-09-28/v2-02",
+  "sampling": {
+    "contact_multiplier": 6,
+    "n_rollouts": 100,
+    "recipe": "rollout_resample",
+    "seed": 0,
+    "temperature": 1.0,
+    "tie_break": null,
+    "token_budget": "min(8192-prompt_tokens, 6*L+128)",
+    "top_k": -1,
+    "top_p": 0.95,
+    "unfinished_policy": "Nonterminating samples are excluded from contact voting. Every requested and usable rollout is counted per evaluation unit."
+  },
+  "schema_version": 1,
+  "score_worker_provenance": {
+    "behavior": "Nonterminating samples are excluded from voting and accounted for explicitly; terminating-sample voting matches PR #244.",
+    "matches_pr244_accepted_worker": true,
+    "pr244_accepted_worker_sha256": "dd2f76dd5d34d1549e0be1197d9053d6e3aa0ef909f062ff5355d65f31cd571c"
+  },
+  "started_at": "2026-10-05T15:35:51.108429+00:00",
+  "suite": "exp343",
+  "validation": {
+    "contacts-v1-exp343-m2-p06-complex-1.5B-step-280154": {
+      "affected_units": 0,
+      "dense_matrices": 670,
+      "requested_rollouts": 67000,
+      "unfinished_rollouts": 0,
+      "unique_stems": 556,
+      "units": 670,
+      "usable_rollouts": 67000
+    }
+  },
+  "worker_sha256": "dd2f76dd5d34d1549e0be1197d9053d6e3aa0ef909f062ff5355d65f31cd571c"
+}

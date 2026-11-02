@@ -1,0 +1,5 @@
+{
+  "script": "plot_survival.py",
+  "args": [],
+  "caption": "Natural (non-designed) eval proteins with no training homolog above the threshold. 'Natural' excludes both exp65's de novo set and any FoldBench entity whose RCSB source organism is synthetic. The expansion delivers its <40 % gain but only about half the predicted <30 % gain."
+}

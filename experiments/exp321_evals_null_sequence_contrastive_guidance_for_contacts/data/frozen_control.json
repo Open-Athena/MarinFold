@@ -1,0 +1,24 @@
+{
+  "status": "frozen_before_heldout_control_dispatch",
+  "frozen_at_utc": "2026-09-23T01:30:03Z",
+  "selected_mode": "full_t08_single",
+  "parameters": {
+    "single_stream": true,
+    "gamma": 0.0,
+    "temperature": 0.8,
+    "top_p": 0.95
+  },
+  "selection_metric": "mean pairwise contact-map Jaccard at N=20",
+  "natural_all_jaccard": {
+    "guided": 0.296745190729982,
+    "control": 0.298260484590914
+  },
+  "natural_long_jaccard": {
+    "guided": 0.273133257320141,
+    "control": 0.282803009677593
+  },
+  "foldswitch_jaccard": {
+    "guided": 0.336134338800003,
+    "control": 0.338766089054148
+  }
+}
