@@ -33,8 +33,8 @@ from typing import Any
 import duckdb
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from extract import _GENERATOR, _generator, _sql_literal  # noqa: E402
-from pinder_extract import fetch_member  # noqa: E402
+from extract import _GENERATOR, _generator, _sql_literal
+from pinder_extract import fetch_member
 
 #: Heavy-atom separation below which two residues are touching under any
 #: definition. **Not** a pass/fail bound -- see ``ROTAMER_REACH_CEILING``.

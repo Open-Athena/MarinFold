@@ -12,7 +12,7 @@ import pytest
 HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
 
-from verify_contacts import (  # noqa: E402
+from verify_contacts import (
     LONG_SIDE_CHAINS,
     MIN_SEPARATION_FACTOR,
     ROTAMER_REACH_CEILING,

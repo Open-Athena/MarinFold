@@ -88,7 +88,7 @@ def _upload(token: str, local: Path, remote: str) -> int:
         try:
             batch_bucket_files(BUCKET_REPO, add=[(blob, remote)], token=token)
             return len(blob)
-        except Exception as error:  # noqa: BLE001 - retried, then re-raised
+        except Exception as error:
             if attempt == MAX_ATTEMPTS:
                 raise
             delay = min(60.0, 2.0 ** attempt)

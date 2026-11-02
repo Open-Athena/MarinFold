@@ -21,7 +21,14 @@ import zstandard
 HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
 
-from extract import _WalkCheckpoint, MEMBER_TEMPLATE, TarResult, _tar_results, http_range, walk_members  # noqa: E402
+from extract import (
+    MEMBER_TEMPLATE,
+    TarResult,
+    _tar_results,
+    _WalkCheckpoint,
+    http_range,
+    walk_members,
+)
 
 #: The member name of a real AFCDB model, checked by hand against
 #: heterodimers/shard_1003_batch_2.tar. `model_id` already carries the `AF-`
@@ -38,9 +45,8 @@ def test_concurrent_results_are_durable_before_the_slow_first_tar() -> None:
 
     def process(tar: str) -> TarResult:
         started.append(tar)
-        if tar == "slow":
-            if not release_slow.wait(5):
-                raise TimeoutError("completed work was blocked by the slow tar")
+        if tar == "slow" and not release_slow.wait(5):
+            raise TimeoutError("completed work was blocked by the slow tar")
         return TarResult(tar_uri=tar)
 
     results = _tar_results(["slow", "fast", "helper"], 2, process, done.__contains__)

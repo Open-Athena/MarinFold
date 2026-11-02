@@ -10,7 +10,7 @@ import pyarrow.parquet as pq
 HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
 
-from selection import run_selection  # noqa: E402
+from selection import run_selection
 
 
 def _model(

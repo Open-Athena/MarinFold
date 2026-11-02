@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from publish_to_hf import _verify_sizes, plan  # noqa: E402
+from publish_to_hf import _verify_sizes, plan
 
 
 def test_missing_shard_is_rejected_before_upload(tmp_path: Path) -> None:
