@@ -76,7 +76,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from collections import Counter
-from concurrent.futures import ThreadPoolExecutor
+from collections.abc import Callable, Iterator
+from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -286,7 +287,7 @@ def walk_members(
     offset = 0
     reads = 0
     if checkpoint is not None:
-        offset, found = checkpoint.load()
+        offset, found = checkpoint.load(url, wanted)
     while found.keys() != wanted:
         header = http_range(url, offset, 512)
         reads += 1
@@ -302,7 +303,7 @@ def walk_members(
             found[name] = (offset + 512, size)
         offset += 512 + ((size + 511) // 512) * 512
         if checkpoint is not None:
-            checkpoint.maybe_save(offset, found, reads)
+            checkpoint.maybe_save(offset, found, reads, url, wanted)
     header_reads.append(reads)
     return found
 
@@ -321,11 +322,13 @@ class _WalkCheckpoint:
         self._every = every
         self._last = 0
 
-    def load(self) -> tuple[int, dict[str, tuple[int, int]]]:
+    def load(self, url: str, wanted: set[str]) -> tuple[int, dict[str, tuple[int, int]]]:
         try:
             with self._fs.open(self._path, "r") as handle:
                 state = json.load(handle)
         except (FileNotFoundError, OSError, ValueError):
+            return 0, {}
+        if state.get("url") != url or state.get("wanted") != sorted(wanted):
             return 0, {}
         found = {k: (v[0], v[1]) for k, v in state.get("found", {}).items()}
         offset = int(state.get("offset", 0))
@@ -337,16 +340,20 @@ class _WalkCheckpoint:
         return offset, found
 
     def maybe_save(
-        self, offset: int, found: dict[str, tuple[int, int]], reads: int
+        self, offset: int, found: dict[str, tuple[int, int]], reads: int,
+        url: str, wanted: set[str],
     ) -> None:
         if reads - self._last < self._every:
             return
         self._last = reads
-        self.save(offset, found)
+        self.save(offset, found, url, wanted)
 
-    def save(self, offset: int, found: dict[str, tuple[int, int]]) -> None:
+    def save(
+        self, offset: int, found: dict[str, tuple[int, int]], url: str, wanted: set[str]
+    ) -> None:
         payload = json.dumps(
-            {"offset": offset, "found": {k: list(v) for k, v in found.items()}}
+            {"offset": offset, "found": {k: list(v) for k, v in found.items()},
+             "url": url, "wanted": sorted(wanted)}
         )
         with self._fs.open(self._path, "w") as handle:
             handle.write(payload)
@@ -541,6 +548,40 @@ def extract_tar(
     return out
 
 
+def _tar_results(
+    pending: list[str],
+    concurrency: int,
+    process: Callable[[str], TarResult],
+    completed: Callable[[str], bool],
+) -> Iterator[tuple[int, str, Future[TarResult] | None]]:
+    """Yield finished work promptly, checking helper progress before each start.
+
+    Only active workers have submitted futures. The caller persists each
+    yielded result before we submit replacements, bounding both duplicate
+    helper work and completed results waiting in memory.
+    """
+    remaining = iter(enumerate(pending, start=1))
+    with ThreadPoolExecutor(max_workers=max(1, concurrency)) as pool:
+        active: dict[Future[TarResult], tuple[int, str]] = {}
+        exhausted = False
+        while active or not exhausted:
+            while not exhausted and len(active) < max(1, concurrency):
+                item = next(remaining, None)
+                if item is None:
+                    exhausted = True
+                    break
+                index, tar = item
+                if completed(tar):
+                    yield index, tar, None
+                    continue
+                active[pool.submit(process, tar)] = item
+            if active:
+                finished, _ = wait(active, return_when=FIRST_COMPLETED)
+                for future in finished:
+                    index, tar = active.pop(future)
+                    yield index, tar, future
+
+
 def run(
     manifest: str,
     out_dir: str,
@@ -614,8 +655,8 @@ def run(
     if reverse:
         # A second pod on the same shard, working from the far end. Because a
         # finished tar is skipped globally, the two converge in the middle and
-        # the only cost of meeting is one tar done twice -- the write is
-        # idempotent. This lets pods that finished their own shard help with
+        # at most the active tars are done twice -- the write is idempotent.
+        # This lets pods that finished their own shard help with
         # one that has not.
         pending.reverse()
     if resumed:
@@ -675,48 +716,35 @@ def run(
             flush=True,
         )
 
+    skipped: list[str] = []
+
+    def process(tar: str) -> TarResult:
+        return extract_tar(
+            tar, by_tar[tar], fetch_concurrency=fetch_concurrency,
+            checkpoint=_WalkCheckpoint(fs, f"{prefix}/walk/{tar_stem(tar)}.json"),
+        )
+
+    def completed(tar: str) -> bool:
+        fs.invalidate_cache(f"{prefix}/ledger")
+        return fs.exists(f"{prefix}/ledger/{tar_stem(tar)}.parquet")
+
     began = time.monotonic()
-    if tar_concurrency > 1:
-        with ThreadPoolExecutor(max_workers=tar_concurrency) as pool:
-            futures = {
-                pool.submit(
-                    extract_tar,
-                    tar,
-                    by_tar[tar],
-                    fetch_concurrency=fetch_concurrency,
-                    checkpoint=_WalkCheckpoint(
-                        fs, f"{prefix}/walk/{tar_stem(tar)}.json"
-                    ),
-                ): tar
-                for tar in pending
-            }
-            for index, (future, tar) in enumerate(futures.items(), start=1):
-                try:
-                    result = future.result()
-                except (RuntimeError, *_RETRYABLE) as error:
-                    defer(tar, error)
-                    continue
-                absorb(result)
-                report(index, result)
-    else:
-        for index, tar in enumerate(pending, start=1):
-            try:
-                result = extract_tar(
-                    tar,
-                    by_tar[tar],
-                    fetch_concurrency=fetch_concurrency,
-                    checkpoint=_WalkCheckpoint(
-                        fs, f"{prefix}/walk/{tar_stem(tar)}.json"
-                    ),
-                )
-            except (RuntimeError, *_RETRYABLE) as error:
-                defer(tar, error)
-                continue
-            absorb(result)
-            report(index, result)
+    for index, tar, future in _tar_results(pending, tar_concurrency, process, completed):
+        if future is None:
+            skipped.append(tar)
+            continue
+        try:
+            result = future.result()
+        except (RuntimeError, *_RETRYABLE) as error:
+            defer(tar, error)
+            continue
+        absorb(result)
+        report(index, result)
     elapsed = time.monotonic() - began
 
-    expected = sum(len(by_tar[t]) for t in pending)
+    attempted = len(pending) - len(skipped)
+    skipped_set = set(skipped)
+    expected = sum(len(by_tar[t]) for t in pending if t not in skipped_set)
     summary = {
         "manifest": manifest,
         "out_dir": prefix,
@@ -724,21 +752,22 @@ def run(
         "shard_count": shard_count,
         "tars_in_shard": len(tars),
         "tars_resumed": resumed,
+        "tars_completed_by_helper": len(skipped),
         "tars_deferred": len(deferred),
-        "tars": len(pending),
+        "tars": attempted,
         "models_requested": expected,
         "documents": documents,
         "ledger_rows": ledger_rows,
         "reasons": dict(sorted(reasons.items())),
         "header_reads": header_reads,
-        "header_reads_per_tar": round(header_reads / max(len(pending), 1), 1),
+        "header_reads_per_tar": round(header_reads / max(attempted, 1), 1),
         "member_bytes": member_bytes,
         "seconds": round(elapsed, 1),
         "walk_seconds": round(walk_seconds, 1),
         "work_seconds": round(work_seconds, 1),
-        "seconds_per_tar": round(elapsed / max(len(pending), 1), 2),
+        "seconds_per_tar": round(elapsed / max(attempted, 1), 2),
         "seconds_per_document": round(elapsed / max(documents, 1), 4),
-        "documents_per_tar": round(documents / max(len(pending), 1), 1),
+        "documents_per_tar": round(documents / max(attempted, 1), 1),
         "payload_mb_per_document": round(member_bytes / 1e6 / max(documents, 1), 3),
     }
     stem = f"{shard_index:05d}-of-{shard_count:05d}"

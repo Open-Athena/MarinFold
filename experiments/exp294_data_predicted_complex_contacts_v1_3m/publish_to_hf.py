@@ -1,5 +1,9 @@
 # Copyright The MarinFold Authors
 # SPDX-License-Identifier: Apache-2.0
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["huggingface_hub==1.7.1"]
+# ///
 
 """Publish the consolidated corpus to the public `open-athena/MarinFold` bucket.
 
@@ -16,10 +20,11 @@ The tokenizer travels with the data, not in a separate repo -- a corpus whose
 `num_tokens` cannot be reproduced is not much use. `--verify` re-lists the
 bucket afterwards and checks every intended file arrived at its expected size.
 
-    HF_TOKEN=... uv run python publish_to_hf.py --release /data/exp294_release
+    HF_TOKEN=... uv run publish_to_hf.py --release /data/exp294_release
 """
 
 import argparse
+import json
 import os
 import sys
 import time
@@ -50,6 +55,10 @@ def plan(release: Path, prefix: str) -> list[tuple[Path, str]]:
     shards = sorted((release / "corpus" / "train").glob("shard-*.parquet"))
     if not shards:
         raise FileNotFoundError(f"no shards under {release / 'corpus' / 'train'}")
+    count = json.loads((release / 'corpus' / 'corpus_stats.json').read_text())["shards"]
+    expected = {f"shard-{i:05d}-of-{count:05d}.parquet" for i in range(count)}
+    if count <= 0 or {p.name for p in shards} != expected:
+        raise ValueError("corpus shards do not match the complete set in corpus_stats.json")
     items = [(p, f"{prefix}/train/{p.name}") for p in shards]
 
     tokenizer = sorted((release / "tokenizer").glob("*"))
@@ -95,19 +104,22 @@ def verify(items: list[tuple[Path, str]], token: str, prefix: str) -> None:
     published = {}
     for entry in list_bucket_tree(BUCKET_REPO, prefix.rstrip("/") + "/",
                                   recursive=True, token=token):
-        path = getattr(entry, "path", None)
-        if path is not None:
-            published[path] = getattr(entry, "size", None)
+        if entry.type == "file":
+            published[entry.path] = entry.size
+    _verify_sizes(items, published)
+    _log(f"verified {len(items)} files under {prefix}")
+
+
+def _verify_sizes(items: list[tuple[Path, str]], published: dict[str, int]) -> None:
     problems = []
     for local, remote in items:
         if remote not in published:
             problems.append(f"{remote}: absent")
-        elif published[remote] not in (None, local.stat().st_size):
+        elif published[remote] != local.stat().st_size:
             problems.append(f"{remote}: {published[remote]} bytes on the bucket, "
                             f"{local.stat().st_size} locally")
     if problems:
         raise RuntimeError("publication did not verify:\n  " + "\n  ".join(problems))
-    _log(f"verified {len(items)} files under {prefix}")
 
 
 def main(argv: list[str] | None = None) -> int:

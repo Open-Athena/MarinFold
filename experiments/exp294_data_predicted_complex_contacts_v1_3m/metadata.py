@@ -200,12 +200,12 @@ SELECT
     ) AS source_quality_pass,
     {QUALITY_IPSAE_THRESHOLD}::DOUBLE AS source_ipsae_threshold,
     {QUALITY_PDOCKQ2_THRESHOLD}::DOUBLE AS source_pdockq2_threshold,
-    least(
-        CASE WHEN ipSAE_AB IS NOT NULL AND ipSAE_BA IS NOT NULL
-            THEN least(ipSAE_AB, ipSAE_BA) / {QUALITY_IPSAE_THRESHOLD} END,
-        CASE WHEN pDockQ2_AB IS NOT NULL AND pDockQ2_BA IS NOT NULL
-            THEN greatest(pDockQ2_AB, pDockQ2_BA) / {QUALITY_PDOCKQ2_THRESHOLD} END
-    ) AS quality_ratio,
+    CASE WHEN ipSAE_AB IS NOT NULL AND ipSAE_BA IS NOT NULL
+        AND pDockQ2_AB IS NOT NULL AND pDockQ2_BA IS NOT NULL
+        THEN least(
+            least(ipSAE_AB, ipSAE_BA) / {QUALITY_IPSAE_THRESHOLD},
+            greatest(pDockQ2_AB, pDockQ2_BA) / {QUALITY_PDOCKQ2_THRESHOLD}
+        ) END AS quality_ratio,
     ipTM AS iptm,
     ipSAE_AB AS ipsae_ab,
     ipSAE_BA AS ipsae_ba,

@@ -46,11 +46,25 @@ def test_build_droplist_keeps_the_strongest_hit(tmp_path: Path) -> None:
         # Clears the rule but is above the reporting ceiling.
         "q4\tAFDB:AF-P3-F1\t0.99\t0.99\t50.0\t10\n"
     )
-    dropped, stats = build_droplist(m8, report_ceiling=10.0)
+    dropped, stats = build_droplist(m8, report_ceiling=10.0, max_seqs=1_000_000)
     assert set(dropped) == {"P1"}
     assert "1e-40" in dropped["P1"], "the strongest hit should name the reason"
     assert stats["alignments_reported"] == 4
     assert stats["dropped_accessions"] == 1
+
+
+@pytest.mark.parametrize(("max_seqs", "censored"), [(2, 1), (3, 0)])
+def test_censoring_uses_the_configured_search_limit(
+    tmp_path: Path, max_seqs: int, censored: int
+) -> None:
+    m8 = tmp_path / "aln.m8"
+    m8.write_text(
+        "q1\tAF-P1-F1\t0.95\t0.99\t1e-40\t400\n"
+        "q1\tAF-P2-F1\t0.32\t0.55\t1e-4\t90\n"
+        "q2\tAF-P3-F1\t0.10\t0.10\t5.0\t20\n"
+    )
+    _, stats = build_droplist(m8, report_ceiling=10.0, max_seqs=max_seqs)
+    assert stats["queries_at_max_seqs"] == censored
 
 
 @pytest.mark.skipif(not has_mmseqs, reason="mmseqs binary not available")

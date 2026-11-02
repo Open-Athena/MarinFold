@@ -78,6 +78,7 @@ def test_selection_is_tiered_decontaminated_deduplicated_and_audited(
         _model("LOW", "heterodimer", "L1", "L2", quality_ratio=0.2),
         _model("DUP-LOWER", "heterodimer", "A2", "A1", quality_ratio=0.7),
         _model("CONTAM", "heterodimer", "CONTAM", "C2", quality_ratio=0.95),
+        _model("CONTAM-B", "heterodimer", "C5", "CONTAM", quality_ratio=0.95),
         _model("TOO-LONG", "heterodimer", "LONG", "L3", quality_ratio=0.95),
         _model("NO-INTERFACE", "heterodimer", "N1", "N2", interactions=0),
         _model("CLASH", "heterodimer", "C3", "C4", clashes=11),
@@ -123,6 +124,7 @@ def test_selection_is_tiered_decontaminated_deduplicated_and_audited(
     }
     assert ledger["DUP-LOWER"]["reason"] == "duplicate_sequence_pair"
     assert ledger["CONTAM"]["reason"] == "eval_sequence_homolog"
+    assert ledger["CONTAM-B"]["reason"] == "eval_sequence_homolog"
     assert ledger["TOO-LONG"]["reason"] == "does_not_fit_contacts_ring"
     assert ledger["NO-INTERFACE"]["reason"] == "no_reported_interaction"
     assert ledger["CLASH"]["reason"] == "too_many_backbone_clashes"

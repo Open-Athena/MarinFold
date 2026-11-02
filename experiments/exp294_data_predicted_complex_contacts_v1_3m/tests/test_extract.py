@@ -6,18 +6,22 @@
 import http.server
 import io
 import json
+import os
 import socketserver
 import sys
 import tarfile
 import threading
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+import fsspec
 import pytest
+import zstandard
 
 HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
 
-from extract import MEMBER_TEMPLATE, http_range, walk_members  # noqa: E402
+from extract import _WalkCheckpoint, MEMBER_TEMPLATE, TarResult, _tar_results, http_range, walk_members  # noqa: E402
 
 #: The member name of a real AFCDB model, checked by hand against
 #: heterodimers/shard_1003_batch_2.tar. `model_id` already carries the `AF-`
@@ -25,6 +29,46 @@ from extract import MEMBER_TEMPLATE, http_range, walk_members  # noqa: E402
 #: that found nothing -- 20 tars and 197,333 header reads for zero documents.
 REAL_MODEL_ID = "AF-0000000207677021"
 REAL_MEMBER = "AF-0000000207677021-model_v1.cif.zst"
+
+
+def test_concurrent_results_are_durable_before_the_slow_first_tar() -> None:
+    release_slow = threading.Event()
+    started: list[str] = []
+    done: set[str] = set()
+
+    def process(tar: str) -> TarResult:
+        started.append(tar)
+        if tar == "slow":
+            if not release_slow.wait(5):
+                raise TimeoutError("completed work was blocked by the slow tar")
+        return TarResult(tar_uri=tar)
+
+    results = _tar_results(["slow", "fast", "helper"], 2, process, done.__contains__)
+    try:
+        _, tar, future = next(results)
+        assert tar == "fast"
+        assert future.result().tar_uri == "fast"
+        assert "helper" not in started, "pending tars must not be eagerly queued"
+        done.add("helper")
+    finally:
+        release_slow.set()
+    remaining = list(results)
+    assert {tar for _, tar, result in remaining if result is None} == {"helper"}
+    assert {tar for _, tar, result in remaining if result is not None} == {"slow"}
+    assert set(started) == {"slow", "fast"}
+
+
+def test_serial_worker_rechecks_helper_completion_before_each_tar() -> None:
+    done: set[str] = set()
+
+    def process(tar: str) -> TarResult:
+        return TarResult(tar_uri=tar)
+
+    results = _tar_results(["first", "helper"], 1, process, done.__contains__)
+    _, tar, result = next(results)
+    assert tar == "first" and result.result().tar_uri == "first"
+    done.add("helper")
+    assert list(results) == [(2, "helper", None)]
 
 
 class _RangeHandler(http.server.BaseHTTPRequestHandler):
@@ -114,39 +158,17 @@ def test_a_name_that_is_not_in_the_tar_is_reported_not_invented(tar_server) -> N
     assert reads[0] > len(names), "a miss walks the whole tar"
 
 
-def test_a_shared_zstd_decompressor_corrupts_under_threads() -> None:
-    """Pins the root cause of three failed probe runs.
-
-    Sharing one ZstdDecompressor across the fetch pool corrupts its C-level
-    state. Locally that surfaces as "Unknown frame descriptor"; on a pod it
-    surfaced as SIGSEGV with no Python traceback, which is why it took three
-    runs to find. extract.py therefore caches the *module* and builds a
-    decompressor per call.
-    """
-    import os
-    import threading
-
-    import zstandard
-
+def test_per_call_zstd_decompressors_are_safe_under_threads() -> None:
+    """Exercise the intended per-call allocation without provoking a segfault."""
     payload = zstandard.ZstdCompressor().compress(os.urandom(200_000))
-    shared = zstandard.ZstdDecompressor()
 
-    def hammer(sink: list[str], use_shared: bool) -> None:
+    def decompress_many() -> None:
         for _ in range(40):
-            try:
-                decompressor = shared if use_shared else zstandard.ZstdDecompressor()
-                decompressor.decompress(payload, max_output_size=1 << 22)
-            except Exception as error:  # noqa: BLE001 - that is the point
-                sink.append(f"{type(error).__name__}: {error}")
-                return
+            assert len(zstandard.ZstdDecompressor().decompress(payload)) == 200_000
 
-    per_call: list[str] = []
-    threads = [threading.Thread(target=hammer, args=(per_call, False)) for _ in range(12)]
-    for thread in threads:
-        thread.start()
-    for thread in threads:
-        thread.join()
-    assert per_call == [], "a per-call decompressor must be safe under threads"
+    with ThreadPoolExecutor(max_workers=12) as pool:
+        for result in [pool.submit(decompress_many) for _ in range(12)]:
+            result.result()
 
 
 def test_extract_does_not_cache_a_decompressor_instance() -> None:
@@ -599,3 +621,12 @@ def test_a_malformed_structure_is_a_rejection_not_a_batch_failure(tmp_path, monk
     monkeypatch.setattr(pinder_extract, "fetch_member", boom)
     with pytest.raises(ConnectionResetError):
         pinder_extract._one(row)
+
+
+def test_changed_manifest_restarts_the_tar_walk(tar_server, tmp_path: Path) -> None:
+    url, names = tar_server
+    checkpoint = _WalkCheckpoint(fsspec.filesystem("file"), str(tmp_path / "walk.json"), every=1)
+    previous = walk_members(url, {names[-1]}, header_reads=[], checkpoint=checkpoint)
+    assert set(previous) == {names[-1]}
+    current = walk_members(url, {names[0]}, header_reads=[], checkpoint=checkpoint)
+    assert set(current) == {names[0]}

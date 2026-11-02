@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 import duckdb
+import pytest
 
 HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
@@ -13,6 +14,7 @@ sys.path.insert(0, str(HERE))
 from metadata import (  # noqa: E402
     HETERODIMER_COLUMNS,
     HOMODIMER_COLUMNS,
+    HOMODIMER_NORMALIZED_SQL,
     normalize_all,
     run_census,
 )
@@ -119,3 +121,17 @@ def test_normalize_and_census_preserve_source_and_derive_scores(tmp_path: Path) 
     assert sum(row["rows"] for row in census["by_complex_type"]) == 2
     assert all(row["hard_eligible"] == 1 for row in census["by_complex_type"])
     assert (tmp_path / "census" / "yield_by_score.csv").exists()
+
+
+@pytest.mark.parametrize("missing", ["ipSAE_AB", "ipSAE_BA", "pDockQ2_AB", "pDockQ2_BA"])
+def test_incomplete_score_pair_has_no_quality_ratio(tmp_path: Path, missing: str) -> None:
+    expressions = []
+    scores = {"ipSAE_AB", "ipSAE_BA", "pDockQ2_AB", "pDockQ2_BA"}
+    for name, dtype in HOMODIMER_COLUMNS.items():
+        value = "0.9" if name in scores and name != missing else "NULL"
+        expressions.append(f'CAST({value} AS {dtype}) AS "{name}"')
+    path = tmp_path / "raw.parquet"
+    con = duckdb.connect()
+    con.execute(f"COPY (SELECT {', '.join(expressions)}) TO '{path}' (FORMAT PARQUET)")
+    normalized = HOMODIMER_NORMALIZED_SQL.format(raw_path=f"'{path}'")
+    assert con.execute(f"SELECT quality_ratio FROM ({normalized})").fetchone()[0] is None

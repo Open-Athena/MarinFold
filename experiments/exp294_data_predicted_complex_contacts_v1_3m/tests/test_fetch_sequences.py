@@ -17,7 +17,7 @@ import pytest
 HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
 
-from fetch_sequences import accession_from_token, fetch, verify  # noqa: E402
+from fetch_sequences import _RangeReader, _scan_range, accession_from_token, content_length, fetch, verify  # noqa: E402
 
 
 class _RangeHandler(http.server.SimpleHTTPRequestHandler):
@@ -189,35 +189,35 @@ def test_verify_rejects_a_missing_shard(fasta_server, tmp_path: Path) -> None:
         verify(str(out_dir))
 
 
-def test_reader_resumes_after_a_dropped_connection(fasta_server, tmp_path: Path) -> None:
-    """A mid-stream drop must resume, not lose the rest of a multi-GB range.
+class _FailOnceResponse:
+    def read(self, size: int) -> bytes:
+        raise ConnectionResetError("interrupted read")
 
-    EBI refuses connections under concurrency and drops long-held ones, so this
-    is an expected operating condition at 118 GB, not an edge case.
-    """
-    import fetch_sequences
+    def close(self) -> None:
+        pass
 
+
+class _ReconnectReader(_RangeReader):
+    """Inject a failed initial transport while using the real reconnect path."""
+
+    def _connect(self, offset: int) -> None:
+        if self.reconnects == 0:
+            self._response = _FailOnceResponse()
+        else:
+            super()._connect(offset)
+
+
+def test_reader_resumes_after_a_dropped_connection(fasta_server) -> None:
     url, records = fasta_server
-    wanted = [r[0] for r in records]
-
-    real_fill = fetch_sequences._RangeReader.fill
-    state = {"calls": 0, "broken": 0}
-
-    def flaky_fill(self, minimum: int) -> None:
-        state["calls"] += 1
-        if state["calls"] % 3 == 0 and state["broken"] < 4:
-            state["broken"] += 1
-            raise ConnectionResetError("injected mid-stream drop")
-        return real_fill(self, minimum)
-
-    fetch_sequences._RangeReader.fill = flaky_fill
+    reader = _ReconnectReader(url, 0)
     try:
-        out_dir = tmp_path / "flaky"
-        with pytest.raises(ConnectionResetError):
-            fetch(_normalized(tmp_path, wanted), out_dir, url=url, workers=1)
+        recovered = bytearray()
+        while line := reader.readline():
+            recovered.extend(line)
+        assert recovered == "".join(record[2] for record in records).encode()
+        assert reader.reconnects == 1
     finally:
-        fetch_sequences._RangeReader.fill = real_fill
-    assert state["broken"] > 0
+        reader.close()
 
 
 def test_truncated_transfer_is_fatal(fasta_server, tmp_path: Path, monkeypatch) -> None:
@@ -242,3 +242,42 @@ def test_truncated_transfer_is_fatal(fasta_server, tmp_path: Path, monkeypatch) 
             url=url,
             workers=1,
         )
+
+
+def test_truncation_while_seeking_a_record_boundary_is_fatal(
+    fasta_server, tmp_path: Path
+) -> None:
+    url, _ = fasta_server
+    actual_size = content_length(url)
+    # A later worker starts inside the final record. Its owner is the previous
+    # worker, so reaching the real EOF is legitimate; an early EOF is not.
+    start = actual_size - 4
+    result = _scan_range(
+        url, set(), 1, start, actual_size, str(tmp_path / "tail.fasta.gz"), actual_size
+    )
+    assert result.records == 0
+    with pytest.raises(RuntimeError, match="while skipping.*truncated"):
+        _scan_range(
+            url, set(), 1, start, actual_size + 100,
+            str(tmp_path / "truncated.fasta.gz"), actual_size + 100,
+        )
+
+
+@pytest.mark.parametrize("shards", [1, 2])
+def test_fragment_duplicates_do_not_hide_missing_accessions(
+    fasta_server, tmp_path: Path, shards: int
+) -> None:
+    url, records = fasta_server
+    # Duplicate ACC0000 as a second fragment and omit the last requested id.
+    _RangeHandler.payload += records[0][2].replace("-F1", "-F2").encode()
+    wanted = [records[0][0], "ABSENT"]
+    normalized = _normalized(tmp_path, wanted)
+    out = tmp_path / "fragments"
+    if shards == 1:
+        with pytest.raises(RuntimeError, match="are missing"):
+            fetch(normalized, out, url=url, workers=2)
+    else:
+        for shard in range(shards):
+            fetch(normalized, out, url=url, workers=2, shard_index=shard, shard_count=shards)
+        with pytest.raises(RuntimeError, match="are missing"):
+            verify(str(out))

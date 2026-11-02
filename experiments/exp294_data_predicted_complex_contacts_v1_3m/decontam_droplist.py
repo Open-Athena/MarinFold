@@ -125,7 +125,9 @@ def search(
     return m8
 
 
-def build_droplist(m8: Path, report_ceiling: float) -> tuple[dict[str, str], dict[str, Any]]:
+def build_droplist(
+    m8: Path, report_ceiling: float, *, max_seqs: int
+) -> tuple[dict[str, str], dict[str, Any]]:
     """Fold every alignment into one drop record per contaminated accession."""
     dropped: dict[str, str] = {}
     best: dict[str, float] = {}
@@ -154,7 +156,7 @@ def build_droplist(m8: Path, report_ceiling: float) -> tuple[dict[str, str], dic
                     f"qcov={coverage:.3f}:evalue={e:.3g}"
                 )
 
-    censored = [q for q, n in per_query_alignments.items() if n >= 1_000_000]
+    censored = [q for q, n in per_query_alignments.items() if n >= max_seqs]
     stats: dict[str, Any] = {
         "alignments_reported": alignments,
         "queries_with_alignments": len(per_query_alignments),
@@ -209,7 +211,7 @@ def build(
     if not m8.is_file():
         raise FileNotFoundError(m8)
 
-    dropped, stats = build_droplist(m8, report_evalue_ceiling)
+    dropped, stats = build_droplist(m8, report_evalue_ceiling, max_seqs=max_seqs)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     accessions = sorted(dropped)
     pq.write_table(

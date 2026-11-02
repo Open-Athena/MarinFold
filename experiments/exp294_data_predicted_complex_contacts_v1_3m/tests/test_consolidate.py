@@ -96,7 +96,7 @@ def _arm(root: Path, name: str, rows: list[dict]) -> Path:
     return root / name
 
 
-def _build(tmp_path: Path, *, cluster_cap: float) -> dict:
+def _build(tmp_path: Path, *, cluster_cap: float, pinder_cluster: str | None = "c-big") -> dict:
     """One AFCDB pair repeated 8x (a redundant cluster) plus 20 singletons, and a
     PINDER arm carrying a 5-member cluster, a val system, a test system, and one
     on the eval drop list. Each arm also contributes one model whose chains never
@@ -104,7 +104,7 @@ def _build(tmp_path: Path, *, cluster_cap: float) -> dict:
     afcdb = [_afcdb_row(i, pair=("P1", "P2")) for i in range(8)]
     afcdb += [_afcdb_row(100 + i, pair=(f"Q{i}", f"R{i}")) for i in range(20)]
     afcdb += [_afcdb_row(200, pair=("Z1", "Z2"), inter_chain=0)]
-    pinder = [_pinder_row(i, cluster="c-big") for i in range(5)]
+    pinder = [_pinder_row(i, cluster=pinder_cluster) for i in range(5)]
     pinder += [_pinder_row(50 + i, cluster=f"c{i}") for i in range(10)]
     pinder += [_pinder_row(90, cluster="cv", split="val"),
                _pinder_row(91, cluster="ct", split="test"),
@@ -224,6 +224,23 @@ def test_cap_binds_only_on_over_represented_clusters(capped: dict, corpus: dict)
     assert limited[5] < uncapped[5]
     assert (capped["stats"]["balanced_share_top_1_cluster"]
             < corpus["stats"]["balanced_share_top_1_cluster"])
+    assert capped["stats"]["balanced_share_top_1_cluster"] == pytest.approx(0.05)
+    weights_by_cluster = con.execute(
+        f"SELECT sum(sampling_weight) FROM read_parquet("
+        f"'{capped['out'] / 'train' / '*.parquet'}') GROUP BY cluster_key"
+    ).fetchall()
+    total = sum(row[0] for row in weights_by_cluster)
+    assert max(row[0] / total for row in weights_by_cluster) <= 0.05 + 1e-12
+
+
+def test_impossible_probability_cap_is_rejected(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="cannot define probabilities"):
+        _build(tmp_path, cluster_cap=0.01)
+
+
+def test_minimum_feasible_cap_gives_uniform_cluster_mass(tmp_path: Path) -> None:
+    corpus = _build(tmp_path, cluster_cap=1 / 31)
+    assert corpus["stats"]["balanced_share_top_1_cluster"] == pytest.approx(1 / 31)
 
 
 def test_contactless_models_are_dropped_from_both_arms(corpus: dict) -> None:
@@ -297,3 +314,8 @@ def test_flatten_rejects_a_missing_partition(tmp_path: Path) -> None:
     pq.write_table(pa.Table.from_pylist([{"i": 0}]), stage / "shard=0" / "p.parquet")
     with pytest.raises(RuntimeError, match="shard 1: duckdb wrote no part file"):
         flatten(duckdb.connect(), stage, train, 2)
+
+
+def test_pinder_cannot_fall_into_the_afcdb_namespace(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="non-null interface cluster"):
+        _build(tmp_path, cluster_cap=1, pinder_cluster=None)

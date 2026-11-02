@@ -211,6 +211,11 @@ def build(
     merged = intake["afcdb_documents_in"] + intake["pinder_documents_kept"]
     kept = con.execute("SELECT count(*) FROM corpus").fetchone()[0]
     intake["dropped_no_interface_contacts"] = merged - kept
+    if con.execute(
+        "SELECT count(*) FROM corpus WHERE source_arm = 'pinder' "
+        "AND interface_cluster_id IS NULL"
+    ).fetchone()[0]:
+        raise ValueError("PINDER documents must carry a non-null interface cluster")
 
     # Cluster key: PINDER carries a real interface cluster; AFCDB has none, so
     # its sequence pair stands in. Labelled so the two are never conflated.
@@ -218,10 +223,10 @@ def build(
         """
         CREATE OR REPLACE TABLE weighted AS
         WITH keyed AS (
-            SELECT *, coalesce(
-                'pinder:' || interface_cluster_id,
-                'afcdb_pair:' || least(partner_a, partner_b) || '|' ||
-                    greatest(partner_a, partner_b)) AS cluster_key
+            SELECT *, CASE WHEN source_arm = 'pinder'
+                THEN 'pinder:' || interface_cluster_id
+                ELSE 'afcdb_pair:' || least(partner_a, partner_b) || '|' ||
+                    greatest(partner_a, partner_b) END AS cluster_key
             FROM corpus
         ), sized AS (
             SELECT *, count(*) OVER (PARTITION BY cluster_key) AS cluster_size
@@ -230,18 +235,46 @@ def build(
         SELECT *, 1.0 / sqrt(cluster_size) AS raw_weight FROM sized
         """
     )
-    total_raw = con.execute("SELECT sum(raw_weight) FROM weighted").fetchone()[0]
+    con.execute(
+        "CREATE OR REPLACE TABLE cluster_weights AS "
+        "SELECT cluster_key, sum(raw_weight) AS weight "
+        "FROM weighted GROUP BY cluster_key"
+    )
+    n_clusters = con.execute("SELECT count(*) FROM cluster_weights").fetchone()[0]
+    if not 0 < cluster_cap <= 1 or cluster_cap * n_clusters < 1:
+        raise ValueError(
+            f"cluster_cap={cluster_cap} cannot define probabilities for "
+            f"{n_clusters} clusters; require 1/n_clusters <= cluster_cap <= 1"
+        )
+    # Water-filling: after clipping k largest clusters to t, the remaining
+    # mass is S + k*t. Solve t / (S + k*t) = cap, keeping smaller clusters'
+    # raw weights intact. Select the first k whose next cluster fits under t.
+    threshold = con.execute(
+        """
+        WITH ranked AS (
+            SELECT weight,
+                row_number() OVER (ORDER BY weight DESC, cluster_key) - 1 AS k,
+                sum(weight) OVER (ORDER BY weight DESC, cluster_key
+                    ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING) AS remaining
+            FROM cluster_weights
+        ), thresholds AS (
+            SELECT weight, k, ? * remaining / (1 - ? * k) AS threshold
+            FROM ranked WHERE 1 - ? * k > 0
+        )
+        SELECT threshold FROM thresholds WHERE threshold >= weight
+        ORDER BY k LIMIT 1
+        """,
+        [cluster_cap, cluster_cap, cluster_cap],
+    ).fetchone()
+    if threshold is None:
+        raise RuntimeError("Could not determine a feasible cluster weight cap")
     con.execute(
         f"""
         CREATE OR REPLACE TABLE balanced AS
-        WITH per_cluster AS (
-            SELECT cluster_key, sum(raw_weight) / {float(total_raw)} AS cluster_share
-            FROM weighted GROUP BY cluster_key
-        )
         SELECT w.*,
             w.raw_weight * least(1.0,
-                {float(cluster_cap)} / nullif(c.cluster_share, 0)) AS sampling_weight
-        FROM weighted w JOIN per_cluster c USING (cluster_key)
+                {float(threshold[0])} / c.weight) AS sampling_weight
+        FROM weighted w JOIN cluster_weights c USING (cluster_key)
         """
     )
 

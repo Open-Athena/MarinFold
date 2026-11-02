@@ -35,6 +35,7 @@ instead, and ``--out`` may be any local directory.
 """
 
 import argparse
+import hashlib
 import json
 import random
 import re
@@ -43,12 +44,14 @@ import time
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 import duckdb
 import fsspec
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 SEQUENCES_URL = "https://ftp.ebi.ac.uk/pub/databases/alphafold/sequences.fasta"
 #: Longest AFDB record we will tolerate without seeing a record boundary. AFDB
@@ -163,6 +166,7 @@ class ShardResult:
     bytes_read: int
     seconds: float
     reconnects: int = 0
+    accessions: set[bytes] = field(default_factory=set)
 
 
 class _RangeReader:
@@ -174,7 +178,6 @@ class _RangeReader:
         self._eof = False
         self.consumed = start
         self.reconnects = 0
-        self.exhausted = False
         self._connect(start)
 
     def _connect(self, offset: int) -> None:
@@ -217,7 +220,6 @@ class _RangeReader:
                 continue
             if not chunk:
                 self._eof = True
-                self.exhausted = True
                 break
             self._buffer += chunk
 
@@ -256,6 +258,7 @@ def _scan_range(
     # ``start``, would not emit it either.
     reader = _RangeReader(url, start - 1 if start > 0 else 0)
     records = matched = 0
+    accessions: set[bytes] = set()
     first_start = start
     last_report = began
 
@@ -274,6 +277,13 @@ def _scan_range(
                 while True:
                     line = reader.readline()
                     if not line:
+                        if reader.consumed != source_total:
+                            raise RuntimeError(
+                                f"range {index}: stream ended at byte "
+                                f"{reader.consumed:,} while skipping to the first "
+                                f"record boundary, but the source is "
+                                f"{source_total:,} bytes; the transfer was truncated"
+                            )
                         return ShardResult(index, 0, 0, reader.consumed - start, 0.0)
                     skipped += len(line)
                     if skipped > MAX_RECORD_BYTES:
@@ -318,6 +328,7 @@ def _scan_range(
                 records += 1
                 if accession in wanted:
                     matched += 1
+                    accessions.add(accession)
                     sink.write(header)
                     sink.writelines(body)
                 record_start = reader.consumed
@@ -352,6 +363,7 @@ def _scan_range(
         reader.consumed - start,
         time.monotonic() - began,
         reader.reconnects,
+        accessions,
     )
 
 
@@ -435,7 +447,11 @@ def fetch(
     elapsed = time.monotonic() - began
 
     records = sum(r.records for r in results)
-    matched = sum(r.matched for r in results)
+    found = set().union(*(r.accessions for r in results))
+    matched = len(found)
+    accession_path = f"{out_dir}/matched_accessions-{shard_index:04d}.parquet"
+    with fsspec.open(accession_path, "wb") as handle:
+        pq.write_table(pa.table({"accession": pa.array(sorted(found), type=pa.binary())}), handle)
     read = sum(r.bytes_read for r in results)
     summary = {
         "source_url": url,
@@ -453,7 +469,10 @@ def fetch(
         "source_records": records,
         "reconnects": sum(r.reconnects for r in results),
         "requested_accessions": len(wanted),
+        "requested_accessions_sha256": hashlib.sha256(b"\n".join(sorted(wanted))).hexdigest(),
         "matched_accessions": matched,
+        "matched_records": sum(r.matched for r in results),
+        "matched_accessions_path": accession_path,
         "shards": shard_paths,
         "per_shard": [
             {
@@ -492,7 +511,8 @@ def verify(out_dir: str, *, expected_accessions: int | None = None) -> dict[str,
     A sharded fetch can only be judged as a union: each pod sees a fraction of
     the accessions and none can tell on its own whether the set is complete.
     This asserts the windows are contiguous from 0 to the source length and
-    that every requested accession was matched exactly once across shards.
+    that every requested accession was matched across shards. Multiple AFDB
+    fragments of one accession count once for coverage.
     """
     out_dir = out_dir.rstrip("/")
     fs, _ = fsspec.core.url_to_fs(out_dir)
@@ -530,7 +550,19 @@ def verify(out_dir: str, *, expected_accessions: int | None = None) -> dict[str,
         raise RuntimeError(f"windows end at {cursor:,}, source is {source_bytes:,}")
 
     requested = summaries[0]["requested_accessions"]
-    matched = sum(s["matched_accessions"] for s in summaries)
+    if any(
+        s["requested_accessions_sha256"] != summaries[0]["requested_accessions_sha256"]
+        or s["requested_accessions"] != requested
+        or s["source_bytes"] != source_bytes
+        or s["source_url"] != summaries[0]["source_url"]
+        for s in summaries
+    ):
+        raise RuntimeError("shards disagree on the source or requested accession set")
+    found: set[bytes] = set()
+    for summary in summaries:
+        with fsspec.open(summary["matched_accessions_path"], "rb") as handle:
+            found.update(pq.read_table(handle).column("accession").to_pylist())
+    matched = len(found)
     result = {
         "out_dir": out_dir,
         "shards": count,

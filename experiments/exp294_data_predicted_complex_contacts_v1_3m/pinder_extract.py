@@ -166,6 +166,11 @@ def _one(row: dict[str, Any]) -> tuple[dict | None, dict]:
         # structures and unresolved residues are normal.
         return None, {"system_id": sid, "status": "rejected", "reason": "no_interface_contacts"}
     seqs = [gemmi.one_letter_code([r.name for r in chain]) for chain in structure[0]]
+    if result.num_chains != 2 or len(seqs) != 2:
+        raise ValueError(
+            f"{sid}: PINDER extraction requires exactly two chains; "
+            f"got {result.num_chains} generated and {len(seqs)} source chains"
+        )
     return (
         {
             "system_id": sid,
