@@ -1,5 +1,5 @@
 {
-  "script": "plot.py",
+  "script": "two_epoch_plot.py",
   "args": [],
-  "caption": "Raw sequence-count sensitivity on the same 97 proteins and primary condition. Empty tiers are explicit; raw depth is distinct from Neff."
+  "caption": "Primary accuracy uses 100 randomized prompts. Tier means and paired differences from default, with 95% protein-bootstrap intervals. Neff <10 has four proteins; raw depth <10 has none."
 }

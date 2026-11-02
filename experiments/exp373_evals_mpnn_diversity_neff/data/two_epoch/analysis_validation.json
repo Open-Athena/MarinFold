@@ -1,0 +1,12 @@
+{
+  "models": [
+    "default",
+    "mpnn",
+    "mpnn2-lr5e-4",
+    "mpnn2-lr1e-3"
+  ],
+  "metric_rows": 55680,
+  "first_300_curve_rows_verified": 6496,
+  "f1_scores": 928000,
+  "old_tables_reused": true
+}

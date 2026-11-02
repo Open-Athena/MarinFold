@@ -1,5 +1,5 @@
 {
-  "script": "plot.py",
+  "script": "two_epoch_plot.py",
   "args": [],
-  "caption": "Oracle: best ground-truth F1 among the first k samples. Dashed: mean individual F1 over all 1,000. Bands: pointwise 95% protein CIs. Oracle selection needs truth and is not an inference-time selector."
+  "caption": "Temperature 1; seeded prefix order. Solid: oracle best single-rollout F1. Dashed: mean of 1,000 individual F1 scores per protein. Pointwise 95% intervals; each range has its own oracle."
 }

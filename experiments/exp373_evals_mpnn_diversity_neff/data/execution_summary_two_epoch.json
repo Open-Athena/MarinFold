@@ -1,0 +1,389 @@
+{
+  "captured_utc": "2026-11-02T23:15:59.184370+00:00",
+  "cluster": "cw-us-east-02a",
+  "jobs": [
+    {
+      "job_id": "/bizon/exp373-mpnn2-lr5e-4-smoke-a01",
+      "model": "mpnn2-lr5e-4",
+      "shard": 0,
+      "shards": 6,
+      "smoke": true,
+      "extension": false,
+      "two_epoch": true,
+      "source_sha256": "699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5",
+      "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v3-two-epoch/source/699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5.zip",
+      "cluster": "cw-us-east-02a",
+      "attempt": 1,
+      "state": "succeeded",
+      "exit_code": 0,
+      "failures": 0,
+      "preemptions": 0,
+      "tasks": [
+        {
+          "task_id": "/bizon/exp373-mpnn2-lr5e-4-smoke-a01/0",
+          "state": "succeeded",
+          "attempt": 0,
+          "started_utc": "2026-11-02T22:12:52.225000+00:00",
+          "finished_utc": "2026-11-02T22:15:34.817000+00:00",
+          "elapsed_seconds": 162.5920000076294
+        }
+      ]
+    },
+    {
+      "job_id": "/bizon/exp373-mpnn2-lr1e-3-smoke-a01",
+      "model": "mpnn2-lr1e-3",
+      "shard": 0,
+      "shards": 6,
+      "smoke": true,
+      "extension": false,
+      "two_epoch": true,
+      "source_sha256": "699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5",
+      "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v3-two-epoch/source/699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5.zip",
+      "cluster": "cw-us-east-02a",
+      "attempt": 1,
+      "state": "succeeded",
+      "exit_code": 0,
+      "failures": 0,
+      "preemptions": 0,
+      "tasks": [
+        {
+          "task_id": "/bizon/exp373-mpnn2-lr1e-3-smoke-a01/0",
+          "state": "succeeded",
+          "attempt": 0,
+          "started_utc": "2026-11-02T22:12:52.225000+00:00",
+          "finished_utc": "2026-11-02T22:15:34.817000+00:00",
+          "elapsed_seconds": 162.5920000076294
+        }
+      ]
+    },
+    {
+      "job_id": "/bizon/exp373-mpnn2-lr5e-4-s00-a01",
+      "model": "mpnn2-lr5e-4",
+      "shard": 0,
+      "shards": 6,
+      "smoke": false,
+      "extension": false,
+      "two_epoch": true,
+      "source_sha256": "699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5",
+      "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v3-two-epoch/source/699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5.zip",
+      "cluster": "cw-us-east-02a",
+      "attempt": 1,
+      "state": "succeeded",
+      "exit_code": 0,
+      "failures": 0,
+      "preemptions": 0,
+      "tasks": [
+        {
+          "task_id": "/bizon/exp373-mpnn2-lr5e-4-s00-a01/0",
+          "state": "succeeded",
+          "attempt": 0,
+          "started_utc": "2026-11-02T22:16:03.319000+00:00",
+          "finished_utc": "2026-11-02T23:09:53.166000+00:00",
+          "elapsed_seconds": 3229.8469998836517
+        }
+      ]
+    },
+    {
+      "job_id": "/bizon/exp373-mpnn2-lr5e-4-s01-a01",
+      "model": "mpnn2-lr5e-4",
+      "shard": 1,
+      "shards": 6,
+      "smoke": false,
+      "extension": false,
+      "two_epoch": true,
+      "source_sha256": "699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5",
+      "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v3-two-epoch/source/699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5.zip",
+      "cluster": "cw-us-east-02a",
+      "attempt": 1,
+      "state": "succeeded",
+      "exit_code": 0,
+      "failures": 0,
+      "preemptions": 0,
+      "tasks": [
+        {
+          "task_id": "/bizon/exp373-mpnn2-lr5e-4-s01-a01/0",
+          "state": "succeeded",
+          "attempt": 0,
+          "started_utc": "2026-11-02T22:16:10.170000+00:00",
+          "finished_utc": "2026-11-02T23:14:30.560000+00:00",
+          "elapsed_seconds": 3500.3899998664856
+        }
+      ]
+    },
+    {
+      "job_id": "/bizon/exp373-mpnn2-lr5e-4-s02-a01",
+      "model": "mpnn2-lr5e-4",
+      "shard": 2,
+      "shards": 6,
+      "smoke": false,
+      "extension": false,
+      "two_epoch": true,
+      "source_sha256": "699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5",
+      "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v3-two-epoch/source/699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5.zip",
+      "cluster": "cw-us-east-02a",
+      "attempt": 1,
+      "state": "succeeded",
+      "exit_code": 0,
+      "failures": 0,
+      "preemptions": 0,
+      "tasks": [
+        {
+          "task_id": "/bizon/exp373-mpnn2-lr5e-4-s02-a01/0",
+          "state": "succeeded",
+          "attempt": 0,
+          "started_utc": "2026-11-02T22:16:10.170000+00:00",
+          "finished_utc": "2026-11-02T23:02:49.613000+00:00",
+          "elapsed_seconds": 2799.4429998397827
+        }
+      ]
+    },
+    {
+      "job_id": "/bizon/exp373-mpnn2-lr5e-4-s03-a01",
+      "model": "mpnn2-lr5e-4",
+      "shard": 3,
+      "shards": 6,
+      "smoke": false,
+      "extension": false,
+      "two_epoch": true,
+      "source_sha256": "699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5",
+      "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v3-two-epoch/source/699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5.zip",
+      "cluster": "cw-us-east-02a",
+      "attempt": 1,
+      "state": "succeeded",
+      "exit_code": 0,
+      "failures": 0,
+      "preemptions": 0,
+      "tasks": [
+        {
+          "task_id": "/bizon/exp373-mpnn2-lr5e-4-s03-a01/0",
+          "state": "succeeded",
+          "attempt": 0,
+          "started_utc": "2026-11-02T22:16:10.170000+00:00",
+          "finished_utc": "2026-11-02T23:11:32.896000+00:00",
+          "elapsed_seconds": 3322.7259998321533
+        }
+      ]
+    },
+    {
+      "job_id": "/bizon/exp373-mpnn2-lr5e-4-s04-a01",
+      "model": "mpnn2-lr5e-4",
+      "shard": 4,
+      "shards": 6,
+      "smoke": false,
+      "extension": false,
+      "two_epoch": true,
+      "source_sha256": "699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5",
+      "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v3-two-epoch/source/699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5.zip",
+      "cluster": "cw-us-east-02a",
+      "attempt": 1,
+      "state": "succeeded",
+      "exit_code": 0,
+      "failures": 0,
+      "preemptions": 0,
+      "tasks": [
+        {
+          "task_id": "/bizon/exp373-mpnn2-lr5e-4-s04-a01/0",
+          "state": "succeeded",
+          "attempt": 0,
+          "started_utc": "2026-11-02T22:16:10.170000+00:00",
+          "finished_utc": "2026-11-02T23:09:53.166000+00:00",
+          "elapsed_seconds": 3222.99599981308
+        }
+      ]
+    },
+    {
+      "job_id": "/bizon/exp373-mpnn2-lr5e-4-s05-a01",
+      "model": "mpnn2-lr5e-4",
+      "shard": 5,
+      "shards": 6,
+      "smoke": false,
+      "extension": false,
+      "two_epoch": true,
+      "source_sha256": "699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5",
+      "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v3-two-epoch/source/699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5.zip",
+      "cluster": "cw-us-east-02a",
+      "attempt": 1,
+      "state": "succeeded",
+      "exit_code": 0,
+      "failures": 0,
+      "preemptions": 0,
+      "tasks": [
+        {
+          "task_id": "/bizon/exp373-mpnn2-lr5e-4-s05-a01/0",
+          "state": "succeeded",
+          "attempt": 0,
+          "started_utc": "2026-11-02T22:16:10.170000+00:00",
+          "finished_utc": "2026-11-02T23:06:26.965000+00:00",
+          "elapsed_seconds": 3016.7949998378754
+        }
+      ]
+    },
+    {
+      "job_id": "/bizon/exp373-mpnn2-lr1e-3-s00-a01",
+      "model": "mpnn2-lr1e-3",
+      "shard": 0,
+      "shards": 6,
+      "smoke": false,
+      "extension": false,
+      "two_epoch": true,
+      "source_sha256": "699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5",
+      "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v3-two-epoch/source/699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5.zip",
+      "cluster": "cw-us-east-02a",
+      "attempt": 1,
+      "state": "succeeded",
+      "exit_code": 0,
+      "failures": 0,
+      "preemptions": 0,
+      "tasks": [
+        {
+          "task_id": "/bizon/exp373-mpnn2-lr1e-3-s00-a01/0",
+          "state": "succeeded",
+          "attempt": 0,
+          "started_utc": "2026-11-02T22:16:10.170000+00:00",
+          "finished_utc": "2026-11-02T23:05:18.219000+00:00",
+          "elapsed_seconds": 2948.0490000247955
+        }
+      ]
+    },
+    {
+      "job_id": "/bizon/exp373-mpnn2-lr1e-3-s01-a01",
+      "model": "mpnn2-lr1e-3",
+      "shard": 1,
+      "shards": 6,
+      "smoke": false,
+      "extension": false,
+      "two_epoch": true,
+      "source_sha256": "699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5",
+      "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v3-two-epoch/source/699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5.zip",
+      "cluster": "cw-us-east-02a",
+      "attempt": 1,
+      "state": "succeeded",
+      "exit_code": 0,
+      "failures": 0,
+      "preemptions": 0,
+      "tasks": [
+        {
+          "task_id": "/bizon/exp373-mpnn2-lr1e-3-s01-a01/0",
+          "state": "succeeded",
+          "attempt": 0,
+          "started_utc": "2026-11-02T22:16:18.060000+00:00",
+          "finished_utc": "2026-11-02T23:07:35.688000+00:00",
+          "elapsed_seconds": 3077.628000020981
+        }
+      ]
+    },
+    {
+      "job_id": "/bizon/exp373-mpnn2-lr1e-3-s02-a01",
+      "model": "mpnn2-lr1e-3",
+      "shard": 2,
+      "shards": 6,
+      "smoke": false,
+      "extension": false,
+      "two_epoch": true,
+      "source_sha256": "699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5",
+      "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v3-two-epoch/source/699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5.zip",
+      "cluster": "cw-us-east-02a",
+      "attempt": 1,
+      "state": "succeeded",
+      "exit_code": 0,
+      "failures": 0,
+      "preemptions": 0,
+      "tasks": [
+        {
+          "task_id": "/bizon/exp373-mpnn2-lr1e-3-s02-a01/0",
+          "state": "succeeded",
+          "attempt": 0,
+          "started_utc": "2026-11-02T22:16:18.060000+00:00",
+          "finished_utc": "2026-11-02T22:57:52.511000+00:00",
+          "elapsed_seconds": 2494.4509999752045
+        }
+      ]
+    },
+    {
+      "job_id": "/bizon/exp373-mpnn2-lr1e-3-s03-a01",
+      "model": "mpnn2-lr1e-3",
+      "shard": 3,
+      "shards": 6,
+      "smoke": false,
+      "extension": false,
+      "two_epoch": true,
+      "source_sha256": "699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5",
+      "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v3-two-epoch/source/699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5.zip",
+      "cluster": "cw-us-east-02a",
+      "attempt": 1,
+      "state": "succeeded",
+      "exit_code": 0,
+      "failures": 0,
+      "preemptions": 0,
+      "tasks": [
+        {
+          "task_id": "/bizon/exp373-mpnn2-lr1e-3-s03-a01/0",
+          "state": "succeeded",
+          "attempt": 0,
+          "started_utc": "2026-11-02T22:16:18.060000+00:00",
+          "finished_utc": "2026-11-02T23:04:14.324000+00:00",
+          "elapsed_seconds": 2876.263999938965
+        }
+      ]
+    },
+    {
+      "job_id": "/bizon/exp373-mpnn2-lr1e-3-s04-a01",
+      "model": "mpnn2-lr1e-3",
+      "shard": 4,
+      "shards": 6,
+      "smoke": false,
+      "extension": false,
+      "two_epoch": true,
+      "source_sha256": "699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5",
+      "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v3-two-epoch/source/699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5.zip",
+      "cluster": "cw-us-east-02a",
+      "attempt": 1,
+      "state": "succeeded",
+      "exit_code": 0,
+      "failures": 0,
+      "preemptions": 0,
+      "tasks": [
+        {
+          "task_id": "/bizon/exp373-mpnn2-lr1e-3-s04-a01/0",
+          "state": "succeeded",
+          "attempt": 0,
+          "started_utc": "2026-11-02T22:16:18.060000+00:00",
+          "finished_utc": "2026-11-02T23:03:19.230000+00:00",
+          "elapsed_seconds": 2821.170000076294
+        }
+      ]
+    },
+    {
+      "job_id": "/bizon/exp373-mpnn2-lr1e-3-s05-a01",
+      "model": "mpnn2-lr1e-3",
+      "shard": 5,
+      "shards": 6,
+      "smoke": false,
+      "extension": false,
+      "two_epoch": true,
+      "source_sha256": "699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5",
+      "source_uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v3-two-epoch/source/699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5.zip",
+      "cluster": "cw-us-east-02a",
+      "attempt": 1,
+      "state": "succeeded",
+      "exit_code": 0,
+      "failures": 0,
+      "preemptions": 0,
+      "tasks": [
+        {
+          "task_id": "/bizon/exp373-mpnn2-lr1e-3-s05-a01/0",
+          "state": "succeeded",
+          "attempt": 0,
+          "started_utc": "2026-11-02T22:16:18.060000+00:00",
+          "finished_utc": "2026-11-02T23:02:23.921000+00:00",
+          "elapsed_seconds": 2765.861000061035
+        }
+      ]
+    }
+  ],
+  "production_jobs": 12,
+  "smoke_jobs": 2,
+  "failures": 0,
+  "preemptions": 0,
+  "production_task_gpu_hours": 10.021005555325084
+}

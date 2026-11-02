@@ -1,5 +1,5 @@
 {
-  "script": "plot.py",
+  "script": "two_epoch_plot.py",
   "args": [],
-  "caption": "Natural proteins, fixed prompts. Means at temperatures 0.7, 1.0 and 1.3 show the tradeoff between diversity, precision, ensemble accuracy and output size. Descriptive comparison; no temperature was selected."
+  "caption": "All-range metrics at matched sample counts. First 300 fixed samples at each temperature; pointwise 95% protein-bootstrap intervals. This sweep does not select a new temperature."
 }

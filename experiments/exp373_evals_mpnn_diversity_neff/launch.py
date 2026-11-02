@@ -25,24 +25,28 @@ def main() -> None:
     parser.add_argument("--submit", action="store_true")
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument("--extend", action="store_true")
-    parser.add_argument("--models", nargs="+", default=["mpnn", "default"])
+    parser.add_argument("--two-epoch", action="store_true")
+    parser.add_argument("--models", nargs="+")
     parser.add_argument("--shards", type=int, default=6)
     parser.add_argument("--only-shards", nargs="+", type=int)
     parser.add_argument("--attempt", type=int, default=1)
     args = parser.parse_args()
-    assert len(args.models) * args.shards <= 12
-    plan = json.loads((HERE / "data/plan.json").read_text())
+    assert not (args.extend and args.two_epoch)
+    plan_name = "two_epoch_plan.json" if args.two_epoch else "plan.json"
+    plan = json.loads((HERE / "data" / plan_name).read_text())
+    models = args.models or list(plan["models"])
+    assert set(models) <= set(plan["models"])
+    assert len(models) * args.shards <= 12
+    suffix = "_two_epoch" if args.two_epoch else ("_1000" if args.extend else "")
     extension = (
         json.loads((HERE / "data/extension_plan.json").read_text())
         if args.extend
         else None
     )
     if not args.smoke:
-        validation_name = (
-            "smoke_validation_1000.json" if args.extend else "smoke_validation.json"
-        )
+        validation_name = f"smoke_validation{suffix}.json"
         validation = json.loads((HERE / "data" / validation_name).read_text())
-        assert set(validation) == {"default", "mpnn"}
+        assert set(validation) == set(plan["models"])
         assert all(
             v["unfinished"] == 0 and v["n_rollouts"] == 100 for v in validation.values()
         )
@@ -53,7 +57,7 @@ def main() -> None:
             "worker.py",
             "contacts.py",
             "publish_file.py",
-            "data/plan.json",
+            "data/" + plan_name,
             "inputs/targets.json",
         ]
     ]
@@ -110,14 +114,12 @@ def main() -> None:
         + plan["marinfold_revision"]
         + "#subdirectory=marinfold"
     )
-    record_path = (
-        HERE / "data" / ("launches_1000.json" if args.extend else "launches.json")
-    )
+    record_path = HERE / "data" / f"launches{suffix}.json"
     records = json.loads(record_path.read_text()) if record_path.exists() else []
     config = Path(iris.__file__).parent / "config/cw-us-east-02a.yaml"
     with open_iris_client(config_file=config, workspace=None) as connection:
         client = FrayIrisClient.from_iris_client(connection)
-        for model in args.models:
+        for model in models:
             for shard in (
                 [0] if args.smoke else (args.only_shards or range(args.shards))
             ):
@@ -137,6 +139,8 @@ def main() -> None:
                         + (" --extend" if args.extend else ""),
                     ]
                 )
+                if args.two_epoch:
+                    shell += " --two-epoch"
                 name = (
                     f"exp373-{model}-"
                     + ("1000-" if args.extend else "")
@@ -166,6 +170,7 @@ def main() -> None:
                         "shards": args.shards,
                         "smoke": args.smoke,
                         "extension": args.extend,
+                        "two_epoch": args.two_epoch,
                         "source_sha256": digest,
                         "source_uri": remote,
                         "cluster": "cw-us-east-02a",
