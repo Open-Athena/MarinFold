@@ -1,5 +1,25 @@
 # MarinFold Updates
 
+## Week of November 2, 2026
+
+### Last two weeks
+
+- **Training: the ProteinMPNN-only runs finished.** The hypothesis here was that maybe our current model is really just learning to match sequences to things it's seen before (in terms of sequence similarity). We want to break that behavior by training only on synthetic sequences. This did kind of have the intended effect: diversity across rollouts is slightly higher, but our accuracy is a lot lower, although we are still waiting on the full evals. Details: The 5e-4 and 1e-3 trials completed two epochs; the unstable 2e-3 trial was stopped. The one-epoch GPU and TPU cooldowns also finished, with similar contact accuracy: about **0.46 on eval-val / 0.67 on eval-denovo**, below the full-data default (**0.555 / 0.696**). Contact evaluations of the final two-epoch checkpoints remain to do. ([#364](https://github.com/Open-Athena/MarinFold/issues/364))
+- **Training: the smaller-model sweep finished.** Final validation loss is **3.248 / 3.083 / 3.018** for **255M / 498M / 985M**, versus **2.984** for the 1.47B default, at the same full-corpus exposure. Loss continues to improve with size, but learning rates were not tuned per size and contact evaluations are still pending. ([#362](https://github.com/Open-Athena/MarinFold/issues/362))
+- **Training: both 5.86B runs diverged and were stopped.** Reducing the learning rate from 0.001 to 0.000707 delayed divergence and briefly gave slightly lower loss than the default, but neither run reached the final cooldown. The cause of instability is unresolved. ([#363](https://github.com/Open-Athena/MarinFold/issues/363))
+- **Training: the NLP-pretrained 4B Qwen models are improving.** Eval-val R-precision reached **0.272 after 9B additional tokens** on contacts-v1 and **0.248 after 4B** with natural-language prompts. At 4B tokens, contacts-v1 scores **0.216**, though the formats expose the model to different numbers of proteins. Both remain well below the scratch-trained default and resumed training today after a storage outage. ([#347](https://github.com/Open-Athena/MarinFold/issues/347))
+- **Evaluation: ProteinMPNN-only training increases diversity but lowers accuracy.** On natural eval-val proteins, even choosing the best of 1,000 samples using ground truth gives F1 **0.463**, versus **0.561** for the default. The extra samples find slightly more true contacts but **53% more false contacts**; consensus accuracy largely plateaus after 300 samples. ([#373](https://github.com/Open-Athena/MarinFold/issues/373))
+- **Inference: proofreader weighting gives a small gain; guided search did not help.** Weighting ordinary rollouts by predicted quality improves R-precision from **0.545 to 0.550** on the proofreader's 1,473-structure test cohort, at about **51% more inference time**. None of the tested guided-search methods improved the accuracy/cost tradeoff. This is not the standard decontaminated eval-val benchmark, and Helico accuracy remains untested. ([#368](https://github.com/Open-Athena/MarinFold/issues/368))
+- **Evaluation: a few true contacts help predict the rest.** Supplying eight random true contacts improves remaining-contact R-precision by about **six percentage points** on eval-val. Accuracy peaks at **0.711** when supplying 40% of true contacts; supplied contacts are excluded from scoring. ([#369](https://github.com/Open-Athena/MarinFold/issues/369))
+
+### Upcoming
+
+- Tim: Continue the **NLP-pretrained 4B Qwen** runs toward 100B additional tokens per format, with contact evaluations every 1B tokens. ([#347](https://github.com/Open-Athena/MarinFold/issues/347))
+- Tim: Evaluate the final two-epoch ProteinMPNN-only and smaller-model checkpoints against the full-data default. ([#364](https://github.com/Open-Athena/MarinFold/issues/364), [#362](https://github.com/Open-Athena/MarinFold/issues/362))
+- Jacob: Probe the model's representations and contact-decision circuits; test whether fine-tuning on ATLAS molecular-dynamics frames makes sampled contact frequencies track the simulated ensemble. ([#372](https://github.com/Open-Athena/MarinFold/issues/372), [#376](https://github.com/Open-Athena/MarinFold/issues/376))
+
+---
+
 ## Week of October 19, 2026
 
 ### Last two weeks
