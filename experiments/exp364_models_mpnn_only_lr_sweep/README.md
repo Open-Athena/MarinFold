@@ -36,6 +36,12 @@ On October 30 the user ended the unstable 2e-3 trial early. The two-epoch comple
 
 ## Results
 
+### Final checkpoint evaluation, 2026-11-02
+
+At the user's request, evaluate the completed 5e-4 and 1e-3 two-epoch parents, both at step **373768**, on **97 eval-val proteins and 19 eval-denovo designs**. The pinned plan is `data/contact_eval/plan.json`; each checkpoint runs 100 rollouts per protein with the established CUDA/vLLM sampling, a one-protein smoke gate, and the previously approved capped-sample continuation policy. Two independent batch H100 jobs run in CoreWeave US-EAST-02A. The verified trainer-generated exports and co-located tokenizers are reused directly: no native checkpoint copying, re-export, or model egress is needed. `data/contact_eval/final_export_manifests.json` pins all six files per model by SHA-256, alongside the regional finite-weight and native-counter verification.
+
+October 21 and October 29 results remain in their dated subdirectories. New results will be published under [November 2 final-checkpoint evaluation](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-11-02/final-01). The requested scope excludes eval-test and the legacy benchmark. Final R-precision remains pending.
+
 The 2026-10-13 in-region audit (`/bizon/exp364-lr1e-3-audit-a01`) succeeded and independently reproduced the source counts in `data/epoch_corpus_counts.csv`: 23,921,189 packed examples per epoch. Two epochs expose exactly 47,842,378 examples; 373,769 updates at batch 128 leave 74 real examples and 54 padding examples in the last batch. The first epoch boundary is crossed without padding or repeating examples. The inherited 8192-token clipping policy removes one trailing token from each of 772 documents per pass; no document is dropped.
 
 Six CPU tests pass. They compare the resolved recipe directly against exp277, enforce redesign-only training with unchanged validation, exercise complete traversal and deterministic resume across the epoch boundary through Levanter's actual loader, and check that resizing a gang does not change production identity. The default run's recorded W&B model and optimizer settings were also checked; `data/default_recipe.json` preserves that reference.
@@ -128,7 +134,7 @@ Both completed full-data references still lead on natural proteins. The first-ep
 
 ![Current contact R-precision and earlier snapshots](plots/contact_r_precision.png)
 
-October 21 results are preserved under `data/contact_eval/2026-10-21/`. Current [aggregate scores](data/contact_eval/r_precision.csv), [subgroups](data/contact_eval/r_precision_subgroups.csv), [paired snapshot changes](data/contact_eval/snapshot_changes.csv), per-protein metrics, timing CSVs and validated completion manifests are committed under `data/contact_eval/`. They are also [publicly available with the figure and source](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-10-29/latest-01). All scoring used the same CUDA/vLLM recipe, including the TPU-trained checkpoint.
+October 21 results are preserved under `data/contact_eval/2026-10-21/`. October 29 [aggregate scores](data/contact_eval/2026-10-29/r_precision.csv), [subgroups](data/contact_eval/2026-10-29/r_precision_subgroups.csv), [paired snapshot changes](data/contact_eval/2026-10-29/snapshot_changes.csv), per-protein metrics, timing CSVs and validated completion manifests are archived under `data/contact_eval/2026-10-29/`. They are also [publicly available with the figure and source](https://huggingface.co/buckets/open-athena/MarinFold/tree/data/exp364-models-mpnn-only-lr-sweep/contact-eval/2026-10-29/latest-01). All scoring used the same CUDA/vLLM recipe, including the TPU-trained checkpoint.
 
 ### Verified TPU completion and GPU progress, 2026-10-27
 

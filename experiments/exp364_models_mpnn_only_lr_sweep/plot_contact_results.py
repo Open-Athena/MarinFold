@@ -11,7 +11,8 @@ import pandas as pd
 from build_summary import save_plot_with_meta
 
 HERE = Path(__file__).resolve().parent
-DATA = HERE / "data/contact_eval"
+ROOT = HERE / "data/contact_eval"
+DATA = ROOT / "2026-10-29"
 TRIALS = [
     ("lr5e-4-cooldown", "5e-4: GPU one-epoch final"),
     ("lr5e-4-cooldown-tpu", "5e-4: TPU one-epoch final"),
@@ -26,7 +27,7 @@ def paired_snapshot_changes() -> None:
     rng = np.random.default_rng(20261029)
     rows = []
     for trial, _ in TRIALS:
-        old_path = DATA / "2026-10-21/results" / trial / "contact_precision_all.csv"
+        old_path = ROOT / "2026-10-21/results" / trial / "contact_precision_all.csv"
         if not old_path.exists():
             continue
         old = pd.read_csv(old_path)
@@ -73,7 +74,7 @@ def main() -> None:
         raise ValueError("All five checkpoint evaluations must be complete")
     paired_snapshot_changes()
     current = pd.read_csv(DATA / "r_precision.csv")
-    previous = pd.read_csv(DATA / "2026-10-21/r_precision.csv")
+    previous = pd.read_csv(ROOT / "2026-10-21/r_precision.csv")
     references = pd.read_csv(
         HERE.parent
         / "exp277_models_single_mpnn_pilot/data/eval_rollout_v2_epochs/epoch_comparison.csv"
@@ -166,7 +167,7 @@ def main() -> None:
             "plots/contact_r_precision.pdf",
             "plots/contact_r_precision.png.meta.json",
             "plot_contact_results.py",
-            "data/contact_eval/snapshot_changes.csv",
+            "data/contact_eval/2026-10-29/snapshot_changes.csv",
         ):
             subprocess.run(
                 [

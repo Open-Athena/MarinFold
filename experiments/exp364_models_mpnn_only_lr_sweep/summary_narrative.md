@@ -1,3 +1,11 @@
+## November 2 — final checkpoint evaluation
+
+Score both completed two-epoch parents at step 373768: 97 eval-val proteins and 19 eval-denovo designs, 100 rollouts per protein. Reuse the established CUDA/vLLM recipe and approved continuation policy.
+
+The verified trainer exports stay in CoreWeave US-EAST-02A. Two independent batch H100 jobs use one-protein smoke gates before the complete evaluations. Final R-precision is pending.
+
+October 21 and October 29 results are preserved under dated paths. The one-epoch diversity/Neff study remains separate in issue 373.
+
 ## November 2 — two-epoch training complete
 
 The 1e-3 parent finished October 31 at 13:25 EDT; 5e-4 finished November 1 at 15:33 EST. Both stopped at checkpoint 373768 after exactly 373769 optimizer updates. No training jobs remain active; 2e-3 remains cancelled.

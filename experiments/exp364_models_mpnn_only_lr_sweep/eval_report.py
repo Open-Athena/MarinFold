@@ -250,9 +250,7 @@ def publish(plan: dict, eval_set: str = "all") -> None:
     names += (
         "plan.json",
         "launches.json",
-        "freeze_verification_2026-10-29.json",
-        "export_verification_2026-10-29.json",
-        "tpu_bf16_export_verification.json",
+        *plan["provenance_files"],
     )
     for name in names:
         subprocess.run(
