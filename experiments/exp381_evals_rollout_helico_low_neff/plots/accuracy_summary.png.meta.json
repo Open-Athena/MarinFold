@@ -1,0 +1,5 @@
+{
+  "script": "analyze.py",
+  "args": [],
+  "caption": "Equal-protein means at k=10; 95% protein-bootstrap intervals (10,000 draws). Oracle uses reference labels; confidence pick uses only Helico ranking_score."
+}

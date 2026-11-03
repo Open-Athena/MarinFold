@@ -1,0 +1,5 @@
+{
+  "script": "analyze.py",
+  "args": [],
+  "caption": "Every individual prediction, with median, oracle, and confidence-selected accuracy. Targets are ordered by Neff. Each structure contributes the same three metrics."
+}
