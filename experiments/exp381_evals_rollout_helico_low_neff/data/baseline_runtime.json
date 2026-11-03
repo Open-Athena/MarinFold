@@ -1,0 +1,34 @@
+{
+  "esmfold2": {
+    "versions": {
+      "torch": "2.11.0",
+      "esm": "3.4.2",
+      "numpy": "2.5.4",
+      "transformers": "4.57.6",
+      "biotite": "1.8.0"
+    },
+    "weights_sha256": {
+      "model.safetensors": "138fd4350d6892b81ce6be7ff9bf5a93ae9d4d3751f46a27438a3f9f0dcefa0e",
+      "config.json": "e9ec2496ec433a1dce18627ed4bf3785b4ce0c1d69e4bb4663dad1ab895da012",
+      "ccd.pkl": "9ff44b1927c6b9198e38ffe0928706827a09a350c15530beeeabebfa88038fc5"
+    }
+  },
+  "af3_single": {
+    "versions": {
+      "jax": "0.4.34",
+      "alphafold3_source": "3c89cc7b89aa7042b72885af9016a45b262da008"
+    },
+    "weights_sha256": {
+      "af3.bin.zst": "0dd0290af76eec0119f4c0c41f441fbce4ec18aa21a0a02cac4a3af01d841369"
+    }
+  },
+  "af3_msa": {
+    "versions": {
+      "jax": "0.4.34",
+      "alphafold3_source": "3c89cc7b89aa7042b72885af9016a45b262da008"
+    },
+    "weights_sha256": {
+      "af3.bin.zst": "0dd0290af76eec0119f4c0c41f441fbce4ec18aa21a0a02cac4a3af01d841369"
+    }
+  }
+}

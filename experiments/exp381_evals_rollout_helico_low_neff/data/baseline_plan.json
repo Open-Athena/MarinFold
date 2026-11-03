@@ -1,0 +1,128 @@
+{
+  "status": "frozen_before_baseline_inference",
+  "n_targets": 10,
+  "samples_per_target": 10,
+  "targets": [
+    {
+      "stem": "8eb9_A",
+      "sequence": "TSGILLASITGAGSAFQAYAGCYLTAFRNDPRTLTLRMDKTRGERISNVLVILSGGALSHAVEEVVQIAPGAVRNLATLGASTVQFLHN",
+      "n_residues": 89,
+      "n_msa_rows": 24,
+      "original_msa_sha256": "8b40a9db84efea2902af237af1f3ad78b859f491dbf70243b9dbb80093abd042",
+      "msa_sha256": "ebd0f90cb0db79fb2a796f2acea7e02b748d697d8e51d69db2e1cbad328a9543",
+      "sequence_sha256": "fa642c2b3870a7ba064982ce218ee42cf498403bc5d9de539d93f53d0ea68f70"
+    },
+    {
+      "stem": "7xp9_A",
+      "sequence": "LMRVFSKEATRKYYLDLFKRADFTANLPKLAKKGGPDRLNDALKKLRKAGISEEKFAELKGAAAKYADDWYRIYGK",
+      "n_residues": 76,
+      "n_msa_rows": 13,
+      "original_msa_sha256": "c4ba0a3fae4852599066564355663c4018c3494a3bab49be7f125b7952128326",
+      "msa_sha256": "211046550028bf2c6371f0ec9a866cb89bbfd7a76555910444dd4e48c7cc9249",
+      "sequence_sha256": "2437a1ed75ef634aa1a142e06695b4e16105a81e4b68f7a5b8227dac5b80330c"
+    },
+    {
+      "stem": "7xcd_A",
+      "sequence": "MQDVQRTIEVSVGPIVGLDYTLLYDTLPETVSDNITLPDLKDPERVTEDTKKLILKGCVYIAYHHPLETDTLFIKVHKHIPEFCHSFLSHLLGGEDDDNALIDIGLFFNMLQPSLGGWITKNFLRHPNRMSKDQIKMLLDQIIKMAKAESSDTEEYEKVWKKMPTYFESIIQPLLHKT",
+      "n_residues": 178,
+      "n_msa_rows": 21,
+      "original_msa_sha256": "7b28ef0a333bce3d3647214242135385a6d1132f1d25db9ba9c106b2c5109110",
+      "msa_sha256": "7b28ef0a333bce3d3647214242135385a6d1132f1d25db9ba9c106b2c5109110",
+      "sequence_sha256": "c9ad99d116cb306665c054ca4e6b921ccd19976f743af816c7776a2ffdfee0ce"
+    },
+    {
+      "stem": "8ec3_A",
+      "sequence": "STGSEYYDQLKKAEKDIDSAFKILEKLKKDRDQVELQGTSEDRATAQAKLNQFSKAKLVQELKDLLEKIDKNAKLTIDNAVEDFSETPQSNYVTEADKSLYLAKDKLYDLIKAVESSANTYDAYAKRTGIGHGSKFSEVENHLKDAKSLIKKALK",
+      "n_residues": 155,
+      "n_msa_rows": 25,
+      "original_msa_sha256": "1f671e1907126b68112162f516da19863f00593e7425d23b8ee88c8f4c95be34",
+      "msa_sha256": "fbb2e368d3d0b568e3b4185ba85a3fc55fca61926fcf30b3fca1b5e5ebd3cacf",
+      "sequence_sha256": "65553dbe9db105e3cb9a450255ba2d8fd8a0b9403da57ec4b7dd8b8c132949ff"
+    },
+    {
+      "stem": "8cba_A",
+      "sequence": "SMKYKILKNLQFYYQENVIVVQINEKYLTNREHIFDVEESEQYFVDVEEILTKDGKLEIVYNRPNGYTPLLDLKEYADFYKLDIVNRLLEMNVLEKTNTYLAMQNILLKDTRDLLFIYKADHFDNLPYSTKEELEQWKNFICSFFGKFTLEKYEKNRIEVLTKEKNSFLNDVEAVESLESLRDLIKNRLTEEQKN",
+      "n_residues": 195,
+      "n_msa_rows": 129,
+      "original_msa_sha256": "4aa6303f258084641b8ab58a26f3bd25a7cda53fe98158397ab4bae9b8b121fe",
+      "msa_sha256": "dd290823a4a4d7b44685bd59dec707a96f57431a25b570709b3dbaf9af5ba9f1",
+      "sequence_sha256": "28a8fdc53b4db9685f6940dca07a1dfd77faa38f079f89a76f7d343e0da558d4"
+    },
+    {
+      "stem": "8adc_A",
+      "sequence": "EEQDSLAAFSRIEANITQYDPLLDNAGKSACTCICLKAAEMLLEASPDQVNAGLIDDILVEGVADYNRFKVEHTSVENYELNTFELKRLEFRDVDNPFSAEGNPYAGTLDSFAKMMEKASDSKDLPKPVALVMTKSNMTITIVIRPDGKYWLFDPHGTNGKGAYIESCNTDELIKKIKEIFPKTSYPGMTEDENLGFNSFEAYAVRR",
+      "n_residues": 207,
+      "n_msa_rows": 38,
+      "original_msa_sha256": "7603cfc3d03288171b7b79fcedc4d55f27041b6b51386ee50b0705132b011722",
+      "msa_sha256": "5dc29952e6a6770702dfe692a9cfb4e1d28599ac04a106f3508d3eebc2900448",
+      "sequence_sha256": "238313ec246213eca79847f34d69b39c316167dd8cb3018ab57cc7dd35cf16f7"
+    },
+    {
+      "stem": "8bux_A",
+      "sequence": "GAMGSEAVRSWRGAAEATSRLRERGCDGCLAGIEVQQLFCSQSAAIPEHQLKELNIKIDSALQAYKIALESLGHCEYAMKAGFHLNPKAIEASLQGCCSEAEAQQTGRRPMQCELPTVPVQIGSHFLKGVSFNESAADNLKLKTHTMLQLMKERDDFPVTEVLNQVCPSTWRGACKTAVQLLFGQAGLVVVDTAQIENKEAYAPQISLEGSRIVVQVPSTWCLKEDPATMSLLQRSLDPEKTLGLVDVLYTAVLDLNRWRAGREQALPCIQIQLQRGLQKTFSKLTSRF",
+      "n_residues": 289,
+      "n_msa_rows": 466,
+      "original_msa_sha256": "a2777b8314d33481219018db3b12759a9893f58d1e552fbe13c74b2aa5ff4e40",
+      "msa_sha256": "ea204199b12bcb09c2cc471a3adebf12b021e844386ee496d420dadae73bf2f9",
+      "sequence_sha256": "6283b2aaddd1b11a9f9b0fb5a9a582604e3aa8ac6e38ec1ff966e1d0538239e2"
+    },
+    {
+      "stem": "7yd4_A",
+      "sequence": "GALPPMTSSGSGPVIGDGDAALRQRISQQLFSFGDPTVQEVDGSDAAQFITAAAAVADRDVASVFLPLQRVLGCQQNSGAGFGARAYRRTDGQWGGAMLVVAKSTVSDVDALKACVKSGWRKATAGTPTSMCNNGWTYPPFADTRRGEEGYFVLLAGTASDFCSAPNANYRTTASSWPG",
+      "n_residues": 179,
+      "n_msa_rows": 203,
+      "original_msa_sha256": "c9d120822b132232458aed833f2fbdf5a68743d897c9714fa0f4a37123b29f70",
+      "msa_sha256": "5fee26a9cc4435d4612fea6672a5a425e559cdfe2a57b019e894387e23572100",
+      "sequence_sha256": "41ec6bd99c3960cca42869a6a55ebea5285626cb72008617c064cae1846299fe"
+    },
+    {
+      "stem": "7zu3_A",
+      "sequence": "GQQPQNRMMKLAYLDRGFYKHYGIIVGDHVYQLDSDDIFKTALTGKAKFTKTKLTSDWVIEEECELDYFRIKYLESAVDSEHIFSVDKNCETIAKDIFGTHTLSQHQAIGLVGTILLTAGLMSTIK",
+      "n_residues": 126,
+      "n_msa_rows": 151,
+      "original_msa_sha256": "902864dcfb0b464bd85c533cfc6a6108a612809556986f9a615f7d98752710d9",
+      "msa_sha256": "ecfef93dc2a66dffa8382dfac23314e94957e46c8306eafbf5becab941c92901",
+      "sequence_sha256": "30141a3044c35f52bb245cbcc256571e00846cad61ad55f1a8f564fe00328f9c"
+    },
+    {
+      "stem": "7uvg_A",
+      "sequence": "LYFQGVTATSNLFPEKQVTLKTVKVTYMFQSKDKDMLDFQWDMNYDANVLKPTANTTRAKSFEYPKIGSYVWNSLPGVIKANGNTLSLYDTTSKEIVFASAEFEVIDPEATATTVNLDVQVLRLSKVDPATDMEIGDEEVSVADKSIVDQEVFDKYVVANNTVTDP",
+      "n_residues": 166,
+      "n_msa_rows": 231,
+      "original_msa_sha256": "b4d0e9c510793b8398421219cf1d603ea54f328a0ccaa426e90554e51dbda57e",
+      "msa_sha256": "9e6bd576cbcaf741a3efa4cb3797d079a9ab9206a8b50aeb0149482339fa7bca",
+      "sequence_sha256": "0df69343465ec45878471e556e18b22ef4aa0637251c352c2fd1967e29843f6d"
+    }
+  ],
+  "original_plan_sha256": "89d866382fb322b0c06ccc42fc9bb06ac081f414b7559d1e167be3a9dd928ed8",
+  "tasks_sha256": "cde456823b4f0c7f298e1aa3d12da8e1b6103e42b533cf27fa7071ca1be292d2",
+  "af3": {
+    "source_sha": "3c89cc7b89aa7042b72885af9016a45b262da008",
+    "weights_volume": "marinfold-exp325-alphafold",
+    "weights_sha256": "0dd0290af76eec0119f4c0c41f441fbce4ec18aa21a0a02cac4a3af01d841369",
+    "recycles": 10,
+    "diffusion_samples_per_seed": 1,
+    "templates": false,
+    "single_sequence_msa": "empty unpaired and paired MSA",
+    "msa": "archived ColabFold non_pairing.a3m, projected to resolved residues",
+    "selector": "full-precision native ranking_score"
+  },
+  "esmfold2": {
+    "source_sha": "8f0834cbc350aeaf507f755475873f7c61fa44a1",
+    "hf_repository": "biohub/ESMFold2",
+    "revision": "1ebf0e3481a5184eb6171d40615c79e384b48796",
+    "weights_volume": "esmfold2-weights",
+    "loops": 20,
+    "sampling_steps": 200,
+    "diffusion_samples_per_seed": 1,
+    "lm_dropout": 0.3,
+    "esmc_precision": "bf16",
+    "selector": "full-precision pTM",
+    "msa": false
+  },
+  "analysis": "Identical score.py; macro protein mean; oracle per metric, median, native-confidence pick, sample mean; k=1..10; paired protein bootstrap 10000 draws seed381",
+  "ordering": "Fixed cohort order; seed=381000+100*target_index+rollout; paired across three baseline arms",
+  "timings": "Per seed; AF3 inference includes cold-shape JIT, features and output separate; ESM fold API includes feature prep; no speed comparison",
+  "interpretation": "Matched sample count, not matched compute or training exposure; ten-protein diagnostic pilot",
+  "frozen_utc": "2026-11-03T20:34:03.127739+00:00"
+}

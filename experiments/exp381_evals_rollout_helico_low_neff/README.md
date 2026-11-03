@@ -9,6 +9,7 @@ marinfold_experiment:
 # exp: individual MarinFold rollouts through Helico on the ten lowest-Neff eval-val proteins
 
 **Issue:** [#381](https://github.com/Open-Athena/MarinFold/issues/381).
+**[Summary PDF: all five arms](plots/summary.pdf).**
 Follow-up to [#373](../exp373_evals_mpnn_diversity_neff/README.md).
 The [frozen plan](PLAN.md) and [machine-readable protocol](data/plan.json)
 predate all Helico predictions.
@@ -22,7 +23,84 @@ two-epoch, learning-rate 5e-4 checkpoint. The hypothesis is that oracle structur
 accuracy improves with multiple rollouts, but confidence selection may capture
 only part of that opportunity.
 
-## Results
+## Matched baseline results: all 500 predictions complete
+
+**AF3 with MSA has the highest observed accuracy; ESMFold2 is the strongest
+single-sequence arm.** Confidence-selected mean TM-score is **0.799** for AF3
++ MSA, **0.640** for ESMFold2, and **0.403** for AF3 single sequence, compared
+with **0.433 / 0.440** for default / MPNN-only MarinFold through Helico.
+All three new arms completed **10 proteins × 10 independent seeds = 100
+predictions each**, with one structure per seed and no filtering of successful
+predictions. Combined with the original 200 Helico structures, there are 500.
+
+The same native references and structural scoring are used for all arms.
+Confidence picks use each predictor's own unrounded confidence score: pTM for
+ESMFold2, native ranking_score for AF3 and Helico. Oracle is metric-specific;
+median and mean summarize individual structures. Values below equally weight
+proteins, and all metrics range from zero to one (higher is better).
+
+| Baseline | Selection over 10 predictions | TM-score | All-atom lDDT | GDT-TS |
+|---|---|---:|---:|---:|
+| ESMFold2 | Oracle | 0.672 | 0.592 | 0.637 |
+| ESMFold2 | Median | 0.625 | 0.547 | 0.577 |
+| ESMFold2 | Confidence pick | 0.640 | 0.565 | 0.605 |
+| ESMFold2 | Individual-sample mean | 0.626 | 0.549 | 0.581 |
+| AF3 single sequence | Oracle | 0.465 | 0.412 | 0.415 |
+| AF3 single sequence | Median | 0.413 | 0.378 | 0.371 |
+| AF3 single sequence | Confidence pick | 0.403 | 0.370 | 0.358 |
+| AF3 single sequence | Individual-sample mean | 0.413 | 0.378 | 0.369 |
+| AF3 + MSA | Oracle | 0.838 | 0.776 | 0.826 |
+| AF3 + MSA | Median | 0.801 | 0.738 | 0.783 |
+| AF3 + MSA | Confidence pick | 0.799 | 0.730 | 0.780 |
+| AF3 + MSA | Individual-sample mean | 0.793 | 0.732 | 0.775 |
+
+![Five-arm matched-budget comparison](plots/matched_accuracy_summary.png)
+
+Relative to default MarinFold → Helico, the confidence-selected TM-score
+difference is **+0.207 [0.034, 0.370]** for ESMFold2, **+0.366 [0.169, 0.541]**
+for AF3 + MSA, and **−0.030 [−0.099, 0.044]** for AF3 single sequence.
+AF3's paired MSA-minus-single-sequence difference is **+0.396 [0.196, 0.565]**.
+Intervals are 95% paired protein bootstrap intervals over these ten targets.
+ESMFold2 and AF3 + MSA also have positive paired intervals against default
+Helico for confidence-selected lDDT and GDT-TS; AF3 single sequence does not.
+See [all paired contrasts](data/matched_paired_deltas.csv).
+
+![All metrics versus the matched sample budget](plots/matched_accuracy_vs_samples.png)
+
+**More samples help the Helico arms more, but do not close the accuracy gap.**
+Helico's oracle-minus-individual-mean TM-score gains are 0.136 / 0.134; the
+corresponding gains are 0.046 for ESMFold2, 0.052 for AF3 single sequence, and
+0.045 for AF3 + MSA. ESMFold2's individual-sample mean (0.626) already exceeds
+the observed Helico best-of-ten means (~0.482).
+
+Confidence is useful to different degrees. Its TM-score gain over the individual
+mean is **+0.015 [0.002, 0.031]** for ESMFold2, **−0.010 [−0.032, 0.010]** for
+AF3 single sequence, and **+0.006 [−0.016, 0.034]** for AF3 + MSA.
+Thus this pilot does not demonstrate a confidence-selection benefit for either
+AF3 arm. At k=10 the remaining oracle-minus-confidence gaps are 0.031, 0.062,
+and 0.039, respectively. Curves show fixed observed prefixes, not an average
+over random reorderings; only the oracle is guaranteed to be monotonic.
+[Selection gains and intervals](data/matched_selection_gains.csv).
+
+![All individual TM-scores and confidence selections](plots/matched_per_protein_tm.png)
+
+The aggregate result has meaningful exceptions. At the lowest Neff target,
+**8eb9_A (Neff 1.34)**, MPNN → Helico selects a TM-score **0.728** structure,
+versus default Helico 0.531, AF3 single sequence 0.519, ESMFold2 0.255, and
+AF3 + MSA 0.233. Conversely, **8bux_A** is difficult for every single-sequence
+arm (confidence-selected TM-score 0.157–0.218), while AF3 + MSA reaches **0.922**.
+Low Neff therefore does not imply that the supplied alignment has no useful
+information, nor that adding it helps every target.
+
+[Per-baseline prediction scores](data/baseline_metrics.csv),
+[all five-arm prefix summaries](data/matched_summary.csv), and
+[every protein's selections](data/matched_per_protein_selection.csv) contain
+all numerical results. All 300 new structures have full native Cα coverage;
+minimum heavy-atom coverage is 99.57%, using the same missing-atom convention.
+ESMFold2 also omits the native terminal OXT atom on 7zu3_A and 8adc_A; these
+atoms remain in the reference denominator. [Atom coverage audit](data/baseline_atom_coverage.csv).
+
+## Original Helico comparison
 
 **Completed all 200 Helico predictions on Modal H100 GPUs. There is no clear
 MarinFold model winner on this pilot. Helico confidence selection improves
@@ -244,9 +322,81 @@ reproduction scripts and environment lock. `data/` and `plots/` mirror the small
 analysis artifacts. `publish_to_hf.py` publishes and checks anonymous readback
 of every file; [public_artifacts.json](data/public_artifacts.json) records hashes.
 
+## Matched baseline extension protocol
+
+The [baseline plan](BASELINE_PLAN.md) and [frozen configuration](data/baseline_plan.json)
+add 100 predictions each from **ESMFold2**, **AlphaFold3 single sequence**, and
+**AlphaFold3 + MSA**: ten fresh full-model seeds for each of the same ten proteins.
+Each seed returns exactly one structure, and smoke predictions count toward the
+ten. All arms fold the same resolved sequence as Helico. The original 200 Helico
+predictions and protocol are unchanged.
+
+AlphaFold3 uses the official implementation pinned at
+[`3c89cc7`](https://github.com/google-deepmind/alphafold3/tree/3c89cc7b89aa7042b72885af9016a45b262da008),
+ten recycles and one diffusion sample per seed. Both AF3 arms have templates off.
+Single-sequence input explicitly sets both MSAs to empty strings. The MSA arm
+uses the archived ColabFold non-pairing alignment underlying the Neff analysis,
+projected onto the same resolved residues; original row membership/order is
+preserved, with subsequent standard AF3 MSA preprocessing. It does not run a
+new full AF3 database search. The supplied alignments have 13–466 rows;
+[data/baseline_inputs.csv](data/baseline_inputs.csv) records their identities and hashes.
+
+ESMFold2 uses the released `biohub/ESMFold2` snapshot
+`1ebf0e3481a5184eb6171d40615c79e384b48796` and Biohub source
+[`8f0834c`](https://github.com/Biohub/esm/tree/8f0834cbc350aeaf507f755475873f7c61fa44a1),
+20 loops, 200 diffusion steps, LM dropout 0.3, and ESMC bf16, without MSA.
+The standard PyTorch attention path is used. ESMFold2 selects by full-precision
+pTM; AF3 selects by its full-precision native ranking score. These confidence
+values rank candidates only within their own model/protein; their absolute
+scales are never compared across models. Each confidence choice supplies all
+three structural metrics; oracle remains independently best for each metric.
+
+`score_baselines.py` validates sequence/residue identity and maps predicted
+heavy atoms onto **the exact native reference arrays used by Helico** before
+calling the unchanged `score.py`. Native baseline CIFs round coordinates to
+0.001 Å. Missing native atoms, including the MSE selenium convention above,
+receive the same penalty in all arms. All five arms use the same per-protein
+selection and protein-bootstrap routines; ten targets, not 100 rollouts,
+define the independent units for uncertainty.
+
+The full runs are [ESMFold2](https://modal.com/apps/open-athena/main/ap-f1Hc4eHHqxW81IlHlxe7PB)
+and [AF3, both modes](https://modal.com/apps/open-athena/main/ap-LwrSCRgPSH3FejlYsfuYMe).
+[Execution log](data/baseline_execution_log.json) records startup/collection fixes
+and the three retained smoke predictions; all full-budget prediction calls
+succeeded. [Runtime versions and weight hashes](data/baseline_runtime.json) are
+constant within each arm. [Per-input timings](data/baseline_timings.csv) total
+636.2 seconds for ESMFold2, 454.5 for AF3 single sequence, and 317.0 for AF3 + MSA;
+combined measured inference is **1,407.6 H100-seconds (0.391 H100-hours)**.
+Model setup totals 240.3 seconds across eleven workers. AF3 includes cold-shape
+JIT and ESMFold2's fold API includes preparation; these are not a speed benchmark.
+Setup-inclusive CSV totals add shared setup to measured call time; deduplicate
+setup by worker when accounting for compute.
+
+To regenerate the matched figures from committed CSVs, run
+`uv run python analyze_baselines.py` and `uv run python build_summary.py`.
+For rescoring, restore the original reference arrays with `restore_public.py`,
+restore the additional predictions with `uv run python publish_baselines.py --restore`,
+then run `setup_metrics.py` and `uv run python score_baselines.py`.
+Prediction uses `BASELINE_MODEL=esmfold2 uv run modal run --detach run_baselines.py`
+and `BASELINE_MODEL=af3 uv run modal run --detach run_baselines.py`; the latter
+runs both AF3 modes. The completed task identities resume on Modal rather than
+being overwritten. `--smoke` restricts to the longest protein's first seed;
+`--collect-only` recovers outputs without prediction.
+
+[Verified public artifact manifest](data/baseline_public_artifacts.json).
+The extension's public artifact root is
+`hf://buckets/open-athena/MarinFold/data/exp381-rollout-helico-low-neff/v2-baselines`.
+It retains all 300 baseline CIFs, mapped coordinate arrays, native confidences,
+per-seed timings and AF3 output notices. Private AF3 model parameters are not
+part of the publication. The immutable `v1` root above supplies the original
+200 predictions and native reference structures.
+
 ## Limitations
 
-This is an exploratory ten-protein, ten-rollout pilot. The intervals describe
+This is an exploratory ten-protein, ten-rollout pilot. The added baselines match
+input sequences and sample counts, not compute, training data, or architecture.
+No sequence-level training-exposure audit was performed for ESMFold2 or AF3;
+these results do not establish training-matched generalization. The intervals describe
 resampling these proteins, not uncertainty from new training runs or repeated
 sets of ten rollouts. The oracle uses the answer and is not a deployable selector.
 The two checkpoints differ in more than one training attribute, so any difference
@@ -256,6 +406,13 @@ full input sequences for nine targets. Results do not establish full eval-val,
 held-out eval-test, or whole-sequence folding performance.
 
 ## Conclusion
+
+With matched ten-sample budgets, AF3 + archived ColabFold MSA has the highest
+observed structural accuracy, followed by ESMFold2. AF3 single sequence and the
+two MarinFold → Helico arms have overlapping confidence-selected accuracy in
+this pilot. Helico benefits more from sampling and confidence selection, but its
+observed oracle remains below ESMFold2’s average individual prediction.
+The lowest-Neff target is a useful exception favoring MPNN → Helico.
 
 On these ten lowest-Neff eval-val proteins, the default and ProteinMPNN-only
 two-epoch MarinFold checkpoints yield similar aggregate structural accuracy

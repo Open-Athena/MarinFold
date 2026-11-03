@@ -1,0 +1,23 @@
+{
+  "n_predictions": 500,
+  "n_baseline_predictions": 300,
+  "min_baseline_ca_coverage": 1.0,
+  "min_baseline_atom_coverage": 0.9956869993838572,
+  "counts": {
+    "af3_msa": 100,
+    "af3_single": 100,
+    "default": 100,
+    "esmfold2": 100,
+    "mpnn2-lr5e-4": 100
+  },
+  "baseline_inference_seconds": {
+    "af3_msa": 316.998373586,
+    "af3_single": 454.46718933700004,
+    "esmfold2": 636.178786637
+  },
+  "n_distinct_cif_per_model": {
+    "af3_msa": 100,
+    "af3_single": 100,
+    "esmfold2": 100
+  }
+}

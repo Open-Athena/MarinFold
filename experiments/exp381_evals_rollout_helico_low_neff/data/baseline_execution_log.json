@@ -1,0 +1,53 @@
+[
+  {
+    "stage": "af3_smoke",
+    "app_url": "https://modal.com/apps/open-athena/main/ap-eiFItrxA2dRaxb6DTXFuft",
+    "description": "Startup failed before prediction: shared constants imported pandas in AF3 image."
+  },
+  {
+    "stage": "af3_smoke2",
+    "app_url": "https://modal.com/apps/open-athena/main/ap-rwuTl7HJSi0rE26aCTjhq8",
+    "description": "Two successful longest-target AF3 predictions retained; CPU collector failed missing baseline_config mount."
+  },
+  {
+    "stage": "af3_collect",
+    "app_url": "https://modal.com/apps/open-athena/main/ap-wHelywdyTbxpZVR2xPU7Qr",
+    "description": "Collection failed missing baseline_config mount; no prediction requested."
+  },
+  {
+    "stage": "af3_collect2",
+    "app_url": "https://modal.com/apps/open-athena/main/ap-dboPjJIpoB9BfwYS295FX2",
+    "description": "Recovered both completed AF3 smoke structures; scoring and sequence/CA gates passed."
+  },
+  {
+    "stage": "esm_smoke",
+    "app_url": "https://modal.com/apps/open-athena/main/ap-MbTkc8ARywH54I2BNzH6qx",
+    "description": "Startup failed before prediction: CCD builder expected a directory rather than ccd.pkl path."
+  },
+  {
+    "stage": "esm_smoke2",
+    "app_url": "https://modal.com/apps/open-athena/main/ap-jMenAdtnWUja3BkavGkKvo",
+    "description": "One successful longest-target ESMFold2 prediction retained; CPU collector failed missing baseline_config mount."
+  },
+  {
+    "stage": "esm_collect",
+    "app_url": "https://modal.com/apps/open-athena/main/ap-cHQTV68x2CYAfzb114AKu3",
+    "description": "Recovered completed ESMFold2 smoke structure; scoring and sequence/CA gates passed."
+  },
+  {
+    "stage": "af3_full",
+    "app_url": "https://modal.com/apps/open-athena/main/ap-LwrSCRgPSH3FejlYsfuYMe",
+    "description": "Fixed full budget resumed after successful smoke; expected 198 new predictions plus two retained smoke predictions.",
+    "status": "completed",
+    "new_predictions": 198,
+    "resumed_smoke_predictions": 2
+  },
+  {
+    "stage": "esm_full",
+    "app_url": "https://modal.com/apps/open-athena/main/ap-f1Hc4eHHqxW81IlHlxe7PB",
+    "description": "Fixed full budget resumed after successful smoke; expected 99 new predictions plus one retained smoke prediction.",
+    "status": "completed",
+    "new_predictions": 99,
+    "resumed_smoke_predictions": 1
+  }
+]
