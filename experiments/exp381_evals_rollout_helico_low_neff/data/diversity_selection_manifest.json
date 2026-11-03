@@ -1,0 +1,1351 @@
+{
+  "plan_sha256": "8a0356d54499614c396438d2fa7adeb352fd2c0b6526f6a82565186e9dd981a1",
+  "tasks_sha256": "9b9ebd8847ad9cfdb86b26cbb4cb3b78fe037d6ea609a3cf0fec6f954d9887ee",
+  "selector_source_sha256": "d3e83f82ccea3c77c1e8d329a607c6822a2122556b6c05a6e83995659e9cea06",
+  "inventory_sha256": "12bfeea9c17609042956b1915db7f8f806eab3409cbeba4aea9e1f14d4555798",
+  "n_rollouts": 20000,
+  "n_helico_tasks": 400,
+  "fits": [
+    {
+      "model": "default",
+      "stem": "8eb9_A",
+      "objective": 0.90812643668493,
+      "trials": [
+        {
+          "start": 0,
+          "iterations": 1,
+          "converged": true,
+          "objective": 0.915091242510981
+        },
+        {
+          "start": 1,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9119941211979203
+        },
+        {
+          "start": 2,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9098187499531303
+        },
+        {
+          "start": 3,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9107639545403383
+        },
+        {
+          "start": 4,
+          "iterations": 1,
+          "converged": true,
+          "objective": 0.9178887128650853
+        },
+        {
+          "start": 5,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.90915675848922
+        },
+        {
+          "start": 6,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9137958604075851
+        },
+        {
+          "start": 7,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.90812643668493
+        },
+        {
+          "start": 8,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9082311820943987
+        },
+        {
+          "start": 9,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9146111123283767
+        }
+      ]
+    },
+    {
+      "model": "mpnn2-lr5e-4",
+      "stem": "8eb9_A",
+      "objective": 0.8826426422751253,
+      "trials": [
+        {
+          "start": 0,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8886030506349616
+        },
+        {
+          "start": 1,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8857647714596149
+        },
+        {
+          "start": 2,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8878652147931091
+        },
+        {
+          "start": 3,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.883606605371316
+        },
+        {
+          "start": 4,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.886753104690776
+        },
+        {
+          "start": 5,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8868553953937953
+        },
+        {
+          "start": 6,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.888633025071773
+        },
+        {
+          "start": 7,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8885413840894589
+        },
+        {
+          "start": 8,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.8828727203125124
+        },
+        {
+          "start": 9,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.8826426422751253
+        }
+      ]
+    },
+    {
+      "model": "default",
+      "stem": "7xp9_A",
+      "objective": 0.7706725881293236,
+      "trials": [
+        {
+          "start": 0,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.7746172307534104
+        },
+        {
+          "start": 1,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.7739827535074896
+        },
+        {
+          "start": 2,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.7716698476282043
+        },
+        {
+          "start": 3,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.7744725931795534
+        },
+        {
+          "start": 4,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.7727166884255322
+        },
+        {
+          "start": 5,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.7757606002366332
+        },
+        {
+          "start": 6,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.777404432468591
+        },
+        {
+          "start": 7,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.7706725881293236
+        },
+        {
+          "start": 8,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.7707035697631415
+        },
+        {
+          "start": 9,
+          "iterations": 4,
+          "converged": true,
+          "objective": 0.7729336170093449
+        }
+      ]
+    },
+    {
+      "model": "mpnn2-lr5e-4",
+      "stem": "7xp9_A",
+      "objective": 0.8145942771549698,
+      "trials": [
+        {
+          "start": 0,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.8152906698424542
+        },
+        {
+          "start": 1,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.825636662055013
+        },
+        {
+          "start": 2,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.822962459668884
+        },
+        {
+          "start": 3,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8145942771549698
+        },
+        {
+          "start": 4,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.8309332184249699
+        },
+        {
+          "start": 5,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.8205913134578714
+        },
+        {
+          "start": 6,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8225443071382685
+        },
+        {
+          "start": 7,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.8202703456559781
+        },
+        {
+          "start": 8,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.8202977236586717
+        },
+        {
+          "start": 9,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.826261385360376
+        }
+      ]
+    },
+    {
+      "model": "default",
+      "stem": "7xcd_A",
+      "objective": 0.8874881792522447,
+      "trials": [
+        {
+          "start": 0,
+          "iterations": 4,
+          "converged": true,
+          "objective": 0.8902348693494366
+        },
+        {
+          "start": 1,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.8895660701732904
+        },
+        {
+          "start": 2,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8937147240585726
+        },
+        {
+          "start": 3,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8935595284316225
+        },
+        {
+          "start": 4,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.8874881792522447
+        },
+        {
+          "start": 5,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.890686888563007
+        },
+        {
+          "start": 6,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8911501986984403
+        },
+        {
+          "start": 7,
+          "iterations": 4,
+          "converged": true,
+          "objective": 0.896263461822678
+        },
+        {
+          "start": 8,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.889394801245988
+        },
+        {
+          "start": 9,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.8903386711735117
+        }
+      ]
+    },
+    {
+      "model": "mpnn2-lr5e-4",
+      "stem": "7xcd_A",
+      "objective": 0.9098198892010798,
+      "trials": [
+        {
+          "start": 0,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.9166797279446036
+        },
+        {
+          "start": 1,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.9133321285057225
+        },
+        {
+          "start": 2,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9141354860481734
+        },
+        {
+          "start": 3,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9110373411122578
+        },
+        {
+          "start": 4,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9148491928083546
+        },
+        {
+          "start": 5,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9130386084151417
+        },
+        {
+          "start": 6,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9157316550556206
+        },
+        {
+          "start": 7,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.9154202735825374
+        },
+        {
+          "start": 8,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.9154618070496517
+        },
+        {
+          "start": 9,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9098198892010798
+        }
+      ]
+    },
+    {
+      "model": "default",
+      "stem": "8ec3_A",
+      "objective": 0.7787240131201348,
+      "trials": [
+        {
+          "start": 0,
+          "iterations": 4,
+          "converged": true,
+          "objective": 0.7971999333655327
+        },
+        {
+          "start": 1,
+          "iterations": 4,
+          "converged": true,
+          "objective": 0.7861393356149473
+        },
+        {
+          "start": 2,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.7823585054787016
+        },
+        {
+          "start": 3,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.7929378968441918
+        },
+        {
+          "start": 4,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.7885808862992699
+        },
+        {
+          "start": 5,
+          "iterations": 4,
+          "converged": true,
+          "objective": 0.7834776107026431
+        },
+        {
+          "start": 6,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.7948215402206743
+        },
+        {
+          "start": 7,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.7787240131201348
+        },
+        {
+          "start": 8,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.7828396002203645
+        },
+        {
+          "start": 9,
+          "iterations": 4,
+          "converged": true,
+          "objective": 0.7804940298980403
+        }
+      ]
+    },
+    {
+      "model": "mpnn2-lr5e-4",
+      "stem": "8ec3_A",
+      "objective": 0.7918685340462559,
+      "trials": [
+        {
+          "start": 0,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.795653502442145
+        },
+        {
+          "start": 1,
+          "iterations": 4,
+          "converged": true,
+          "objective": 0.7918685340462559
+        },
+        {
+          "start": 2,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.797617060465152
+        },
+        {
+          "start": 3,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.7993298635881166
+        },
+        {
+          "start": 4,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.8017239151709042
+        },
+        {
+          "start": 5,
+          "iterations": 4,
+          "converged": true,
+          "objective": 0.8054114040009523
+        },
+        {
+          "start": 6,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.7993871107110808
+        },
+        {
+          "start": 7,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.7965444123781414
+        },
+        {
+          "start": 8,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.8003899414184782
+        },
+        {
+          "start": 9,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8000759128569912
+        }
+      ]
+    },
+    {
+      "model": "default",
+      "stem": "8cba_A",
+      "objective": 0.915559207834581,
+      "trials": [
+        {
+          "start": 0,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9206332996865492
+        },
+        {
+          "start": 1,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.9196034562229224
+        },
+        {
+          "start": 2,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9198184701715761
+        },
+        {
+          "start": 3,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9180506732558408
+        },
+        {
+          "start": 4,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9209973225929252
+        },
+        {
+          "start": 5,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.915559207834581
+        },
+        {
+          "start": 6,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9226249802344758
+        },
+        {
+          "start": 7,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.9187258017981784
+        },
+        {
+          "start": 8,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.92155881471918
+        },
+        {
+          "start": 9,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9179512468075854
+        }
+      ]
+    },
+    {
+      "model": "mpnn2-lr5e-4",
+      "stem": "8cba_A",
+      "objective": 0.8652184263692428,
+      "trials": [
+        {
+          "start": 0,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8707455242152562
+        },
+        {
+          "start": 1,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8720750007425409
+        },
+        {
+          "start": 2,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8654456897615248
+        },
+        {
+          "start": 3,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8652184263692428
+        },
+        {
+          "start": 4,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8661271828217743
+        },
+        {
+          "start": 5,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8667616149723772
+        },
+        {
+          "start": 6,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8677344527567843
+        },
+        {
+          "start": 7,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.881289496690533
+        },
+        {
+          "start": 8,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8687595740422795
+        },
+        {
+          "start": 9,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.8716372095878175
+        }
+      ]
+    },
+    {
+      "model": "default",
+      "stem": "8adc_A",
+      "objective": 0.8017599438792585,
+      "trials": [
+        {
+          "start": 0,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.8025652452142908
+        },
+        {
+          "start": 1,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8027558386952027
+        },
+        {
+          "start": 2,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8034675992355051
+        },
+        {
+          "start": 3,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.8032292225563596
+        },
+        {
+          "start": 4,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8055890450219791
+        },
+        {
+          "start": 5,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8082996483476841
+        },
+        {
+          "start": 6,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8025403163922973
+        },
+        {
+          "start": 7,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8022817538041918
+        },
+        {
+          "start": 8,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8065239662983212
+        },
+        {
+          "start": 9,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.8017599438792585
+        }
+      ]
+    },
+    {
+      "model": "mpnn2-lr5e-4",
+      "stem": "8adc_A",
+      "objective": 0.7915972901120159,
+      "trials": [
+        {
+          "start": 0,
+          "iterations": 4,
+          "converged": true,
+          "objective": 0.8003201584013059
+        },
+        {
+          "start": 1,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.7935847296832431
+        },
+        {
+          "start": 2,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8000632359254104
+        },
+        {
+          "start": 3,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8024592331432779
+        },
+        {
+          "start": 4,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.7971305560787879
+        },
+        {
+          "start": 5,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.7948935124752255
+        },
+        {
+          "start": 6,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.79769174058339
+        },
+        {
+          "start": 7,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.799980892109176
+        },
+        {
+          "start": 8,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.7915972901120159
+        },
+        {
+          "start": 9,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.7952909029288355
+        }
+      ]
+    },
+    {
+      "model": "default",
+      "stem": "8bux_A",
+      "objective": 0.9398951887856445,
+      "trials": [
+        {
+          "start": 0,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9432953117782498
+        },
+        {
+          "start": 1,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.940323033097445
+        },
+        {
+          "start": 2,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9437924403982979
+        },
+        {
+          "start": 3,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9418760329918094
+        },
+        {
+          "start": 4,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9458032934097762
+        },
+        {
+          "start": 5,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9414463807661514
+        },
+        {
+          "start": 6,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9458505735894819
+        },
+        {
+          "start": 7,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9415506368166682
+        },
+        {
+          "start": 8,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9398951887856445
+        },
+        {
+          "start": 9,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9417502001810779
+        }
+      ]
+    },
+    {
+      "model": "mpnn2-lr5e-4",
+      "stem": "8bux_A",
+      "objective": 0.9459080589081977,
+      "trials": [
+        {
+          "start": 0,
+          "iterations": 1,
+          "converged": true,
+          "objective": 0.9496828364834918
+        },
+        {
+          "start": 1,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9513274997394587
+        },
+        {
+          "start": 2,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9486928676691966
+        },
+        {
+          "start": 3,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9480258161948844
+        },
+        {
+          "start": 4,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9476504542612106
+        },
+        {
+          "start": 5,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9483427999282783
+        },
+        {
+          "start": 6,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9489137436520252
+        },
+        {
+          "start": 7,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9469024017385566
+        },
+        {
+          "start": 8,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9459080589081977
+        },
+        {
+          "start": 9,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9475384437076254
+        }
+      ]
+    },
+    {
+      "model": "default",
+      "stem": "7yd4_A",
+      "objective": 0.9156600923056883,
+      "trials": [
+        {
+          "start": 0,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9223232778847902
+        },
+        {
+          "start": 1,
+          "iterations": 1,
+          "converged": true,
+          "objective": 0.9236412022348517
+        },
+        {
+          "start": 2,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9229413998037653
+        },
+        {
+          "start": 3,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9224384363108337
+        },
+        {
+          "start": 4,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9245375735923229
+        },
+        {
+          "start": 5,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9190173919272341
+        },
+        {
+          "start": 6,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9237516428547476
+        },
+        {
+          "start": 7,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9219699644616721
+        },
+        {
+          "start": 8,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9230717662530173
+        },
+        {
+          "start": 9,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9156600923056883
+        }
+      ]
+    },
+    {
+      "model": "mpnn2-lr5e-4",
+      "stem": "7yd4_A",
+      "objective": 0.918525244524372,
+      "trials": [
+        {
+          "start": 0,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9233099815705249
+        },
+        {
+          "start": 1,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9262598181323135
+        },
+        {
+          "start": 2,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9237551850968911
+        },
+        {
+          "start": 3,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9229307696700073
+        },
+        {
+          "start": 4,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9236905853046135
+        },
+        {
+          "start": 5,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.918525244524372
+        },
+        {
+          "start": 6,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9216063633570296
+        },
+        {
+          "start": 7,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9196418839812588
+        },
+        {
+          "start": 8,
+          "iterations": 1,
+          "converged": true,
+          "objective": 0.9279479168798134
+        },
+        {
+          "start": 9,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9215028411151048
+        }
+      ]
+    },
+    {
+      "model": "default",
+      "stem": "7zu3_A",
+      "objective": 0.7807399921828229,
+      "trials": [
+        {
+          "start": 0,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.7908708595054388
+        },
+        {
+          "start": 1,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.7878401321298206
+        },
+        {
+          "start": 2,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.7807399921828229
+        },
+        {
+          "start": 3,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.7829018746976864
+        },
+        {
+          "start": 4,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.7808140534701203
+        },
+        {
+          "start": 5,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.785777367217611
+        },
+        {
+          "start": 6,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.7943421301578739
+        },
+        {
+          "start": 7,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.7905641571596749
+        },
+        {
+          "start": 8,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.7870794230754322
+        },
+        {
+          "start": 9,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.7865527653483656
+        }
+      ]
+    },
+    {
+      "model": "mpnn2-lr5e-4",
+      "stem": "7zu3_A",
+      "objective": 0.8318992691911947,
+      "trials": [
+        {
+          "start": 0,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.837767750026114
+        },
+        {
+          "start": 1,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.8328360249456855
+        },
+        {
+          "start": 2,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8363662973794931
+        },
+        {
+          "start": 3,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.8319664623604938
+        },
+        {
+          "start": 4,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8384867375596172
+        },
+        {
+          "start": 5,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.8362477472733231
+        },
+        {
+          "start": 6,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8339301668771818
+        },
+        {
+          "start": 7,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8482822665924556
+        },
+        {
+          "start": 8,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8423767000504918
+        },
+        {
+          "start": 9,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.8318992691911947
+        }
+      ]
+    },
+    {
+      "model": "default",
+      "stem": "7uvg_A",
+      "objective": 0.8218763597268421,
+      "trials": [
+        {
+          "start": 0,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.8233752378040688
+        },
+        {
+          "start": 1,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.8218763597268421
+        },
+        {
+          "start": 2,
+          "iterations": 4,
+          "converged": true,
+          "objective": 0.822435906394412
+        },
+        {
+          "start": 3,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.8276133412730037
+        },
+        {
+          "start": 4,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8251043966545776
+        },
+        {
+          "start": 5,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.8219837344360021
+        },
+        {
+          "start": 6,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.822536520429844
+        },
+        {
+          "start": 7,
+          "iterations": 4,
+          "converged": true,
+          "objective": 0.8225327704294363
+        },
+        {
+          "start": 8,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.8247723215804331
+        },
+        {
+          "start": 9,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.8306771868408241
+        }
+      ]
+    },
+    {
+      "model": "mpnn2-lr5e-4",
+      "stem": "7uvg_A",
+      "objective": 0.9013907351401558,
+      "trials": [
+        {
+          "start": 0,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.9071839007288616
+        },
+        {
+          "start": 1,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.9022747838607559
+        },
+        {
+          "start": 2,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.902362908638696
+        },
+        {
+          "start": 3,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.9024846033694777
+        },
+        {
+          "start": 4,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9020577944428418
+        },
+        {
+          "start": 5,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9013907351401558
+        },
+        {
+          "start": 6,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9067682619301447
+        },
+        {
+          "start": 7,
+          "iterations": 3,
+          "converged": true,
+          "objective": 0.9063934833420452
+        },
+        {
+          "start": 8,
+          "iterations": 4,
+          "converged": true,
+          "objective": 0.9028024048727454
+        },
+        {
+          "start": 9,
+          "iterations": 2,
+          "converged": true,
+          "objective": 0.9017854843642087
+        }
+      ]
+    }
+  ],
+  "frozen_utc": "2026-11-03T21:28:03.875972+00:00"
+}

@@ -1,3 +1,75 @@
+## Select ten contacts from 1,000?
+
+Same ten lowest-Neff eval-val proteins and two MarinFold checkpoints.
+
+20,000 randomized contact rollouts; 18,000 newly generated on CoreWeave H100s.
+
+Fold ten contacts per arm: first ten, random ten, cluster medoids, farthest points.
+
+600 new Modal Helico predictions; 800 Helico plus 300 earlier baseline structures.
+
+Selection inputs were frozen and published before their folding calls.
+
+Medoids cover the sampled pool better, but reduce pairwise contact separation.
+
+A secondary farthest-point arm explicitly raises separation from ~0.94 to ~0.98.
+
+Matched Helico seeds, six recycles, one sample, unchanged checkpoint and scorer.
+
+## Medoids: promising default oracle
+
+Default random -> medoids: oracle TM 0.462 -> 0.528; confidence 0.407 -> 0.469.
+
+Oracle gain +0.066 [0.020, 0.121]; confidence gain +0.062 [-0.017, 0.160].
+
+MPNN random -> medoids: oracle 0.500 -> 0.488; confidence 0.440 -> 0.434.
+
+MPNN confidence gain -0.007 [-0.096, 0.088]. No established primary gain.
+
+Default medoids also exceed first-ten confidence 0.433, but that interval spans zero.
+
+8eb9_A drives much of the gain: default random 0.315 versus medoids 0.743.
+
+All intervals: 10,000 paired protein-bootstrap resamples, conditional on one control draw.
+
+Oracle is best of ten folded selections, not best of 1,000 structures.
+
+## More separation hurts typical folds
+
+Default random -> farthest: mean TM 0.336 -> 0.273; median 0.326 -> 0.252.
+
+MPNN random -> farthest: mean TM 0.343 -> 0.264; median 0.335 -> 0.243.
+
+Mean TM changes: -0.063 [-0.087, -0.039] and -0.079 [-0.118, -0.041].
+
+Mean/median lDDT and GDT-TS also decline for both checkpoints.
+
+Confidence TM changes -0.016 / -0.013; both intervals include zero.
+
+No observed oracle or confidence-pick TM gain from farthest-point selection.
+
+This tests two specific selectors; contact counts also change. Ten-protein pilot.
+
+Use coverage-oriented selection as a hypothesis to test further, not a proven gain.
+
+## Diversity experiment: evidence and cost
+
+All 600 new structures scored; full native CA coverage; >=99.584% heavy atoms.
+
+One pinned Helico runtime and checkpoint, same structural scorer for all arms.
+
+New contact inference: 538.0 H100-seconds; Helico inference: 5,041.1 seconds.
+
+Model setup/staging and container overhead are additional; timings are not billing.
+
+Medoid clustering: 2.50 CPU-seconds. Fourteen Helico workers including checks.
+
+Public HF v3-diversity preserves raw pools, chosen contacts, structures and hashes.
+
+See README, per-protein CSVs, paired contrasts and three new figures.
+
+Earlier ESMFold2 / AF3 baselines follow. They were not rerun for this extension.
+
 ## Five arms, 500 structures
 
 Ten lowest-Neff natural eval-val proteins; ten independent samples per arm.

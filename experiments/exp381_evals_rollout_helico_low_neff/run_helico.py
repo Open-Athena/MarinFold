@@ -34,7 +34,7 @@ def sha256(path: str | Path) -> str:
     return digest.hexdigest()
 
 
-def preflight() -> dict:
+def preflight(n_predictions: int, n_workers: int) -> dict:
     """Check the source and all frozen input hashes before GPU submission."""
     revision = subprocess.check_output(
         ["git", "rev-parse", "HEAD"], cwd=REPO, text=True
@@ -49,10 +49,10 @@ def preflight() -> dict:
             raise ValueError(f"frozen input changed: {relative}")
     if sha256(HERE / "PLAN.md") != plan["plan_markdown_sha256"]:
         raise ValueError("frozen plan changed")
-    hours = 200 * 20 / 3600 + WORKERS * 0.1
+    hours = n_predictions * 20 / 3600 + n_workers * 0.1
     estimate = hours * 3.9492
     print(
-        f"200 predictions; conservative {hours:.2f} H100-hours, ${estimate:.2f} GPU-only",
+        f"{n_predictions} predictions; conservative {hours:.2f} H100-hours, ${estimate:.2f} GPU-only",
         flush=True,
     )
     return dict(
@@ -176,7 +176,9 @@ class Predictor:
         print(f"Loaded verified Helico on {props.name}", flush=True)
 
     @modal.method()
-    def predict(self, target: dict, tasks: list[dict], provenance: dict) -> dict:
+    def predict(
+        self, target: dict, tasks: list[dict], provenance: dict, output_tag: str
+    ) -> dict:
         import numpy as np
         import torch
         from helico.bench import predict_target, structure_to_chains
@@ -216,7 +218,7 @@ class Predictor:
         result_files = {}
         rows = []
         for task in tasks:
-            folder = Path("/results") / TAG / task["task_id"]
+            folder = Path("/results") / output_tag / task["task_id"]
             complete = folder / "result.json"
             if complete.exists():
                 row = json.loads(complete.read_text())
@@ -361,7 +363,7 @@ class Predictor:
 @app.local_entrypoint()
 def run(smoke: bool = False) -> None:
     """Run a two-prediction smoke gate, or resume all 200 frozen predictions."""
-    provenance = preflight()
+    provenance = preflight(200, WORKERS)
     targets = json.loads((HERE / "inputs/targets.json").read_text())
     tasks = json.loads((HERE / "inputs/tasks.json").read_text())
     if smoke:
@@ -379,7 +381,7 @@ def run(smoke: bool = False) -> None:
         if not (HERE / "scratch/results" / t["task_id"] / "result.json").exists()
     ]
     jobs = [
-        (target, [t for t in pending if t["stem"] == target["stem"]], provenance)
+        (target, [t for t in pending if t["stem"] == target["stem"]], provenance, TAG)
         for target in targets
     ]
     jobs = [job for job in jobs if job[1]]
@@ -416,6 +418,6 @@ def run(smoke: bool = False) -> None:
 
 
 if __name__ == "__main__":
-    preflight()
+    preflight(200, WORKERS)
     if os.environ.get("HELICO_DRY_RUN") != "1":
         subprocess.run(["modal", "run", f"{__file__}::run", *sys.argv[1:]], check=True)

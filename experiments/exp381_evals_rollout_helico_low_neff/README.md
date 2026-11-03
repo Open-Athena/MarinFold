@@ -9,7 +9,7 @@ marinfold_experiment:
 # exp: individual MarinFold rollouts through Helico on the ten lowest-Neff eval-val proteins
 
 **Issue:** [#381](https://github.com/Open-Athena/MarinFold/issues/381).
-**[Summary PDF: all five arms](plots/summary.pdf).**
+**[Summary PDF](plots/summary.pdf).**
 Follow-up to [#373](../exp373_evals_mpnn_diversity_neff/README.md).
 The [frozen plan](PLAN.md) and [machine-readable protocol](data/plan.json)
 predate all Helico predictions.
@@ -22,6 +22,162 @@ accurate structure? Compare the current default with the ProteinMPNN-only,
 two-epoch, learning-rate 5e-4 checkpoint. The hypothesis is that oracle structural
 accuracy improves with multiple rollouts, but confidence selection may capture
 only part of that opportunity.
+
+## Diversity selection results: all 600 new structures complete
+
+**No reliable improvement in the confidence-selected structure is established
+by this pilot.** Cluster representatives are promising for the default
+checkpoint's oracle accuracy, but the gain does not carry over to the two-epoch
+checkpoint. Explicitly maximizing contact separation makes the typical Helico
+prediction worse.
+
+The experiment now contains **20,000 contact rollouts, 800 Helico structures,
+and 300 previously completed baseline structures**. Each accuracy below is an
+equal-weight average over the same ten proteins. Oracle is best of the **ten
+folded selections**, not an oracle over 1,000 structures.
+
+| Checkpoint | Contact selection | Oracle TM | Median TM | Confidence-pick TM | Mean TM |
+|---|---|---:|---:|---:|---:|
+| Default | Original first ten | 0.483 | 0.340 | 0.433 | 0.347 |
+| Default | Random ten / 1,000 | 0.462 | 0.326 | 0.407 | 0.336 |
+| Default | Ten medoids / 1,000 | 0.528 | 0.347 | 0.469 | 0.360 |
+| Default | Ten farthest / 1,000 | 0.452 | 0.252 | 0.391 | 0.273 |
+| MPNN-only, 2 epochs | Original first ten | 0.481 | 0.350 | 0.440 | 0.348 |
+| MPNN-only, 2 epochs | Random ten / 1,000 | 0.500 | 0.335 | 0.440 | 0.343 |
+| MPNN-only, 2 epochs | Ten medoids / 1,000 | 0.488 | 0.360 | 0.434 | 0.362 |
+| MPNN-only, 2 epochs | Ten farthest / 1,000 | 0.461 | 0.243 | 0.427 | 0.264 |
+
+![Structural accuracy after selecting ten contacts](plots/diversity_accuracy.png)
+
+The frozen primary contrast, medoids minus random ten in confidence-selected
+TM-score, is **+0.0619 [−0.0166, +0.1596]** for default and
+**−0.0065 [−0.0962, +0.0878]** for MPNN-only. Medoids win on 7/10 and 4/10
+proteins, respectively. Against the original first ten, the differences are
++0.0358 [−0.0591, +0.1101] and −0.0064 [−0.0511, +0.0342]. None of these
+primary confidence-pick intervals excludes zero.
+
+There is a more encouraging **secondary oracle result for default**:
+TM-score rises from 0.462 to 0.528 versus random, a paired gain of
+**+0.0660 [+0.0203, +0.1211]**. Its individual-sample mean improves by
++0.0244 [+0.0003, +0.0445]. MPNN's medoid oracle changes by
+−0.0121 [−0.0678, +0.0480]. The default confidence gain is partly driven by
+8eb9_A: random 0.315 versus medoid 0.743. Other targets vary substantially;
+for example default 7xp9_A falls from 0.550 to 0.416. This is evidence for
+further testing of representative selection, not a demonstrated general gain.
+
+**The farthest-point arm is harmful to typical predictions.** Relative to
+random ten, mean TM-score changes by **−0.0634 [−0.0865, −0.0393]** for
+default and **−0.0791 [−0.1183, −0.0411]** for MPNN. Median changes are
+−0.0736 [−0.1043, −0.0419] and −0.0915 [−0.1375, −0.0482]. Mean and median
+lDDT and GDT-TS also decline for both checkpoints, with negative paired
+intervals. Confidence-selected TM-score changes are smaller and uncertain:
+−0.0162 [−0.1334, +0.1119] and −0.0135 [−0.1268, +0.0963]. Extra contact
+separation does not produce an observed oracle or confidence-pick TM-score improvement.
+
+![Paired changes relative to random ten](plots/diversity_paired_changes.png)
+
+Confidence-selected accuracy across the three metrics:
+
+| Checkpoint | Contact selection | TM-score | All-atom lDDT | GDT-TS |
+|---|---|---:|---:|---:|
+| Default | Original first ten | 0.433 | 0.388 | 0.378 |
+| Default | Random ten / 1,000 | 0.407 | 0.371 | 0.354 |
+| Default | Ten medoids / 1,000 | 0.469 | 0.421 | 0.406 |
+| Default | Ten farthest / 1,000 | 0.391 | 0.376 | 0.342 |
+| MPNN-only, 2 epochs | Original first ten | 0.440 | 0.397 | 0.373 |
+| MPNN-only, 2 epochs | Random ten / 1,000 | 0.440 | 0.393 | 0.377 |
+| MPNN-only, 2 epochs | Ten medoids / 1,000 | 0.434 | 0.385 | 0.362 |
+| MPNN-only, 2 epochs | Ten farthest / 1,000 | 0.427 | 0.394 | 0.366 |
+
+[All per-protein selections](data/diversity_per_protein_selection.csv),
+[all metric/selector means and intervals](data/diversity_summary.csv), and
+[all paired contrasts](data/diversity_paired_deltas.csv) provide the full
+numeric results. The figures show oracle, median, confidence pick, and
+individual mean for all three structural metrics.
+
+All 600 new predictions have full native Cα coverage and at least 99.584%
+heavy-atom coverage, with the same missing-native-atom penalties as the original
+pilot. The inference primitive, checkpoint, software runtime and scoring code
+are unchanged; only the selected contacts differ. All successful predictions
+are retained. New inference took **538.0 H100-seconds for 18,000 extra contact
+rollouts** and **5,041.1 H100-seconds for 600 Helico predictions**. Generation
+worker model setup/staging took 693.9/111.9 seconds across ten workers; Helico
+setup took 356.1 seconds across fourteen workers. Medoid distance construction
+and fitting took 2.50 CPU-seconds total. These are measured components, not
+billed runtime; container startup, dependency installation and idle time are
+not included. Per-input timing CSVs and execution manifests are under `data/`.
+
+This remains a ten-protein pilot with one random subset and one matched set
+of folding seeds. Selectors change contact counts as well as contact geometry,
+so the result is about these selection procedures, not a count-controlled
+causal effect of diversity. It does not evaluate folding all 1,000 rollouts,
+other cluster distances, or the full eval-val set. The medoid oracle remains
+below the earlier ESMFold2 individual mean (0.626), so the broad baseline
+comparison is unchanged.
+
+## Selecting ten contacts from a pool of 1,000
+
+The [diversity protocol](DIVERSITY_PLAN.md) and
+[machine-readable plan](data/diversity_plan.json) were frozen before generating
+additional contacts. Each of the same two checkpoints supplies 1,000 randomized-
+prompt, T=1 rollouts per protein. The original 100-rollout pools are retained
+verbatim and extended by 900, for **20,000 contact rollouts** in total. The older
+exp373 1,000-rollout extension used fixed prompts and is not mixed into these
+randomized pools.
+
+Ten k-medoids representatives are selected by Jaccard distance on the exact
+binary contact sets supplied to Helico, after removing unresolved residues and
+contacts with mapped sequence separation below six. Ten k-medoids++ starts
+are used, with the first starting at the global medoid, up to 100 alternate
+assignment/update iterations, and the lowest mean nearest-representative
+distance retained. Duplicate contact sets retain their sampling multiplicity.
+This represents the sampled distribution; it does not explicitly maximize
+pairwise separation or seek its most extreme outliers.
+
+A **random-ten control** samples uniformly without replacement from the same
+1,000 draws. It uses the same source indices across checkpoints. Both selections
+are ordered by source rollout index and receive the original per-protein,
+per-slot Helico seeds, with one diffusion sample and six recycles. Thus the
+new arms require **400 Helico predictions**, while the original first-ten
+reference reuses its 200 predictions. No native accuracy or Helico confidence
+enters contact selection. The chosen contact sets and all input hashes are
+frozen in [the selection manifest](data/diversity_selection_manifest.json)
+before the new Helico calls.
+
+The primary endpoint is the paired per-protein change in confidence-selected
+TM-score, medoids minus random ten, separately for each checkpoint. Oracle is
+metric-specific; confidence picks one structure for all metrics. All means
+weight the ten proteins equally. Paired 95% intervals use 10,000 protein
+bootstrap resamples, seed381. These intervals condition on one random control
+subset and fixed folding seeds; they do not estimate all subset/seed variance.
+The structural prediction budget is matched, while the extra MarinFold
+generation and clustering cost is additional.
+
+### Secondary arm: farthest-point selection
+
+The contact-only diagnostics showed that medoids reduced mean pairwise distance
+despite improving coverage. To test explicitly more separated sets as well,
+[a supplemental protocol](DIVERSITY_MAXMIN_PLAN.md) was frozen **before inspecting
+new structural accuracy**, and its selected inputs were published before its
+Helico predictions. This adds 200 predictions, making **600 new structures**
+across three selection arms and **800 Helico structures** including first ten.
+
+Greedy farthest-point selection starts at the global medoid, then repeatedly
+adds the rollout whose distance to its nearest selected rollout is largest.
+Ties use the lowest source index. The ten chosen indices are sorted for the
+same per-slot seeds. No native score, contact accuracy, or Helico confidence
+enters this selector. Farthest-point versus random is a **secondary comparison**;
+the original primary medoid comparison is unchanged. Intervals are not corrected
+for the multiple secondary metrics/comparisons.
+
+Mean pairwise Jaccard distances (default / MPNN) are 0.937 / 0.941 for random,
+0.904 / 0.918 for medoids, and **0.983 / 0.981** for farthest points. Medoids
+reduce mean pool-to-nearest distance to 0.852 / 0.865 from random's 0.877 / 0.888;
+farthest points give 0.878 / 0.888. Coverage and pairwise spread measure different
+properties. All selected sets contain contacts, all ten within each selection
+are distinct, and all 200 k-medoids starts converged within the iteration cap.
+
+![Contact-set coverage and pairwise diversity](plots/diversity_contact_geometry.png)
 
 ## Matched baseline results: all 500 predictions complete
 
@@ -407,17 +563,82 @@ held-out eval-test, or whole-sequence folding performance.
 
 ## Conclusion
 
+Selecting ten medoids from 1,000 improves the default checkpoint's observed
+oracle but does not establish a confidence-pick gain, and it does not provide
+a consistent benefit for the two-epoch checkpoint. Selecting deliberately
+separated contact outliers reduces typical structural accuracy for both.
+Contact diversity alone is therefore not a sufficient selection objective in
+this pilot. Representative selection deserves a larger replicated comparison;
+these data do not justify adopting farthest-point selection.
+
 With matched ten-sample budgets, AF3 + archived ColabFold MSA has the highest
 observed structural accuracy, followed by ESMFold2. AF3 single sequence and the
 two MarinFold → Helico arms have overlapping confidence-selected accuracy in
 this pilot. Helico benefits more from sampling and confidence selection, but its
 observed oracle remains below ESMFold2’s average individual prediction.
-The lowest-Neff target is a useful exception favoring MPNN → Helico.
+The lowest-Neff target is a useful exception favoring MPNN → Helico in the original first-ten comparison; default medoid selection now reaches TM-score 0.743 there.
 
-On these ten lowest-Neff eval-val proteins, the default and ProteinMPNN-only
-two-epoch MarinFold checkpoints yield similar aggregate structural accuracy
-through Helico. Ten separate contact-conditioned structures expose substantial
+In the original first-ten evaluation on these proteins, the default and
+ProteinMPNN-only two-epoch checkpoints yield similar aggregate structural
+accuracy through Helico. Ten separate contact-conditioned structures expose substantial
 oracle gains, and Helico confidence recovers much of that improvement. The
 remaining selection gap and large protein-to-protein variation justify testing
 more rollouts and a larger eval-val cohort before choosing between checkpoints
 or drawing conclusions about the value of ProteinMPNN-only training.
+
+
+## Reproducing the 1,000-to-ten selection experiment
+
+From the repository root, generate the extension on the regional CoreWeave
+cluster using the pinned exp373 environment:
+
+```bash
+uv run --project experiments/exp381_evals_rollout_helico_low_neff python experiments/exp381_evals_rollout_helico_low_neff/freeze_diversity.py
+uv run --project experiments/exp373_evals_mpnn_diversity_neff python experiments/exp381_evals_rollout_helico_low_neff/launch_diversity.py --submit --smoke
+uv run --project experiments/exp381_evals_rollout_helico_low_neff python experiments/exp381_evals_rollout_helico_low_neff/validate_diversity_smoke.py
+uv run --project experiments/exp373_evals_mpnn_diversity_neff python experiments/exp381_evals_rollout_helico_low_neff/launch_diversity.py --submit
+```
+
+Wait for completion between generation and validation/selection. The generation
+launcher resumes completed pools and records source bundles and root-job IDs in
+[data/diversity_launches.json](data/diversity_launches.json). Its bundle includes
+the exact exp373 generation/continuation code and parser. Existing checkpoint
+objects are staged within CoreWeave's region; no new checkpoint transfer is needed.
+
+Then, from this experiment directory:
+
+```bash
+uv run python select_diversity.py
+uv run python publish_diversity.py --selection-only
+uv run python select_maxmin.py
+uv run python publish_diversity.py --selection-only --maxmin
+uv run modal run run_diversity.py::diversity --smoke
+uv run python score_diversity.py --smoke
+uv run modal run run_diversity.py::diversity
+uv run python score_diversity.py
+uv run modal run run_maxmin.py::maxmin --smoke
+uv run python score_diversity.py --smoke --maxmin
+uv run modal run run_maxmin.py::maxmin
+uv run python score_diversity.py --maxmin
+uv run python analyze_diversity.py
+uv run python build_summary.py
+uv run python publish_diversity.py
+```
+
+The original Helico preflight still checks native inputs, clean source revision,
+and checkpoint identity. The new preflight additionally checks the frozen,
+anonymously readable selection publication. Smoke predictions count toward the
+600 and are resumed, not resampled. Per-input timing, runtime versions, coverage,
+source indices, and hashes are saved with every prediction.
+
+Public extension artifacts live under
+`hf://buckets/open-athena/MarinFold/data/exp381-rollout-helico-low-neff/v3-diversity`.
+The [raw inventory](data/diversity_raw_inventory.csv) points to all 100-sample
+prefixes and 900-sample suffixes with SHA256 checksums. The
+[publication manifest](data/diversity_public_artifacts.json) identifies the
+new structures, selected inputs, source, tables and figures. Original v1 and
+v2-baselines publications remain separate. Use `uv run python
+publish_diversity.py --restore` for the new selected inputs and 600 saved
+predictions; the earlier `restore_public.py` restores the original references
+and first-ten predictions. The existing scorer build instructions above apply.
+Figures and the PDF can be rebuilt from committed CSVs without GPUs or downloads.

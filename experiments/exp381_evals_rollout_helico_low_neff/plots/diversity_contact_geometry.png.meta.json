@@ -1,0 +1,5 @@
+{
+  "script": "analyze_diversity.py",
+  "args": [],
+  "caption": "Jaccard distance on the exact contact sets supplied to Helico. Medoids optimize mean nearest-representative distance, rather than directly maximizing pairwise separation. All 1,000 draws retain their sampling weight, including duplicates."
+}

@@ -1,0 +1,1872 @@
+{
+  "buckets/open-athena/MarinFold/data/exp381-rollout-helico-low-neff/v3-diversity/raw/default/worker-0.json": {
+    "model": {
+      "nickname": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+      "step": 266344,
+      "uri": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B/hf/step-266344",
+      "files": [
+        {
+          "name": "config.json",
+          "size": 1726,
+          "etag": "09ffdb6012707caf6b8d9c07583ef014"
+        },
+        {
+          "name": "model-00001-of-00002.safetensors",
+          "size": 4979485528,
+          "etag": "c54c3d763a013dfb6fe5f6ea10b1142e-95"
+        },
+        {
+          "name": "model-00002-of-00002.safetensors",
+          "size": 906042048,
+          "etag": "cc2e3173c80dbc8d080dbfd6ca7b23df-18"
+        },
+        {
+          "name": "model.safetensors.index.json",
+          "size": 20882,
+          "etag": "bc0a5fd2c9aae096abae4caf9040c79c"
+        },
+        {
+          "name": "tokenizer.json",
+          "size": 64407,
+          "etag": "c4b3a16978e30eb150cca4fd8934b6ae"
+        },
+        {
+          "name": "tokenizer_config.json",
+          "size": 296,
+          "etag": "5acd13b50d727187034880bd78bcb928"
+        }
+      ]
+    },
+    "verified_files": [
+      {
+        "name": "config.json",
+        "size": 1726,
+        "etag": "09ffdb6012707caf6b8d9c07583ef014",
+        "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd"
+      },
+      {
+        "name": "model-00001-of-00002.safetensors",
+        "size": 4979485528,
+        "etag": "c54c3d763a013dfb6fe5f6ea10b1142e-95",
+        "sha256": "90ef7d19fe258bfa273059b102eb263974895b426cd233d12f4f24552492635b"
+      },
+      {
+        "name": "model-00002-of-00002.safetensors",
+        "size": 906042048,
+        "etag": "cc2e3173c80dbc8d080dbfd6ca7b23df-18",
+        "sha256": "6c5e340a11e19ddcef3ca10866b90a72d81f3b1c7febb9d4e80403f625f7dbd0"
+      },
+      {
+        "name": "model.safetensors.index.json",
+        "size": 20882,
+        "etag": "bc0a5fd2c9aae096abae4caf9040c79c",
+        "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587"
+      },
+      {
+        "name": "tokenizer.json",
+        "size": 64407,
+        "etag": "c4b3a16978e30eb150cca4fd8934b6ae",
+        "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+      },
+      {
+        "name": "tokenizer_config.json",
+        "size": 296,
+        "etag": "5acd13b50d727187034880bd78bcb928",
+        "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+      }
+    ],
+    "hardware": {
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "gpu_total_memory_gb": 79.1806640625,
+      "gpu_compute_capability": "9.0",
+      "hostname": "g83f90a",
+      "platform": "Linux-6.8.12-680-6063-coreweave-amd64-f81899c8-x86_64-with-glibc2.35",
+      "torch_version": "2.7.0+cu128",
+      "runner_tag": "iris",
+      "model_nickname": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+      "checkpoint_step": 266344,
+      "model_load_seconds": 69.6392762970645,
+      "model_stage_seconds": 10.956766871036962,
+      "job_id": ""
+    },
+    "effective_config": {
+      "transformers_version": "5.12.1",
+      "architectures": [
+        "Qwen3ForCausalLM"
+      ],
+      "output_hidden_states": false,
+      "return_dict": true,
+      "dtype": null,
+      "chunk_size_feed_forward": 0,
+      "is_encoder_decoder": false,
+      "id2label": {
+        "0": "LABEL_0",
+        "1": "LABEL_1"
+      },
+      "label2id": {
+        "LABEL_0": 0,
+        "LABEL_1": 1
+      },
+      "problem_type": null,
+      "vocab_size": 2845,
+      "hidden_size": 2048,
+      "intermediate_size": 8192,
+      "num_hidden_layers": 24,
+      "num_attention_heads": 32,
+      "num_key_value_heads": 8,
+      "head_dim": 64,
+      "hidden_act": "silu",
+      "max_position_embeddings": 8192,
+      "initializer_range": 0.02,
+      "rms_norm_eps": 1e-05,
+      "use_cache": true,
+      "tie_word_embeddings": false,
+      "rope_parameters": {
+        "factor": 8.0,
+        "low_freq_factor": 1.0,
+        "high_freq_factor": 4.0,
+        "original_max_position_embeddings": 8192,
+        "rope_type": "llama3",
+        "rope_theta": 500000
+      },
+      "attention_bias": false,
+      "use_sliding_window": false,
+      "sliding_window": null,
+      "max_window_layers": 28,
+      "layer_types": [
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention"
+      ],
+      "attention_dropout": 0.0,
+      "pad_token_id": 0,
+      "bos_token_id": null,
+      "eos_token_id": 1,
+      "_name_or_path": "",
+      "no_bias": true,
+      "model_type": "qwen3",
+      "output_attentions": false,
+      "begin_suppress_tokens": [
+        0,
+        1
+      ],
+      "rope_theta": 500000,
+      "rope_scaling": {
+        "factor": 8.0,
+        "low_freq_factor": 1.0,
+        "high_freq_factor": 4.0,
+        "original_max_position_embeddings": 8192,
+        "rope_type": "llama3"
+      }
+    },
+    "runtime_versions": {
+      "vllm": "0.9.2",
+      "torch": "2.7.0+cu128",
+      "transformers": "4.53.1",
+      "tokenizers": "0.21.2",
+      "marinfold": "0.1.0"
+    }
+  },
+  "buckets/open-athena/MarinFold/data/exp381-rollout-helico-low-neff/v3-diversity/raw/default/worker-1.json": {
+    "model": {
+      "nickname": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+      "step": 266344,
+      "uri": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B/hf/step-266344",
+      "files": [
+        {
+          "name": "config.json",
+          "size": 1726,
+          "etag": "09ffdb6012707caf6b8d9c07583ef014"
+        },
+        {
+          "name": "model-00001-of-00002.safetensors",
+          "size": 4979485528,
+          "etag": "c54c3d763a013dfb6fe5f6ea10b1142e-95"
+        },
+        {
+          "name": "model-00002-of-00002.safetensors",
+          "size": 906042048,
+          "etag": "cc2e3173c80dbc8d080dbfd6ca7b23df-18"
+        },
+        {
+          "name": "model.safetensors.index.json",
+          "size": 20882,
+          "etag": "bc0a5fd2c9aae096abae4caf9040c79c"
+        },
+        {
+          "name": "tokenizer.json",
+          "size": 64407,
+          "etag": "c4b3a16978e30eb150cca4fd8934b6ae"
+        },
+        {
+          "name": "tokenizer_config.json",
+          "size": 296,
+          "etag": "5acd13b50d727187034880bd78bcb928"
+        }
+      ]
+    },
+    "verified_files": [
+      {
+        "name": "config.json",
+        "size": 1726,
+        "etag": "09ffdb6012707caf6b8d9c07583ef014",
+        "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd"
+      },
+      {
+        "name": "model-00001-of-00002.safetensors",
+        "size": 4979485528,
+        "etag": "c54c3d763a013dfb6fe5f6ea10b1142e-95",
+        "sha256": "90ef7d19fe258bfa273059b102eb263974895b426cd233d12f4f24552492635b"
+      },
+      {
+        "name": "model-00002-of-00002.safetensors",
+        "size": 906042048,
+        "etag": "cc2e3173c80dbc8d080dbfd6ca7b23df-18",
+        "sha256": "6c5e340a11e19ddcef3ca10866b90a72d81f3b1c7febb9d4e80403f625f7dbd0"
+      },
+      {
+        "name": "model.safetensors.index.json",
+        "size": 20882,
+        "etag": "bc0a5fd2c9aae096abae4caf9040c79c",
+        "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587"
+      },
+      {
+        "name": "tokenizer.json",
+        "size": 64407,
+        "etag": "c4b3a16978e30eb150cca4fd8934b6ae",
+        "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+      },
+      {
+        "name": "tokenizer_config.json",
+        "size": 296,
+        "etag": "5acd13b50d727187034880bd78bcb928",
+        "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+      }
+    ],
+    "hardware": {
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "gpu_total_memory_gb": 79.1806640625,
+      "gpu_compute_capability": "9.0",
+      "hostname": "g83f90a",
+      "platform": "Linux-6.8.12-680-6063-coreweave-amd64-f81899c8-x86_64-with-glibc2.35",
+      "torch_version": "2.7.0+cu128",
+      "runner_tag": "iris",
+      "model_nickname": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+      "checkpoint_step": 266344,
+      "model_load_seconds": 67.76446809293702,
+      "model_stage_seconds": 11.580986168934032,
+      "job_id": ""
+    },
+    "effective_config": {
+      "transformers_version": "5.12.1",
+      "architectures": [
+        "Qwen3ForCausalLM"
+      ],
+      "output_hidden_states": false,
+      "return_dict": true,
+      "dtype": null,
+      "chunk_size_feed_forward": 0,
+      "is_encoder_decoder": false,
+      "id2label": {
+        "0": "LABEL_0",
+        "1": "LABEL_1"
+      },
+      "label2id": {
+        "LABEL_0": 0,
+        "LABEL_1": 1
+      },
+      "problem_type": null,
+      "vocab_size": 2845,
+      "hidden_size": 2048,
+      "intermediate_size": 8192,
+      "num_hidden_layers": 24,
+      "num_attention_heads": 32,
+      "num_key_value_heads": 8,
+      "head_dim": 64,
+      "hidden_act": "silu",
+      "max_position_embeddings": 8192,
+      "initializer_range": 0.02,
+      "rms_norm_eps": 1e-05,
+      "use_cache": true,
+      "tie_word_embeddings": false,
+      "rope_parameters": {
+        "factor": 8.0,
+        "low_freq_factor": 1.0,
+        "high_freq_factor": 4.0,
+        "original_max_position_embeddings": 8192,
+        "rope_type": "llama3",
+        "rope_theta": 500000
+      },
+      "attention_bias": false,
+      "use_sliding_window": false,
+      "sliding_window": null,
+      "max_window_layers": 28,
+      "layer_types": [
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention"
+      ],
+      "attention_dropout": 0.0,
+      "pad_token_id": 0,
+      "bos_token_id": null,
+      "eos_token_id": 1,
+      "_name_or_path": "",
+      "no_bias": true,
+      "model_type": "qwen3",
+      "output_attentions": false,
+      "begin_suppress_tokens": [
+        0,
+        1
+      ],
+      "rope_theta": 500000,
+      "rope_scaling": {
+        "factor": 8.0,
+        "low_freq_factor": 1.0,
+        "high_freq_factor": 4.0,
+        "original_max_position_embeddings": 8192,
+        "rope_type": "llama3"
+      }
+    },
+    "runtime_versions": {
+      "vllm": "0.9.2",
+      "torch": "2.7.0+cu128",
+      "transformers": "4.53.1",
+      "tokenizers": "0.21.2",
+      "marinfold": "0.1.0"
+    }
+  },
+  "buckets/open-athena/MarinFold/data/exp381-rollout-helico-low-neff/v3-diversity/raw/default/worker-2.json": {
+    "model": {
+      "nickname": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+      "step": 266344,
+      "uri": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B/hf/step-266344",
+      "files": [
+        {
+          "name": "config.json",
+          "size": 1726,
+          "etag": "09ffdb6012707caf6b8d9c07583ef014"
+        },
+        {
+          "name": "model-00001-of-00002.safetensors",
+          "size": 4979485528,
+          "etag": "c54c3d763a013dfb6fe5f6ea10b1142e-95"
+        },
+        {
+          "name": "model-00002-of-00002.safetensors",
+          "size": 906042048,
+          "etag": "cc2e3173c80dbc8d080dbfd6ca7b23df-18"
+        },
+        {
+          "name": "model.safetensors.index.json",
+          "size": 20882,
+          "etag": "bc0a5fd2c9aae096abae4caf9040c79c"
+        },
+        {
+          "name": "tokenizer.json",
+          "size": 64407,
+          "etag": "c4b3a16978e30eb150cca4fd8934b6ae"
+        },
+        {
+          "name": "tokenizer_config.json",
+          "size": 296,
+          "etag": "5acd13b50d727187034880bd78bcb928"
+        }
+      ]
+    },
+    "verified_files": [
+      {
+        "name": "config.json",
+        "size": 1726,
+        "etag": "09ffdb6012707caf6b8d9c07583ef014",
+        "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd"
+      },
+      {
+        "name": "model-00001-of-00002.safetensors",
+        "size": 4979485528,
+        "etag": "c54c3d763a013dfb6fe5f6ea10b1142e-95",
+        "sha256": "90ef7d19fe258bfa273059b102eb263974895b426cd233d12f4f24552492635b"
+      },
+      {
+        "name": "model-00002-of-00002.safetensors",
+        "size": 906042048,
+        "etag": "cc2e3173c80dbc8d080dbfd6ca7b23df-18",
+        "sha256": "6c5e340a11e19ddcef3ca10866b90a72d81f3b1c7febb9d4e80403f625f7dbd0"
+      },
+      {
+        "name": "model.safetensors.index.json",
+        "size": 20882,
+        "etag": "bc0a5fd2c9aae096abae4caf9040c79c",
+        "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587"
+      },
+      {
+        "name": "tokenizer.json",
+        "size": 64407,
+        "etag": "c4b3a16978e30eb150cca4fd8934b6ae",
+        "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+      },
+      {
+        "name": "tokenizer_config.json",
+        "size": 296,
+        "etag": "5acd13b50d727187034880bd78bcb928",
+        "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+      }
+    ],
+    "hardware": {
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "gpu_total_memory_gb": 79.1806640625,
+      "gpu_compute_capability": "9.0",
+      "hostname": "g83f90a",
+      "platform": "Linux-6.8.12-680-6063-coreweave-amd64-f81899c8-x86_64-with-glibc2.35",
+      "torch_version": "2.7.0+cu128",
+      "runner_tag": "iris",
+      "model_nickname": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+      "checkpoint_step": 266344,
+      "model_load_seconds": 75.14548487798311,
+      "model_stage_seconds": 10.187851438997313,
+      "job_id": ""
+    },
+    "effective_config": {
+      "transformers_version": "5.12.1",
+      "architectures": [
+        "Qwen3ForCausalLM"
+      ],
+      "output_hidden_states": false,
+      "return_dict": true,
+      "dtype": null,
+      "chunk_size_feed_forward": 0,
+      "is_encoder_decoder": false,
+      "id2label": {
+        "0": "LABEL_0",
+        "1": "LABEL_1"
+      },
+      "label2id": {
+        "LABEL_0": 0,
+        "LABEL_1": 1
+      },
+      "problem_type": null,
+      "vocab_size": 2845,
+      "hidden_size": 2048,
+      "intermediate_size": 8192,
+      "num_hidden_layers": 24,
+      "num_attention_heads": 32,
+      "num_key_value_heads": 8,
+      "head_dim": 64,
+      "hidden_act": "silu",
+      "max_position_embeddings": 8192,
+      "initializer_range": 0.02,
+      "rms_norm_eps": 1e-05,
+      "use_cache": true,
+      "tie_word_embeddings": false,
+      "rope_parameters": {
+        "factor": 8.0,
+        "low_freq_factor": 1.0,
+        "high_freq_factor": 4.0,
+        "original_max_position_embeddings": 8192,
+        "rope_type": "llama3",
+        "rope_theta": 500000
+      },
+      "attention_bias": false,
+      "use_sliding_window": false,
+      "sliding_window": null,
+      "max_window_layers": 28,
+      "layer_types": [
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention"
+      ],
+      "attention_dropout": 0.0,
+      "pad_token_id": 0,
+      "bos_token_id": null,
+      "eos_token_id": 1,
+      "_name_or_path": "",
+      "no_bias": true,
+      "model_type": "qwen3",
+      "output_attentions": false,
+      "begin_suppress_tokens": [
+        0,
+        1
+      ],
+      "rope_theta": 500000,
+      "rope_scaling": {
+        "factor": 8.0,
+        "low_freq_factor": 1.0,
+        "high_freq_factor": 4.0,
+        "original_max_position_embeddings": 8192,
+        "rope_type": "llama3"
+      }
+    },
+    "runtime_versions": {
+      "vllm": "0.9.2",
+      "torch": "2.7.0+cu128",
+      "transformers": "4.53.1",
+      "tokenizers": "0.21.2",
+      "marinfold": "0.1.0"
+    }
+  },
+  "buckets/open-athena/MarinFold/data/exp381-rollout-helico-low-neff/v3-diversity/raw/default/worker-3.json": {
+    "model": {
+      "nickname": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+      "step": 266344,
+      "uri": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B/hf/step-266344",
+      "files": [
+        {
+          "name": "config.json",
+          "size": 1726,
+          "etag": "09ffdb6012707caf6b8d9c07583ef014"
+        },
+        {
+          "name": "model-00001-of-00002.safetensors",
+          "size": 4979485528,
+          "etag": "c54c3d763a013dfb6fe5f6ea10b1142e-95"
+        },
+        {
+          "name": "model-00002-of-00002.safetensors",
+          "size": 906042048,
+          "etag": "cc2e3173c80dbc8d080dbfd6ca7b23df-18"
+        },
+        {
+          "name": "model.safetensors.index.json",
+          "size": 20882,
+          "etag": "bc0a5fd2c9aae096abae4caf9040c79c"
+        },
+        {
+          "name": "tokenizer.json",
+          "size": 64407,
+          "etag": "c4b3a16978e30eb150cca4fd8934b6ae"
+        },
+        {
+          "name": "tokenizer_config.json",
+          "size": 296,
+          "etag": "5acd13b50d727187034880bd78bcb928"
+        }
+      ]
+    },
+    "verified_files": [
+      {
+        "name": "config.json",
+        "size": 1726,
+        "etag": "09ffdb6012707caf6b8d9c07583ef014",
+        "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd"
+      },
+      {
+        "name": "model-00001-of-00002.safetensors",
+        "size": 4979485528,
+        "etag": "c54c3d763a013dfb6fe5f6ea10b1142e-95",
+        "sha256": "90ef7d19fe258bfa273059b102eb263974895b426cd233d12f4f24552492635b"
+      },
+      {
+        "name": "model-00002-of-00002.safetensors",
+        "size": 906042048,
+        "etag": "cc2e3173c80dbc8d080dbfd6ca7b23df-18",
+        "sha256": "6c5e340a11e19ddcef3ca10866b90a72d81f3b1c7febb9d4e80403f625f7dbd0"
+      },
+      {
+        "name": "model.safetensors.index.json",
+        "size": 20882,
+        "etag": "bc0a5fd2c9aae096abae4caf9040c79c",
+        "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587"
+      },
+      {
+        "name": "tokenizer.json",
+        "size": 64407,
+        "etag": "c4b3a16978e30eb150cca4fd8934b6ae",
+        "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+      },
+      {
+        "name": "tokenizer_config.json",
+        "size": 296,
+        "etag": "5acd13b50d727187034880bd78bcb928",
+        "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+      }
+    ],
+    "hardware": {
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "gpu_total_memory_gb": 79.1806640625,
+      "gpu_compute_capability": "9.0",
+      "hostname": "g83f90a",
+      "platform": "Linux-6.8.12-680-6063-coreweave-amd64-f81899c8-x86_64-with-glibc2.35",
+      "torch_version": "2.7.0+cu128",
+      "runner_tag": "iris",
+      "model_nickname": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+      "checkpoint_step": 266344,
+      "model_load_seconds": 68.35524331592023,
+      "model_stage_seconds": 11.70122348004952,
+      "job_id": ""
+    },
+    "effective_config": {
+      "transformers_version": "5.12.1",
+      "architectures": [
+        "Qwen3ForCausalLM"
+      ],
+      "output_hidden_states": false,
+      "return_dict": true,
+      "dtype": null,
+      "chunk_size_feed_forward": 0,
+      "is_encoder_decoder": false,
+      "id2label": {
+        "0": "LABEL_0",
+        "1": "LABEL_1"
+      },
+      "label2id": {
+        "LABEL_0": 0,
+        "LABEL_1": 1
+      },
+      "problem_type": null,
+      "vocab_size": 2845,
+      "hidden_size": 2048,
+      "intermediate_size": 8192,
+      "num_hidden_layers": 24,
+      "num_attention_heads": 32,
+      "num_key_value_heads": 8,
+      "head_dim": 64,
+      "hidden_act": "silu",
+      "max_position_embeddings": 8192,
+      "initializer_range": 0.02,
+      "rms_norm_eps": 1e-05,
+      "use_cache": true,
+      "tie_word_embeddings": false,
+      "rope_parameters": {
+        "factor": 8.0,
+        "low_freq_factor": 1.0,
+        "high_freq_factor": 4.0,
+        "original_max_position_embeddings": 8192,
+        "rope_type": "llama3",
+        "rope_theta": 500000
+      },
+      "attention_bias": false,
+      "use_sliding_window": false,
+      "sliding_window": null,
+      "max_window_layers": 28,
+      "layer_types": [
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention"
+      ],
+      "attention_dropout": 0.0,
+      "pad_token_id": 0,
+      "bos_token_id": null,
+      "eos_token_id": 1,
+      "_name_or_path": "",
+      "no_bias": true,
+      "model_type": "qwen3",
+      "output_attentions": false,
+      "begin_suppress_tokens": [
+        0,
+        1
+      ],
+      "rope_theta": 500000,
+      "rope_scaling": {
+        "factor": 8.0,
+        "low_freq_factor": 1.0,
+        "high_freq_factor": 4.0,
+        "original_max_position_embeddings": 8192,
+        "rope_type": "llama3"
+      }
+    },
+    "runtime_versions": {
+      "vllm": "0.9.2",
+      "torch": "2.7.0+cu128",
+      "transformers": "4.53.1",
+      "tokenizers": "0.21.2",
+      "marinfold": "0.1.0"
+    }
+  },
+  "buckets/open-athena/MarinFold/data/exp381-rollout-helico-low-neff/v3-diversity/raw/default/worker-smoke.json": {
+    "model": {
+      "nickname": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+      "step": 266344,
+      "uri": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B/hf/step-266344",
+      "files": [
+        {
+          "name": "config.json",
+          "size": 1726,
+          "etag": "09ffdb6012707caf6b8d9c07583ef014"
+        },
+        {
+          "name": "model-00001-of-00002.safetensors",
+          "size": 4979485528,
+          "etag": "c54c3d763a013dfb6fe5f6ea10b1142e-95"
+        },
+        {
+          "name": "model-00002-of-00002.safetensors",
+          "size": 906042048,
+          "etag": "cc2e3173c80dbc8d080dbfd6ca7b23df-18"
+        },
+        {
+          "name": "model.safetensors.index.json",
+          "size": 20882,
+          "etag": "bc0a5fd2c9aae096abae4caf9040c79c"
+        },
+        {
+          "name": "tokenizer.json",
+          "size": 64407,
+          "etag": "c4b3a16978e30eb150cca4fd8934b6ae"
+        },
+        {
+          "name": "tokenizer_config.json",
+          "size": 296,
+          "etag": "5acd13b50d727187034880bd78bcb928"
+        }
+      ]
+    },
+    "verified_files": [
+      {
+        "name": "config.json",
+        "size": 1726,
+        "etag": "09ffdb6012707caf6b8d9c07583ef014",
+        "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd"
+      },
+      {
+        "name": "model-00001-of-00002.safetensors",
+        "size": 4979485528,
+        "etag": "c54c3d763a013dfb6fe5f6ea10b1142e-95",
+        "sha256": "90ef7d19fe258bfa273059b102eb263974895b426cd233d12f4f24552492635b"
+      },
+      {
+        "name": "model-00002-of-00002.safetensors",
+        "size": 906042048,
+        "etag": "cc2e3173c80dbc8d080dbfd6ca7b23df-18",
+        "sha256": "6c5e340a11e19ddcef3ca10866b90a72d81f3b1c7febb9d4e80403f625f7dbd0"
+      },
+      {
+        "name": "model.safetensors.index.json",
+        "size": 20882,
+        "etag": "bc0a5fd2c9aae096abae4caf9040c79c",
+        "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587"
+      },
+      {
+        "name": "tokenizer.json",
+        "size": 64407,
+        "etag": "c4b3a16978e30eb150cca4fd8934b6ae",
+        "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+      },
+      {
+        "name": "tokenizer_config.json",
+        "size": 296,
+        "etag": "5acd13b50d727187034880bd78bcb928",
+        "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+      }
+    ],
+    "hardware": {
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "gpu_total_memory_gb": 79.1806640625,
+      "gpu_compute_capability": "9.0",
+      "hostname": "g83b4e8",
+      "platform": "Linux-6.8.12-680-6063-coreweave-amd64-f81899c8-x86_64-with-glibc2.35",
+      "torch_version": "2.7.0+cu128",
+      "runner_tag": "iris",
+      "model_nickname": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+      "checkpoint_step": 266344,
+      "model_load_seconds": 66.59987943293527,
+      "model_stage_seconds": 11.02026462322101,
+      "job_id": ""
+    },
+    "effective_config": {
+      "transformers_version": "5.12.1",
+      "architectures": [
+        "Qwen3ForCausalLM"
+      ],
+      "output_hidden_states": false,
+      "return_dict": true,
+      "dtype": null,
+      "chunk_size_feed_forward": 0,
+      "is_encoder_decoder": false,
+      "id2label": {
+        "0": "LABEL_0",
+        "1": "LABEL_1"
+      },
+      "label2id": {
+        "LABEL_0": 0,
+        "LABEL_1": 1
+      },
+      "problem_type": null,
+      "vocab_size": 2845,
+      "hidden_size": 2048,
+      "intermediate_size": 8192,
+      "num_hidden_layers": 24,
+      "num_attention_heads": 32,
+      "num_key_value_heads": 8,
+      "head_dim": 64,
+      "hidden_act": "silu",
+      "max_position_embeddings": 8192,
+      "initializer_range": 0.02,
+      "rms_norm_eps": 1e-05,
+      "use_cache": true,
+      "tie_word_embeddings": false,
+      "rope_parameters": {
+        "factor": 8.0,
+        "low_freq_factor": 1.0,
+        "high_freq_factor": 4.0,
+        "original_max_position_embeddings": 8192,
+        "rope_type": "llama3",
+        "rope_theta": 500000
+      },
+      "attention_bias": false,
+      "use_sliding_window": false,
+      "sliding_window": null,
+      "max_window_layers": 28,
+      "layer_types": [
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention"
+      ],
+      "attention_dropout": 0.0,
+      "pad_token_id": 0,
+      "bos_token_id": null,
+      "eos_token_id": 1,
+      "_name_or_path": "",
+      "no_bias": true,
+      "model_type": "qwen3",
+      "output_attentions": false,
+      "begin_suppress_tokens": [
+        0,
+        1
+      ],
+      "rope_theta": 500000,
+      "rope_scaling": {
+        "factor": 8.0,
+        "low_freq_factor": 1.0,
+        "high_freq_factor": 4.0,
+        "original_max_position_embeddings": 8192,
+        "rope_type": "llama3"
+      }
+    },
+    "runtime_versions": {
+      "vllm": "0.9.2",
+      "torch": "2.7.0+cu128",
+      "transformers": "4.53.1",
+      "tokenizers": "0.21.2",
+      "marinfold": "0.1.0"
+    }
+  },
+  "buckets/open-athena/MarinFold/data/exp381-rollout-helico-low-neff/v3-diversity/raw/mpnn2-lr5e-4/worker-0.json": {
+    "model": {
+      "nickname": "contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
+      "step": 373768,
+      "uri": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/hf/step-373768",
+      "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
+      "final_lm_loss": 3.01328706741333,
+      "files": [
+        {
+          "name": "config.json",
+          "size": 1726,
+          "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd"
+        },
+        {
+          "name": "model-00001-of-00002.safetensors",
+          "size": 4979485528,
+          "sha256": "1c4a014d602dc071dd678537a73dd8e19ed1536a62074b034fac205e0e7c90af"
+        },
+        {
+          "name": "model-00002-of-00002.safetensors",
+          "size": 906042048,
+          "sha256": "43b10ec6460b48168b71e4b90a392e918fbd67fa6bfe88ef705b108a974d4634"
+        },
+        {
+          "name": "model.safetensors.index.json",
+          "size": 20882,
+          "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587"
+        },
+        {
+          "name": "tokenizer.json",
+          "size": 64407,
+          "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+        },
+        {
+          "name": "tokenizer_config.json",
+          "size": 296,
+          "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+        }
+      ]
+    },
+    "verified_files": [
+      {
+        "name": "config.json",
+        "size": 1726,
+        "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd"
+      },
+      {
+        "name": "model-00001-of-00002.safetensors",
+        "size": 4979485528,
+        "sha256": "1c4a014d602dc071dd678537a73dd8e19ed1536a62074b034fac205e0e7c90af"
+      },
+      {
+        "name": "model-00002-of-00002.safetensors",
+        "size": 906042048,
+        "sha256": "43b10ec6460b48168b71e4b90a392e918fbd67fa6bfe88ef705b108a974d4634"
+      },
+      {
+        "name": "model.safetensors.index.json",
+        "size": 20882,
+        "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587"
+      },
+      {
+        "name": "tokenizer.json",
+        "size": 64407,
+        "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+      },
+      {
+        "name": "tokenizer_config.json",
+        "size": 296,
+        "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+      }
+    ],
+    "hardware": {
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "gpu_total_memory_gb": 79.1806640625,
+      "gpu_compute_capability": "9.0",
+      "hostname": "g83f90a",
+      "platform": "Linux-6.8.12-680-6063-coreweave-amd64-f81899c8-x86_64-with-glibc2.35",
+      "torch_version": "2.7.0+cu128",
+      "runner_tag": "iris",
+      "model_nickname": "contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
+      "checkpoint_step": 373768,
+      "model_load_seconds": 70.7341970289126,
+      "model_stage_seconds": 11.000653606839478,
+      "job_id": ""
+    },
+    "effective_config": {
+      "transformers_version": "5.12.1",
+      "architectures": [
+        "Qwen3ForCausalLM"
+      ],
+      "output_hidden_states": false,
+      "return_dict": true,
+      "dtype": null,
+      "chunk_size_feed_forward": 0,
+      "is_encoder_decoder": false,
+      "id2label": {
+        "0": "LABEL_0",
+        "1": "LABEL_1"
+      },
+      "label2id": {
+        "LABEL_0": 0,
+        "LABEL_1": 1
+      },
+      "problem_type": null,
+      "vocab_size": 2845,
+      "hidden_size": 2048,
+      "intermediate_size": 8192,
+      "num_hidden_layers": 24,
+      "num_attention_heads": 32,
+      "num_key_value_heads": 8,
+      "head_dim": 64,
+      "hidden_act": "silu",
+      "max_position_embeddings": 8192,
+      "initializer_range": 0.02,
+      "rms_norm_eps": 1e-05,
+      "use_cache": true,
+      "tie_word_embeddings": false,
+      "rope_parameters": {
+        "factor": 8.0,
+        "low_freq_factor": 1.0,
+        "high_freq_factor": 4.0,
+        "original_max_position_embeddings": 8192,
+        "rope_type": "llama3",
+        "rope_theta": 500000
+      },
+      "attention_bias": false,
+      "use_sliding_window": false,
+      "sliding_window": null,
+      "max_window_layers": 28,
+      "layer_types": [
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention"
+      ],
+      "attention_dropout": 0.0,
+      "pad_token_id": 0,
+      "bos_token_id": null,
+      "eos_token_id": 1,
+      "_name_or_path": "",
+      "no_bias": true,
+      "model_type": "qwen3",
+      "output_attentions": false,
+      "begin_suppress_tokens": [
+        0,
+        1
+      ],
+      "rope_theta": 500000,
+      "rope_scaling": {
+        "factor": 8.0,
+        "low_freq_factor": 1.0,
+        "high_freq_factor": 4.0,
+        "original_max_position_embeddings": 8192,
+        "rope_type": "llama3"
+      }
+    },
+    "runtime_versions": {
+      "vllm": "0.9.2",
+      "torch": "2.7.0+cu128",
+      "transformers": "4.53.1",
+      "tokenizers": "0.21.2",
+      "marinfold": "0.1.0"
+    }
+  },
+  "buckets/open-athena/MarinFold/data/exp381-rollout-helico-low-neff/v3-diversity/raw/mpnn2-lr5e-4/worker-1.json": {
+    "model": {
+      "nickname": "contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
+      "step": 373768,
+      "uri": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/hf/step-373768",
+      "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
+      "final_lm_loss": 3.01328706741333,
+      "files": [
+        {
+          "name": "config.json",
+          "size": 1726,
+          "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd"
+        },
+        {
+          "name": "model-00001-of-00002.safetensors",
+          "size": 4979485528,
+          "sha256": "1c4a014d602dc071dd678537a73dd8e19ed1536a62074b034fac205e0e7c90af"
+        },
+        {
+          "name": "model-00002-of-00002.safetensors",
+          "size": 906042048,
+          "sha256": "43b10ec6460b48168b71e4b90a392e918fbd67fa6bfe88ef705b108a974d4634"
+        },
+        {
+          "name": "model.safetensors.index.json",
+          "size": 20882,
+          "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587"
+        },
+        {
+          "name": "tokenizer.json",
+          "size": 64407,
+          "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+        },
+        {
+          "name": "tokenizer_config.json",
+          "size": 296,
+          "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+        }
+      ]
+    },
+    "verified_files": [
+      {
+        "name": "config.json",
+        "size": 1726,
+        "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd"
+      },
+      {
+        "name": "model-00001-of-00002.safetensors",
+        "size": 4979485528,
+        "sha256": "1c4a014d602dc071dd678537a73dd8e19ed1536a62074b034fac205e0e7c90af"
+      },
+      {
+        "name": "model-00002-of-00002.safetensors",
+        "size": 906042048,
+        "sha256": "43b10ec6460b48168b71e4b90a392e918fbd67fa6bfe88ef705b108a974d4634"
+      },
+      {
+        "name": "model.safetensors.index.json",
+        "size": 20882,
+        "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587"
+      },
+      {
+        "name": "tokenizer.json",
+        "size": 64407,
+        "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+      },
+      {
+        "name": "tokenizer_config.json",
+        "size": 296,
+        "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+      }
+    ],
+    "hardware": {
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "gpu_total_memory_gb": 79.1806640625,
+      "gpu_compute_capability": "9.0",
+      "hostname": "g83f90a",
+      "platform": "Linux-6.8.12-680-6063-coreweave-amd64-f81899c8-x86_64-with-glibc2.35",
+      "torch_version": "2.7.0+cu128",
+      "runner_tag": "iris",
+      "model_nickname": "contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
+      "checkpoint_step": 373768,
+      "model_load_seconds": 69.23512378381565,
+      "model_stage_seconds": 10.862915906123817,
+      "job_id": ""
+    },
+    "effective_config": {
+      "transformers_version": "5.12.1",
+      "architectures": [
+        "Qwen3ForCausalLM"
+      ],
+      "output_hidden_states": false,
+      "return_dict": true,
+      "dtype": null,
+      "chunk_size_feed_forward": 0,
+      "is_encoder_decoder": false,
+      "id2label": {
+        "0": "LABEL_0",
+        "1": "LABEL_1"
+      },
+      "label2id": {
+        "LABEL_0": 0,
+        "LABEL_1": 1
+      },
+      "problem_type": null,
+      "vocab_size": 2845,
+      "hidden_size": 2048,
+      "intermediate_size": 8192,
+      "num_hidden_layers": 24,
+      "num_attention_heads": 32,
+      "num_key_value_heads": 8,
+      "head_dim": 64,
+      "hidden_act": "silu",
+      "max_position_embeddings": 8192,
+      "initializer_range": 0.02,
+      "rms_norm_eps": 1e-05,
+      "use_cache": true,
+      "tie_word_embeddings": false,
+      "rope_parameters": {
+        "factor": 8.0,
+        "low_freq_factor": 1.0,
+        "high_freq_factor": 4.0,
+        "original_max_position_embeddings": 8192,
+        "rope_type": "llama3",
+        "rope_theta": 500000
+      },
+      "attention_bias": false,
+      "use_sliding_window": false,
+      "sliding_window": null,
+      "max_window_layers": 28,
+      "layer_types": [
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention"
+      ],
+      "attention_dropout": 0.0,
+      "pad_token_id": 0,
+      "bos_token_id": null,
+      "eos_token_id": 1,
+      "_name_or_path": "",
+      "no_bias": true,
+      "model_type": "qwen3",
+      "output_attentions": false,
+      "begin_suppress_tokens": [
+        0,
+        1
+      ],
+      "rope_theta": 500000,
+      "rope_scaling": {
+        "factor": 8.0,
+        "low_freq_factor": 1.0,
+        "high_freq_factor": 4.0,
+        "original_max_position_embeddings": 8192,
+        "rope_type": "llama3"
+      }
+    },
+    "runtime_versions": {
+      "vllm": "0.9.2",
+      "torch": "2.7.0+cu128",
+      "transformers": "4.53.1",
+      "tokenizers": "0.21.2",
+      "marinfold": "0.1.0"
+    }
+  },
+  "buckets/open-athena/MarinFold/data/exp381-rollout-helico-low-neff/v3-diversity/raw/mpnn2-lr5e-4/worker-2.json": {
+    "model": {
+      "nickname": "contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
+      "step": 373768,
+      "uri": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/hf/step-373768",
+      "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
+      "final_lm_loss": 3.01328706741333,
+      "files": [
+        {
+          "name": "config.json",
+          "size": 1726,
+          "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd"
+        },
+        {
+          "name": "model-00001-of-00002.safetensors",
+          "size": 4979485528,
+          "sha256": "1c4a014d602dc071dd678537a73dd8e19ed1536a62074b034fac205e0e7c90af"
+        },
+        {
+          "name": "model-00002-of-00002.safetensors",
+          "size": 906042048,
+          "sha256": "43b10ec6460b48168b71e4b90a392e918fbd67fa6bfe88ef705b108a974d4634"
+        },
+        {
+          "name": "model.safetensors.index.json",
+          "size": 20882,
+          "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587"
+        },
+        {
+          "name": "tokenizer.json",
+          "size": 64407,
+          "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+        },
+        {
+          "name": "tokenizer_config.json",
+          "size": 296,
+          "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+        }
+      ]
+    },
+    "verified_files": [
+      {
+        "name": "config.json",
+        "size": 1726,
+        "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd"
+      },
+      {
+        "name": "model-00001-of-00002.safetensors",
+        "size": 4979485528,
+        "sha256": "1c4a014d602dc071dd678537a73dd8e19ed1536a62074b034fac205e0e7c90af"
+      },
+      {
+        "name": "model-00002-of-00002.safetensors",
+        "size": 906042048,
+        "sha256": "43b10ec6460b48168b71e4b90a392e918fbd67fa6bfe88ef705b108a974d4634"
+      },
+      {
+        "name": "model.safetensors.index.json",
+        "size": 20882,
+        "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587"
+      },
+      {
+        "name": "tokenizer.json",
+        "size": 64407,
+        "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+      },
+      {
+        "name": "tokenizer_config.json",
+        "size": 296,
+        "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+      }
+    ],
+    "hardware": {
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "gpu_total_memory_gb": 79.1806640625,
+      "gpu_compute_capability": "9.0",
+      "hostname": "g83f90a",
+      "platform": "Linux-6.8.12-680-6063-coreweave-amd64-f81899c8-x86_64-with-glibc2.35",
+      "torch_version": "2.7.0+cu128",
+      "runner_tag": "iris",
+      "model_nickname": "contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
+      "checkpoint_step": 373768,
+      "model_load_seconds": 71.40077970316634,
+      "model_stage_seconds": 11.747586886864156,
+      "job_id": ""
+    },
+    "effective_config": {
+      "transformers_version": "5.12.1",
+      "architectures": [
+        "Qwen3ForCausalLM"
+      ],
+      "output_hidden_states": false,
+      "return_dict": true,
+      "dtype": null,
+      "chunk_size_feed_forward": 0,
+      "is_encoder_decoder": false,
+      "id2label": {
+        "0": "LABEL_0",
+        "1": "LABEL_1"
+      },
+      "label2id": {
+        "LABEL_0": 0,
+        "LABEL_1": 1
+      },
+      "problem_type": null,
+      "vocab_size": 2845,
+      "hidden_size": 2048,
+      "intermediate_size": 8192,
+      "num_hidden_layers": 24,
+      "num_attention_heads": 32,
+      "num_key_value_heads": 8,
+      "head_dim": 64,
+      "hidden_act": "silu",
+      "max_position_embeddings": 8192,
+      "initializer_range": 0.02,
+      "rms_norm_eps": 1e-05,
+      "use_cache": true,
+      "tie_word_embeddings": false,
+      "rope_parameters": {
+        "factor": 8.0,
+        "low_freq_factor": 1.0,
+        "high_freq_factor": 4.0,
+        "original_max_position_embeddings": 8192,
+        "rope_type": "llama3",
+        "rope_theta": 500000
+      },
+      "attention_bias": false,
+      "use_sliding_window": false,
+      "sliding_window": null,
+      "max_window_layers": 28,
+      "layer_types": [
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention"
+      ],
+      "attention_dropout": 0.0,
+      "pad_token_id": 0,
+      "bos_token_id": null,
+      "eos_token_id": 1,
+      "_name_or_path": "",
+      "no_bias": true,
+      "model_type": "qwen3",
+      "output_attentions": false,
+      "begin_suppress_tokens": [
+        0,
+        1
+      ],
+      "rope_theta": 500000,
+      "rope_scaling": {
+        "factor": 8.0,
+        "low_freq_factor": 1.0,
+        "high_freq_factor": 4.0,
+        "original_max_position_embeddings": 8192,
+        "rope_type": "llama3"
+      }
+    },
+    "runtime_versions": {
+      "vllm": "0.9.2",
+      "torch": "2.7.0+cu128",
+      "transformers": "4.53.1",
+      "tokenizers": "0.21.2",
+      "marinfold": "0.1.0"
+    }
+  },
+  "buckets/open-athena/MarinFold/data/exp381-rollout-helico-low-neff/v3-diversity/raw/mpnn2-lr5e-4/worker-3.json": {
+    "model": {
+      "nickname": "contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
+      "step": 373768,
+      "uri": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/hf/step-373768",
+      "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
+      "final_lm_loss": 3.01328706741333,
+      "files": [
+        {
+          "name": "config.json",
+          "size": 1726,
+          "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd"
+        },
+        {
+          "name": "model-00001-of-00002.safetensors",
+          "size": 4979485528,
+          "sha256": "1c4a014d602dc071dd678537a73dd8e19ed1536a62074b034fac205e0e7c90af"
+        },
+        {
+          "name": "model-00002-of-00002.safetensors",
+          "size": 906042048,
+          "sha256": "43b10ec6460b48168b71e4b90a392e918fbd67fa6bfe88ef705b108a974d4634"
+        },
+        {
+          "name": "model.safetensors.index.json",
+          "size": 20882,
+          "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587"
+        },
+        {
+          "name": "tokenizer.json",
+          "size": 64407,
+          "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+        },
+        {
+          "name": "tokenizer_config.json",
+          "size": 296,
+          "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+        }
+      ]
+    },
+    "verified_files": [
+      {
+        "name": "config.json",
+        "size": 1726,
+        "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd"
+      },
+      {
+        "name": "model-00001-of-00002.safetensors",
+        "size": 4979485528,
+        "sha256": "1c4a014d602dc071dd678537a73dd8e19ed1536a62074b034fac205e0e7c90af"
+      },
+      {
+        "name": "model-00002-of-00002.safetensors",
+        "size": 906042048,
+        "sha256": "43b10ec6460b48168b71e4b90a392e918fbd67fa6bfe88ef705b108a974d4634"
+      },
+      {
+        "name": "model.safetensors.index.json",
+        "size": 20882,
+        "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587"
+      },
+      {
+        "name": "tokenizer.json",
+        "size": 64407,
+        "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+      },
+      {
+        "name": "tokenizer_config.json",
+        "size": 296,
+        "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+      }
+    ],
+    "hardware": {
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "gpu_total_memory_gb": 79.1806640625,
+      "gpu_compute_capability": "9.0",
+      "hostname": "g83f90a",
+      "platform": "Linux-6.8.12-680-6063-coreweave-amd64-f81899c8-x86_64-with-glibc2.35",
+      "torch_version": "2.7.0+cu128",
+      "runner_tag": "iris",
+      "model_nickname": "contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
+      "checkpoint_step": 373768,
+      "model_load_seconds": 69.68404608801939,
+      "model_stage_seconds": 12.454945578007028,
+      "job_id": ""
+    },
+    "effective_config": {
+      "transformers_version": "5.12.1",
+      "architectures": [
+        "Qwen3ForCausalLM"
+      ],
+      "output_hidden_states": false,
+      "return_dict": true,
+      "dtype": null,
+      "chunk_size_feed_forward": 0,
+      "is_encoder_decoder": false,
+      "id2label": {
+        "0": "LABEL_0",
+        "1": "LABEL_1"
+      },
+      "label2id": {
+        "LABEL_0": 0,
+        "LABEL_1": 1
+      },
+      "problem_type": null,
+      "vocab_size": 2845,
+      "hidden_size": 2048,
+      "intermediate_size": 8192,
+      "num_hidden_layers": 24,
+      "num_attention_heads": 32,
+      "num_key_value_heads": 8,
+      "head_dim": 64,
+      "hidden_act": "silu",
+      "max_position_embeddings": 8192,
+      "initializer_range": 0.02,
+      "rms_norm_eps": 1e-05,
+      "use_cache": true,
+      "tie_word_embeddings": false,
+      "rope_parameters": {
+        "factor": 8.0,
+        "low_freq_factor": 1.0,
+        "high_freq_factor": 4.0,
+        "original_max_position_embeddings": 8192,
+        "rope_type": "llama3",
+        "rope_theta": 500000
+      },
+      "attention_bias": false,
+      "use_sliding_window": false,
+      "sliding_window": null,
+      "max_window_layers": 28,
+      "layer_types": [
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention"
+      ],
+      "attention_dropout": 0.0,
+      "pad_token_id": 0,
+      "bos_token_id": null,
+      "eos_token_id": 1,
+      "_name_or_path": "",
+      "no_bias": true,
+      "model_type": "qwen3",
+      "output_attentions": false,
+      "begin_suppress_tokens": [
+        0,
+        1
+      ],
+      "rope_theta": 500000,
+      "rope_scaling": {
+        "factor": 8.0,
+        "low_freq_factor": 1.0,
+        "high_freq_factor": 4.0,
+        "original_max_position_embeddings": 8192,
+        "rope_type": "llama3"
+      }
+    },
+    "runtime_versions": {
+      "vllm": "0.9.2",
+      "torch": "2.7.0+cu128",
+      "transformers": "4.53.1",
+      "tokenizers": "0.21.2",
+      "marinfold": "0.1.0"
+    }
+  },
+  "buckets/open-athena/MarinFold/data/exp381-rollout-helico-low-neff/v3-diversity/raw/mpnn2-lr5e-4/worker-smoke.json": {
+    "model": {
+      "nickname": "contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
+      "step": 373768,
+      "uri": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/hf/step-373768",
+      "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
+      "final_lm_loss": 3.01328706741333,
+      "files": [
+        {
+          "name": "config.json",
+          "size": 1726,
+          "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd"
+        },
+        {
+          "name": "model-00001-of-00002.safetensors",
+          "size": 4979485528,
+          "sha256": "1c4a014d602dc071dd678537a73dd8e19ed1536a62074b034fac205e0e7c90af"
+        },
+        {
+          "name": "model-00002-of-00002.safetensors",
+          "size": 906042048,
+          "sha256": "43b10ec6460b48168b71e4b90a392e918fbd67fa6bfe88ef705b108a974d4634"
+        },
+        {
+          "name": "model.safetensors.index.json",
+          "size": 20882,
+          "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587"
+        },
+        {
+          "name": "tokenizer.json",
+          "size": 64407,
+          "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+        },
+        {
+          "name": "tokenizer_config.json",
+          "size": 296,
+          "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+        }
+      ]
+    },
+    "verified_files": [
+      {
+        "name": "config.json",
+        "size": 1726,
+        "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd"
+      },
+      {
+        "name": "model-00001-of-00002.safetensors",
+        "size": 4979485528,
+        "sha256": "1c4a014d602dc071dd678537a73dd8e19ed1536a62074b034fac205e0e7c90af"
+      },
+      {
+        "name": "model-00002-of-00002.safetensors",
+        "size": 906042048,
+        "sha256": "43b10ec6460b48168b71e4b90a392e918fbd67fa6bfe88ef705b108a974d4634"
+      },
+      {
+        "name": "model.safetensors.index.json",
+        "size": 20882,
+        "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587"
+      },
+      {
+        "name": "tokenizer.json",
+        "size": 64407,
+        "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+      },
+      {
+        "name": "tokenizer_config.json",
+        "size": 296,
+        "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+      }
+    ],
+    "hardware": {
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "gpu_total_memory_gb": 79.1806640625,
+      "gpu_compute_capability": "9.0",
+      "hostname": "g83b4e8",
+      "platform": "Linux-6.8.12-680-6063-coreweave-amd64-f81899c8-x86_64-with-glibc2.35",
+      "torch_version": "2.7.0+cu128",
+      "runner_tag": "iris",
+      "model_nickname": "contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
+      "checkpoint_step": 373768,
+      "model_load_seconds": 65.3751962641254,
+      "model_stage_seconds": 10.36090703587979,
+      "job_id": ""
+    },
+    "effective_config": {
+      "transformers_version": "5.12.1",
+      "architectures": [
+        "Qwen3ForCausalLM"
+      ],
+      "output_hidden_states": false,
+      "return_dict": true,
+      "dtype": null,
+      "chunk_size_feed_forward": 0,
+      "is_encoder_decoder": false,
+      "id2label": {
+        "0": "LABEL_0",
+        "1": "LABEL_1"
+      },
+      "label2id": {
+        "LABEL_0": 0,
+        "LABEL_1": 1
+      },
+      "problem_type": null,
+      "vocab_size": 2845,
+      "hidden_size": 2048,
+      "intermediate_size": 8192,
+      "num_hidden_layers": 24,
+      "num_attention_heads": 32,
+      "num_key_value_heads": 8,
+      "head_dim": 64,
+      "hidden_act": "silu",
+      "max_position_embeddings": 8192,
+      "initializer_range": 0.02,
+      "rms_norm_eps": 1e-05,
+      "use_cache": true,
+      "tie_word_embeddings": false,
+      "rope_parameters": {
+        "factor": 8.0,
+        "low_freq_factor": 1.0,
+        "high_freq_factor": 4.0,
+        "original_max_position_embeddings": 8192,
+        "rope_type": "llama3",
+        "rope_theta": 500000
+      },
+      "attention_bias": false,
+      "use_sliding_window": false,
+      "sliding_window": null,
+      "max_window_layers": 28,
+      "layer_types": [
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention",
+        "full_attention"
+      ],
+      "attention_dropout": 0.0,
+      "pad_token_id": 0,
+      "bos_token_id": null,
+      "eos_token_id": 1,
+      "_name_or_path": "",
+      "no_bias": true,
+      "model_type": "qwen3",
+      "output_attentions": false,
+      "begin_suppress_tokens": [
+        0,
+        1
+      ],
+      "rope_theta": 500000,
+      "rope_scaling": {
+        "factor": 8.0,
+        "low_freq_factor": 1.0,
+        "high_freq_factor": 4.0,
+        "original_max_position_embeddings": 8192,
+        "rope_type": "llama3"
+      }
+    },
+    "runtime_versions": {
+      "vllm": "0.9.2",
+      "torch": "2.7.0+cu128",
+      "transformers": "4.53.1",
+      "tokenizers": "0.21.2",
+      "marinfold": "0.1.0"
+    }
+  }
+}
