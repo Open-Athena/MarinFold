@@ -1,0 +1,5 @@
+{
+  "script": "analyze_baselines.py",
+  "args": [],
+  "caption": "All five arms use the same ten proteins and ten samples each. Oracle is metric-specific; confidence selects one structure. Whiskers bootstrap proteins, not rollouts."
+}

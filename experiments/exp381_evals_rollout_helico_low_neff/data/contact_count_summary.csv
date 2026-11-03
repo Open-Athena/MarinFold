@@ -1,0 +1,5 @@
+,n_canonical_contacts,n_canonical_contacts,n_canonical_contacts,n_canonical_contacts,n_unresolved_removed,n_unresolved_removed,n_unresolved_removed,n_unresolved_removed,n_mapped_near_removed,n_mapped_near_removed,n_mapped_near_removed,n_mapped_near_removed,n_effective_contacts,n_effective_contacts,n_effective_contacts,n_effective_contacts
+,sum,mean,min,max,sum,mean,min,max,sum,mean,min,max,sum,mean,min,max
+model,,,,,,,,,,,,,,,,
+default,14895,148.95,27,271,791,7.91,0,42,34,0.34,0,3,14070,140.7,27,263
+mpnn2-lr5e-4,17901,179.01,49,415,1320,13.2,0,97,38,0.38,0,3,16543,165.43,49,352

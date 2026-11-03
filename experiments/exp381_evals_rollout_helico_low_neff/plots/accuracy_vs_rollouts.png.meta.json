@@ -1,0 +1,5 @@
+{
+  "script": "analyze.py",
+  "args": [],
+  "caption": "Oracle, confidence-selected, and median accuracy for the first k saved rollouts. Lines describe one fixed sequence of ten samples, not expected curves over all possible rollout orders."
+}

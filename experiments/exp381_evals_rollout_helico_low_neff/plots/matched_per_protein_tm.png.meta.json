@@ -1,0 +1,5 @@
+{
+  "script": "analyze_baselines.py",
+  "args": [],
+  "caption": "Ten samples per protein per arm; star identifies the single confidence-selected structure. Targets appear in increasing original Neff order."
+}

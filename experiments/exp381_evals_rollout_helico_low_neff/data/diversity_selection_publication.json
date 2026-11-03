@@ -1,0 +1,12 @@
+{
+  "root": "hf://buckets/open-athena/MarinFold/data/exp381-rollout-helico-low-neff/v3-diversity",
+  "anonymous_readback_verified": true,
+  "files_sha256": {
+    "DIVERSITY_PLAN.md": "84c625c8cd43d26238e5459b0158b60d04b163f2aaad6fcfb32a05b364ce26f2",
+    "data/diversity_plan.json": "8a0356d54499614c396438d2fa7adeb352fd2c0b6526f6a82565186e9dd981a1",
+    "data/diversity_selection_manifest.json": "f413505a9ed600b82386a6d0499abf27ab1f584b684ad5af0c2afeaf5af45224",
+    "data/diversity_contact_inputs.csv": "a609773046bc9c71e343bfd53f85de082ba4fe2c88364c0b675f179f38dff326",
+    "inputs/diversity/tasks.json": "9b9ebd8847ad9cfdb86b26cbb4cb3b78fe037d6ea609a3cf0fec6f954d9887ee",
+    "inputs/diversity/targets.json": "2829eff49e6f19f3188b77c43889d992a89dab05450b18ad30addd46a87c008c"
+  }
+}

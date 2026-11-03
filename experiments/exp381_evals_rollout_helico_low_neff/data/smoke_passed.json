@@ -1,0 +1,16 @@
+{
+  "plan_sha256": "89d866382fb322b0c06ccc42fc9bb06ac081f414b7559d1e167be3a9dd928ed8",
+  "n_predictions": 2,
+  "checks": [
+    "checkpoint digest",
+    "paired source prompts/seeds",
+    "effective contact count",
+    "finite coordinates/confidence",
+    "full CA coverage",
+    "all three metrics finite"
+  ],
+  "tasks": [
+    "8eb9_A__default__r00",
+    "8eb9_A__mpnn2-lr5e-4__r00"
+  ]
+}

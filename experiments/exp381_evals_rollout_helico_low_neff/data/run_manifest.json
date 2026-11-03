@@ -1,0 +1,68 @@
+{
+  "n_targets": 10,
+  "n_models": 2,
+  "n_predictions": 200,
+  "plan_sha256": "89d866382fb322b0c06ccc42fc9bb06ac081f414b7559d1e167be3a9dd928ed8",
+  "tmscore_build": {
+    "repository": "https://github.com/pylelab/USalign",
+    "revision": "23f14ffcf8647f2dc1c0e01043db3a7f3a661c28",
+    "compiler": "g++ (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0",
+    "flags": [
+      "-O3"
+    ],
+    "binary_sha256": "3de3adb9cbe9660d2b9b8b444f37891acf887ad08228b65486f06a578cc99529",
+    "source_sha256": {
+      "BLOSUM.h": "1a530ee0e4950652e69dfe86817a48e82836e6e0208b7891574c96d4de377905",
+      "GeometryTools.h": "6eb67d095027aeb8b378c4710c6eb81b5f5d0b40a58b5ff04d99b3a9970969f1",
+      "HwRMSD.cpp": "b4840bccb2d60378320cf27489c29a32c7089cab5eafbd65d487ac32a9d32fa6",
+      "HwRMSD.h": "95b9b515f2356cf19aa9a90a7d9f4d527201a37f3e86f20e9dc4b8d5f23f4757",
+      "Kabsch.h": "4095a4edfd3ff06e40bf6b16afcdb49ce6b8b560e4061bafae9ccbe098ade172",
+      "MMalign.cpp": "aee466354d32f2ad79819d614704d9cf9f4ca3f643a38584f150cfc7a2974295",
+      "MMalign.h": "c3f5513c68f1ffd76dd9e699cc75cd05f1ce75f6a1e9a3ab29ec9dae009bd92a",
+      "NW.h": "31ac181ec0388084759892078e51176e47389d46baaa0f157eb296cbcc8ed9f2",
+      "NWalign.cpp": "2f3f27206068b30b6a755a81172e3aae59b1fe8c60047ccf6cf783473c41ae39",
+      "NWalign.h": "c1dd213c5cb8397c2c28c104367b2dc466402a10eda91d823376a5ef47f1ebc7",
+      "SOIalign.h": "7e99dfb77e4c8f37d70ee8316d496866b42cde4de29ffd7f70036e296b84a57a",
+      "TMalign.cpp": "ba817485efc2b09119959b68d8ebd45f8d9ceae9352516cfc960e9e3c651cb33",
+      "TMalign.h": "497805bae22b14c85e7cd14fbd966f91273ce69e58a5e1ccaa1366379cba0355",
+      "TMscore.cpp": "20896e24ff16a8111bb90bbca68ca0702fb94f572f392eb7dda1bfdb8cb102f5",
+      "TMscore.h": "90c8729833112dc2e6f28e79f5d51049b2d0056c1b4bb3e614f909dda7c068f2",
+      "USFlexalign.cpp": "6ee980c615042b1c70faff5ba9970758179cf10d438d417e03478ab5627451d7",
+      "USalign.cpp": "93f0847fca104a1925757a7c13236900e2a9ebaaccf6a79e5ffd2b024908be11",
+      "addChainID.cpp": "e30e445e49b49bc11030ea10581d53ac2e701acb2a40c8f4e40d801de10d3514",
+      "basic_fun.h": "0ac7688bec88d820c756f0fc196417e1e5ed934b192077a9137c263c749cc590",
+      "biounitasym.cpp": "789e1589711b6a8eaf25d71605822843e049f1803ead61d7ab71d1892cd6f4d4",
+      "ca2rr.cpp": "dabdd3fcdb703d4f981707127c74bd2e5ba65970170ad55ae51774ef54a61268",
+      "ca2rr.h": "1d8d2b28350c4f70e71ad80c59d94c39c0f1f76e9b77c13248730212f77d3d0e",
+      "cif2pdb.cpp": "e56cca2346252873ae0a9e612c9f50b198ac237b4db22aabfaee20f31b0a646f",
+      "flexalign.h": "a6506352022ec98368106528d5ece04e23a14c40addd98328f6aeec26e7774b6",
+      "param_set.h": "6eaccac57f6c2a554adfc9b214aad2fed97c31b3f22c1c33dadd985804f282d2",
+      "pdb2fasta.cpp": "37b93b357d613759c51e098f2e921655792d55414c3e1013996ee0d42375a719",
+      "pdb2ss.cpp": "ab0ab7fd831d6703f53f532676f0e4b44db20b9702872b86925abbcc6e74188e",
+      "pdb2xyz.cpp": "3e9b8f48c853c8f5089031d41190f4264c4ff751fe8ac38536640b3722816024",
+      "pdbAtomName.cpp": "6fe68f1ff66f6d185d6e13501f01e1cad74dc25c94d2badccb5c4efcd2095118",
+      "pstream.h": "852f6e1b752c93f46091b042adf2e831b580e5a58545f9ed121781bb66dae4d5",
+      "qTMclust.cpp": "93abb1357bfa7ee0448a7655827af63fa87be41a4cafda60a14811bae947d232",
+      "se.cpp": "9d13d3bdde13056ab475d22723797a27ecda4548c8ee6feb24bbc770f582e244",
+      "se.h": "9793c04a50d2b8e2a249ce832e90d8461fec6bd5bd3030f409187689978950db",
+      "xyz_sfetch.cpp": "1843bd860ec17cf54a066f73a722776a9f767a5bc210a1fcc6c5e4ef46fba7cf"
+    }
+  },
+  "minimum_atom_coverage": 0.9958448753462604,
+  "minimum_ca_coverage": 1.0,
+  "helico_source_sha": "b10385d736673c81b10e70d1099962af6f2573c0",
+  "helico_checkpoint_sha256": "779d540e5bb45cd26bb970188da2f1937ed3079942923a1356c29d06f20fe644",
+  "runner_sha256": [
+    "66999c4297ec01924758136bd2c1a74b308286f5f84a5b013b5611915eb8a71d"
+  ],
+  "scoring_source_sha256": "3b9860fbd413ce396621cd8f743d7056801e45135d00d9214235408a41357cc7",
+  "runtime_versions": {
+    "torch": "2.10.0",
+    "numpy": "2.2.6",
+    "scipy": "1.15.3",
+    "cuequivariance-torch": "0.8.1",
+    "cuequivariance-ops-torch-cu12": "0.8.1",
+    "biopython": "1.85",
+    "pyconfind": "0.6.0"
+  }
+}

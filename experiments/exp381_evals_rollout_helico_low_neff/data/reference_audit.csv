@@ -1,0 +1,11 @@
+stem,protein_chain,protein_sequence_verified,n_residues,n_heavy_atoms,excluded_nonprotein_residues
+8eb9_A,A,True,89,653,B:SO4
+7xp9_A,A,True,76,613,
+7xcd_A,A,True,178,1444,
+8ec3_A,A,True,155,1229,B:MG
+8cba_A,A,True,195,1662,
+8adc_A,A,True,207,1623,
+8bux_A,A,True,289,2162,B:EDO;C:MLI;D:MLI;E:MG
+7yd4_A,A,True,179,1275,B:GOL
+7zu3_A,A,True,126,1007,
+7uvg_A,A,True,166,1301,B:EDO;C:IOD;D:IOD;E:IOD;F:IOD;G:IOD;H:IOD;I:IOD;J:IOD
