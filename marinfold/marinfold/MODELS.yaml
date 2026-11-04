@@ -24,6 +24,18 @@
   document_structures:
     - contacts-v1
 
+# Optional redesign-only model: exp364's completed 5e-4 two-epoch parent.
+# Final checkpoint 373768, 373769 optimizer updates; LM validation 3.01328707.
+# Eval-val all / long R-precision 0.52470 / 0.50813; eval-denovo 0.67385 / 0.63709.
+# Six model/tokenizer files are byte-identical to the evaluated float32 export;
+# inference uses bfloat16. Source SHA-256 and public Xet hashes are recorded in
+# publication_manifest.json. This is the checkpoint selected for study #373.
+- nickname: contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B
+  url: https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/hf/step-373768
+  wandb_url: https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B
+  document_structures:
+    - contacts-v1
+
 # Optional redesign-only model: exp364's completed 5e-4 GPU one-epoch fork,
 # 162,574,724 ProteinMPNN documents; 186,885 total optimizer updates.
 # Final checkpoint 186884, LM validation loss 3.03572. Eval-val all / long

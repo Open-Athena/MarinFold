@@ -1,0 +1,10 @@
+{
+  "job_id": "/bizon/exp364-publish-lr5e-4-step373768-a01",
+  "git_commit": "451353cc5da3769f3d2ed3854ccdc1076154cb1d",
+  "cluster": "cw-us-east-02a",
+  "bundle_uri": "hf://buckets/open-athena/MarinFold/data/exp364-models-mpnn-only-lr-sweep/publication/source/f6039c1e8a826e95c67eda58f041f4ccdd40df0d41e7f0ee05d89a08a4104d23.zip",
+  "bundle_sha256": "f6039c1e8a826e95c67eda58f041f4ccdd40df0d41e7f0ee05d89a08a4104d23",
+  "source_bytes": 5885614887,
+  "run_id": "contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
+  "step": 373768
+}

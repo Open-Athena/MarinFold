@@ -1,0 +1,176 @@
+{
+  "published_at_utc": "2026-11-04T18:35:55.822816+00:00",
+  "git_commit": "451353cc5da3769f3d2ed3854ccdc1076154cb1d",
+  "source": {
+    "checkpoint": {
+      "trial": "lr5e-4",
+      "run_id": "contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
+      "step": 373768,
+      "label": "contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B-step-373768",
+      "source_format": "huggingface",
+      "source": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/hf/step-373768",
+      "native_checkpoint": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/checkpoints/step-373768",
+      "hf_export": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/hf/step-373768",
+      "source_bytes": 5885614887,
+      "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
+      "model_config": {
+        "rope": {
+          "theta": 500000,
+          "factor": 8,
+          "low_freq_factor": 1,
+          "high_freq_factor": 4,
+          "original_max_position_embeddings": 8192
+        },
+        "head_dim": null,
+        "use_bias": false,
+        "num_heads": 32,
+        "tokenizer": null,
+        "hidden_dim": 2048,
+        "num_layers": 24,
+        "hybrid_norm": false,
+        "max_seq_len": 8192,
+        "scan_layers": true,
+        "upcast_attn": false,
+        "use_qk_norm": true,
+        "attn_backend": "JAX_FLASH",
+        "num_kv_heads": 8,
+        "sliding_window": 4096,
+        "intermediate_dim": 8192,
+        "initializer_range": 0.02,
+        "layer_norm_epsilon": 1e-05,
+        "use_sliding_window": false,
+        "activation_function": "silu",
+        "tie_word_embeddings": false,
+        "input_embedding_norm": false,
+        "reference_checkpoint": "Qwen/Qwen3-0.6B",
+        "use_layer_norm_weight": true,
+        "gradient_checkpointing": true,
+        "flash_attention_block_size": null
+      },
+      "latest_logged_step": 373768,
+      "latest_eval_loss": 3.01328706741333,
+      "model_egress_bytes": 0,
+      "evaluation_cluster": "cw-us-east-02a",
+      "export_manifest": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/evals/rollout-v2/2026-11-02/final-01/manifests/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B-step-373768.json"
+    },
+    "files": [
+      {
+        "name": "config.json",
+        "size": 1726,
+        "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd"
+      },
+      {
+        "name": "model-00001-of-00002.safetensors",
+        "size": 4979485528,
+        "sha256": "1c4a014d602dc071dd678537a73dd8e19ed1536a62074b034fac205e0e7c90af"
+      },
+      {
+        "name": "model-00002-of-00002.safetensors",
+        "size": 906042048,
+        "sha256": "43b10ec6460b48168b71e4b90a392e918fbd67fa6bfe88ef705b108a974d4634"
+      },
+      {
+        "name": "model.safetensors.index.json",
+        "size": 20882,
+        "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587"
+      },
+      {
+        "name": "tokenizer.json",
+        "size": 64407,
+        "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+      },
+      {
+        "name": "tokenizer_config.json",
+        "size": 296,
+        "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+      }
+    ],
+    "finite_verification": {
+      "verified_at": "2026-11-02T18:40:04.731470+00:00",
+      "export": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/hf/step-373768",
+      "all_parameters_finite": true,
+      "parameter_bytes": 5885497344,
+      "files": {
+        "model-00001-of-00002.safetensors": {
+          "parameter_bytes": 4979460096,
+          "sha256": "1c4a014d602dc071dd678537a73dd8e19ed1536a62074b034fac205e0e7c90af"
+        },
+        "model-00002-of-00002.safetensors": {
+          "parameter_bytes": 906037248,
+          "sha256": "43b10ec6460b48168b71e4b90a392e918fbd67fa6bfe88ef705b108a974d4634"
+        }
+      }
+    },
+    "native_verification": {
+      "metadata": {
+        "step": 373768,
+        "timestamp": "2026-11-01T20:31:14.951709",
+        "is_temporary": false
+      },
+      "scalar_counters": {
+        "step": 373769,
+        "opt_state/count": 373769,
+        "opt_state/hyperparams_states/learning_rate/count": 373769,
+        "opt_state/inner_state/1/count": 373769
+      }
+    },
+    "selection": {
+      "primary": "eval-val all-range R-precision",
+      "r_precision": 0.5247032644606194,
+      "interpretation": "Completed 5e-4 two-epoch model; strongest eval-val point estimate among the completed redesign-only runs. Selected for follow-up issue373."
+    },
+    "default_model_unchanged": "contacts-v1-exp277-m2-p06-full-epoch-1.5B"
+  },
+  "published_uri": "hf://buckets/open-athena/MarinFold/checkpoints/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/hf/step-373768",
+  "publication_job": "/bizon/exp364-publish-lr5e-4-step373768-a01",
+  "source_region": "cw-us-east-02a",
+  "source_bytes": 5885614887,
+  "weights_dtype": "float32",
+  "recommended_inference_dtype": "bfloat16",
+  "all_source_files_byte_identical": true,
+  "files": {
+    "README.md": {
+      "size": 3008,
+      "sha256": "8ff419313e27df9463954624e8e4a90cf99048595d86041c6c5cd1a451b932bb",
+      "xet_hash": "2797a9302bfd8f0f95627f4adb33fd5ff651fd51f1d895a9d7a0205f1b6eadbb",
+      "source_sha256": null
+    },
+    "config.json": {
+      "size": 1726,
+      "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd",
+      "xet_hash": "d06d8481d9041e87742f2af124251aa37cf96c36355ac7c863eeaf666bf7e938",
+      "source_sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd"
+    },
+    "model-00001-of-00002.safetensors": {
+      "size": 4979485528,
+      "sha256": "1c4a014d602dc071dd678537a73dd8e19ed1536a62074b034fac205e0e7c90af",
+      "xet_hash": "90337a01812c15c459ff5bf4e87325055a83ac085920e422385943dcdd1321f3",
+      "source_sha256": "1c4a014d602dc071dd678537a73dd8e19ed1536a62074b034fac205e0e7c90af"
+    },
+    "model-00002-of-00002.safetensors": {
+      "size": 906042048,
+      "sha256": "43b10ec6460b48168b71e4b90a392e918fbd67fa6bfe88ef705b108a974d4634",
+      "xet_hash": "17e7779d14850e1b1b90b10547ccd26ec3444de3b227aa30295f3b63898d39bc",
+      "source_sha256": "43b10ec6460b48168b71e4b90a392e918fbd67fa6bfe88ef705b108a974d4634"
+    },
+    "model.safetensors.index.json": {
+      "size": 20882,
+      "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587",
+      "xet_hash": "c8640bd5180d9b255dd6468699e666031958cb559f4cc7f21b0e04a188509cdd",
+      "source_sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587"
+    },
+    "tokenizer.json": {
+      "size": 64407,
+      "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24",
+      "xet_hash": "a87b08797b5c5b1962e52c55d07f76605b07b06a324c55ceaa2f59b7859622bc",
+      "source_sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+    },
+    "tokenizer_config.json": {
+      "size": 296,
+      "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24",
+      "xet_hash": "b44fc341176157a16c375462065c25a76fcfab8e7040bd5b692e251aeae5c403",
+      "source_sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+    }
+  },
+  "reused_public_files": []
+}

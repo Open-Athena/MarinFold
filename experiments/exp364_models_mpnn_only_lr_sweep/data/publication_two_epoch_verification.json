@@ -1,0 +1,24 @@
+{
+  "verified_at_utc": "2026-11-04T18:43:18.523016+00:00",
+  "anonymous_access": true,
+  "published_uri": "hf://buckets/open-athena/MarinFold/checkpoints/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/hf/step-373768",
+  "all_public_sizes_and_xet_hashes_match": true,
+  "small_files_readback_sha256_verified": true,
+  "all_source_files_byte_identical": true,
+  "source_bytes": 5885614887,
+  "files": [
+    "README.md",
+    "config.json",
+    "model-00001-of-00002.safetensors",
+    "model-00002-of-00002.safetensors",
+    "model.safetensors.index.json",
+    "tokenizer.json",
+    "tokenizer_config.json"
+  ],
+  "default_unchanged": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+  "completed_publication_job": "/bizon/exp364-publish-lr5e-4-step373768-a01",
+  "transformers_config_and_tokenizer_load_passed": true,
+  "registry_tests_passed": 14,
+  "publication_job_state": "succeeded",
+  "finished_at_utc": "2026-11-04T18:42:46.474000+00:00"
+}

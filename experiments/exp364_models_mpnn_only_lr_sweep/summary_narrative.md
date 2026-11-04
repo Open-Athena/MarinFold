@@ -1,3 +1,11 @@
+## November 4 — two-epoch checkpoint published
+
+The completed 5e-4 checkpoint at step 373768 is public on HF with its tokenizer and provenance, and registered as contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B. Exp277 remains the default; the one-epoch entry is separate.
+
+All six model/tokenizer files (5.89 GB) are byte-identical to the evaluated export. A regional CPU worker verified every source SHA-256 before upload and each public Xet hash afterward. Independent anonymous checks and config/tokenizer loading passed.
+
+Eval-val / eval-denovo all-range R-precision remains 0.52470 / 0.67385. The public checkpoint is ready for the issue 373 agent. Eight publication checks and 14 registry tests pass; source and publication manifests are committed.
+
 ## November 2 — final contact scores complete
 
 Both jobs succeeded around 14:08 EST. Each scored 97 eval-val proteins and 19 eval-denovo designs with 100 rollouts per protein. All 23,200 rollouts finished; zero extensions, failures or preemptions. No experiment training or evaluation jobs remain active.
