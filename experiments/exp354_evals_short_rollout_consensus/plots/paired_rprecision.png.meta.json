@@ -1,0 +1,8 @@
+{
+  "script": "analyze.py",
+  "args": [
+    "--results",
+    "../../scratch/exp354/production"
+  ],
+  "caption": "All five caps, with 100-short controls; shading marks \u00b10.005. Intervals are exploratory and pointwise."
+}
