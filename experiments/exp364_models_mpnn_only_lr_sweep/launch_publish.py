@@ -25,17 +25,34 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--submit", action="store_true")
     parser.add_argument("--attempt", type=int, default=1)
+    parser.add_argument(
+        "--checkpoint", choices=("one-epoch", "two-epoch"), required=True
+    )
     args = parser.parse_args()
-    job_name = f"exp364-publish-gpu-cooldown-step186884-a{args.attempt:02d}"
+    if args.checkpoint == "two-epoch":
+        prefix = "publication_two_epoch"
+        run_id = "contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B"
+        step = 373768
+        job_label = "lr5e-4"
+    else:
+        prefix = "publication"
+        run_id = "contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B"
+        step = 186884
+        job_label = "gpu-cooldown"
+    source = json.loads((HERE / f"data/{prefix}_source.json").read_text())
+    if (source["checkpoint"]["run_id"], source["checkpoint"]["step"]) != (run_id, step):
+        raise ValueError("Publication source does not match the requested checkpoint")
+    source_bytes = sum(entry["size"] for entry in source["files"])
+    job_name = f"exp364-publish-{job_label}-step{step}-a{args.attempt:02d}"
     with tempfile.TemporaryDirectory(prefix="exp364-publication-") as temporary:
         directory = Path(temporary)
         bundle = directory / "source"
-        for name in (
-            "publish_checkpoint.py",
-            "publication_model_card.md",
-            "data/publication_source.json",
+        for name, bundled_name in (
+            ("publish_checkpoint.py", "publish_checkpoint.py"),
+            (f"{prefix}_model_card.md", "publication_model_card.md"),
+            (f"data/{prefix}_source.json", "data/publication_source.json"),
         ):
-            destination = bundle / name
+            destination = bundle / bundled_name
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(HERE / name, destination)
         archive = Path(shutil.make_archive(str(directory / "source"), "zip", bundle))
@@ -91,7 +108,7 @@ def main() -> None:
             "python3 -c " + shlex.quote(bootstrap),
             "cd " + shlex.quote(workdir),
             "python3 -m pip install --quiet 'fsspec==2026.1.0' 's3fs==2026.1.0' 'aiobotocore==2.26.0' 'huggingface-hub==1.27.0' 'hf-xet==1.6.1a0'",
-            "exec python3 publish_checkpoint.py",
+            f"exec python3 publish_checkpoint.py --run-id {shlex.quote(run_id)} --step {step}",
         ]
     )
     image = "python:3.12-bookworm"
@@ -117,12 +134,14 @@ def main() -> None:
             "cluster": "cw-us-east-02a",
             "bundle_uri": remote,
             "bundle_sha256": digest,
-            "source_bytes": 5885614887,
+            "source_bytes": source_bytes,
+            "run_id": run_id,
+            "step": step,
         }
-        (HERE / "data/publication_launch.json").write_text(
+        (HERE / f"data/{prefix}_launch.json").write_text(
             json.dumps(record, indent=2) + "\n"
         )
-        (HERE / f"data/publication_launch_a{args.attempt:02d}.json").write_text(
+        (HERE / f"data/{prefix}_launch_a{args.attempt:02d}.json").write_text(
             json.dumps(record, indent=2) + "\n"
         )
         print("SUBMITTED", job.job_id, flush=True)

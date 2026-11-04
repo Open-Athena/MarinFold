@@ -1,5 +1,6 @@
-"""Publish the selected, evaluated one-epoch GPU checkpoint without changing bytes."""
+"""Publish a selected, evaluated checkpoint without changing model bytes."""
 
+import argparse
 import hashlib
 import json
 import os
@@ -12,8 +13,6 @@ import hf_xet
 from huggingface_hub import HfFileSystem
 
 HERE = Path(__file__).resolve().parent
-RUN = "contacts-v1-exp364-mpnn-only-1ep-lr5e-4-cooldown-1.5B"
-DESTINATION = f"buckets/open-athena/MarinFold/checkpoints/{RUN}/hf/step-186884"
 
 
 def sha256(path: Path) -> str:
@@ -22,14 +21,16 @@ def sha256(path: Path) -> str:
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
-def main() -> None:
-    """Verify the entire source before publishing and check every public Xet hash."""
-    source = json.loads((HERE / "data/publication_source.json").read_text())
+def validate_source(source: dict, run_id: str, step: int) -> str:
+    """Bind the intended checkpoint and its weight hashes to the finite check."""
     checkpoint = source["checkpoint"]
-    if (checkpoint["run_id"], checkpoint["step"]) != (RUN, 186884):
+    if (checkpoint["run_id"], checkpoint["step"]) != (run_id, step):
         raise ValueError("Publication source is not the selected checkpoint")
-    if not source["finite_verification"]["all_parameters_finite"]:
+    verification = source["finite_verification"]
+    if not verification["all_parameters_finite"]:
         raise ValueError("The source must have a complete finite-weight verification")
+    if verification["export"] != checkpoint["hf_export"]:
+        raise ValueError("Finite verification identifies another export")
     required = {
         "config.json",
         "model.safetensors.index.json",
@@ -38,17 +39,38 @@ def main() -> None:
         "model-00001-of-00002.safetensors",
         "model-00002-of-00002.safetensors",
     }
-    if {entry["name"] for entry in source["files"]} != required:
+    if (
+        len(source["files"]) != len(required)
+        or {entry["name"] for entry in source["files"]} != required
+    ):
         raise ValueError("Unexpected publication file inventory")
+    for entry in source["files"]:
+        if entry["name"].endswith(".safetensors") and (
+            entry["sha256"] != verification["files"][entry["name"]]["sha256"]
+        ):
+            raise ValueError("Weight hash differs from finite verification")
+    return f"buckets/open-athena/MarinFold/checkpoints/{run_id}/hf/step-{step}"
+
+
+def main() -> None:
+    """Verify the entire source before publishing and check every public Xet hash."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--run-id", required=True)
+    parser.add_argument("--step", type=int, required=True)
+    args = parser.parse_args()
+    source = json.loads((HERE / "data/publication_source.json").read_text())
+    destination = validate_source(source, args.run_id, args.step)
+    checkpoint = source["checkpoint"]
+    required = {entry["name"] for entry in source["files"]}
     fs = fsspec.filesystem("s3", use_listings_cache=False)
     hub = HfFileSystem(token=os.environ["HF_TOKEN"])
     public_hub = HfFileSystem(token=False)
     existing = (
         {
             Path(item["name"]).name: item
-            for item in public_hub.ls(DESTINATION, refresh=True)
+            for item in public_hub.ls(destination, refresh=True)
         }
-        if public_hub.exists(DESTINATION, refresh=True)
+        if public_hub.exists(destination, refresh=True)
         else {}
     )
     if set(existing) - (required | {"README.md"}):
@@ -57,7 +79,7 @@ def main() -> None:
         "published_at_utc": datetime.now(UTC).isoformat(),
         "git_commit": os.environ["GIT_COMMIT"],
         "source": source,
-        "published_uri": "hf://" + DESTINATION,
+        "published_uri": "hf://" + destination,
         "publication_job": os.environ["PUBLICATION_JOB"],
         "source_region": "cw-us-east-02a",
         "source_bytes": sum(entry["size"] for entry in source["files"]),
@@ -117,10 +139,10 @@ def main() -> None:
             if path.name in existing:
                 manifest["reused_public_files"].append(path.name)
             else:
-                hub.put_file(str(path), DESTINATION + "/" + path.name)
+                hub.put_file(str(path), destination + "/" + path.name)
             # fsspec reuses filesystem instances, so the anonymous listing from
             # the previous file must be refreshed after each authenticated PUT.
-            public = public_hub.info(DESTINATION + "/" + path.name, refresh=True)
+            public = public_hub.info(destination + "/" + path.name, refresh=True)
             if public["size"] != path.stat().st_size or public["xet_hash"] != local_xet:
                 raise ValueError(f"Published content differs: {path.name}")
             manifest["files"][path.name] = {
@@ -137,10 +159,10 @@ def main() -> None:
                 ),
             }
             print("VERIFIED_PUBLIC", path.name, path.stat().st_size, digest, flush=True)
-        with hub.open(DESTINATION + "/publication_manifest.json", "wt") as stream:
+        with hub.open(destination + "/publication_manifest.json", "wt") as stream:
             json.dump(manifest, stream, indent=2)
             stream.write("\n")
-    print("COMPLETE", "hf://" + DESTINATION, flush=True)
+    print("COMPLETE", "hf://" + destination, flush=True)
 
 
 if __name__ == "__main__":
