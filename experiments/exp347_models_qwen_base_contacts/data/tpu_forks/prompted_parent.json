@@ -1,0 +1,139 @@
+{
+  "created_utc": "2026-11-02T14:55:26.555340+00:00",
+  "format": "prompted",
+  "parent_run": "exp347-qwen35-4b-prompted-corpus235m-100bt",
+  "fork_run": "exp347-qwen35-4b-prompted-corpus235m-tpu-east5",
+  "parent": {
+    "step": 87360,
+    "tokens": 4026058835,
+    "world": 8,
+    "uri": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-100bt/step-87360",
+    "final": false,
+    "evaluation_export": false
+  },
+  "uri": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-tpu-east5/source/step-87360",
+  "objects": {
+    "complete.json": {
+      "uri": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-tpu-east5/source/step-87360/complete.json",
+      "size": 222,
+      "etag": "\"3c2541093f9dce8a5121e04572a6d802\"",
+      "source_etag": "\"3c2541093f9dce8a5121e04572a6d802\""
+    },
+    "model/chat_template.jinja": {
+      "uri": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-tpu-east5/source/step-87360/model/chat_template.jinja",
+      "size": 7756,
+      "etag": "\"94f89e03284d911fc65d06422439fd79\"",
+      "source_etag": "\"94f89e03284d911fc65d06422439fd79\""
+    },
+    "model/config.json": {
+      "uri": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-tpu-east5/source/step-87360/model/config.json",
+      "size": 1978,
+      "etag": "\"26126df689a87fbfead3af886faf53a0\"",
+      "source_etag": "\"26126df689a87fbfead3af886faf53a0\""
+    },
+    "model/generation_config.json": {
+      "uri": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-tpu-east5/source/step-87360/model/generation_config.json",
+      "size": 115,
+      "etag": "\"2606793e95f127bb4eb798ac69d14f58\"",
+      "source_etag": "\"2606793e95f127bb4eb798ac69d14f58\""
+    },
+    "model/model-00001-of-00005.safetensors": {
+      "uri": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-tpu-east5/source/step-87360/model/model-00001-of-00005.safetensors",
+      "size": 3992270808,
+      "etag": "\"1130b5a47ad3c09dddf8f9100a0a796b-77\"",
+      "source_etag": "\"1130b5a47ad3c09dddf8f9100a0a796b-77\""
+    },
+    "model/model-00002-of-00005.safetensors": {
+      "uri": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-tpu-east5/source/step-87360/model/model-00002-of-00005.safetensors",
+      "size": 3990304880,
+      "etag": "\"fbdb1aa655fd5ab4f03ec02a3f552b92-77\"",
+      "source_etag": "\"fbdb1aa655fd5ab4f03ec02a3f552b92-77\""
+    },
+    "model/model-00003-of-00005.safetensors": {
+      "uri": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-tpu-east5/source/step-87360/model/model-00003-of-00005.safetensors",
+      "size": 3937874288,
+      "etag": "\"c1222b0c72f8b6d27f6672bec61a2e10-76\"",
+      "source_etag": "\"c1222b0c72f8b6d27f6672bec61a2e10-76\""
+    },
+    "model/model-00004-of-00005.safetensors": {
+      "uri": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-tpu-east5/source/step-87360/model/model-00004-of-00005.safetensors",
+      "size": 3926580480,
+      "etag": "\"c5194ac8e3ef32979825db95781bfb66-75\"",
+      "source_etag": "\"c5194ac8e3ef32979825db95781bfb66-75\""
+    },
+    "model/model-00005-of-00005.safetensors": {
+      "uri": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-tpu-east5/source/step-87360/model/model-00005-of-00005.safetensors",
+      "size": 976029952,
+      "etag": "\"b7889c7534047bd6c09fd58749a299a9-19\"",
+      "source_etag": "\"b7889c7534047bd6c09fd58749a299a9-19\""
+    },
+    "model/model.safetensors.index.json": {
+      "uri": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-tpu-east5/source/step-87360/model/model.safetensors.index.json",
+      "size": 41994,
+      "etag": "\"2340df7c15fea6900e2a6ec68d7b230b\"",
+      "source_etag": "\"2340df7c15fea6900e2a6ec68d7b230b\""
+    },
+    "model/tokenizer.json": {
+      "uri": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-tpu-east5/source/step-87360/model/tokenizer.json",
+      "size": 19989343,
+      "etag": "\"8439b77c1caca73b57280e363c83b334\"",
+      "source_etag": "\"8439b77c1caca73b57280e363c83b334\""
+    },
+    "model/tokenizer_config.json": {
+      "uri": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-tpu-east5/source/step-87360/model/tokenizer_config.json",
+      "size": 1101,
+      "etag": "\"b1757af2b6439c2d06f3d9d3aa317146\"",
+      "source_etag": "\"b1757af2b6439c2d06f3d9d3aa317146\""
+    },
+    "resume/rank-0.pt": {
+      "uri": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-tpu-east5/source/step-87360/resume/rank-0.pt",
+      "size": 5085610054,
+      "etag": "\"4c9c29d8280867fad5ab68b4875eccaf-5\"",
+      "source_etag": "\"4f4350fd3d77fa6d5e714e3fc8510f20-98\""
+    },
+    "resume/rank-1.pt": {
+      "uri": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-tpu-east5/source/step-87360/resume/rank-1.pt",
+      "size": 4089480517,
+      "etag": "\"5b132031fe94fcdcf301a500d7a309fe-79\"",
+      "source_etag": "\"5b132031fe94fcdcf301a500d7a309fe-79\""
+    },
+    "resume/rank-2.pt": {
+      "uri": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-tpu-east5/source/step-87360/resume/rank-2.pt",
+      "size": 4089480581,
+      "etag": "\"0cd940236af619b6825e9152234611e7-79\"",
+      "source_etag": "\"0cd940236af619b6825e9152234611e7-79\""
+    },
+    "resume/rank-3.pt": {
+      "uri": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-tpu-east5/source/step-87360/resume/rank-3.pt",
+      "size": 4076367914,
+      "etag": "\"bfb89a7a13551ec9cefdf337928484bb-78\"",
+      "source_etag": "\"bfb89a7a13551ec9cefdf337928484bb-78\""
+    },
+    "resume/rank-4.pt": {
+      "uri": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-tpu-east5/source/step-87360/resume/rank-4.pt",
+      "size": 4076377406,
+      "etag": "\"d1ebf3cf16ac0d4c31e68188c2634ab1-78\"",
+      "source_etag": "\"d1ebf3cf16ac0d4c31e68188c2634ab1-78\""
+    },
+    "resume/rank-5.pt": {
+      "uri": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-tpu-east5/source/step-87360/resume/rank-5.pt",
+      "size": 4076377342,
+      "etag": "\"a51458b6b3da512356c2e6ee294ed69f-78\"",
+      "source_etag": "\"a51458b6b3da512356c2e6ee294ed69f-78\""
+    },
+    "resume/rank-6.pt": {
+      "uri": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-tpu-east5/source/step-87360/resume/rank-6.pt",
+      "size": 4076375504,
+      "etag": "\"8d60663ec48cc4ec57c8f4956aa6a419-78\"",
+      "source_etag": "\"8d60663ec48cc4ec57c8f4956aa6a419-78\""
+    },
+    "resume/rank-7.pt": {
+      "uri": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-tpu-east5/source/step-87360/resume/rank-7.pt",
+      "size": 4076375568,
+      "etag": "\"907a4d2f514f03d0cb64e46d76cf784e-78\"",
+      "source_etag": "\"907a4d2f514f03d0cb64e46d76cf784e-78\""
+    }
+  },
+  "bytes": 50489547803,
+  "copy_method": "Same-region S3 CopyObject/UploadPartCopy, source ETag preconditions"
+}

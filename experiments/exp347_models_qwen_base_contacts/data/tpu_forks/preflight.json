@@ -1,6 +1,6 @@
 {
   "created_utc": "2026-10-30T20:55:04.394157+00:00",
-  "status": "awaiting_transfer_approval_and_backend_validation",
+  "status": "transfer_complete_cpu_parity_passed_tpu_validation_pending",
   "destination_region": "us-east5",
   "destination_root": "gs://marin-us-east5/protein-structure/MarinFold/exp347_qwen_base_contacts",
   "source_catalog_sha256": "861b8a507298d7405f74e1cf4ca9f74421d70fa4949fed384cea01f5a15149b8",
@@ -122,5 +122,13 @@
   "total_transfer_bytes": 579867066465,
   "approval_ceiling_bytes": 590000000000,
   "no_hot_path_cross_region_io": true,
-  "no_bulk_transfer_performed": true
+  "no_bulk_transfer_performed": false,
+  "approval": {
+    "received_utc": "2026-11-02T14:46:11.353709+00:00",
+    "source": "User reply: Ok I approve",
+    "maximum_cross_region_bytes": 590000000000,
+    "route": "CoreWeave east/RNO to GCP us-east5",
+    "constraint": "All ongoing TPU corpus/checkpoint/evaluation I/O remains in us-east5"
+  },
+  "transfer_receipt": "transfer_complete.json"
 }

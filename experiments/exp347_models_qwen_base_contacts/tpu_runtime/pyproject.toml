@@ -1,0 +1,52 @@
+[project]
+name = "exp347-qwen-tpu-runtime"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "maxtext",
+    "jax==0.12.0.1",
+    "flax==0.12.12",
+    "optax==0.2.6",
+    "orbax-checkpoint==0.12.8",
+    "pathwaysutils==0.1.13",
+    "omegaconf==2.3.0",
+    "pydantic==2.12.5",
+    "aqtp==0.9.0",
+    "einops==0.8.1",
+    "einshape==1.0",
+    "tensorboardX==2.6.4",
+    "grain==0.2.14",
+    "tensorflow-cpu==2.20.0",
+    "datasets==4.4.2",
+    "google-cloud-storage==3.7.0",
+    "google-cloud-logging==3.13.0",
+    "transformers==5.3.0",
+    "safetensors==0.7.0",
+    "torch==2.10.0+cpu",
+    "jinja2==3.1.6",
+    "ml-collections==1.1.0",
+    "tpu-info==0.14.2",
+    "cloud-accelerator-diagnostics==0.1.1",
+    "tokamax==0.0.12",
+    "drjax==0.2.1",
+    "protobuf==6.33.6",
+    "tiktoken==0.12.0",
+    "sentencepiece==0.2.1",
+    "gcsfs==2025.10.0",
+    "wandb==0.25.1",
+]
+
+[project.optional-dependencies]
+tpu = ["jax[tpu]==0.12.0.1"]
+
+[tool.uv.sources]
+maxtext = { git = "https://github.com/AI-Hypercomputer/maxtext.git", rev = "6bd0c6834aea8deebd892be9280ef1babc7a96c8" }
+torch = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv]
+environments = ["sys_platform == 'linux' and platform_machine == 'x86_64'"]

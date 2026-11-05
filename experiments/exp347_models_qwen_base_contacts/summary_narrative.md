@@ -17,7 +17,7 @@ Exclude the same 5.11% of source rows when either complete document exceeds 16K.
 The pool has 4.493B raw tokens versus 1.290B prompted tokens.
 Equal token budgets imply different protein exposure.
 
-## Latest results — November 2
+## Latest results and progress — November 5
 
 All thirteen periodic eval-val milestones completed: raw 1B–9B, prompted 1B–4B.
 Each uses 97 proteins × 100 terminated rollouts; no unfinished samples.
@@ -28,28 +28,28 @@ Native-token budgets imply different protein exposure; format causality is unres
 Raw gains 0.03099 / 0.03481 from 6B to 9B; the earlier tie did not establish a plateau.
 Existing exp232 m2-p06 remains higher at 0.51980 / 0.50173.
 An exact sequence-KNN null over the expanded corpus has not been computed.
-Both training jobs stopped November 1 because RNO storage writes were suspended again.
-Verified local recovery points: raw 9.108B tokens, prompted 4.022B tokens.
-November 2 regional PUT/GET and a 5 MiB multipart upload probe pass.
-Recovery roots raw a08 and prompted a09 resumed and saved verified local checkpoints.
-Recovery preserves optimizer state, identities, and local checkpoint outputs.
-Full records: 1,261 timing rows, 25,220 metric rows, 52 worker provenance files.
-Periodic eval drivers remain live with no backlog. TPU forks still await preparation/approval.
+GPU parents continue: raw 13.560B tokens / step 85,112; prompted 5.980B / step 130,692.
+These are additional tokens in the full 235.49M-document phase.
+Latest scores above remain the completed 9B raw / 4B prompted milestones.
+Five newer requests await scores: raw 10B–13B and prompted 5B.
+Both evaluation roots report Terminated by user; restart clarification is pending.
+Full results: 1,261 timing rows, 25,220 metric rows, 52 worker provenance files.
 
-## TPU forks — preparation, not launched
+## TPU forks — transfer complete, validation queued
 
-Requested: continue both 4B formats on TPUs while GPU parents keep training.
-Preserve FP32 weights, Adam moments/step, eight logical data cursors and token schedule.
-New W&B identities distinguish each fork and its exact parent checkpoint.
-Current trainer uses CUDA kernels; the candidate TPU route is MaxText's Qwen3.5 backend.
-Its supplied dense config is 9B; our 4B adapter and full-state converter remain to build.
-Require PyTorch/JAX logits, loss, gradient and update parity, then TPU save/restore validation.
-Regional mirrored data reader implemented: exact replay after source removal passes.
-All 54 local tests, Ruff and Pyrefly pass; these do not validate TPU training.
-Proposed placement: us-east5; one validation slice, then at most two eight-unit slices.
-One-time transfer inventory: 579.87 GB; proposed ceiling 590 GB requires user approval.
-All future corpus reads, checkpoints and evaluation outputs stay in the TPU region.
-No bulk transfer or TPU training launched. Keep the existing 1B-token eval-val cadence.
+Both 4B forks preserve frozen FP32 weights, Adam moments/step, eight logical data cursors,
+the 32-document global batch, and the remaining original 100B-token schedule.
+User approved the one-time transfer on November 2; all later TPU I/O stays in us-east5.
+Transfer completed November 2: 9,668 objects / 579.87 GB, all checksum-verified.
+Frozen parents: raw step 59,319 / 9.122B; prompted step 87,360 / 4.026B.
+The MaxText 4B adapter and full-state checkpoint converter are implemented.
+CPU PyTorch/JAX logits, loss, gradients, clipped Adam continuation all pass.
+Actual eight-rank optimizer reconstruction and exact Orbax resumed-update tests pass.
+All 61 experiment tests, Ruff and Pyrefly pass. Hardware feasibility is not yet established.
+Bounded two-update v5p-8 validation accepted November 5 at 16:10:07 UTC, us-east5-a.
+Iris root: exp347-tpu-contacts_v1-validate-a02; pending allocation at 16:10:33 UTC.
+Neither production TPU fork is training yet. Hardware recovery validation and the
+regional periodic evaluation bridge remain before production. GPU parents stay independent.
 
 ## Pilot execution
 

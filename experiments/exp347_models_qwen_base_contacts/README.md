@@ -512,6 +512,58 @@ Before admitting production forks, the remaining gates are:
 
 ## Results
 
+### TPU validation submitted; GPU progress — November 5
+
+The user approved the one-time transfer on November 2. The regional staging job
+`/timodonnell/exp347-tpu-east5-input-copy-a01` completed at 16:37:28 UTC that day:
+**9,668 objects / 579,867,082,188 bytes**, below the approved 590 GB ceiling.
+Every object was checksum-verified before publishing the regional mirror. The
+[completion receipt](data/tpu_forks/transfer_complete.json), immutable
+[transfer plan](data/tpu_forks/transfer_plan.json), and frozen parent receipts
+([contacts-v1](data/tpu_forks/contacts_v1_parent.json),
+[prompted](data/tpu_forks/prompted_parent.json)) pin the exact inputs.
+The fork points are raw step **59,319 / 9,121,552,680 tokens** and prompted step
+**87,360 / 4,026,058,835 tokens**. They are immutable snapshots, separate from
+subsequent rolling GPU checkpoints. All future TPU corpus reads, model state,
+and evaluation outputs remain under the us-east5 experiment prefix.
+
+The text-only 4B adapter now uses the pinned MaxText implementation through its
+public APIs. It maps all 426 unique HF parameters (4,205,751,296 FP32 elements)
+and both Adam moments, preserving tied embeddings and the absolute token/LR
+schedule. The isolated runtime is locked in `tpu_runtime/uv.lock`.
+`validate_tpu_math.py` passed CPU comparisons against PyTorch for padded logits,
+loss, gradients, and a clipped update with nonzero saved Adam state. Maximum
+absolute logit and gradient errors were 4.77e-7 and 2.24e-8. A real eight-process
+PyTorch ZeRO test verified rank-shard reconstruction. `validate_tpu_checkpoint.py`
+verified exact Orbax array recovery, the same next update after restoring, and
+agreement of accumulated token-weighted loss with the PyTorch reference. The
+[math](data/tpu_forks/cpu_math_validation.json) and
+[checkpoint](data/tpu_forks/cpu_checkpoint_validation.json) reports preserve these
+results. All 61 experiment tests and the new-code Ruff/Pyrefly checks pass.
+These are CPU correctness checks, not evidence of full-size TPU feasibility.
+
+`validate_tpu_runtime.py` now loads the entire frozen state, saves a regional
+initial conversion, takes two global 32-document updates, verifies replay of all
+eight logical cursors, and checks exact save/restore of model and optimizer state.
+It uses a separate debug W&B identity and never starts production automatically.
+`launch_tpu_validation.py` submitted
+[`/timodonnell/exp347-tpu-contacts_v1-validate-a02`](https://iris.oa.dev/#/job/%2Ftimodonnell%2Fexp347-tpu-contacts_v1-validate-a02)
+at **16:10:07 UTC November 5**: one `v5p-8` slice (four chips), us-east5-a,
+batch priority, two-hour execution limit. At 16:10:33 it was **pending allocation**.
+Attempt a01 was rejected before job creation by Iris's client build-date floor;
+the prescribed client metadata correction and an accepted CPU canary resolved
+that submission gate. Full-state hardware validation, production continuation,
+and the regional periodic-evaluation bridge remain unfinished. **Neither TPU
+production fork is training yet.**
+
+The GPU parents remain running independently. At approximately 15:46 UTC,
+contacts-v1 had **13,560,384,466 tokens / step 85,112**, and prompted had
+**5,979,942,174 tokens / step 130,692**. The latest completed eval-val scores
+remain raw +9B **0.27164 all-range / 0.23281 long-range**, and prompted +4B
+**0.24773 / 0.21288**. The two evaluation drivers now report **Terminated by user**.
+Raw 10B–13B and prompted 5B requests await scores; their restart is pending
+clarification of that explicit stop. No new R-precision measurement is claimed.
+
 ### Full-corpus milestones and recovery — November 2
 
 Four more periodic evaluations completed since October 30. All thirteen

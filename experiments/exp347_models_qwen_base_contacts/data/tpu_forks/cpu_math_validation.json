@@ -1,0 +1,16 @@
+{
+  "completed_utc": "2026-11-05T15:55:49.197742+00:00",
+  "backend": "cpu",
+  "jax_version": "0.12.0.1",
+  "torch_version": "2.10.0+cpu",
+  "valid_tokens": 207,
+  "logits_max_absolute_error": 4.76837158203125e-07,
+  "loss": 5.560919284820557,
+  "reference_loss": 5.560919761657715,
+  "gradient_max_absolute_error": 2.2351741790771484e-08,
+  "updated_parameter_max_absolute_error": 2.384185791015625e-07,
+  "adam_step_before": 59319,
+  "adam_step_after": 59320,
+  "grad_norm": 93.19339752197266,
+  "status": "passed"
+}

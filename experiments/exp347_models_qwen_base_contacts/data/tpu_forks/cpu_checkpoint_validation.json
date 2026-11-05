@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "completed_utc": "2026-11-05T16:05:37.372058+00:00",
+  "backend": "cpu",
+  "devices": 1,
+  "loss": 5.5598320960998535,
+  "reference_loss": 5.5598320960998535,
+  "valid_tokens": 371,
+  "state_roundtrip": "exact",
+  "resumed_update": "exact"
+}
