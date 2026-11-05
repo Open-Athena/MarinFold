@@ -17,23 +17,22 @@ Exclude the same 5.11% of source rows when either complete document exceeds 16K.
 The pool has 4.493B raw tokens versus 1.290B prompted tokens.
 Equal token budgets imply different protein exposure.
 
-## Latest results and progress — November 5
+## Latest R-precision results — November 5
 
-All thirteen periodic eval-val milestones completed: raw 1B–9B, prompted 1B–4B.
-Each uses 97 proteins × 100 terminated rollouts; no unfinished samples.
-Raw at +9B tokens: all R=0.27164, long R=0.23281.
-Prompted at +4B: all R=0.24773, long R=0.21288.
-At matched +4B, raw scores 0.21607 / 0.17332; prompted leads by 0.03166 / 0.03956.
-Native-token budgets imply different protein exposure; format causality is unresolved.
-Raw gains 0.03099 / 0.03481 from 6B to 9B; the earlier tie did not establish a plateau.
-Existing exp232 m2-p06 remains higher at 0.51980 / 0.50173.
-An exact sequence-KNN null over the expanded corpus has not been computed.
-GPU parents continue: raw 13.560B tokens / step 85,112; prompted 5.980B / step 130,692.
-These are additional tokens in the full 235.49M-document phase.
-Latest scores above remain the completed 9B raw / 4B prompted milestones.
-Five newer requests await scores: raw 10B–13B and prompted 5B.
-Both evaluation roots report Terminated by user; restart clarification is pending.
-Full results: 1,261 timing rows, 25,220 metric rows, 52 worker provenance files.
+Both evaluators restarted with 12 H100 shards per checkpoint, 40 GPUs total including training.
+Same 97 eval-val proteins × 100 terminated rollouts; all checkpoint/output I/O stays in RNO2A.
+New raw +10B point: all R=0.28560, long R=0.24710.
+New prompted +5B point: all R=0.28089, long R=0.24608.
+New prompted +6B point: all R=0.29649, long R=0.26331.
+Raw improves by 0.01396 / 0.01429 from 9B to 10B.
+Prompted improves by 0.04876 / 0.05042 from 4B to 6B.
+At matched 6B, raw scores 0.24064 / 0.19799: prompted leads by 0.05585 / 0.06531.
+Equal native-token budgets imply different protein exposure; format causality is unresolved.
+Periodic record: 16 checkpoints, 1,552 timing rows, 31,040 metric rows, 88 worker provenance files.
+All new aggregate means independently match the complete per-protein tables.
+Prompted is caught up. Raw 11B is scoring; 12B and 13B remain queued.
+The curve plots 20 complete pilot/interim/periodic checkpoints, with CSV and vector SVG exports.
+Eval-test remains untouched. An exact expanded-corpus sequence-KNN null is unavailable.
 
 ## TPU forks — transfer complete, validation queued
 

@@ -1,6 +1,8 @@
 """Plot all committed 4B pilot and continuation eval-val measurements."""
 
+import csv
 import json
+import math
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -8,61 +10,121 @@ import matplotlib.pyplot as plt
 from build_summary import save_plot_with_meta
 
 
+def measurements(here: Path) -> list[dict]:
+    """Read complete checkpoint measurements and retain their exposure/provenance."""
+    rows = []
+    for document_format in ("contacts_v1", "prompted"):
+        files = [
+            here / "data/eval_val_pilot" / document_format / "summary.json",
+            here / "data/eval_val_interim_20261021" / document_format / "summary.json",
+            *sorted(
+                (here / "data/eval_val_periodic" / document_format).glob(
+                    "step-*/summary.json"
+                )
+            ),
+        ]
+        seen = set()
+        for filename in files:
+            result = json.loads(filename.read_text())
+            if (
+                not result["complete"]
+                or result["n_units"] != 97
+                or result["n_rollouts"] != 100
+                or result["unfinished_rollouts"] != 0
+                or result["document_format"] != document_format
+            ):
+                raise ValueError(f"Incomplete or mismatched measurement: {filename}")
+            tokens = 0 if "eval_val_pilot" in filename.parts else result["tokens"]
+            if tokens in seen:
+                raise ValueError(
+                    f"Duplicate checkpoint exposure: {document_format}, {tokens}"
+                )
+            seen.add(tokens)
+            for contact_range in ("all", "long"):
+                rows.append(
+                    {
+                        "format": document_format,
+                        "phase_tokens": tokens,
+                        "phase_tokens_billions": tokens / 1e9,
+                        "step": result.get("step", ""),
+                        "range": contact_range,
+                        "n_proteins": result["valid_r_precision"][contact_range],
+                        "r_precision": result["r_precision"][contact_range],
+                        "checkpoint": result["checkpoint"],
+                        "summary": str(filename.relative_to(here)),
+                    }
+                )
+    return sorted(
+        rows, key=lambda row: (row["format"], row["range"], row["phase_tokens"])
+    )
+
+
 def main() -> None:
     here = Path(__file__).parent
-    fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharex=True)
+    rows = measurements(here)
+    with (here / "data/eval_val_progress.csv").open("w") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.6), sharex=True, sharey=True)
+    upper = math.ceil((max(row["r_precision"] for row in rows) + 0.025) * 20) / 20
     for document_format, label, color in [
         ("contacts_v1", "contacts-v1", "#2166ac"),
         ("prompted", "Prompted", "#b35806"),
     ]:
-        pilot = json.loads(
-            (here / "data/eval_val_pilot" / document_format / "summary.json").read_text()
-        )
-        interim = json.loads(
-            (
-                here
-                / "data/eval_val_interim_20261021"
-                / document_format
-                / "summary.json"
-            ).read_text()
-        )
-        periodic = [
-            json.loads(path.read_text())
-            for path in (here / "data/eval_val_periodic" / document_format).glob(
-                "step-*/summary.json"
-            )
-        ]
-        continuation = sorted([interim, *periodic], key=lambda result: result["tokens"])
         for ax, contact_range in zip(axes, ["all", "long"], strict=True):
+            points = [
+                row
+                for row in rows
+                if row["format"] == document_format and row["range"] == contact_range
+            ]
             ax.plot(
-                [0, *(result["tokens"] / 1e9 for result in continuation)],
-                [
-                    pilot["r_precision"][contact_range],
-                    *(result["r_precision"][contact_range] for result in continuation),
-                ],
+                [row["phase_tokens_billions"] for row in points],
+                [row["r_precision"] for row in points],
                 marker="o",
+                markersize=4,
                 color=color,
                 label=label,
             )
+            last = points[-1]
+            ax.annotate(
+                f"{last['r_precision']:.3f}",
+                (last["phase_tokens_billions"], last["r_precision"]),
+                xytext=(5, 6),
+                textcoords="offset points",
+                color=color,
+                fontsize=10,
+            )
             ax.set_title(f"{contact_range.capitalize()}-range contacts")
-            ax.set_xlabel("Additional full-corpus tokens (billions)")
+            ax.set_xlabel("Additional full-corpus native tokens (billions)")
             ax.set_ylabel("Mean per-protein R-precision")
-            ax.set_ylim(bottom=0, top=0.28)
+            ax.set_ylim(bottom=0, top=upper)
+            ax.margins(x=0.09)
+            ax.spines[["top", "right"]].set_visible(False)
             ax.grid(alpha=0.2)
     axes[0].legend(frameon=False)
     fig.suptitle("Qwen3.5-4B: 97 eval-val proteins × 100 completed rollouts")
-    fig.tight_layout()
-    save_plot_with_meta(
-        fig,
-        here / "plots/eval_val_progress.png",
-        caption=(
-            "Measured checkpoints only; zero additional tokens is the corresponding "
-            "1B-token AFDB pilot. Native-token counts imply different protein exposure "
-            "between formats. Differences below approximately 0.005 are evaluator ties. "
-            "Neither continuation is near its 100B target."
-        ),
-        dpi=160,
+    fig.text(
+        0.5,
+        0.015,
+        "0 = corresponding 1B-token AFDB pilot; equal native-token counts do not imply equal protein exposure.",
+        ha="center",
+        fontsize=9,
+        color="#555555",
     )
+    fig.tight_layout(rect=(0, 0.055, 1, 1))
+    for extension in ("png", "svg"):
+        save_plot_with_meta(
+            fig,
+            here / f"plots/eval_val_progress.{extension}",
+            caption=(
+                "Measured checkpoints only; zero additional tokens is the corresponding "
+                "1B-token AFDB pilot. Native-token counts imply different protein exposure "
+                "between formats. Differences below approximately 0.005 are evaluator ties. "
+                "Neither continuation is near its 100B target."
+            ),
+            dpi=160,
+        )
     plt.close(fig)
 
 

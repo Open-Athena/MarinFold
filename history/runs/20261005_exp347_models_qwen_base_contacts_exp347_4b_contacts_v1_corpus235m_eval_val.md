@@ -31,6 +31,7 @@ marinfold_run:
   - /timodonnell/exp347-4b-contacts-v1-corpus235m-eval-val-a03
   - /timodonnell/exp347-4b-contacts-v1-corpus235m-eval-val-a05
   - /timodonnell/exp347-4b-contacts-v1-corpus235m-eval-val-a06
+  - /timodonnell/exp347-4b-contacts-v1-corpus235m-eval-val-a07
 ---
 # 2026-10-05 · exp347_models_qwen_base_contacts · exp347-4b-contacts-v1-corpus235m-eval-val
 
@@ -77,3 +78,7 @@ The regular driver remains active at the 1B-additional-token cadence.
 October 22: prior east a01 driver confirmed killed before replacement. The a02 driver is live in RNO2A, watches the regional request prefix, and explicitly places GPU children there. New checkpoint exports and evaluation results stay in marin-rno2a. Evaluation cadence remains 1B additional tokens; October 21 remains the latest completed R-precision point.
 
 October 30: all six periodic milestones (1B through6B) are complete. Latest step39284/6000012722 tokens: all R=0.2406436906219813, long R=0.19799282973966936. Each97 proteins x100 terminated rollouts. Driver a06 remains live, caught up with the request queue. Small artifacts and per-input timings saved under experiments/exp347_models_qwen_base_contacts/data/eval_val_periodic/contacts_v1/.
+
+November 5: user explicitly authorized restarting the stopped evaluator. Replacement a07 was accepted at 18:54:21 UTC in RNO2A, retaining this W&B identity and the 1B-token schedule. It uses 12 independent single-H100 shards per checkpoint; combined evaluation/training reservations remain within the 48-H100 cap. The 97-protein, 100-rollout contract and checkpoint-local outputs are unchanged. Recovered results and timings are collected with `collect_periodic_evals.py`, checked against per-protein tables and worker checkpoint identities, and plotted by `plot_eval_progress.py`.
+
+November 5 refreshed result: step 64544 / 10,000,117,732 additional tokens; all-range R=0.28559874, long-range R=0.24709758. All 97 proteins completed 100 rollouts. Full per-protein metrics, timings, and 12 worker provenance records are committed for each new checkpoint.

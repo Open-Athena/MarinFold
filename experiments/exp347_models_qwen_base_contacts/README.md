@@ -512,6 +512,60 @@ Before admitting production forks, the remaining gates are:
 
 ## Results
 
+### Evaluators restarted and learning curves refreshed — November 5
+
+The user explicitly authorized restarting both stopped evaluation drivers.
+`/timodonnell/exp347-4b-contacts-v1-corpus235m-eval-val-a07` and
+`/timodonnell/exp347-4b-prompted-corpus235m-eval-val-a06` were accepted at
+18:54:21 and 18:55:05 UTC, retaining their existing W&B identities and the
+1B-additional-token cadence. Each checkpoint uses 12 independent single-H100
+workers at batch priority in RNO2A. Together with the two eight-H100 trainers,
+this reserves at most 40 H100s, within the approved 48-GPU cap. Checkpoint and
+result I/O remains local. Parallelism changes neither per-protein seeds nor the
+97-protein, 100-rollout measurement contract.
+
+Three new complete measurements are now verified:
+
+| Format | Additional tokens | Checkpoint step | All-range R | Long-range R |
+| --- | ---: | ---: | ---: | ---: |
+| contacts-v1 | 10,000,117,732 | 64,544 | 0.28560 | 0.24710 |
+| prompted | 5,000,028,978 | 109,481 | 0.28089 | 0.24608 |
+| prompted | 6,000,033,097 | 131,069 | 0.29649 | 0.26331 |
+
+Raw gains **0.01396 / 0.01429** all/long R from 9B to 10B. Prompted gains
+**0.04876 / 0.05042** from 4B to 6B. At matched 6B native tokens, raw scores
+0.24064 / 0.19799, so prompted leads by **0.05585 / 0.06531**. Equal native-token
+counts imply different protein exposure; this is a comparison of the complete
+formatting treatments, not a causal estimate of natural-language prompting.
+
+Latest all-range viral/nonviral R is 0.23727 / 0.28879 for raw and
+0.25471 / 0.29925 for prompted (six / 91 proteins). Long-range values are
+0.21495 / 0.24922 and 0.21058 / 0.26678. These cuts are indicative given the
+small viral subset. Eval-test remains untouched; the frozen low-MSA FoldBench
+cut is outside eval-val. No new expanded-corpus sequence-KNN null is claimed.
+
+The periodic record now has **16 complete checkpoints**, **1,552 timing rows**,
+**31,040 metric rows**, and **88 worker provenance files**. Every new protein
+completed all 100 rollouts. `collect_periodic_evals.py` verifies target membership,
+metric coverage, per-protein timings, matching checkpoint objects across workers,
+and agreement of recomputed means with committed results before importing a point.
+
+[`plot_eval_progress.py`](plot_eval_progress.py) renders all 20 measured pilot,
+interim, and periodic checkpoints as separate overall/long-range learning curves.
+Zero on the x-axis is the corresponding completed 1B-token AFDB pilot; the axis
+then tracks additional full-corpus native tokens. The plot includes no estimates
+for unscored checkpoints and now scales its y-axis to the observed values.
+Download the [PNG](plots/eval_val_progress.png), [SVG](plots/eval_val_progress.svg),
+or [CSV with exact checkpoint/token provenance](data/eval_val_progress.csv).
+
+Prompted is caught up through 6B. Contacts-v1 11B is being scored, with 12B and
+13B following in the persistent driver's queue. These three checkpoints do not
+yet have aggregate values and are not plotted. Both drivers continue watching
+for subsequent 1B-token requests. The updated figure and small result artifacts
+are published to the public HF bucket; all results remain reproducible from
+committed tables. Changed Python files pass Ruff and Pyrefly, and all 11 focused
+evaluation contract/aggregation/locality tests pass.
+
 ### TPU validation submitted; GPU progress — November 5
 
 The user approved the one-time transfer on November 2. The regional staging job

@@ -31,6 +31,7 @@ marinfold_run:
   - /timodonnell/exp347-4b-prompted-corpus235m-eval-val-a03
   - /timodonnell/exp347-4b-prompted-corpus235m-eval-val-a04
   - /timodonnell/exp347-4b-prompted-corpus235m-eval-val-a05
+  - /timodonnell/exp347-4b-prompted-corpus235m-eval-val-a06
 ---
 # 2026-10-05 · exp347_models_qwen_base_contacts · exp347-4b-prompted-corpus235m-eval-val
 
@@ -75,3 +76,7 @@ The regular driver remains active at the 1B-additional-token cadence.
 October 22: prior east a01 driver confirmed killed before replacement. The a02 driver is live in RNO2A, watches the regional request prefix, and explicitly places GPU children there. New checkpoint exports and evaluation results stay in marin-rno2a. Evaluation cadence remains 1B additional tokens; October 21 remains the latest completed R-precision point.
 
 October 30: all three periodic milestones (1B through3B) are complete. Latest step65882/3000024329 tokens: all R=0.23440299005572018, long R=0.19767224064475736. Each97 proteins x100 terminated rollouts. Driver a05 remains live, caught up with the request queue. Small artifacts and per-input timings saved under experiments/exp347_models_qwen_base_contacts/data/eval_val_periodic/prompted/.
+
+November 5: user explicitly authorized restarting the stopped evaluator. Replacement a06 was accepted at 18:55:05 UTC in RNO2A, retaining this W&B identity and the 1B-token schedule. It uses 12 independent single-H100 shards per checkpoint; combined evaluation/training reservations remain within the 48-H100 cap. The 97-protein, 100-rollout contract and checkpoint-local outputs are unchanged. Recovered results and timings are collected with `collect_periodic_evals.py`, checked against per-protein tables and worker checkpoint identities, and plotted by `plot_eval_progress.py`.
+
+November 5 refreshed result: step 131069 / 6,000,033,097 additional tokens; all-range R=0.29649409, long-range R=0.26330529. All 97 proteins completed 100 rollouts. Full per-protein metrics, timings, and 12 worker provenance records are committed for each new checkpoint.

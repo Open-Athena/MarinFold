@@ -1,0 +1,5 @@
+{
+  "script": "plot_eval_progress.py",
+  "args": [],
+  "caption": "Measured checkpoints only; zero additional tokens is the corresponding 1B-token AFDB pilot. Native-token counts imply different protein exposure between formats. Differences below approximately 0.005 are evaluator ties. Neither continuation is near its 100B target."
+}

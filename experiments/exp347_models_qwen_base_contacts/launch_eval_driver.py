@@ -118,10 +118,10 @@ def main() -> None:
             group="exp347-qwen-base-contacts",
             config={
                 "training_run": args.training_run,
-                "shards": args.shards,
                 "universe": "legacy-e8-reference" if args.reference_e8 else "eval-val",
             },
         ) as run:
+            run.config.update({"shards": args.shards}, allow_val_change=True)
             history_command = [
                 "uv",
                 "run",
