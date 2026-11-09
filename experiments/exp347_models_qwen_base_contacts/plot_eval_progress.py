@@ -62,12 +62,21 @@ def measurements(here: Path) -> list[dict]:
 def main() -> None:
     here = Path(__file__).parent
     rows = measurements(here)
+    reference = json.loads((here / "data/eval_val_default_reference.json").read_text())
+    if reference["eval_set"] != "eval-val" or reference["n_proteins"] != 97:
+        raise ValueError(
+            "Default-model reference must use the same 97-protein eval-val set"
+        )
     with (here / "data/eval_val_progress.csv").open("w") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
         writer.writeheader()
         writer.writerows(rows)
     fig, axes = plt.subplots(1, 2, figsize=(12, 4.6), sharex=True, sharey=True)
-    upper = math.ceil((max(row["r_precision"] for row in rows) + 0.025) * 20) / 20
+    highest = max(
+        max(row["r_precision"] for row in rows),
+        max(reference["r_precision"].values()),
+    )
+    upper = math.ceil((highest + 0.025) * 20) / 20
     for document_format, label, color in [
         ("contacts_v1", "contacts-v1", "#2166ac"),
         ("prompted", "Prompted", "#b35806"),
@@ -102,7 +111,26 @@ def main() -> None:
             ax.margins(x=0.09)
             ax.spines[["top", "right"]].set_visible(False)
             ax.grid(alpha=0.2)
-    axes[0].legend(frameon=False)
+    for ax, contact_range in zip(axes, ["all", "long"], strict=True):
+        value = reference["r_precision"][contact_range]
+        ax.axhline(
+            value,
+            color="#555555",
+            linestyle=":",
+            linewidth=1.8,
+            label=reference["label"],
+        )
+        ax.annotate(
+            f"{value:.3f}",
+            (0.98, value),
+            xycoords=("axes fraction", "data"),
+            xytext=(0, 5),
+            textcoords="offset points",
+            ha="right",
+            color="#555555",
+            fontsize=10,
+        )
+    axes[0].legend(frameon=False, loc="lower right")
     fig.suptitle("Qwen3.5-4B: 97 eval-val proteins × 100 completed rollouts")
     fig.text(
         0.5,
@@ -121,6 +149,8 @@ def main() -> None:
                 "Measured checkpoints only; zero additional tokens is the corresponding "
                 "1B-token AFDB pilot. Native-token counts imply different protein exposure "
                 "between formats. Differences below approximately 0.005 are evaluator ties. "
+                "Dotted lines show the current default exp277 1.5B step-266344 on the same "
+                "97 eval-val proteins, with pinned provenance in data/eval_val_default_reference.json. "
                 "Neither continuation is near its 100B target."
             ),
             dpi=160,

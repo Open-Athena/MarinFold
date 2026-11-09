@@ -7,16 +7,17 @@ from pathlib import Path
 def main() -> None:
     here = Path(__file__).parent
     destination = "hf://buckets/open-athena/MarinFold/data/exp347-qwen-base-contacts"
-    subprocess.run(
-        [
-            "hf",
-            "buckets",
-            "cp",
-            str(here / "data/eval_val_progress.csv"),
-            f"{destination}/data/eval_val_progress.csv",
-        ],
-        check=True,
-    )
+    for filename in ("eval_val_progress.csv", "eval_val_default_reference.json"):
+        subprocess.run(
+            [
+                "hf",
+                "buckets",
+                "cp",
+                str(here / "data" / filename),
+                f"{destination}/data/{filename}",
+            ],
+            check=True,
+        )
     for directory in [
         "data/e8_reference",
         "data/eval_val_pilot",

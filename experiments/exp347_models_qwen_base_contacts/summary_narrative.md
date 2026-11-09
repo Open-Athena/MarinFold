@@ -28,6 +28,8 @@ Prompted remains at +6B: all R=0.29649, long R=0.26331.
 Equal native-token budgets imply different protein exposure; format causality is unresolved.
 Periodic record: 25 checkpoints, 2,425 timing rows, 48,500 metric rows, 196 provenance files.
 The curve plots 29 complete pilot/interim/periodic checkpoints, with CSV and SVG exports.
+Dotted reference: current default exp277 1.5B, step266344; all R=0.55375, long R=0.53802.
+Reference uses the same97 eval-val proteins; registry and score-table provenance are pinned.
 Eval-test remains untouched. An exact expanded-corpus sequence-KNN null is unavailable.
 
 ## Execution and recovery — November 9

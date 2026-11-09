@@ -557,6 +557,12 @@ The [curve](plots/eval_val_progress.png), [SVG](plots/eval_val_progress.svg), an
 checkpoints. The periodic record has **25 milestones, 2,425 timing rows, 48,500
 metric rows, and 196 worker provenance files**.
 
+Dotted horizontal lines mark the current default, **exp277 1.5B, step 266344**:
+**0.55375 all-range / 0.53802 long-range R-precision** on the same 97 eval-val
+proteins. The registry and original score table were checked on November 9;
+[data/eval_val_default_reference.json](data/eval_val_default_reference.json) pins
+the model, exact values, source commit, and score-table checksum.
+
 The first TPU hardware gate reached four v5p chips in us-east5-a, then failed
 before an optimizer update: Transformers serializes the text weights with a
 `model.language_model` prefix, while the live PyTorch parameters and optimizer

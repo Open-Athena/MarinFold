@@ -1,0 +1,18 @@
+{
+  "model": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+  "label": "Current default (exp277, 1.5B)",
+  "step": 266344,
+  "checkpoint": "https://huggingface.co/buckets/open-athena/MarinFold/tree/checkpoints/contacts-v1-exp277-m2-p06-full-epoch-1.5B/hf/step-266344",
+  "eval_set": "eval-val",
+  "n_proteins": 97,
+  "metric": "mean per-protein R-precision",
+  "recipe": "exp82 rollout + resample",
+  "r_precision": {
+    "all": 0.5537468341913647,
+    "long": 0.5380178272779218
+  },
+  "registry_verified_utc": "2026-11-09T16:42:29.356789+00:00",
+  "registry_source": "https://github.com/Open-Athena/MarinFold/blob/a2250338b35c864a73dde357a50c5ffb355b2b8e/marinfold/marinfold/MODELS.yaml",
+  "metric_source": "https://github.com/Open-Athena/MarinFold/blob/a2250338b35c864a73dde357a50c5ffb355b2b8e/experiments/exp277_models_single_mpnn_pilot/data/eval_rollout_v2/subset_aggregate_metrics.csv",
+  "metric_source_sha256": "6dd97981ce1521bf23e79323c93fd1c0e502465004a00bd0e3f37d9954e51265"
+}
