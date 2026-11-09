@@ -1,5 +1,22 @@
 # MarinFold Updates
 
+## Week of November 9, 2026
+
+### Last week
+
+- **Evaluation: two epochs close much of the ProteinMPNN-only accuracy gap.** Kind of interesting: we can train a model on *no natural sequences whatsoever* and still have comparable results to our current default. The best completed model scores **0.525 on eval-val / 0.674 on eval-denovo**, versus **0.463 / 0.665** after one epoch and **0.555 / 0.696** for the full-data default. The checkpoint is published. In the expanded diversity study, its excess false contacts over the default falls from **53% to 20%**, but we still do not establish reduced dependence on MSA depth. ([#364](https://github.com/Open-Athena/MarinFold/issues/364), [#373](https://github.com/Open-Athena/MarinFold/issues/373))
+- **Training: the NLP-pretrained 4B Qwen models continue to improve.** Latest eval-val R-precision is **0.338 at 19B additional tokens** for contacts-v1 and **0.296 at 6B** for natural-language prompts, up from **0.272 / 0.248** last week. Both remain below the scratch-trained default. Contacts-v1 is still training; W&B marks the prompted run failed since November 5, at 6.17B tokens. ([#347](https://github.com/Open-Athena/MarinFold/issues/347), [contacts-v1 run](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-4b-contacts_v1-corpus235m-100bt), [prompted run](https://wandb.ai/open-athena/MarinFold/runs/exp347-qwen35-4b-prompted-corpus235m-100bt))
+- **Evaluation: Gideon's first MD comparison covers 80 ATLAS proteins.** Contact-frequency prediction error (Brier score; lower is better) is **0.104 for MarinFold / 0.102 for AlphaFold2** overall. On the 59 proteins where MarinFold's samples agree most, it improves to **0.083 / 0.104**. If Gideon will be at meeting today let's discuss these results and followups. ([#375](https://github.com/Open-Athena/MarinFold/issues/375))
+
+### Upcoming
+
+- Tim: Resume the prompted **NLP-pretrained 4B Qwen** run, continue training and periodic contact evaluations, and finish validating the TPU continuation. ([#347](https://github.com/Open-Athena/MarinFold/issues/347))
+- Tim: work on blog post
+- Gideon: potentially follow up on ([#375](https://github.com/Open-Athena/MarinFold/issues/375))
+- Jacob: potentially follow up on probing contact-decision circuits and test fine-tuning on ATLAS MD frames. ([#372](https://github.com/Open-Athena/MarinFold/issues/372), [#376](https://github.com/Open-Athena/MarinFold/issues/376))
+
+---
+
 ## Week of November 2, 2026
 
 ### Last two weeks
