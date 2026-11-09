@@ -22,6 +22,21 @@ def parameter_shapes(config: dict) -> dict[str, tuple[int, ...]]:
     return {name: tuple(param.shape) for name, param in model.named_parameters()}
 
 
+def serialized_parameter_names(shapes: Mapping[str, tuple[int, ...]]) -> dict[str, str]:
+    """Map Qwen's saved text-weight names to its in-memory parameter names.
+
+    Transformers 5.3 saves this text-only model under ``model.language_model``
+    through its checkpoint conversion mapping, while ``named_parameters`` uses
+    ``model``. Optimizer partition reconstruction must retain the latter names
+    and their original order. The tied LM head has no separate saved tensor.
+    """
+    if any(not name.startswith("model.") for name in shapes):
+        raise ValueError("Expected the tied Qwen text model's unique parameters")
+    return {
+        "model.language_model." + name.removeprefix("model."): name for name in shapes
+    }
+
+
 def zero_partitions(
     shapes: Mapping[str, tuple[int, ...]], world: int = 8
 ) -> list[list[str]]:

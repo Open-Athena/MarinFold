@@ -512,6 +512,63 @@ Before admitting production forks, the remaining gates are:
 
 ## Results
 
+### Training and evaluation recovery — November 9
+
+Contacts-v1 continues on the original RNO2A a08 job and reached **19,473,906,821
+additional tokens** at step **123,548**, 19.47% of its 100B target. Its complete
+step-123534 recovery checkpoint was independently verified in the local bucket.
+Prompted a09 failed on November 5 while uploading a model shard: three bounded
+storage timeouts ended the process. The previous complete checkpoint, step
+**133,790 / 6,166,688,646 tokens**, retains all 20 objects, including all eight
+optimizer shards. Current RNO PUT/GET checks pass, and the raw parent continues
+writing there. The unchanged prompted configuration was resubmitted as
+`/timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a10` at **16:11:35 UTC**;
+initial state is pending allocation. Both original W&B identities, 100B-token
+budgets, and regional checkpoint roots are retained.
+
+Both periodic evaluation drivers remain live and are caught up. Nine new
+contacts-v1 milestones, 11B through 19B, passed the collector's target, rollout,
+timing, aggregate, and checkpoint-provenance checks. Each uses 97 eval-val
+proteins and 100 terminated rollouts:
+
+| Format | Additional tokens | Checkpoint step | All-range R | Long-range R |
+| --- | ---: | ---: | ---: | ---: |
+| contacts-v1 | 11,000,027,981 | 69,608 | 0.29209 | 0.25775 |
+| contacts-v1 | 12,000,038,417 | 77,453 | 0.30147 | 0.27212 |
+| contacts-v1 | 13,000,205,448 | 82,837 | 0.31267 | 0.27641 |
+| contacts-v1 | 14,000,057,291 | 89,178 | 0.31194 | 0.27831 |
+| contacts-v1 | 15,000,119,442 | 96,226 | 0.31784 | 0.28906 |
+| contacts-v1 | 16,000,091,018 | 100,949 | 0.33107 | 0.29403 |
+| contacts-v1 | 17,000,014,465 | 108,421 | 0.33411 | 0.30294 |
+| contacts-v1 | 18,000,062,164 | 114,806 | **0.34703** | **0.31652** |
+| contacts-v1 | 19,000,027,107 | 119,246 | 0.33788 | 0.30936 |
+| prompted (unchanged) | 6,000,033,097 | 131,069 | 0.29649 | 0.26331 |
+
+The latest raw score gains **0.05228 / 0.06227** all/long R over 10B, but is
+**0.00915 / 0.00716 lower** than the current best at 18B. This one decrease does
+not establish convergence. The 19B viral/nonviral all-range means are
+**0.25658 / 0.34324** (6 / 91 proteins), and long-range means are
+**0.23415 / 0.31432**. Equal native-token budgets still imply different protein
+exposure; these measurements do not isolate a prompting effect. Eval-test remains
+unread and an exact expanded-corpus sequence-KNN null remains unavailable.
+
+The [curve](plots/eval_val_progress.png), [SVG](plots/eval_val_progress.svg), and
+[CSV](data/eval_val_progress.csv) now include 29 measured pilot/interim/periodic
+checkpoints. The periodic record has **25 milestones, 2,425 timing rows, 48,500
+metric rows, and 196 worker provenance files**.
+
+The first TPU hardware gate reached four v5p chips in us-east5-a, then failed
+before an optimizer update: Transformers serializes the text weights with a
+`model.language_model` prefix, while the live PyTorch parameters and optimizer
+use `model`. The converter now maps those names explicitly without changing the
+optimizer enumeration. A real small-model `save_pretrained`/safetensors round
+trip reproduces every parameter exactly; all **426** frozen 4B index entries
+are accounted for. Eight-rank optimizer reconstruction still passes. The bounded
+validation retry `exp347-tpu-contacts_v1-validate-a03` was accepted at
+**16:13:29 UTC** with the same regional inputs and is pending allocation. **Neither TPU production fork is training yet**; full hardware
+save/restore validation and the regional periodic evaluation bridge are still
+required.
+
 ### Evaluators restarted and learning curves refreshed — November 5
 
 The user explicitly authorized restarting both stopped evaluation drivers.

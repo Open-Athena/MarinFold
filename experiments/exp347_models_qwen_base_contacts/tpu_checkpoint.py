@@ -17,7 +17,12 @@ from jax.experimental import multihost_utils
 from safetensors.numpy import load as load_safetensors
 
 from tpu_model import convert_parameters
-from tpu_state import decode_rank, parameter_shapes, zero_partitions
+from tpu_state import (
+    decode_rank,
+    parameter_shapes,
+    serialized_parameter_names,
+    zero_partitions,
+)
 
 ROOT = "gs://marin-us-east5/protein-structure/MarinFold/exp347_qwen_base_contacts"
 LEDGER = ROOT + "/transfers/20261102-v1"
@@ -73,8 +78,9 @@ def load_parent(
     if actual_config != source_config:
         raise ValueError("Source model configuration changed")
     shapes = parameter_shapes(source_config)
+    saved_names = serialized_parameter_names(shapes)
     index = read_json(fs, source + "/model/model.safetensors.index.json")
-    if set(index["weight_map"]) != set(shapes):
+    if set(index["weight_map"]) != set(saved_names):
         raise ValueError("Source safetensors do not cover all unique HF parameters")
     weights = {}
     for filename in sorted(set(index["weight_map"].values())):
@@ -84,7 +90,7 @@ def load_parent(
             name for name, file in index["weight_map"].items() if file == filename
         }:
             raise ValueError("Weight shard differs from its safetensors index")
-        weights.update(shard)
+        weights.update({saved_names[name]: value for name, value in shard.items()})
     for name, value in weights.items():
         if (
             tuple(value.shape) != shapes[name]

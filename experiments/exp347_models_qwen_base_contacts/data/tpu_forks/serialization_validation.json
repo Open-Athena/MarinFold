@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "observed_at_utc": "2026-11-09T16:12:24.238758+00:00",
+  "source_snapshot": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-contacts_v1-corpus235m-tpu-east5/source/step-59319",
+  "source_config_sha256": "6b8d3d9ddb74b7ac684a44bee6e458ed1e23de14342aff60b327333995a7dfbd",
+  "source_index_sha256": "994c058945cdd8cd16b67f5a4f3e7346a6dbc6328232b70f0c7b3cd8b064e622",
+  "unique_parameters": 426,
+  "serialized_prefix": "model.language_model.",
+  "in_memory_prefix": "model.",
+  "missing_parameters": [],
+  "extra_parameters": [],
+  "roundtrip_test": "test_tpu_state.py::test_saved_qwen_parameters_match_optimizer_names",
+  "optimizer_test": "test_tpu_state.py::test_decode_matches_real_zero_partitions",
+  "scope": "Index coverage and exact small-model save/read round trip. Full-size TPU execution remains unvalidated."
+}

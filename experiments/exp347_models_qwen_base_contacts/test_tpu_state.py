@@ -1,5 +1,6 @@
 """Verify saved optimizer decoding against actual eight-rank PyTorch ZeRO-1."""
 
+import json
 from pathlib import Path
 
 import numpy as np
@@ -7,9 +8,52 @@ import pytest
 import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
+from safetensors.torch import load_file
 from torch.distributed.optim import ZeroRedundancyOptimizer
+from transformers import Qwen3_5ForCausalLM, Qwen3_5TextConfig
 
-from tpu_state import decode_rank, zero_partitions
+from tpu_state import (
+    decode_rank,
+    parameter_shapes,
+    serialized_parameter_names,
+    zero_partitions,
+)
+
+
+def test_saved_qwen_parameters_match_optimizer_names(tmp_path: Path) -> None:
+    source = json.loads(
+        (Path(__file__).parent / "data/tpu_forks/source_model_config.json").read_text()
+    )
+    source.update(
+        hidden_size=32,
+        intermediate_size=64,
+        num_hidden_layers=4,
+        num_attention_heads=4,
+        num_key_value_heads=2,
+        head_dim=16,
+        linear_key_head_dim=8,
+        linear_value_head_dim=8,
+        linear_num_key_heads=2,
+        linear_num_value_heads=4,
+        vocab_size=64,
+        eos_token_id=63,
+        layer_types=source["layer_types"][:4],
+    )
+    model = Qwen3_5ForCausalLM(Qwen3_5TextConfig(**source)).cpu()
+    model.save_pretrained(tmp_path, max_shard_size="20KB")
+    index = json.loads((tmp_path / "model.safetensors.index.json").read_text())
+    shapes = parameter_shapes(source)
+    names = serialized_parameter_names(shapes)
+    assert set(index["weight_map"]) == set(names)
+    restored = {}
+    for filename in set(index["weight_map"].values()):
+        restored.update(
+            {names[k]: v for k, v in load_file(tmp_path / filename).items()}
+        )
+    parameters = dict(model.named_parameters())
+    assert set(restored) == set(parameters) == set(shapes)
+    for name, tensor in restored.items():
+        torch.testing.assert_close(tensor, parameters[name], atol=0, rtol=0)
 
 
 def optimizer_worker(rank: int, root: str) -> None:

@@ -22,6 +22,7 @@ marinfold_run:
   - /timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a07
   - /timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a08
   - /timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a09
+  - /timodonnell/exp347-qwen35-4b-prompted-corpus235m-100bt-a10
 ---
 # 2026-10-05 · exp347_models_qwen_base_contacts · exp347-qwen35-4b-prompted-corpus235m-100bt
 
@@ -69,3 +70,5 @@ October 30: a07 failed October 27 at 12:35 UTC because CoreWeave suspended RNO w
 
 November 2: a08 failed November 1 at 11:20–11:21 UTC when RNO account writes were suspended again. Complete local checkpoint step 87225 / 4,021,851,548 tokens was independently verified with all 20 objects. Regional PUT/GET and a 5 MiB multipart UploadPart probe now pass; replacement a09 was submitted with the same full state and eight-H100 configuration. The 4B additional-token eval-val milestone scores all R=0.24773 / long R=0.21288, with 97 proteins and 100 terminated rollouts each.
 Recovery verified: new step 87,226 / 4,021,881,608 tokens, all 20 checkpoint objects complete in RNO; Iris and W&B both report running.
+
+November9: a09 failed November5 after three bounded checkpoint model-shard upload timeouts. Full local step133790/6166688646token recovery state verified (20objects, all8optimizer shards), current RNO PUT/GET passed. Replacement a10 accepted16:11:35UTC, pending allocation; same W&B identity,100B budget and1B evaluation cadence. No new training progress claimed yet.

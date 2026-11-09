@@ -1,0 +1,26 @@
+{
+  "request": {
+    "run_id": "exp347-qwen35-4b-contacts_v1-corpus235m-100bt",
+    "step": 114806,
+    "tokens": 18000062164,
+    "format": "contacts_v1",
+    "checkpoint": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-contacts_v1-corpus235m-100bt/hf/step-114806",
+    "final": false
+  },
+  "jobs": [
+    "/timodonnell/exp347-4b-contacts-v1-corpus235m-eval-val-a07/exp347-eval-21c6e0abc336-s00",
+    "/timodonnell/exp347-4b-contacts-v1-corpus235m-eval-val-a07/exp347-eval-21c6e0abc336-s01",
+    "/timodonnell/exp347-4b-contacts-v1-corpus235m-eval-val-a07/exp347-eval-21c6e0abc336-s02",
+    "/timodonnell/exp347-4b-contacts-v1-corpus235m-eval-val-a07/exp347-eval-21c6e0abc336-s03",
+    "/timodonnell/exp347-4b-contacts-v1-corpus235m-eval-val-a07/exp347-eval-21c6e0abc336-s04",
+    "/timodonnell/exp347-4b-contacts-v1-corpus235m-eval-val-a07/exp347-eval-21c6e0abc336-s05",
+    "/timodonnell/exp347-4b-contacts-v1-corpus235m-eval-val-a07/exp347-eval-21c6e0abc336-s06",
+    "/timodonnell/exp347-4b-contacts-v1-corpus235m-eval-val-a07/exp347-eval-21c6e0abc336-s07",
+    "/timodonnell/exp347-4b-contacts-v1-corpus235m-eval-val-a07/exp347-eval-21c6e0abc336-s08",
+    "/timodonnell/exp347-4b-contacts-v1-corpus235m-eval-val-a07/exp347-eval-21c6e0abc336-s09",
+    "/timodonnell/exp347-4b-contacts-v1-corpus235m-eval-val-a07/exp347-eval-21c6e0abc336-s10",
+    "/timodonnell/exp347-4b-contacts-v1-corpus235m-eval-val-a07/exp347-eval-21c6e0abc336-s11"
+  ],
+  "shards": 12,
+  "image": "vllm/vllm-openai@sha256:5f5e535216848d0c52159c8c13a0af04be5f6fe1a84e79914300610796f76d40"
+}

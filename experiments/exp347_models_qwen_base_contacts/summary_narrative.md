@@ -17,38 +17,41 @@ Exclude the same 5.11% of source rows when either complete document exceeds 16K.
 The pool has 4.493B raw tokens versus 1.290B prompted tokens.
 Equal token budgets imply different protein exposure.
 
-## Latest R-precision results — November 5
+## Latest R-precision results — November 9
 
-Both evaluators restarted with 12 H100 shards per checkpoint, 40 GPUs total including training.
-Same 97 eval-val proteins × 100 terminated rollouts; all checkpoint/output I/O stays in RNO2A.
-New raw +10B point: all R=0.28560, long R=0.24710.
-New prompted +5B point: all R=0.28089, long R=0.24608.
-New prompted +6B point: all R=0.29649, long R=0.26331.
-Raw improves by 0.01396 / 0.01429 from 9B to 10B.
-Prompted improves by 0.04876 / 0.05042 from 4B to 6B.
-At matched 6B, raw scores 0.24064 / 0.19799: prompted leads by 0.05585 / 0.06531.
+Nine new contacts-v1 milestones completed, 11B through 19B additional native tokens.
+Same 97 eval-val proteins × 100 terminated rollouts; all result I/O stays in RNO2A.
+Latest raw +19B: all R=0.33788, long R=0.30936.
+Best raw +18B: all R=0.34703, long R=0.31652.
+The latest point gains 0.05228 / 0.06227 from 10B, but dips 0.00915 / 0.00716 from 18B.
+Prompted remains at +6B: all R=0.29649, long R=0.26331.
 Equal native-token budgets imply different protein exposure; format causality is unresolved.
-Periodic record: 16 checkpoints, 1,552 timing rows, 31,040 metric rows, 88 worker provenance files.
-All new aggregate means independently match the complete per-protein tables.
-Prompted is caught up. Raw 11B is scoring; 12B and 13B remain queued.
-The curve plots 20 complete pilot/interim/periodic checkpoints, with CSV and vector SVG exports.
+Periodic record: 25 checkpoints, 2,425 timing rows, 48,500 metric rows, 196 provenance files.
+The curve plots 29 complete pilot/interim/periodic checkpoints, with CSV and SVG exports.
 Eval-test remains untouched. An exact expanded-corpus sequence-KNN null is unavailable.
 
-## TPU forks — transfer complete, validation queued
+## Execution and recovery — November 9
 
-Both 4B forks preserve frozen FP32 weights, Adam moments/step, eight logical data cursors,
-the 32-document global batch, and the remaining original 100B-token schedule.
-User approved the one-time transfer on November 2; all later TPU I/O stays in us-east5.
-Transfer completed November 2: 9,668 objects / 579.87 GB, all checksum-verified.
-Frozen parents: raw step 59,319 / 9.122B; prompted step 87,360 / 4.026B.
-The MaxText 4B adapter and full-state checkpoint converter are implemented.
-CPU PyTorch/JAX logits, loss, gradients, clipped Adam continuation all pass.
-Actual eight-rank optimizer reconstruction and exact Orbax resumed-update tests pass.
-All 61 experiment tests, Ruff and Pyrefly pass. Hardware feasibility is not yet established.
-Bounded two-update v5p-8 validation accepted November 5 at 16:10:07 UTC, us-east5-a.
-Iris root: exp347-tpu-contacts_v1-validate-a02; pending allocation at 16:10:33 UTC.
-Neither production TPU fork is training yet. Hardware recovery validation and the
-regional periodic evaluation bridge remain before production. GPU parents stay independent.
+Raw a08 continues: 19.474B / 100B tokens, step123548; complete local checkpoint verified.
+Prompted a09 stopped November5 after three model-shard upload timeouts.
+Previous complete state remains intact: step133790 / 6.167B tokens, all8 optimizer shards.
+Current RNO PUT/GET passes; raw continues writing in the same region.
+Prompted a10 submitted16:11:35UTC, same8H100s, optimizer, data cursor and100B schedule.
+Initial state pending allocation; no resumed progress is implied by submission.
+Both evaluation drivers are live and caught up; they retain the1B-token cadence.
+
+## TPU forks — checkpoint-name fix, validation retry
+
+Approved transfer complete: 9,668 objects / 579.87GB; all future TPU I/O stays in us-east5.
+Frozen parents: raw step59319 / 9.122B; prompted step87360 / 4.026B.
+First v5p-8 gate reached hardware, then failed before a training update.
+Saved HF keys use model.language_model; in-memory parameter names use model.
+Converter now explicitly maps those names, retaining optimizer order and full coverage.
+Actual saved-model roundtrip reproduces every weight exactly; all426 production keys match.
+Real eight-rank optimizer reconstruction passes; CPU logits/loss/gradient/Adam checks already passed.
+Bounded validation a03 accepted16:13:29UTC in us-east5-a; pending allocation.
+Neither production TPU fork is training yet. Full hardware recovery validation and
+regional periodic evaluation bridge remain unfinished; GPU parents stay independent.
 
 ## Pilot execution
 
@@ -87,7 +90,7 @@ Current source pool: 235,490,905 documents in 9,112 audited shards (exp343).
 Native AFDB/ESM + both MPNN redesign corpora + 3.4M complex train documents.
 Stream and tokenize online; preserve lineage holdouts and paired 16K filtering.
 235.49M is before filtering, not a measured eligible-protein count.
-Allocation: 8 training + up to 4 periodic evaluation H100s per 4B arm.
+Allocation: 8 training + up to 12 periodic evaluation H100s per 4B arm.
 The partial 2B pilot is inactive; October 21 interim evaluations used 12 workers each.
 Continue the respective 1B weights with fresh optimizer and data cursor.
 Both 4B single-protein 100-rollout evaluation smokes passed without truncation.
