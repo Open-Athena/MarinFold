@@ -1,0 +1,20 @@
+{
+  "python": "3.12.11",
+  "packages": {
+    "torch": "2.8.0+cu129",
+    "vllm": "0.11.0+cu129",
+    "transformers": "4.57.0",
+    "tokenizers": "0.22.1",
+    "numpy": "2.2.6",
+    "pandas": "3.0.6",
+    "scikit-learn": "1.9.1",
+    "fsspec": "2026.1.0",
+    "s3fs": "2026.1.0",
+    "aiobotocore": "2.26.0",
+    "marinfold": "0.1.0"
+  },
+  "image_tag": "vllm/vllm-openai:v0.11.0",
+  "resolved_arm64_manifest": "sha256:6755b858d1dd7098b48c4239c0c13533a9ebf2887ce4e3ae8b73dc6ab546c6e0",
+  "marinfold_revision": "d1bea417a64cc042ad931422200c3edeb873f2e0",
+  "job_id": "/bizon/exp354-gb-v1-20261009-production-00"
+}

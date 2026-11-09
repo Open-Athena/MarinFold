@@ -1,0 +1,3 @@
+eval_set,stratum,predictor,range,cut,value,n
+eval-val,all,seq-KNN (decontaminated corpus),all,R,0.4071491506034931,97
+eval-val,all,seq-KNN (decontaminated corpus),long,R,0.3921147797801755,97
