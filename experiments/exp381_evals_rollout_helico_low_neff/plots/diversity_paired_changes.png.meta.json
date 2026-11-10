@@ -1,0 +1,5 @@
+{
+  "script": "analyze_diversity.py",
+  "args": [],
+  "caption": "10,000 paired bootstrap resamples of ten proteins (seed381). Medoid confidence-selected TM-score is the original primary endpoint; farthest-point comparisons are secondary. Intervals describe protein variation conditional on one fixed random subset and the selected inference seeds."
+}

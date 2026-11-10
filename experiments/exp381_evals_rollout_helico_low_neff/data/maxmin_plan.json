@@ -1,0 +1,333 @@
+{
+  "original_plan_sha256": "89d866382fb322b0c06ccc42fc9bb06ac081f414b7559d1e167be3a9dd928ed8",
+  "protocol_sha256": "84c625c8cd43d26238e5459b0158b60d04b163f2aaad6fcfb32a05b364ce26f2",
+  "targets_sha256": "2829eff49e6f19f3188b77c43889d992a89dab05450b18ad30addd46a87c008c",
+  "models": {
+    "default": {
+      "nickname": "contacts-v1-exp277-m2-p06-full-epoch-1.5B",
+      "step": 266344,
+      "uri": "s3://marin-us-east-02a/MarinFold/exp277_models_single_mpnn_pilot/runs/contacts-v1-exp277-m2-p06-full-epoch-1.5B/hf/step-266344",
+      "files": [
+        {
+          "name": "config.json",
+          "size": 1726,
+          "etag": "09ffdb6012707caf6b8d9c07583ef014"
+        },
+        {
+          "name": "model-00001-of-00002.safetensors",
+          "size": 4979485528,
+          "etag": "c54c3d763a013dfb6fe5f6ea10b1142e-95"
+        },
+        {
+          "name": "model-00002-of-00002.safetensors",
+          "size": 906042048,
+          "etag": "cc2e3173c80dbc8d080dbfd6ca7b23df-18"
+        },
+        {
+          "name": "model.safetensors.index.json",
+          "size": 20882,
+          "etag": "bc0a5fd2c9aae096abae4caf9040c79c"
+        },
+        {
+          "name": "tokenizer.json",
+          "size": 64407,
+          "etag": "c4b3a16978e30eb150cca4fd8934b6ae"
+        },
+        {
+          "name": "tokenizer_config.json",
+          "size": 296,
+          "etag": "5acd13b50d727187034880bd78bcb928"
+        }
+      ]
+    },
+    "mpnn2-lr5e-4": {
+      "nickname": "contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
+      "step": 373768,
+      "uri": "s3://marin-us-east-02a/MarinFold/exp364_models_mpnn_only_lr_sweep/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B/hf/step-373768",
+      "wandb_url": "https://wandb.ai/open-athena/MarinFold/runs/contacts-v1-exp364-mpnn-only-2ep-lr5e-4-1.5B",
+      "final_lm_loss": 3.01328706741333,
+      "files": [
+        {
+          "name": "config.json",
+          "size": 1726,
+          "sha256": "eab3b5c0674c856a1205e3b35cf7c3a741fec06d02058e7d62f1c6b0d39ac0bd"
+        },
+        {
+          "name": "model-00001-of-00002.safetensors",
+          "size": 4979485528,
+          "sha256": "1c4a014d602dc071dd678537a73dd8e19ed1536a62074b034fac205e0e7c90af"
+        },
+        {
+          "name": "model-00002-of-00002.safetensors",
+          "size": 906042048,
+          "sha256": "43b10ec6460b48168b71e4b90a392e918fbd67fa6bfe88ef705b108a974d4634"
+        },
+        {
+          "name": "model.safetensors.index.json",
+          "size": 20882,
+          "sha256": "ab300748eea954731b85225d41fe452f12c5b812d30655d7741d83e9af43b587"
+        },
+        {
+          "name": "tokenizer.json",
+          "size": 64407,
+          "sha256": "72a7023f5196052476fe761205b70288b3219c7462d92e33f708e7b75fb71f24"
+        },
+        {
+          "name": "tokenizer_config.json",
+          "size": 296,
+          "sha256": "67f4c4f47e107a33f162449497f02298ba8262de21774dfbcb1b08d0d947fe24"
+        }
+      ]
+    }
+  },
+  "marinfold_revision": "d1bea417a64cc042ad931422200c3edeb873f2e0",
+  "prefix_sources": [
+    {
+      "model": "default",
+      "stem": "8eb9_A",
+      "temperature": 1.0,
+      "mode": "randomized",
+      "rollouts": 100,
+      "bytes": 123237,
+      "sha256": "6c901a6d45d14636e4c9c61e85b11d559ed4725c4dbe0b779da0da88ee1896f0",
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v1/raw/default/8eb9_A-t1.0-randomized.json.gz",
+      "eval_set": NaN
+    },
+    {
+      "model": "mpnn2-lr5e-4",
+      "stem": "8eb9_A",
+      "temperature": 1.0,
+      "mode": "randomized",
+      "rollouts": 100,
+      "bytes": 145110,
+      "sha256": "d968c2cb01d11f7638220838e43e870a0bba5f5b8400c7ba97a4de7ecd4155ba",
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v3-two-epoch/raw/mpnn2-lr5e-4/8eb9_A-t1.0-randomized.json.gz",
+      "eval_set": "eval-val"
+    },
+    {
+      "model": "default",
+      "stem": "7xp9_A",
+      "temperature": 1.0,
+      "mode": "randomized",
+      "rollouts": 100,
+      "bytes": 117845,
+      "sha256": "e20f82ce1872a6ee1fb2041e3892c0cbeac7ed30ef753cf10d88e41f7ac0d402",
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v1/raw/default/7xp9_A-t1.0-randomized.json.gz",
+      "eval_set": NaN
+    },
+    {
+      "model": "mpnn2-lr5e-4",
+      "stem": "7xp9_A",
+      "temperature": 1.0,
+      "mode": "randomized",
+      "rollouts": 100,
+      "bytes": 122806,
+      "sha256": "ef6d5eba6659ecf44baf1a4debdb57d2633d14c67524fccb03f15e514cecbabc",
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v3-two-epoch/raw/mpnn2-lr5e-4/7xp9_A-t1.0-randomized.json.gz",
+      "eval_set": "eval-val"
+    },
+    {
+      "model": "default",
+      "stem": "7xcd_A",
+      "temperature": 1.0,
+      "mode": "randomized",
+      "rollouts": 100,
+      "bytes": 284888,
+      "sha256": "17cb32dc2c6d6f08a8c49d3e808adbdf71e8828b4efb4bbfa426d56d22405b0d",
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v1/raw/default/7xcd_A-t1.0-randomized.json.gz",
+      "eval_set": NaN
+    },
+    {
+      "model": "mpnn2-lr5e-4",
+      "stem": "7xcd_A",
+      "temperature": 1.0,
+      "mode": "randomized",
+      "rollouts": 100,
+      "bytes": 301414,
+      "sha256": "b3679a0a072f244397352935e9bb23cc6d6a4d3b817efed82b5caa42e590e0b6",
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v3-two-epoch/raw/mpnn2-lr5e-4/7xcd_A-t1.0-randomized.json.gz",
+      "eval_set": "eval-val"
+    },
+    {
+      "model": "default",
+      "stem": "8ec3_A",
+      "temperature": 1.0,
+      "mode": "randomized",
+      "rollouts": 100,
+      "bytes": 249327,
+      "sha256": "9c9a8abca099d7ac1a4ecea2e7a2e855810a6a774035fbd5a0226f9476dac832",
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v1/raw/default/8ec3_A-t1.0-randomized.json.gz",
+      "eval_set": NaN
+    },
+    {
+      "model": "mpnn2-lr5e-4",
+      "stem": "8ec3_A",
+      "temperature": 1.0,
+      "mode": "randomized",
+      "rollouts": 100,
+      "bytes": 253633,
+      "sha256": "ba0a892a0ef600d9769ac379043d83fd5c4603deece0bdd04bdda2dd9447a99f",
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v3-two-epoch/raw/mpnn2-lr5e-4/8ec3_A-t1.0-randomized.json.gz",
+      "eval_set": "eval-val"
+    },
+    {
+      "model": "default",
+      "stem": "8cba_A",
+      "temperature": 1.0,
+      "mode": "randomized",
+      "rollouts": 100,
+      "bytes": 360233,
+      "sha256": "9925d50bd68432c9add7cbd7c1f682d1fd1d09ffdfa3b218ded0602af144396e",
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v1/raw/default/8cba_A-t1.0-randomized.json.gz",
+      "eval_set": NaN
+    },
+    {
+      "model": "mpnn2-lr5e-4",
+      "stem": "8cba_A",
+      "temperature": 1.0,
+      "mode": "randomized",
+      "rollouts": 100,
+      "bytes": 447757,
+      "sha256": "83b011b74976303d55540340c19facfe44f4ca82a4976cc08e39f5d0f9d04184",
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v3-two-epoch/raw/mpnn2-lr5e-4/8cba_A-t1.0-randomized.json.gz",
+      "eval_set": "eval-val"
+    },
+    {
+      "model": "default",
+      "stem": "8adc_A",
+      "temperature": 1.0,
+      "mode": "randomized",
+      "rollouts": 100,
+      "bytes": 393124,
+      "sha256": "7bfcffdef97aaf3438d68ec4d46b60e957765a9512029ea09ff9c6e5704420b6",
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v1/raw/default/8adc_A-t1.0-randomized.json.gz",
+      "eval_set": NaN
+    },
+    {
+      "model": "mpnn2-lr5e-4",
+      "stem": "8adc_A",
+      "temperature": 1.0,
+      "mode": "randomized",
+      "rollouts": 100,
+      "bytes": 399145,
+      "sha256": "dda1b7da9b845e4585b3b8d5191722d0efba19a3bbf3af8f889f6eab86e0c6cb",
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v3-two-epoch/raw/mpnn2-lr5e-4/8adc_A-t1.0-randomized.json.gz",
+      "eval_set": "eval-val"
+    },
+    {
+      "model": "default",
+      "stem": "8bux_A",
+      "temperature": 1.0,
+      "mode": "randomized",
+      "rollouts": 100,
+      "bytes": 477276,
+      "sha256": "5d4320944b48ac5f4c2d2377cc5804db26308d8cf055289d51826bef6122ac24",
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v1/raw/default/8bux_A-t1.0-randomized.json.gz",
+      "eval_set": NaN
+    },
+    {
+      "model": "mpnn2-lr5e-4",
+      "stem": "8bux_A",
+      "temperature": 1.0,
+      "mode": "randomized",
+      "rollouts": 100,
+      "bytes": 606560,
+      "sha256": "bba5178d5688e98dfe6643a3c56bb3521729afdbc81cc2e8d7b0540565c05704",
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v3-two-epoch/raw/mpnn2-lr5e-4/8bux_A-t1.0-randomized.json.gz",
+      "eval_set": "eval-val"
+    },
+    {
+      "model": "default",
+      "stem": "7yd4_A",
+      "temperature": 1.0,
+      "mode": "randomized",
+      "rollouts": 100,
+      "bytes": 290942,
+      "sha256": "df002f42cec9560b25cbeb22388a79a96a873dc61f90628e5072da375c134e4e",
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v1/raw/default/7yd4_A-t1.0-randomized.json.gz",
+      "eval_set": NaN
+    },
+    {
+      "model": "mpnn2-lr5e-4",
+      "stem": "7yd4_A",
+      "temperature": 1.0,
+      "mode": "randomized",
+      "rollouts": 100,
+      "bytes": 311698,
+      "sha256": "9161dd71e9b4e10ee4542c218154dd3bd0b4f0fed209635e190dc6c557832891",
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v3-two-epoch/raw/mpnn2-lr5e-4/7yd4_A-t1.0-randomized.json.gz",
+      "eval_set": "eval-val"
+    },
+    {
+      "model": "default",
+      "stem": "7zu3_A",
+      "temperature": 1.0,
+      "mode": "randomized",
+      "rollouts": 100,
+      "bytes": 212071,
+      "sha256": "574892e21c0c91ab988a243ce41aff1f073670da2672f0f1b44db1d439911bca",
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v1/raw/default/7zu3_A-t1.0-randomized.json.gz",
+      "eval_set": NaN
+    },
+    {
+      "model": "mpnn2-lr5e-4",
+      "stem": "7zu3_A",
+      "temperature": 1.0,
+      "mode": "randomized",
+      "rollouts": 100,
+      "bytes": 221774,
+      "sha256": "2cd3bc685c0bd56da54328cf93f8d88d7a1991d72f100e88e5cb240c84ebd480",
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v3-two-epoch/raw/mpnn2-lr5e-4/7zu3_A-t1.0-randomized.json.gz",
+      "eval_set": "eval-val"
+    },
+    {
+      "model": "default",
+      "stem": "7uvg_A",
+      "temperature": 1.0,
+      "mode": "randomized",
+      "rollouts": 100,
+      "bytes": 315387,
+      "sha256": "2fc7ffabfcd3efc0da1013bd85ec3f0f4aef17938e31e48641984c3475c2b0c3",
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v1/raw/default/7uvg_A-t1.0-randomized.json.gz",
+      "eval_set": NaN
+    },
+    {
+      "model": "mpnn2-lr5e-4",
+      "stem": "7uvg_A",
+      "temperature": 1.0,
+      "mode": "randomized",
+      "rollouts": 100,
+      "bytes": 338069,
+      "sha256": "5695030501759137dd263b3f736f6221887a15e1f02d2faa7739b4e22d644d51",
+      "uri": "hf://buckets/open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v3-two-epoch/raw/mpnn2-lr5e-4/7uvg_A-t1.0-randomized.json.gz",
+      "eval_set": "eval-val"
+    }
+  ],
+  "rollout_start": 100,
+  "rollout_stop": 1000,
+  "cluster": "cw-us-east-02a",
+  "artifact_root": "hf://buckets/open-athena/MarinFold/data/exp381-rollout-helico-low-neff/v3-diversity",
+  "temperature": 1.0,
+  "mode": "randomized",
+  "top_p": 0.95,
+  "top_k": -1,
+  "selector": "greedy max-min Jaccard; start global medoid; ties lowest source index",
+  "selection_seed": "SHA256(exp381-diversity:{stem}) first8bytes modulo2**32",
+  "random_control_seed": "SHA256(exp381-random10:{stem}) first8bytes modulo2**32",
+  "n_representatives": 10,
+  "helico_arms": [
+    "maxmin10"
+  ],
+  "helico_seed": "first 8 bytes SHA256(exp381-helico:{stem}:{rollout}), big-endian, mod (2**63-1)",
+  "helico_samples": 1,
+  "helico_cycles": 6,
+  "helico_source_sha": "b10385d736673c81b10e70d1099962af6f2573c0",
+  "helico_checkpoint_sha256": "779d540e5bb45cd26bb970188da2f1937ed3079942923a1356c29d06f20fe644",
+  "bootstrap_draws": 10000,
+  "bootstrap_seed": 381,
+  "primary": "Unchanged original primary; maxmin10 versus random10 is secondary",
+  "frozen_utc": "2026-11-03T21:29:58.507809+00:00",
+  "supplement_protocol_sha256": "3a9904288bbbae48adede3843254b0ed7ac266d9f0ae9b2e2fe34e91f370f021",
+  "original_selection_sha256": "f413505a9ed600b82386a6d0499abf27ab1f584b684ad5af0c2afeaf5af45224",
+  "n_helico_predictions": 200
+}

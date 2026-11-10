@@ -1,0 +1,5 @@
+{
+  "script": "analyze_diversity.py",
+  "args": [],
+  "caption": "All arms fold ten contact sets per protein with matched per-slot Helico seeds. Mean across the same ten lowest-Neff eval-val proteins. Medoids, farthest points and random controls use a 1,000-rollout pool per checkpoint; original first ten are reused."
+}

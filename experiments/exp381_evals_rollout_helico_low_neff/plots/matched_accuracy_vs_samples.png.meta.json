@@ -1,0 +1,5 @@
+{
+  "script": "analyze_baselines.py",
+  "args": [],
+  "caption": "Macro averages of all fixed prefixes k=1..10. Only oracle is monotonic; confidence pick may worsen as more samples arrive. Sample mean is the per-protein individual-sample average."
+}

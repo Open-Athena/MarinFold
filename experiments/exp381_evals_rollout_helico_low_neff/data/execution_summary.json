@@ -1,0 +1,17 @@
+{
+  "n_predictions": 200,
+  "n_workers_including_smoke": 5,
+  "inference_seconds": 1367.5851247210003,
+  "inference_gpu_hours": 0.3798847568669445,
+  "inference_gpu_usd_at_0_001097_per_second": 1.5002408818189374,
+  "median_inference_seconds": 6.659581564999996,
+  "min_inference_seconds": 5.691860640999998,
+  "max_inference_seconds": 10.962294968999998,
+  "unique_worker_setup_seconds": 80.471474282,
+  "nominal_h100_usd_per_second": 0.001097,
+  "cost_note": "Inference-time component only, not a Modal invoice; excludes startup, failed startup gates, volume commits, idle time, CPU and RAM.",
+  "all_ranking_scores_equal_ptm": true,
+  "n_has_clash": 0,
+  "earliest_prediction_utc": "2026-11-03T19:05:14.096464+00:00",
+  "latest_prediction_utc": "2026-11-03T19:14:20.244036+00:00"
+}

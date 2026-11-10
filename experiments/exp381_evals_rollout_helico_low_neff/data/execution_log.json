@@ -1,0 +1,44 @@
+[
+  {
+    "app_id": "ap-KAV7WjJ3sUIOpFziQGVCEG",
+    "purpose": "startup gate",
+    "status": "stopped before inference",
+    "detail": "Rejected training-only checkpoint config fields; changed to official Helico load_model API.",
+    "url": "https://modal.com/apps/open-athena/main/ap-KAV7WjJ3sUIOpFziQGVCEG"
+  },
+  {
+    "app_id": "ap-vxttrMWPmtozOV0e3WvMXG",
+    "purpose": "CPU checkpoint inspection",
+    "status": "completed",
+    "detail": "Saved the full checkpoint configuration and verified weight hash/step.",
+    "url": "https://modal.com/apps/open-athena/main/ap-vxttrMWPmtozOV0e3WvMXG"
+  },
+  {
+    "app_id": "ap-J9HgM7jsxzflKPCRisxWbu",
+    "purpose": "startup gate",
+    "status": "stopped before inference",
+    "detail": "Modal-injected runtime lacks package distribution metadata; record client version in launcher instead.",
+    "url": "https://modal.com/apps/open-athena/main/ap-J9HgM7jsxzflKPCRisxWbu"
+  },
+  {
+    "app_id": "ap-XHl4loLnX7unMHtFodHRuc",
+    "purpose": "input gate",
+    "status": "failed before inference",
+    "detail": "Reference CIF retains non-protein entities; explicitly restrict input and reference to its sole protein chain.",
+    "url": "https://modal.com/apps/open-athena/main/ap-XHl4loLnX7unMHtFodHRuc"
+  },
+  {
+    "app_id": "ap-j7tv7croUlVBpU0eXRR5sA",
+    "purpose": "production smoke, 2 predictions",
+    "status": "completed",
+    "detail": "Both model rollout-zero predictions retained in the final 200.",
+    "url": "https://modal.com/apps/open-athena/main/ap-j7tv7croUlVBpU0eXRR5sA"
+  },
+  {
+    "app_id": "ap-TSSWBiJZdoScbSdURxo2sX",
+    "purpose": "remaining 198 predictions",
+    "status": "completed",
+    "detail": "Up to four Modal H100 workers.",
+    "url": "https://modal.com/apps/open-athena/main/ap-TSSWBiJZdoScbSdURxo2sX"
+  }
+]

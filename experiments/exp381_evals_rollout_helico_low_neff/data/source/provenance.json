@@ -1,0 +1,8 @@
+{
+  "source_repository": "https://github.com/Open-Athena/MarinFold",
+  "source_commit": "965f86751d952ee03b7f4f7ced90d7e6306b1c73",
+  "inventory_source_path": "experiments/exp373_evals_mpnn_diversity_neff/data/raw_inventory_two_epoch.csv",
+  "inventory_full_sha256": "19ddd304f10246bb3d295b65819d775e8fddec182b4a4f35e0041cc82176418c",
+  "inventory_subset_sha256": "e1465929ee0001903e4928989a7c418c876c840702c778544bb20c837d85f05b",
+  "subset": "10 selected eval-val stems, model mpnn2-lr5e-4, temperature 1, randomized mode"
+}

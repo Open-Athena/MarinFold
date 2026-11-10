@@ -1,0 +1,154 @@
+{
+  "root": "hf://buckets/open-athena/MarinFold/data/exp381-rollout-helico-low-neff/v1",
+  "anonymous_readback_verified": true,
+  "files": {
+    "README.md": {
+      "bytes": 15933,
+      "sha256": "6ee047b668ab175cffe9211f631b7d9f816c496d085055271947f80b9410823d"
+    },
+    "data/contact_count_summary.csv": {
+      "bytes": 585,
+      "sha256": "cbf4643010392ac8d6f14ad95b0f81636908340bb3e083ba824880b8b3cdfe95"
+    },
+    "data/contact_inputs.csv": {
+      "bytes": 71219,
+      "sha256": "c4a945024417efe4f58dfc06464214bebea485d1ff012a47a7c465b54f68c500"
+    },
+    "data/execution_log.json": {
+      "bytes": 1797,
+      "sha256": "cc76f13d15669b24371d332c9041afbba9ad915d7713aeaec78ce6fc634d4917"
+    },
+    "data/execution_summary.json": {
+      "bytes": 785,
+      "sha256": "3e2fef5fdfefee05b8753c86f8c65dfb310f6b40b9b0fb8421ca9ff8971214b6"
+    },
+    "data/helico_checkpoint_config.json": {
+      "bytes": 1492,
+      "sha256": "3762e26aa5a5607135eb2dd07664b82fedd264c98823fb30d960d5a09b25c735"
+    },
+    "data/missing_reference_atoms.csv": {
+      "bytes": 400,
+      "sha256": "0644c88934005eb7bddf013e84f4c4b87aafae276b354df7ec6d16dcfccf4aaa"
+    },
+    "data/paired_model_deltas.csv": {
+      "bytes": 1017,
+      "sha256": "8a935d9de128817487deed7fb2178e10d0664627d3e3a63a281bd5d6ba5d3766"
+    },
+    "data/per_protein_selection.csv": {
+      "bytes": 116579,
+      "sha256": "7c5532ac1de156e184ae8b73247f7e4103f2dc2fd1346d170367804038b992df"
+    },
+    "data/per_rollout_metrics.csv": {
+      "bytes": 203417,
+      "sha256": "3182fd9a9ebedff4ba5c2d6340ca961bbaa0a6fafb36960d74bdc17129f9af2b"
+    },
+    "data/plan.json": {
+      "bytes": 5350,
+      "sha256": "89d866382fb322b0c06ccc42fc9bb06ac081f414b7559d1e167be3a9dd928ed8"
+    },
+    "data/reference_audit.csv": {
+      "bytes": 424,
+      "sha256": "bc3550494e8bb75a9a21ed3da9d236c842ba67a6c7db7ac8e08d4077da8eb76c"
+    },
+    "data/reused_marinfold_timings.csv": {
+      "bytes": 7717,
+      "sha256": "681f63168fcb5cfaf3936defd1cb3c1c1b0cc3da88135a913f12df363d8c57bf"
+    },
+    "data/run_manifest.json": {
+      "bytes": 4170,
+      "sha256": "b4c97a98c0968a7d0c44a295eac6c3da087e6203a78801fd2b9184e6f01841db"
+    },
+    "data/selection_gains.csv": {
+      "bytes": 2417,
+      "sha256": "ba764c4e8182e170a9ed84d8798baf615445d070768e91244a2f67ff6fce43c8"
+    },
+    "data/selection_regret.csv": {
+      "bytes": 4621,
+      "sha256": "57eee4234e5222c8b51e8e282f68cdc7fdb7790bb37a923732de2f031e4e350e"
+    },
+    "data/smoke_passed.json": {
+      "bytes": 390,
+      "sha256": "be99580a681cd730bc75014f66fd7b307536236dbdcc803275073fe1c2974880"
+    },
+    "data/source/exp373_raw_inventory_two_epoch.csv": {
+      "bytes": 2543,
+      "sha256": "e1465929ee0001903e4928989a7c418c876c840702c778544bb20c837d85f05b"
+    },
+    "data/source/exp373_two_epoch_plan.json": {
+      "bytes": 5957,
+      "sha256": "e3796ea56b31cad8b16cf2930a6fdb4e5c12dd829f19f09090327c3921588919"
+    },
+    "data/source/provenance.json": {
+      "bytes": 527,
+      "sha256": "75f5b4108a309fcfba0d5604df7a7438f17d72ea0cff2e8ecea43c56366d5c41"
+    },
+    "data/source_raw_inventory.csv": {
+      "bytes": 4743,
+      "sha256": "4223a76daa52b1e8e420f5c03dd939a0d9e06bab8526a3050a4eea65f3017e4e"
+    },
+    "data/summary.csv": {
+      "bytes": 18859,
+      "sha256": "3fc01cf1cb78590e94fd6ac12ca7cd19131412e78fe3ad4beec1c96c9f2c63fe"
+    },
+    "data/targets.csv": {
+      "bytes": 3992,
+      "sha256": "9d3bba1f8fd6f0b7f4b77c9290bb5a984e5650ef10745d193921f6ad459208c5"
+    },
+    "data/timings.csv": {
+      "bytes": 187338,
+      "sha256": "7264aa2cd0075612f5622f785b85de54d138f87d68ce19604b6e100781c43636"
+    },
+    "data/tmscore_build.json": {
+      "bytes": 3250,
+      "sha256": "d6e1ca1691416e16004e650cee5e5b8fc9d749f2dade62b5b1424b50c046d6a8"
+    },
+    "data/viral_status_summary.csv": {
+      "bytes": 2140,
+      "sha256": "6ce0309585ee24bd25bf0815346cc266464fad5ca4f8e22e7cebec09470ff92e"
+    },
+    "data/within_protein_confidence.csv": {
+      "bytes": 2634,
+      "sha256": "92464307abdb9b6d54865b2158f409490d941f0d3e58d95c9a3ada3bc6e79ef6"
+    },
+    "inputs.tar.gz": {
+      "bytes": 1541938,
+      "sha256": "146cdd127fbfacebfce424187bf4c7027dc8313f3f53d8eb8ba6195990339336"
+    },
+    "plots/accuracy_summary.png": {
+      "bytes": 70725,
+      "sha256": "b83272dd6a9144a758702f18391e46a632395c674f0b2950e9d2fad8340616bf"
+    },
+    "plots/accuracy_summary.png.meta.json": {
+      "bytes": 213,
+      "sha256": "bedd2b26d928f0e2784b8127f814c07eb3c23759cd9abc5676b7e6ef99072a90"
+    },
+    "plots/accuracy_vs_rollouts.png": {
+      "bytes": 121472,
+      "sha256": "cc59dfdbe040fca7cdc537de73b6da095e74cd9b7b06c17d317245ab97fa9b77"
+    },
+    "plots/accuracy_vs_rollouts.png.meta.json": {
+      "bytes": 243,
+      "sha256": "c58b22cf16956e6af304910f084e3b9a137d818df7ee643f3b414ae18eafccea"
+    },
+    "plots/per_protein_accuracy.png": {
+      "bytes": 173486,
+      "sha256": "cd8008dc0539abf37abe213d9e323924997d31b54d975fe45c7adfdcc462b954"
+    },
+    "plots/per_protein_accuracy.png.meta.json": {
+      "bytes": 222,
+      "sha256": "5c24c872a530841c7b61ed020a74f849ba3c952883fdedc74b3e17b369d4f55e"
+    },
+    "plots/summary.pdf": {
+      "bytes": 329610,
+      "sha256": "dcc46d8264e8b0915ce3ba5c47baeef981f648a8dd220c9a0a48d117e8bd3676"
+    },
+    "source.tar.gz": {
+      "bytes": 72515,
+      "sha256": "d4bfd826340377a68cb3b2a91036185245657c2546cdb58896f43c0adb9cf45a"
+    },
+    "structures.tar.gz": {
+      "bytes": 17115241,
+      "sha256": "945fffba6fd2f98671c1d03b386b51c6eb3fa48459345228c2d391982865524c"
+    }
+  }
+}

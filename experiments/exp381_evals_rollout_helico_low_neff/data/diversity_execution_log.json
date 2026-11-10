@@ -1,0 +1,18 @@
+{
+  "helico_smoke": {
+    "app_id": "ap-BNRxYk090UlRS23qUhHD5Q",
+    "url": "https://modal.com/apps/open-athena/main/ap-BNRxYk090UlRS23qUhHD5Q"
+  },
+  "helico_full": {
+    "app_id": "ap-WpImlTmrIBPboLtlyM4UQL",
+    "url": "https://modal.com/apps/open-athena/main/ap-WpImlTmrIBPboLtlyM4UQL"
+  },
+  "maxmin_smoke": {
+    "app_id": "ap-VJ1SMJFVZa7knk0JTODiDb",
+    "url": "https://modal.com/apps/open-athena/main/ap-VJ1SMJFVZa7knk0JTODiDb"
+  },
+  "maxmin_full": {
+    "app_id": "ap-S1bkGNkoOMAxW28n4WxjFu",
+    "url": "https://modal.com/apps/open-athena/main/ap-S1bkGNkoOMAxW28n4WxjFu"
+  }
+}
