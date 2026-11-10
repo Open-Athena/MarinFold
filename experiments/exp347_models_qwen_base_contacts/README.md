@@ -512,6 +512,53 @@ Before admitting production forks, the remaining gates are:
 
 ## Results
 
+### GPU progress and 20B evaluation — November 10
+
+Both CoreWeave parents are training. At 21:42 UTC, contacts-v1 a08 had reached
+**20,588,581,468 additional tokens / step 131161**, and prompted a10 had reached
+**6,643,721,012 tokens / step 144954**. Each retains its **100B additional-token**
+target, eight H100s, original W&B identity, and RNO2A checkpoint destination.
+Complete recovery checkpoints at raw step 131161 and prompted step 144933 were
+verified, including the tokenizer and all eight optimizer shards.
+
+Both periodic evaluators are live and caught up. The new raw 20B result passes
+the full 97-target, 100-terminated-rollout, timing, and checkpoint-provenance
+checks; the prompted 7B evaluation is not due yet.
+
+| Format | Evaluated additional tokens | Checkpoint step | All-range R | Long-range R |
+| --- | ---: | ---: | ---: | ---: |
+| contacts-v1 | 20,000,079,692 | 127506 | **0.34567** | **0.32120** |
+| prompted | 6,000,033,097 | 131069 | 0.29649 | 0.26331 |
+| Current default: exp277 1.5B | — | 266344 | 0.55375 | 0.53802 |
+
+The raw 20B result improves by **0.00779 / 0.01184** all/long R over 19B.
+Compared with 18B, all-range is 0.00136 lower and long-range is 0.00468 higher;
+both differences fall within the 0.005 practical-tie threshold. The 20B
+viral/nonviral means are **0.27963 / 0.35002** all-range and
+**0.24978 / 0.32591** long-range (6 / 91 proteins). Equal native-token budgets
+still imply different protein exposure. Eval-test remains unread.
+
+The [PNG](plots/eval_val_progress.png), [SVG](plots/eval_val_progress.svg), and
+[CSV](data/eval_val_progress.csv) now cover **30 measured checkpoints**.
+The periodic record contains **26 milestones, 2,522 timing rows, 50,440 metric
+rows, and 208 worker provenance files**. Dotted lines retain the current default
+reference; the model registry was rechecked on November 10 and is unchanged.
+Source values and checksums remain pinned in
+[data/eval_val_default_reference.json](data/eval_val_default_reference.json).
+
+TPU validation a03 loaded all 426 FP32 parameters and eight optimizer shards,
+saved the converted regional checkpoint, and completed one microbatch. It then
+exhausted device memory on the second microbatch, before any optimizer update.
+The bounded retry reduces the microbatch from eight documents to four, using
+eight accumulation steps for the same 32-document global batch, 16K context,
+token-weighted objective, eight data cursors, and original optimizer schedule.
+The CPU check passes loss and Adam-state parity at the existing 2e-6 tolerances
+and exact resumed-update recovery. Validation
+`/timodonnell/exp347-tpu-contacts_v1-validate-a04` was accepted at **21:48:38 UTC**
+on one v5p-8 slice in us-east5-a, with a two-hour limit and no automatic retries.
+Neither TPU production fork is training yet; full hardware update/recovery
+validation and the regional periodic evaluation bridge remain required.
+
 ### Training and evaluation recovery — November 9
 
 Contacts-v1 continues on the original RNO2A a08 job and reached **19,473,906,821

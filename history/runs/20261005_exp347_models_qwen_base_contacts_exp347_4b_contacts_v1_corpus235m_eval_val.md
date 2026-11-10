@@ -84,3 +84,5 @@ November 5: user explicitly authorized restarting the stopped evaluator. Replace
 November 5 refreshed result: step 64544 / 10,000,117,732 additional tokens; all-range R=0.28559874, long-range R=0.24709758. All 97 proteins completed 100 rollouts. Full per-protein metrics, timings, and 12 worker provenance records are committed for each new checkpoint.
 
 November9: all19 periodic raw milestones are complete. Latest step119246/19000027107tokens scores0.3378773050 all and0.3093641769 long; best step114806/+18B scores0.3470314515/0.3165192998. Nine new milestones each have97proteins×100terminatedrollouts with metrics, timings and12worker provenance files. Driver a07 remains live and caught up.
+
+November10: collected the completed20B milestone at step127506 /20,000,079,692 additional tokens. All97 eval-val proteins have100 terminated rollouts and measured timings. R-precision all=.34567054900005284, long=.32119943032891185. Canonical result prefix: s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/eval-val/exp347-qwen35-4b-contacts_v1-corpus235m-100bt/step-127506. Driver a07 remains running and caught up.

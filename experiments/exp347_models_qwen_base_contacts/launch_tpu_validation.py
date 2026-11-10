@@ -37,6 +37,7 @@ def main() -> None:
     command = [
         "uv",
         "run",
+        "--no-sync",
         "--project",
         "/home/bizon/git/marin",
         "--package",

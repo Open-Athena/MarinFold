@@ -17,41 +17,40 @@ Exclude the same 5.11% of source rows when either complete document exceeds 16K.
 The pool has 4.493B raw tokens versus 1.290B prompted tokens.
 Equal token budgets imply different protein exposure.
 
-## Latest R-precision results — November 9
+## Latest R-precision results — November 10
 
-Nine new contacts-v1 milestones completed, 11B through 19B additional native tokens.
+New contacts-v1 milestone: 20B additional native tokens, checkpoint step127506.
 Same 97 eval-val proteins × 100 terminated rollouts; all result I/O stays in RNO2A.
-Latest raw +19B: all R=0.33788, long R=0.30936.
-Best raw +18B: all R=0.34703, long R=0.31652.
-The latest point gains 0.05228 / 0.06227 from 10B, but dips 0.00915 / 0.00716 from 18B.
+Latest raw +20B: all R=0.34567, long R=0.32120.
+Best raw all-range remains +18B: R=0.34703; 20B has the highest long-range score.
+Gains from19B: 0.00779 / 0.01184; differences from18B are within the0.005 tie threshold.
 Prompted remains at +6B: all R=0.29649, long R=0.26331.
 Equal native-token budgets imply different protein exposure; format causality is unresolved.
-Periodic record: 25 checkpoints, 2,425 timing rows, 48,500 metric rows, 196 provenance files.
-The curve plots 29 complete pilot/interim/periodic checkpoints, with CSV and SVG exports.
+Periodic record: 26 checkpoints, 2,522 timing rows, 50,440 metric rows, 208 provenance files.
+The curve plots 30 complete pilot/interim/periodic checkpoints, with CSV and SVG exports.
 Dotted reference: current default exp277 1.5B, step266344; all R=0.55375, long R=0.53802.
 Reference uses the same97 eval-val proteins; registry and score-table provenance are pinned.
 Eval-test remains untouched. An exact expanded-corpus sequence-KNN null is unavailable.
 
-## Execution and recovery — November 9
+## Execution and recovery — November 10
 
-Raw a08 continues: 19.474B / 100B tokens, step123548; complete local checkpoint verified.
-Prompted a09 stopped November5 after three model-shard upload timeouts.
-Previous complete state remains intact: step133790 / 6.167B tokens, all8 optimizer shards.
-Current RNO PUT/GET passes; raw continues writing in the same region.
-Prompted a10 submitted16:11:35UTC, same8H100s, optimizer, data cursor and100B schedule.
-Initial state pending allocation; no resumed progress is implied by submission.
-Both evaluation drivers are live and caught up; they retain the1B-token cadence.
+Raw a08 continues: 20.589B / 100B tokens, step131161.
+Prompted a10 resumed successfully: 6.644B / 100B tokens, step144954.
+Complete local checkpoints verified at raw131161 and prompted144933, all8 optimizer shards.
+Both use8H100s and preserve optimizer, data cursor, W&B identity and100B schedule.
+Training and evaluation I/O remain in RNO2A.
+Both evaluation drivers are live and caught up; next milestones are raw21B and prompted7B.
 
-## TPU forks — checkpoint-name fix, validation retry
+## TPU forks — memory limit, smaller microbatch
 
 Approved transfer complete: 9,668 objects / 579.87GB; all future TPU I/O stays in us-east5.
 Frozen parents: raw step59319 / 9.122B; prompted step87360 / 4.026B.
-First v5p-8 gate reached hardware, then failed before a training update.
-Saved HF keys use model.language_model; in-memory parameter names use model.
-Converter now explicitly maps those names, retaining optimizer order and full coverage.
-Actual saved-model roundtrip reproduces every weight exactly; all426 production keys match.
-Real eight-rank optimizer reconstruction passes; CPU logits/loss/gradient/Adam checks already passed.
-Bounded validation a03 accepted16:13:29UTC in us-east5-a; pending allocation.
+Validation a03 loaded all426 FP32 parameters and all8 optimizer shards in840.6seconds.
+Converted state saved regionally; first microbatch completed, second exhausted device memory.
+Retry halves the microbatch to4 documents, one per chip, and accumulates8 microbatches.
+Global batch remains32 documents; full16K context, cursor order and token weighting unchanged.
+CPU smaller-microbatch loss/Adam parity and exact resumed-update checks pass.
+Bounded validation a04 accepted21:48:38UTC, one v5p-8 in us-east5-a, two-hour limit.
 Neither production TPU fork is training yet. Full hardware recovery validation and
 regional periodic evaluation bridge remain unfinished; GPU parents stay independent.
 

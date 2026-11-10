@@ -66,8 +66,15 @@ def main() -> None:
     snapshot = json.loads(Path(f"data/tpu_forks/{args.format}_parent.json").read_text())
     source = frozen_source(snapshot)
     source_config = read_json(fs, source + "/model/config.json")
+    # One full-length document per chip reduces activation memory while retaining
+    # the accumulated gradient. The global update still uses 32 documents.
+    microbatch_documents = 4
     config = configuration(
-        source_config, length=MAX_LENGTH, batch=8, attention="flash", tiles=128
+        source_config,
+        length=MAX_LENGTH,
+        batch=microbatch_documents,
+        attention="flash",
+        tiles=128,
     )
     mesh, model = abstract_model(config)
     graph, template, rest = nnx.split(model, nnx.Param, ...)
@@ -105,6 +112,8 @@ def main() -> None:
             "parent": snapshot["parent"],
             "converted_checkpoint": converted,
             "global_batch_documents": 32,
+            "microbatch_documents": microbatch_documents,
+            "accumulation_steps": 32 // microbatch_documents,
             "target_tokens": metadata["target_tokens"],
             "devices": [str(device) for device in jax.devices()],
         },
@@ -139,8 +148,12 @@ def main() -> None:
             stream.state = cursor
         for _ in range(2):
             began = time.perf_counter()
-            rows = [[stream.next() for stream in streams] for _ in range(4)]
-            count = sum(len(row[args.format]) - 1 for batch in rows for row in batch)
+            rows = [stream.next() for _ in range(4) for stream in streams]
+            count = sum(len(row[args.format]) - 1 for row in rows)
+            batches = [
+                rows[i : i + microbatch_documents]
+                for i in range(0, len(rows), microbatch_documents)
+            ]
             data_seconds = time.perf_counter() - began
             print(
                 f"Step {metadata['step'] + 1}: {count} tokens; compiling/training",
@@ -148,7 +161,7 @@ def main() -> None:
             )
             total_loss = 0.0
             accumulated = None
-            for microbatch, batch in enumerate(rows):
+            for microbatch, batch in enumerate(batches):
                 inputs = {
                     key: jax.device_put(value, batch_sharding)
                     for key, value in document_batch(
@@ -162,7 +175,9 @@ def main() -> None:
                     if accumulated is None
                     else accumulate_fn(accumulated, gradient)
                 )
-                print(f"Completed microbatch {microbatch + 1}/4", flush=True)
+                print(
+                    f"Completed microbatch {microbatch + 1}/{len(batches)}", flush=True
+                )
             lr = learning_rate(metadata["tokens"], metadata["target_tokens"])
             state, norm = update_fn(state, accumulated, lr)
             jax.block_until_ready(state)

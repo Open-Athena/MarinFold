@@ -47,18 +47,25 @@ def validate() -> dict:
         {"contacts_v1": rng.integers(0, 256, length).tolist()}
         for length in (129, 81, 99, 66)
     ]
-    batches = [document_batch(rows[i : i + 2], "contacts_v1", 128) for i in (0, 2)]
     count = sum(len(row["contacts_v1"]) - 1 for row in rows)
     gradient_fn, accumulate_fn, update_fn = training_functions(
         graph, template, rest, config
     )
 
-    def step(current: dict) -> tuple[dict, float]:
-        loss, gradient = gradient_fn(current["params"], rest, batches[0], count)
-        loss2, gradient2 = gradient_fn(current["params"], rest, batches[1], count)
-        gradient = accumulate_fn(gradient, gradient2)
-        updated, _ = update_fn(current, gradient, 1.9e-5)
-        return updated, float(loss + loss2)
+    def step(current: dict, batch_size: int = 2) -> tuple[dict, float]:
+        total_loss = 0.0
+        accumulated = None
+        for i in range(0, len(rows), batch_size):
+            batch = document_batch(rows[i : i + batch_size], "contacts_v1", 128)
+            loss, gradient = gradient_fn(current["params"], rest, batch, count)
+            total_loss += float(loss)
+            accumulated = (
+                gradient
+                if accumulated is None
+                else accumulate_fn(accumulated, gradient)
+            )
+        updated, _ = update_fn(current, accumulated, 1.9e-5)
+        return updated, total_loss
 
     full = document_batch(rows, "contacts_v1", 128)
     targets = (
@@ -82,6 +89,7 @@ def validate() -> dict:
         uri = folder + "/state"
         save_arrays(uri, state)
         restored = restore_arrays(uri, state)
+        smaller_batch_state = restore_arrays(uri, state)
         verify_roundtrip(state, restored)
         original_next, loss = step(state)
         restored_next, restored_loss = step(restored)
@@ -89,6 +97,14 @@ def validate() -> dict:
         np.testing.assert_allclose(loss, expected, atol=2e-6, rtol=2e-6)
         if restored_loss != loss or int(restored_next["adam_step"]) != 59320:
             raise ValueError("Restored training did not preserve the next update")
+        smaller_next, smaller_loss = step(smaller_batch_state, batch_size=1)
+        np.testing.assert_allclose(smaller_loss, loss, atol=2e-6, rtol=2e-6)
+        # Regrouping the same variable-length documents must preserve the
+        # token-weighted objective and Adam state, up to FP32 reduction order.
+        for original, smaller in zip(
+            jax.tree.leaves(original_next), jax.tree.leaves(smaller_next), strict=True
+        ):
+            np.testing.assert_allclose(original, smaller, atol=2e-6, rtol=2e-6)
     return {
         "status": "passed",
         "completed_utc": datetime.now(UTC).isoformat(),
@@ -99,6 +115,9 @@ def validate() -> dict:
         "valid_tokens": count,
         "state_roundtrip": "exact",
         "resumed_update": "exact",
+        "microbatch_sizes": [2, 1],
+        "microbatch_update_parity": "passed (atol=2e-6, rtol=2e-6)",
+        "smaller_microbatch_loss": smaller_loss,
     }
 
 
