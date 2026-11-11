@@ -1,68 +1,69 @@
 # ProteinMPNN-only diversity and Neff dependence
 
-## What we tested
+## Four checkpoints, matched evaluation
 
-Does redesign-only training broaden contact predictions and reduce their dependence on available evolutionary information?
+The two-epoch models are now included: exp364 5e-4 and 1e-3, both at step 373768, alongside the original one-epoch 5e-4 model (step 186884) and full-data default (step 266344). The two-epoch 5e-4 model is the primary follow-up from the checkpoint handoff.
 
-We compared the exp364 MPNN-only 1.5B checkpoint at step 186884 with the exp277 full-data default at step 266344. The primary cohort is 97 natural eval-val proteins; 19 designs are reported separately. Eval-test was not scored.
+We added 440,800 rollouts, bringing the total to 881,600. Each model has 1,000 fixed-prompt samples at temperature 1, 300 at 0.7 and 1.3, and 100 randomized prompts at each temperature. All original predictions are unchanged.
 
-The original design has 300 fixed-prompt samples plus 100 matched randomized prompts per model/protein, at temperatures 0.7, 1.0 and 1.3. A requested follow-up extends temperature-1 fixed prompts to 1,000 samples, preserving every original sample and adding 162,400. All 440,800 samples are saved. Intervals bootstrap proteins, preserving model pairing, with 10,000 draws.
+Primary cohort: 97 natural eval-val proteins. Secondary cohort: 19 designs, kept separate. Eval-test was not scored. Prompts, seeds, truth, parser, runtime and scoring are matched. Intervals use 10,000 paired protein-bootstrap draws; secondary comparisons are not multiplicity-adjusted.
 
-## Diversity increases after the controls
+## The stronger checkpoint narrows the gap
 
-On natural proteins, mean fixed-prompt Jaccard distance rises from 0.708 to 0.813. The paired difference is +0.1046, with 95% CI [0.0866, 0.1229].
+Natural-protein randomized-100 R-precision, in default / one-epoch / two-epoch 5e-4 / two-epoch 1e-3 order: 0.5540 / 0.4628 / 0.5211 / 0.4790.
 
-Matching every paired sample's contact count gives +0.1064 [0.0891, 0.1244]. Randomized prompts give +0.1008 [0.0836, 0.1189]. Long-range contacts show the same effect. Independent seed-block differences are +0.1050, +0.1042 and +0.1046.
+Two-epoch 5e-4 improves over one epoch by +0.0583 [0.0425, 0.0763]. Its remaining deficit versus default is -0.0329 [-0.0489, -0.0177]. Two-epoch 1e-3 trails 5e-4 by 0.0421 [0.0277, 0.0575].
 
-MPNN-only generates modestly more contacts, but the long-range fraction is similar. Count, prompt and seed-block controls support a real difference in the contact-sampling distribution.
+Fixed-300 Jaccard distance is 0.7083 / 0.8130 / 0.7576 / 0.8022. The stronger 5e-4 model is less diverse than one epoch, but still more diverse than default. Its excess survives count matching (+0.0530), randomized prompts (+0.0455), unrestricted pairs and all three seed blocks. These are distributional differences, not evidence of physical conformational states.
 
-## Extending discovery and ensembles to 1,000
+## Discovery through 1,000: a smaller error cost
 
-The extension reveals a small MPNN-only coverage advantage: 99.0% versus 98.5% for default. The paired difference is +0.50 percentage points [0.11, 0.96]. The original 300-sample difference was inconclusive.
+At k=1,000, true-contact coverage is 98.51% / 99.01% / 99.22% / 99.02%, in the same four-model order. Distinct false contacts per protein are 8,011 / 12,291 / 9,625 / 12,192.
 
-At 1,000, MPNN-only discovers 255.6 true and 12,290.8 false contacts per protein, versus default's 254.2 true and 8,011.0 false contacts. This is 1.4 more true contacts alongside 4,280 more false contacts: 53% more false discovery.
+Two-epoch 5e-4 gains 0.71 percentage points [0.34, 1.15] of coverage over default: about 2 additional true contacts alongside 1,614 additional false contacts. Its false-contact count is 20% higher than default, down from the one-epoch model's 53% excess.
 
-Ensembles largely plateau after 300: default R-precision changes from 0.5394 to 0.5414, and MPNN-only from 0.4541 to 0.4549. Both gains have intervals spanning zero. Default remains higher at every plotted k. Original temperature, diversity and Neff analyses retain their original sample counts.
+From 300 to 1,000, two-epoch 5e-4 adds 4.5 true and 2,679 false contacts per protein. Ensemble R improves only +0.0024 [0.0002, 0.0050], reaching 0.5203 versus default's 0.5414. Other models' small ensemble gains span zero. Extra diversity still mostly adds benchmark errors, with a substantially smaller cost for the stronger checkpoint.
 
 ## Oracle best@k and mean individual F1
 
-For each protein, oracle best@k selects the highest individual-rollout contact F1 among the first k samples. We then average equally across proteins. Selection requires ground truth; this is an upper bound, not an inference-time selector. All- and long-range oracles select independently.
+For each protein, oracle best@k selects the highest individual contact F1 among the first k seeded samples. Selection uses ground truth; it is an upper bound, not an inference-time selector. All- and long-range oracles select independently. Dashed lines average individual F1 over 1,000 samples within each protein, then across proteins.
 
-On natural proteins, mean individual F1 over all 1,000 samples is 0.4115 for default and 0.3020 for MPNN-only. These are the dashed comparison lines. Oracle best@1,000 is 0.5607 versus 0.4628: paired MPNN-only deficit 0.0980 [0.0799, 0.1166]. Bands are pointwise protein-bootstrap intervals.
+Natural-protein mean individual F1: 0.4115 / 0.3020 / 0.3718 / 0.3197. Oracle best@1,000: 0.5607 / 0.4628 / 0.5266 / 0.4798. Two-epoch 5e-4 gains +0.0639 [0.0467, 0.0816] in oracle F1 over one epoch, but remains below default by 0.0341 [0.0214, 0.0483].
 
-Sampling beyond 300 finds better individual predictions in both models. Oracle F1 gains are +0.0161 [0.0120, 0.0205] and +0.0218 [0.0168, 0.0275], respectively. Long-range best@1,000 is 0.5625 versus 0.4679. Default remains stronger in both ordinary and oracle F1.
+Every model gains oracle F1 after 300: +0.0161 / +0.0218 / +0.0152 / +0.0197, all with positive intervals. Ordinary mean F1 is stable over the extension. Long-range results agree. Bands are pointwise protein-bootstrap intervals, not simultaneous bands or rollout-level uncertainty.
 
-## Neff gives contrast-specific support
+## Neff: the earlier tier result does not generalize
 
-Neff is redundancy-weighted depth at 80% identity, not raw MSA sequence count. Fixed tiers contain 4, 10, 28 and 55 natural proteins.
+Neff is redundancy-weighted depth at 80% identity. Fixed tiers contain 4, 10, 28 and 55 natural proteins. No model receives an MSA at inference.
 
-The all-range high-minus-low accuracy drop is 0.399 for default and 0.329 for MPNN-only: difference -0.0705 [-0.1026, -0.0401]. However, absolute low-Neff accuracy is 0.280 versus 0.263; MPNN-only does not improve it.
+Two-epoch 5e-4 has a slightly higher low-tier point estimate than default (0.2829 versus 0.2799), but the paired difference is inconclusive: +0.0031 [-0.0921, 0.0989]. Its high-minus-low drop difference is -0.0249 [-0.1229, 0.0735]. The one-epoch model's smaller extreme-tier drop therefore does not carry over clearly to the stronger checkpoint.
 
-The continuous interaction is inconclusive: -0.0080 [-0.0276, 0.0165] per Neff decade. Long range, length/viral adjustment and nonviral-only slopes are also inconclusive. The largest accuracy gap occurs in the middle tiers. Four lowest-tier proteins limit generalization. No natural protein has raw MSA depth below 10.
+Two-epoch 5e-4's continuous interaction is -0.0028 [-0.0233, 0.0212] per Neff decade, also inconclusive after length/viral adjustment and viral exclusion. Two-epoch 1e-3 has a positive long-range interaction in the full cohort, the opposite of flatter dependence. No natural protein has raw MSA depth below 10. Four lowest-Neff proteins limit generalization.
 
-## Patterns and mechanisms
+## Dependencies and sequence-similarity limits
 
-Both models have contact dependencies beyond sample-size and contact-frequency margins. Excess Jaccard SD over exact-margin shuffled controls is 0.0197 for default and 0.0169 for MPNN-only. Half/full-chain differences are small relative to that excess. This does not identify physical states or uniquely stronger MPNN-only coordination.
+All four models have broader pairwise-distance distributions than shuffles preserving every sample size and contact frequency. Excess Jaccard SD is 0.0197 / 0.0169 / 0.0186 / 0.0182. Neither new model differs clearly from default in excess Jaccard or overlap SD. Half/full-chain differences are small relative to the excess; they are not proof of exact uniform mixing.
 
-Eight contact-map examples were chosen by Neff rank before inference. Some retain similar recurring patterns; others show diffuse MPNN-only frequencies and lower accuracy.
+The contact maps retain the same eight proteins selected by Neff rank before inference. Every model uses the first 300 samples and the same frequency scale.
 
-Existing sequence searches cover native AFDB/ESM-Atlas. The actual 162.6-million-document redesign corpus has no complete available sequence-search or KNN audit. Removing native documents retains structural ancestry and cannot establish an absence of retrieval or memorization.
+All redesign models use the same 162.6-million-document corpus. Historical native AFDB/ESM-Atlas searches remain available, but no complete redesign-corpus sequence search or matched KNN null is available. Removing native sequences retains backbone ancestry. These results cannot identify reduced retrieval or memorization as the mechanism.
 
-## Secondary designs and execution checks
+## Designs and independent replication check
 
-For 19 designs, the original Jaccard difference is inconclusive: +0.0457 [-0.0017, 0.0976]. At 1,000, oracle F1 is 0.7428 versus 0.7158, paired difference -0.0270 [-0.0472, -0.0077]; mean individual F1 is 0.5205 versus 0.4670. These secondary intervals are unadjusted. Designs are never pooled with natural proteins.
+On 19 designs, randomized-100 R is 0.7082 / 0.6613 / 0.6687 / 0.6623. Best@1,000 F1 is 0.7428 / 0.7158 / 0.7171 / 0.7091. The two-epoch 5e-4 improvements over one epoch are inconclusive for both metrics. Its oracle deficit versus default also spans zero. Natural-protein improvements should not be generalized automatically to designs.
 
-All 12 extension shards succeeded after one initialization failure was restarted unchanged. The 162,400 new samples have no continuations or caps and add 2.57 GPU-hours of pure inference. Original sampling used 5.20 GPU-hours and retained its 17 final caps at other temperatures. Setup and retries are excluded from these timings.
+The independent exp364 evaluation uses seed 0 instead of our paired SHA-derived seeds. Natural-protein R differs by at most 0.0036 across new checkpoints and ranges. The largest design discrepancy is long-range 5e-4: 0.6309 versus 0.6371, difference -0.0062 [-0.0218, 0.0100]. All eight difference intervals span zero.
 
-Every original 300-sample prefix passes its frozen hash. All 3,248 original discovery/ensemble rows reproduce within 1e-12. Validation also checks paired prompt tokens, seeds, checkpoint identity, parser consistency and bounded, monotonic oracle curves. Thirteen unit tests pass.
+Input hashes and all 4,640 reference metric-row candidate/truth/top counts match. This supports a stochastic-draw explanation; protein-bootstrap intervals are conditional on these two realized evaluations, not repeated seed experiments.
 
-## Interpretation and reproducibility
+## Execution, interpretation and reproducibility
 
-Greater diversity is supported on natural proteins. At 1,000, it yields a small MPNN-only true-contact coverage benefit alongside substantially more false discovery. Extra sampling improves oracle F1 in both models; default still has better mean F1, best@1,000 F1 and ensemble accuracy. Neff support remains specific to the extreme-tier contrast.
+Both smoke tests and all 12 production H100 shards succeeded on their first attempt. New work used 8.64 inference GPU-hours and 10.02 production task GPU-hours including setup/publication. All 440,800 new samples are retained. Four final caps occur only at temperature 1.3; none affect primary temperature 1.
 
-One selected checkpoint per recipe, different training exposure/schedules, observational Neff associations, sparse low-Neff data and incomplete redesign-sequence searches limit causal interpretation.
+Validation checks paired prompts/seeds, checkpoint hashes, runtime versions and parsed contacts. All 1,624 original raw files are unchanged; 6,496 first-300 curve rows reproduce within 1e-12. Fifteen tests cover parser/scorer behavior, exact shuffle margins, F1/oracle ordering and complete four-model pairing.
 
-The README is the complete report. Figures regenerate from committed tables. Original raw files (921 MB) remain immutable under v1; new files (442 MB) and the updated report live under v2-1000. Prefix and publication manifests preserve provenance. Individual F1 scores are committed; each appendix figure prints its generating command.
+Two-epoch 5e-4 is more accurate and less excessively diverse than one epoch. Default still leads natural-protein mean F1, oracle best@1,000 and ensemble accuracy. Reduced Neff dependence is not established for the strongest redesign-only checkpoint. Different training schedules/exposure prevent causal isolation of an extra epoch or native-document removal.
 
-Report and source: https://github.com/Open-Athena/MarinFold/pull/374
-Public bucket prefix: open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v2-1000
+The README is the complete report. Figures regenerate from committed tables. New raw predictions (1.423 GB), source bundles, inputs and this report are public under v3-two-epoch; v1/v2 remain immutable. Each appendix figure prints its generating command.
+
+Public bucket: open-athena/MarinFold/data/exp373-mpnn-diversity-neff/v3-two-epoch

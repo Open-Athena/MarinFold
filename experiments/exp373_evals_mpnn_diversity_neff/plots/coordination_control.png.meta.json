@@ -1,5 +1,5 @@
 {
-  "script": "plot.py",
+  "script": "two_epoch_plot.py",
   "args": [],
-  "caption": "Fixed prompts, T=1. Curveball shuffles preserve every sample size and contact frequency. Ten null replicates; independent half/full chains assess mixing sensitivity. Coordination does not establish conformations."
+  "caption": "Temperature 1; first 300 fixed samples. Ten 3,000-trade curveball chains preserve every sample size and contact frequency. Positive excess indicates dependencies beyond these margins; 95% protein-bootstrap intervals."
 }

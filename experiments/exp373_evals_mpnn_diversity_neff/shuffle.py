@@ -15,10 +15,16 @@ from analyze import candidate_sets, load
 HERE = Path(__file__).resolve().parent
 
 
-def run_one(task: tuple[str, str, dict, int]) -> list[dict]:
+def run_one(task: tuple[str, str, dict, int, bool]) -> list[dict]:
     """Evaluate one protein/model and cache only hash-identified complete results."""
-    model, stem, truth, repeats = task
-    source = HERE / "scratch/raw" / model / f"{stem}-t1.0-fixed.json.gz"
+    model, stem, truth, repeats, two_epoch = task
+    source = (
+        HERE
+        / "scratch"
+        / ("raw_two_epoch" if two_epoch else "raw")
+        / model
+        / f"{stem}-t1.0-fixed.json.gz"
+    )
     digest = hashlib.sha256(
         source.read_bytes()
         + (HERE / "analysis_stats.py").read_bytes()
@@ -30,6 +36,7 @@ def run_one(task: tuple[str, str, dict, int]) -> list[dict]:
         if saved["sha256"] == digest:
             return saved["rows"]
     record = load(source)
+    record = {**record, "samples": record["samples"][:300]}
     sets, _, _, _ = candidate_sets(record, truth)
     actual = diversity(sets, truth["L"] ** 2)
     frequencies = Counter(x for s in sets for x in s)
@@ -63,13 +70,17 @@ def main() -> None:
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--repeats", type=int, default=10)
     parser.add_argument("--allow-partial", action="store_true")
+    parser.add_argument("--two-epoch", action="store_true")
     args = parser.parse_args()
     truth = json.loads((HERE / "inputs/ground_truth.json").read_text())
+    plan_name = "two_epoch_plan.json" if args.two_epoch else "plan.json"
+    models = json.loads((HERE / "data" / plan_name).read_text())["models"]
+    raw = HERE / "scratch" / ("raw_two_epoch" if args.two_epoch else "raw")
     tasks = [
-        (model, r["stem"], r, args.repeats)
+        (model, r["stem"], r, args.repeats, args.two_epoch)
         for r in truth
-        for model in ["default", "mpnn"]
-        if (HERE / "scratch/raw" / model / f"{r['stem']}-t1.0-fixed.json.gz").exists()
+        for model in models
+        if (raw / model / f"{r['stem']}-t1.0-fixed.json.gz").exists()
     ]
     if not args.allow_partial:
         assert len(tasks) == 232
@@ -82,8 +93,11 @@ def main() -> None:
                 print("SHUFFLED", index, "/", len(tasks), flush=True)
     destination = HERE / ("scratch/partial" if args.allow_partial else "data")
     destination.mkdir(exist_ok=True)
-    pd.DataFrame(rows).to_csv(destination / "shuffle_controls.csv", index=False)
-    if not args.allow_partial:
+    name = (
+        "shuffle_controls_two_epoch.csv" if args.two_epoch else "shuffle_controls.csv"
+    )
+    pd.DataFrame(rows).to_csv(destination / name, index=False)
+    if not args.allow_partial and not args.two_epoch:
         path = HERE / "data/completeness.json"
         complete = json.loads(path.read_text())
         complete["shuffle_replicates"] = args.repeats

@@ -1,0 +1,21 @@
+{
+  "conditions": 1392,
+  "samples": 440800,
+  "original_files_unchanged": 1624,
+  "raw_bytes": 1422998122,
+  "paired_prompts_and_seeds": true,
+  "all_checkpoint_sha256_verified": true,
+  "source_bundles": [
+    "699ec2559e463feab47f11d02ce12a30723100c35967784a2f9efc00f78d93d5"
+  ],
+  "inference_gpu_hours": 8.641798120940415,
+  "counts": {
+    "unfinished": 4,
+    "extended": 1177,
+    "empty": 0,
+    "malformed_statements": 202,
+    "invalid_positions": 3853,
+    "unexpected_text": 247,
+    "retractions": 0
+  }
+}

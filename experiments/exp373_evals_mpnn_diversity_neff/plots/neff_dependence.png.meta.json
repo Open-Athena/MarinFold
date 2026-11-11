@@ -1,5 +1,5 @@
 {
-  "script": "plot.py",
+  "script": "two_epoch_plot.py",
   "args": [],
-  "caption": "Primary comparison: 97 natural proteins, T=1, 100 randomized prompts. Top: fixed tiers and bootstrap 95% CIs. Bottom: paired differences and unadjusted OLS."
+  "caption": "Primary accuracy uses 100 randomized prompts. Tier means and paired differences from default, with 95% protein-bootstrap intervals. Neff <10 has four proteins; raw depth <10 has none."
 }

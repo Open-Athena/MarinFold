@@ -17,24 +17,35 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--inputs-only", action="store_true")
     parser.add_argument("--extend", action="store_true")
+    parser.add_argument("--two-epoch", action="store_true")
     args = parser.parse_args()
-    plan_name = "extension_plan.json" if args.extend else "plan.json"
+    assert not (args.extend and args.two_epoch)
+    plan_name = (
+        "two_epoch_plan.json"
+        if args.two_epoch
+        else ("extension_plan.json" if args.extend else "plan.json")
+    )
+    manifest_name = (
+        "publication_manifest_two_epoch.json"
+        if args.two_epoch
+        else (
+            "publication_manifest_1000.json"
+            if args.extend
+            else "publication_manifest.json"
+        )
+    )
     plan = json.loads((HERE / "data" / plan_name).read_text())
     root = plan["artifact_root"].removeprefix("hf://")
     files = list((HERE / "inputs").glob("*"))
     if not args.inputs_only:
-        files += list((HERE / "data").glob("*")) + list((HERE / "plots").glob("*"))
+        files += list((HERE / "data").rglob("*")) + list((HERE / "plots").glob("*"))
         files += [
             p for p in HERE.glob("*") if p.suffix in [".py", ".md", ".toml", ".lock"]
         ]
     fs = HfFileSystem()
     records = []
     for path in sorted(files):
-        if (
-            not path.is_file()
-            or path.name == "publication_manifest_1000.json"
-            or (not args.extend and path.name == "publication_manifest.json")
-        ):
+        if not path.is_file() or path.name == manifest_name:
             continue
         relative = str(path.relative_to(HERE))
         destination = root + "/" + relative
@@ -47,15 +58,7 @@ def main() -> None:
         assert hashlib.sha256(content).hexdigest() == digest
         records.append({"path": relative, "bytes": len(content), "sha256": digest})
         print("VERIFIED", relative, len(content), flush=True)
-    manifest = (
-        HERE
-        / "data"
-        / (
-            "publication_manifest_1000.json"
-            if args.extend
-            else "publication_manifest.json"
-        )
-    )
+    manifest = HERE / "data" / manifest_name
     manifest.write_text(
         json.dumps({"root": "hf://" + root, "files": records}, indent=2) + "\n"
     )
