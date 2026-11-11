@@ -1,0 +1,10 @@
+{
+  "script": "analyze_cases.py",
+  "args": [
+    "--plan",
+    "data/monomer_inference_plan.json",
+    "--run",
+    "/data/exp369/monomers-v1"
+  ],
+  "caption": "Bars average two 100-rollout repeats; white dots show each repeat. Left: mean support over contacts unique to each structure, on common resolved residues. Right: R-precision against each contact set, whose sizes differ. These are isolated biological monomers, not established catastrophic fold errors. Pru p 7 bars use deposited model 1; black whiskers span the 20-conformer NMR ensemble after averaging the two repeats, not confidence intervals. Predictions have no structure contacts in their prompts."
+}

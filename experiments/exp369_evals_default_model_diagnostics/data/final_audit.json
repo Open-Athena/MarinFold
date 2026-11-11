@@ -1,0 +1,50 @@
+{
+  "conditions": 6664,
+  "proteins": 97,
+  "rollouts": 666400,
+  "invalid_rollouts": 2218,
+  "unfinished_rollouts": 0,
+  "malformed_statements": 1107,
+  "out_of_range_pairs": 1797,
+  "pure_inference_worker_hours": 11.690844747993461,
+  "condition_total_worker_hours": 14.11006091331164,
+  "worker_model_load_seconds": 2181.0195180743467,
+  "workers_with_retained_conditions": 32,
+  "first_condition_timestamp_utc": "2026-10-21T14:47:10.616507+00:00",
+  "last_condition_timestamp_utc": "2026-10-21T16:20:30.357648+00:00",
+  "timing_scope": "Retained completed conditions only; excludes canceled incomplete work and v1 attempts.",
+  "baseline_reproducibility": {
+    "all": {
+      "n_proteins": 97,
+      "new_mean": 0.5544865042993137,
+      "archived_mean": 0.5537468341913646,
+      "mean_difference": 0.0007396701079490238,
+      "difference_95ci": [
+        -0.0020527801025814383,
+        0.0035049204545671443
+      ],
+      "mean_absolute_per_protein_difference": 0.01056445209893849
+    },
+    "long": {
+      "n_proteins": 97,
+      "new_mean": 0.538290415433959,
+      "archived_mean": 0.5380178272779219,
+      "mean_difference": 0.000272588156037148,
+      "difference_95ci": [
+        -0.0048326310067481676,
+        0.004991691917479645
+      ],
+      "mean_absolute_per_protein_difference": 0.0154216894478852
+    }
+  },
+  "zero_invalid_rollout_sensitivity": {
+    "all": {
+      "maximum_absolute_change_in_mean_r_precision": 0.00021323827499719616,
+      "maximum_absolute_change_in_mean_gain": 0.0005219877223680003
+    },
+    "long": {
+      "maximum_absolute_change_in_mean_r_precision": 0.0005138574677665542,
+      "maximum_absolute_change_in_mean_gain": 0.001235422238143602
+    }
+  }
+}

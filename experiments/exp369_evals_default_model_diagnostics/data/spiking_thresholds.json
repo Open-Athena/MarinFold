@@ -1,0 +1,74 @@
+[
+  {
+    "policy": "random",
+    "axis": "count",
+    "criterion": "gain_at_least_0.05_with_positive_95ci",
+    "first_tested_dose": 8.0
+  },
+  {
+    "policy": "random",
+    "axis": "count",
+    "criterion": "remaining_r_precision_at_least_0.80",
+    "first_tested_dose": null
+  },
+  {
+    "policy": "random",
+    "axis": "fraction",
+    "criterion": "gain_at_least_0.05_with_positive_95ci",
+    "first_tested_dose": 0.05
+  },
+  {
+    "policy": "random",
+    "axis": "fraction",
+    "criterion": "remaining_r_precision_at_least_0.80",
+    "first_tested_dose": null
+  },
+  {
+    "policy": "random",
+    "axis": "sse_round",
+    "criterion": "gain_at_least_0.05_with_positive_95ci",
+    "first_tested_dose": 1.0
+  },
+  {
+    "policy": "random",
+    "axis": "sse_round",
+    "criterion": "remaining_r_precision_at_least_0.80",
+    "first_tested_dose": null
+  },
+  {
+    "policy": "sse_balanced",
+    "axis": "count",
+    "criterion": "gain_at_least_0.05_with_positive_95ci",
+    "first_tested_dose": 8.0
+  },
+  {
+    "policy": "sse_balanced",
+    "axis": "count",
+    "criterion": "remaining_r_precision_at_least_0.80",
+    "first_tested_dose": null
+  },
+  {
+    "policy": "sse_balanced",
+    "axis": "fraction",
+    "criterion": "gain_at_least_0.05_with_positive_95ci",
+    "first_tested_dose": 0.05
+  },
+  {
+    "policy": "sse_balanced",
+    "axis": "fraction",
+    "criterion": "remaining_r_precision_at_least_0.80",
+    "first_tested_dose": null
+  },
+  {
+    "policy": "sse_balanced",
+    "axis": "sse_round",
+    "criterion": "gain_at_least_0.05_with_positive_95ci",
+    "first_tested_dose": 1.0
+  },
+  {
+    "policy": "sse_balanced",
+    "axis": "sse_round",
+    "criterion": "remaining_r_precision_at_least_0.80",
+    "first_tested_dose": null
+  }
+]

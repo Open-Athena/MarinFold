@@ -1,0 +1,253 @@
+{
+  "n_jobs": 12,
+  "remaining_conditions": 325,
+  "bundle_sha256": "2e09a01610f1f3baae727de0fea4085d028491d6ee9df31335d57e6843e36bf4",
+  "out": "s3://marin-us-east-02a/MarinFold/exp369/spiking-v2/full",
+  "assignments": [
+    {
+      "stem": "7wzm_A",
+      "L": 492,
+      "counts": [
+        45,
+        49,
+        64,
+        85,
+        91,
+        128,
+        182,
+        273,
+        364
+      ],
+      "remaining_conditions": 17
+    },
+    {
+      "stem": "7x8l_A",
+      "L": 514,
+      "counts": [
+        8,
+        11,
+        16,
+        29,
+        32,
+        36,
+        58,
+        59,
+        64,
+        101,
+        116,
+        128,
+        232,
+        348,
+        464
+      ],
+      "remaining_conditions": 29
+    },
+    {
+      "stem": "7xq4_A",
+      "L": 514,
+      "counts": [
+        0,
+        1,
+        2,
+        4,
+        8,
+        9,
+        16,
+        23,
+        28,
+        32,
+        47,
+        52,
+        55,
+        64,
+        94,
+        97,
+        128,
+        188,
+        283,
+        377
+      ],
+      "remaining_conditions": 53
+    },
+    {
+      "stem": "8azb_A",
+      "L": 521,
+      "counts": [
+        0,
+        4,
+        8,
+        16,
+        32,
+        58,
+        65,
+        117,
+        234,
+        469
+      ],
+      "remaining_conditions": 29
+    },
+    {
+      "stem": "8azb_A",
+      "L": 521,
+      "counts": [
+        1,
+        2,
+        5,
+        11,
+        29,
+        35,
+        64,
+        116,
+        128,
+        352
+      ],
+      "remaining_conditions": 28
+    },
+    {
+      "stem": "7xyr_A",
+      "L": 591,
+      "counts": [
+        4,
+        7,
+        8,
+        14,
+        16,
+        32,
+        35,
+        44,
+        64,
+        70,
+        80,
+        128,
+        141,
+        143,
+        282,
+        424,
+        565
+      ],
+      "remaining_conditions": 33
+    },
+    {
+      "stem": "7uww_A",
+      "L": 635,
+      "counts": [
+        8,
+        13,
+        16,
+        32,
+        34,
+        51,
+        64,
+        69,
+        89,
+        128,
+        138,
+        169,
+        277,
+        415,
+        554
+      ],
+      "remaining_conditions": 30
+    },
+    {
+      "stem": "8bke_A",
+      "L": 638,
+      "counts": [
+        57,
+        64,
+        98,
+        104,
+        128,
+        197,
+        296,
+        395
+      ],
+      "remaining_conditions": 15
+    },
+    {
+      "stem": "8dge_A",
+      "L": 738,
+      "counts": [
+        1,
+        4,
+        9,
+        18,
+        45,
+        64,
+        101,
+        182,
+        365,
+        731
+      ],
+      "remaining_conditions": 20
+    },
+    {
+      "stem": "8dge_A",
+      "L": 738,
+      "counts": [
+        0,
+        2,
+        8,
+        16,
+        32,
+        52,
+        91,
+        128,
+        189,
+        548
+      ],
+      "remaining_conditions": 19
+    },
+    {
+      "stem": "7znz_A",
+      "L": 761,
+      "counts": [
+        4,
+        9,
+        18,
+        46,
+        64,
+        93,
+        128,
+        163,
+        372,
+        745
+      ],
+      "remaining_conditions": 26
+    },
+    {
+      "stem": "7znz_A",
+      "L": 761,
+      "counts": [
+        0,
+        1,
+        2,
+        8,
+        16,
+        32,
+        49,
+        90,
+        94,
+        158,
+        186,
+        559
+      ],
+      "remaining_conditions": 26
+    }
+  ],
+  "job_ids": [
+    "/bizon/exp369-tail-2e09a016-7wzm_a-cb13b023",
+    "/bizon/exp369-tail-2e09a016-7x8l_a-939722ae",
+    "/bizon/exp369-tail-2e09a016-7xq4_a-60f99a73",
+    "/bizon/exp369-tail-2e09a016-8azb_a-f0daf821",
+    "/bizon/exp369-tail-2e09a016-8azb_a-b7b0a626",
+    "/bizon/exp369-tail-2e09a016-7xyr_a-ec531da0",
+    "/bizon/exp369-tail-2e09a016-7uww_a-c7d63fde",
+    "/bizon/exp369-tail-2e09a016-8bke_a-41fbe37d",
+    "/bizon/exp369-tail-2e09a016-8dge_a-3608eddd",
+    "/bizon/exp369-tail-2e09a016-8dge_a-273a0003",
+    "/bizon/exp369-tail-2e09a016-7znz_a-6d7bbce3",
+    "/bizon/exp369-tail-2e09a016-7znz_a-cb86fd01"
+  ],
+  "job_prefix": "/bizon/exp369-tail-2e09a016"
+}

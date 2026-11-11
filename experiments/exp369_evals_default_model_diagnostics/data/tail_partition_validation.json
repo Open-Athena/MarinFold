@@ -1,0 +1,8 @@
+{
+  "test": "three real longest proteins, partially completed count groups",
+  "jobs": 12,
+  "remaining_conditions": 201,
+  "disjoint": true,
+  "complete_coverage": true,
+  "frozen_bundle_reused": true
+}

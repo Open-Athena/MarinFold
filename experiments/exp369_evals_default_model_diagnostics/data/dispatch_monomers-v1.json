@@ -1,0 +1,18 @@
+{
+  "phase": "monomers-v1",
+  "n_gpus": 1,
+  "n_shards": 1,
+  "shard_indices": [
+    0
+  ],
+  "priority": 3,
+  "image": "vllm/vllm-openai:v0.9.2",
+  "bundle_sha256": "4c371e9500681b45dcbc39bdd999e9d0d12b54edeba9d7e455cec137e4b8ffad",
+  "bundle_bytes": 178625,
+  "checkpoint_bytes_per_gpu": 5885618986,
+  "checkpoint_transfer": "CoreWeave S3 to CoreWeave H100 only",
+  "out": "s3://marin-us-east-02a/MarinFold/exp369/spiking-v2/monomers-v1",
+  "eval_set": "afdb-training-monomers",
+  "n_targets": 3,
+  "submit": true
+}
