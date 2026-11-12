@@ -17,9 +17,9 @@ Exclude the same 5.11% of source rows when either complete document exceeds 16K.
 The pool has 4.493B raw tokens versus 1.290B prompted tokens.
 Equal token budgets imply different protein exposure.
 
-## Latest R-precision results — November 10
+## Latest R-precision results — verified November 12
 
-New contacts-v1 milestone: 20B additional native tokens, checkpoint step127506.
+No new evaluations since November 10: neither run reached its next 1B-token milestone.
 Same 97 eval-val proteins × 100 terminated rollouts; all result I/O stays in RNO2A.
 Latest raw +20B: all R=0.34567, long R=0.32120.
 Best raw all-range remains +18B: R=0.34703; 20B has the highest long-range score.
@@ -32,25 +32,27 @@ Dotted reference: current default exp277 1.5B, step266344; all R=0.55375, long R
 Reference uses the same97 eval-val proteins; registry and score-table provenance are pinned.
 Eval-test remains untouched. An exact expanded-corpus sequence-KNN null is unavailable.
 
-## Execution and recovery — November 10
+## Execution and recovery — November 12
 
-Raw a08 continues: 20.589B / 100B tokens, step131161.
-Prompted a10 resumed successfully: 6.644B / 100B tokens, step144954.
-Complete local checkpoints verified at raw131161 and prompted144933, all8 optimizer shards.
-Both use8H100s and preserve optimizer, data cursor, W&B identity and100B schedule.
-Training and evaluation I/O remain in RNO2A.
-Both evaluation drivers are live and caught up; next milestones are raw21B and prompted7B.
+Both GPU parents stopped November 11 at 02:00 UTC: CoreWeave account write suspension.
+Last logged progress: raw 20.864B / step132582; prompted 6.743B / step147137.
+Complete checkpoints verified: raw 20.859B / step132559; prompted 6.742B / step147102.
+All eight optimizer shards and tokenizer intact; current PUT/GET and multipart writes pass.
+RNO2A has only four free H100s; each recovery needs eight. Recoveries queued at batch priority.
+Original optimizer, data cursor, W&B identity and 100B schedule retained; outputs stay local.
+Both evaluators are live and caught up; next milestones remain raw21B and prompted7B.
 
-## TPU forks — memory limit, smaller microbatch
+## TPU forks — optimizer counter placement fixed
 
 Approved transfer complete: 9,668 objects / 579.87GB; all future TPU I/O stays in us-east5.
 Frozen parents: raw step59319 / 9.122B; prompted step87360 / 4.026B.
-Validation a03 loaded all426 FP32 parameters and all8 optimizer shards in840.6seconds.
-Converted state saved regionally; first microbatch completed, second exhausted device memory.
-Retry halves the microbatch to4 documents, one per chip, and accumulates8 microbatches.
-Global batch remains32 documents; full16K context, cursor order and token weighting unchanged.
-CPU smaller-microbatch loss/Adam parity and exact resumed-update checks pass.
-Bounded validation a04 accepted21:48:38UTC, one v5p-8 in us-east5-a, two-hour limit.
+After the earlier memory failure, microbatch remains four documents with eight accumulation steps.
+Validation a04 failed during checkpoint comparison before W&B registration or training.
+Adam counter was on one device, incompatible with model arrays on all four devices.
+Counter now explicitly replicates over the model mesh. Four-device recovery/Adam regression passes.
+Global batch32, full16K context, cursor order and token weighting remain unchanged.
+CPU model/microbatch parity and exact resumed-update checks pass.
+Bounded validation a05 accepted19:21:47UTC, one v5p-8 in us-east5-a, two-hour limit.
 Neither production TPU fork is training yet. Full hardware recovery validation and
 regional periodic evaluation bridge remain unfinished; GPU parents stay independent.
 

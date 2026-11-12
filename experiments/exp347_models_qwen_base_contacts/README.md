@@ -512,6 +512,41 @@ Before admitting production forks, the remaining gates are:
 
 ## Results
 
+### Storage failure, recovery queue, and unchanged evaluations — November 12
+
+Both GPU parents stopped around **02:00 UTC November 11 (9 p.m. EST November 10)**
+when CoreWeave rejected checkpoint multipart uploads: `Account is write suspended
+for this availability zone`. Raw a08 last logged **20,864,016,335 tokens / step
+132582**; prompted a10 last logged **6,743,234,473 tokens / step 147137**.
+Complete recovery checkpoints remain intact at **step 132559 / 20,859,246,064
+tokens** and **step 147102 / 6,741,574,856 tokens**, respectively. All 20 objects
+per checkpoint, including eight optimizer shards and the tokenizer, were verified.
+
+Current regional PUT/GET and 5 MiB multipart UploadPart probes pass. Recovery
+retains eight H100s per arm, the original optimizer/cursors/W&B identities and
+100B-token schedules, and all future checkpoint writes stay in RNO2A. Capacity
+is constrained: the 19:20 and 19:22 UTC snapshots report only four free H100s.
+Recovery roots `exp347-qwen35-4b-contacts_v1-corpus235m-100bt-a09` and
+`exp347-qwen35-4b-prompted-corpus235m-100bt-a11` were accepted at **19:23:05** and
+**19:25:11 UTC** at batch priority. They await allocation; submission does not
+establish resumed training progress.
+
+Both evaluators remain live and caught up. **No new evaluations completed since
+November 10**, because neither arm reached its next 1B-token milestone. The latest
+scores remain raw **20B: 0.34567 all / 0.32120 long**, prompted **6B: 0.29649 /
+0.26331**, each on 97 eval-val proteins with 100 terminated rollouts. The plot now
+prints the verification date, explicitly says no new evaluations, and labels each
+endpoint with its evaluated token count. The current-default registry was checked
+again and still points to exp277 1.5B step 266344; its dotted reference is unchanged.
+
+TPU a04 failed November 11 before W&B registration or training: the Adam-step
+counter was on one device while the parameters and moments spanned four. The
+counter now uses explicit replication on the model mesh. A new four-device CPU
+test verifies exact Orbax recovery and the next Adam update; model/loss and
+microbatch parity still pass. Bounded validation **a05** was accepted at
+**19:21:47 UTC November 12** on one v5p-8 in us-east5-a. Production TPU training
+and the regional periodic evaluation bridge remain unfinished.
+
 ### GPU progress and 20B evaluation — November 10
 
 Both CoreWeave parents are training. At 21:42 UTC, contacts-v1 a08 had reached

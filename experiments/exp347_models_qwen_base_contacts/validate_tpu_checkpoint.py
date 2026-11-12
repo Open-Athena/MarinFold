@@ -13,7 +13,7 @@ import torch
 from flax import nnx
 from transformers import Qwen3_5ForCausalLM, Qwen3_5TextConfig
 
-from tpu_checkpoint import restore_arrays, save_arrays
+from tpu_checkpoint import replicated_adam_step, restore_arrays, save_arrays
 from tpu_model import abstract_model, configuration, convert_parameters, initial_rest
 from tpu_training import document_batch, training_functions
 from validate_tpu_math import probe_config
@@ -27,7 +27,7 @@ def validate() -> dict:
     source = probe_config()
     hf = Qwen3_5ForCausalLM(Qwen3_5TextConfig(**source)).eval()
     config = configuration(source, length=128, batch=2, dtype="float32")
-    _, model = abstract_model(config)
+    mesh, model = abstract_model(config)
     graph, template, rest = nnx.split(model, nnx.Param, ...)
     rest = initial_rest(rest)
     params = convert_parameters(
@@ -40,7 +40,7 @@ def validate() -> dict:
         "params": params,
         "mu": jax.tree.map(lambda p: jnp.full_like(p, 0.001), params),
         "nu": jax.tree.map(lambda p: jnp.full_like(p, 0.002), params),
-        "adam_step": jnp.asarray(59319),
+        "adam_step": replicated_adam_step(59319, mesh),
     }
     rng = np.random.default_rng(914)
     rows = [

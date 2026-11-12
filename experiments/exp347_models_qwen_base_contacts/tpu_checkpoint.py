@@ -8,12 +8,12 @@ import urllib.request
 from typing import Any
 
 import jax
-import jax.numpy as jnp
 import numpy as np
 import orbax.checkpoint as ocp
 import torch
 from flax import nnx
 from jax.experimental import multihost_utils
+from jax.sharding import Mesh, NamedSharding, PartitionSpec
 from safetensors.numpy import load as load_safetensors
 
 from tpu_model import convert_parameters
@@ -69,8 +69,20 @@ def verify_snapshot(fs: Any, snapshot: dict) -> str:
     return source
 
 
+def replicated_adam_step(step: int, mesh: Mesh) -> jax.Array:
+    """Place the optimizer counter on every device owning the model state."""
+    return jax.device_put(
+        np.asarray(step, dtype=np.int32), NamedSharding(mesh, PartitionSpec())
+    )
+
+
 def load_parent(
-    fs: Any, snapshot: dict, source_config: dict, config: Any, template: nnx.State
+    fs: Any,
+    snapshot: dict,
+    source_config: dict,
+    config: Any,
+    template: nnx.State,
+    mesh: Mesh,
 ) -> tuple[dict, dict]:
     """Decode all FP32 parameters, optimizer moments, and eight logical cursors."""
     source = verify_snapshot(fs, snapshot)
@@ -132,7 +144,7 @@ def load_parent(
         "params": params.to_pure_dict(),
         "mu": first_moment.to_pure_dict(),
         "nu": second_moment.to_pure_dict(),
-        "adam_step": jnp.asarray(adam_step, jnp.int32),
+        "adam_step": replicated_adam_step(adam_step, mesh),
     }
     # Preserve source RNG streams as provenance; the no-dropout TPU model does
     # not claim to interchange CUDA and JAX hardware RNG bit for bit.

@@ -1,5 +1,6 @@
 """Plot all committed 4B pilot and continuation eval-val measurements."""
 
+import argparse
 import csv
 import json
 import math
@@ -60,6 +61,11 @@ def measurements(here: Path) -> list[dict]:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--status-note", help="Dated collection status, separate from measured scores."
+    )
+    args = parser.parse_args()
     here = Path(__file__).parent
     rows = measurements(here)
     reference = json.loads((here / "data/eval_val_default_reference.json").read_text())
@@ -71,7 +77,7 @@ def main() -> None:
         writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
         writer.writeheader()
         writer.writerows(rows)
-    fig, axes = plt.subplots(1, 2, figsize=(12, 4.6), sharex=True, sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5), sharex=True, sharey=True)
     highest = max(
         max(row["r_precision"] for row in rows),
         max(reference["r_precision"].values()),
@@ -97,7 +103,7 @@ def main() -> None:
             )
             last = points[-1]
             ax.annotate(
-                f"{last['r_precision']:.3f}",
+                f"{last['phase_tokens_billions']:.0f}B: {last['r_precision']:.3f}",
                 (last["phase_tokens_billions"], last["r_precision"]),
                 xytext=(5, 6),
                 textcoords="offset points",
@@ -108,7 +114,7 @@ def main() -> None:
             ax.set_xlabel("Additional full-corpus native tokens (billions)")
             ax.set_ylabel("Mean per-protein R-precision")
             ax.set_ylim(bottom=0, top=upper)
-            ax.margins(x=0.09)
+            ax.margins(x=0.13)
             ax.spines[["top", "right"]].set_visible(False)
             ax.grid(alpha=0.2)
     for ax, contact_range in zip(axes, ["all", "long"], strict=True):
@@ -132,6 +138,8 @@ def main() -> None:
         )
     axes[0].legend(frameon=False, loc="lower right")
     fig.suptitle("Qwen3.5-4B: 97 eval-val proteins × 100 completed rollouts")
+    if args.status_note:
+        fig.text(0.5, 0.92, args.status_note, ha="center", fontsize=10, color="#555555")
     fig.text(
         0.5,
         0.015,
@@ -140,7 +148,7 @@ def main() -> None:
         fontsize=9,
         color="#555555",
     )
-    fig.tight_layout(rect=(0, 0.055, 1, 1))
+    fig.tight_layout(rect=(0, 0.055, 1, 0.9 if args.status_note else 1))
     for extension in ("png", "svg"):
         save_plot_with_meta(
             fig,
@@ -151,7 +159,8 @@ def main() -> None:
                 "between formats. Differences below approximately 0.005 are evaluator ties. "
                 "Dotted lines show the current default exp277 1.5B step-266344 on the same "
                 "97 eval-val proteins, with pinned provenance in data/eval_val_default_reference.json. "
-                "Neither continuation is near its 100B target."
+                "Neither continuation is near its 100B target. "
+                + (args.status_note or "")
             ),
             dpi=160,
         )

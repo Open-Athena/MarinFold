@@ -1,5 +1,8 @@
 {
   "script": "plot_eval_progress.py",
-  "args": [],
-  "caption": "Measured checkpoints only; zero additional tokens is the corresponding 1B-token AFDB pilot. Native-token counts imply different protein exposure between formats. Differences below approximately 0.005 are evaluator ties. Dotted lines show the current default exp277 1.5B step-266344 on the same 97 eval-val proteins, with pinned provenance in data/eval_val_default_reference.json. Neither continuation is near its 100B target."
+  "args": [
+    "--status-note",
+    "Checked November 12, 2026: no new evaluations since November 10."
+  ],
+  "caption": "Measured checkpoints only; zero additional tokens is the corresponding 1B-token AFDB pilot. Native-token counts imply different protein exposure between formats. Differences below approximately 0.005 are evaluator ties. Dotted lines show the current default exp277 1.5B step-266344 on the same 97 eval-val proteins, with pinned provenance in data/eval_val_default_reference.json. Neither continuation is near its 100B target. Checked November 12, 2026: no new evaluations since November 10."
 }

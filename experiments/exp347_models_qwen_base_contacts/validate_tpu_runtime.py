@@ -81,7 +81,7 @@ def main() -> None:
     rest = initial_rest(rest)
     began = time.perf_counter()
     print("Loading frozen FP32 parameters and eight optimizer shards", flush=True)
-    state, metadata = load_parent(fs, snapshot, source_config, config, template)
+    state, metadata = load_parent(fs, snapshot, source_config, config, template, mesh)
     load_seconds = time.perf_counter() - began
     print(f"Converted full state in {load_seconds:.1f}s", flush=True)
     converted = (

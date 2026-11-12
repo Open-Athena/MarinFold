@@ -58,6 +58,7 @@ def main() -> None:
     command = [
         "uv",
         "run",
+        "--no-sync",
         "--project",
         str(args.marin_checkout),
         "--package",
