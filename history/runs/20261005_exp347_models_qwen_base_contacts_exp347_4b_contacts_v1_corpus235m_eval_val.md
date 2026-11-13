@@ -86,3 +86,10 @@ November 5 refreshed result: step 64544 / 10,000,117,732 additional tokens; all-
 November9: all19 periodic raw milestones are complete. Latest step119246/19000027107tokens scores0.3378773050 all and0.3093641769 long; best step114806/+18B scores0.3470314515/0.3165192998. Nine new milestones each have97proteins×100terminatedrollouts with metrics, timings and12worker provenance files. Driver a07 remains live and caught up.
 
 November10: collected the completed20B milestone at step127506 /20,000,079,692 additional tokens. All97 eval-val proteins have100 terminated rollouts and measured timings. R-precision all=.34567054900005284, long=.32119943032891185. Canonical result prefix: s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/eval-val/exp347-qwen35-4b-contacts_v1-corpus235m-100bt/step-127506. Driver a07 remains running and caught up.
+
+November 13: collected the completed 21B and 22B milestones, steps 133218 and
+139024. Latest 22,000,068,018 additional tokens score 0.36120782042183486
+all-range and 0.3346670424390309 long-range R-precision. Both have all 97 eval-val
+proteins × 100 terminated rollouts, measured timings, and 12 worker provenance
+records. Driver a07 is running and caught up. Canonical regional prefix:
+`s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/eval-val/exp347-qwen35-4b-contacts_v1-corpus235m-100bt/step-139024`.

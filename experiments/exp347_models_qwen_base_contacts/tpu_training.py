@@ -47,11 +47,18 @@ def training_functions(
             / count
         )
 
-    gradient = jax.jit(jax.value_and_grad(loss_fn))
+    value_and_grad = jax.value_and_grad(loss_fn)
+    gradient = jax.jit(value_and_grad)
 
-    @jax.jit(donate_argnums=(0, 1))
-    def accumulate(accumulated: dict, gradient: dict) -> dict:
-        return jax.tree.map(jnp.add, accumulated, gradient)
+    @jax.jit(donate_argnums=(4,))
+    def accumulate(
+        params: dict, rest: nnx.State, batch: dict, count: Any, accumulated: dict
+    ) -> tuple[Any, dict]:
+        # A separate gradient call must materialize a full second gradient tree
+        # before accumulation can donate either buffer. Fuse the two operations
+        # so XLA can reuse the old accumulator while producing the new one.
+        loss, current = value_and_grad(params, rest, batch, count)
+        return loss, jax.tree.map(jnp.add, accumulated, current)
 
     @jax.jit(donate_argnums=(0, 1))
     def update(state: dict, gradient: dict, lr: Any) -> tuple[dict, Any]:

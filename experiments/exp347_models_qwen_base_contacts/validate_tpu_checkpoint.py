@@ -57,13 +57,13 @@ def validate() -> dict:
         accumulated = None
         for i in range(0, len(rows), batch_size):
             batch = document_batch(rows[i : i + batch_size], "contacts_v1", 128)
-            loss, gradient = gradient_fn(current["params"], rest, batch, count)
+            if accumulated is None:
+                loss, accumulated = gradient_fn(current["params"], rest, batch, count)
+            else:
+                loss, accumulated = accumulate_fn(
+                    current["params"], rest, batch, count, accumulated
+                )
             total_loss += float(loss)
-            accumulated = (
-                gradient
-                if accumulated is None
-                else accumulate_fn(accumulated, gradient)
-            )
         updated, _ = update_fn(current, accumulated, 1.9e-5)
         return updated, total_loss
 
@@ -90,6 +90,7 @@ def validate() -> dict:
         save_arrays(uri, state)
         restored = restore_arrays(uri, state)
         smaller_batch_state = restore_arrays(uri, state)
+        full_batch_state = restore_arrays(uri, state)
         verify_roundtrip(state, restored)
         original_next, loss = step(state)
         restored_next, restored_loss = step(restored)
@@ -105,6 +106,15 @@ def validate() -> dict:
             jax.tree.leaves(original_next), jax.tree.leaves(smaller_next), strict=True
         ):
             np.testing.assert_allclose(original, smaller, atol=2e-6, rtol=2e-6)
+        full_loss, full_gradient = gradient_fn(
+            full_batch_state["params"], rest, full, count
+        )
+        full_next, _ = update_fn(full_batch_state, full_gradient, 1.9e-5)
+        np.testing.assert_allclose(loss, float(full_loss), atol=2e-6, rtol=2e-6)
+        for original, reference in zip(
+            jax.tree.leaves(original_next), jax.tree.leaves(full_next), strict=True
+        ):
+            np.testing.assert_allclose(original, reference, atol=2e-6, rtol=2e-6)
     return {
         "status": "passed",
         "completed_utc": datetime.now(UTC).isoformat(),
@@ -118,6 +128,8 @@ def validate() -> dict:
         "microbatch_sizes": [2, 1],
         "microbatch_update_parity": "passed (atol=2e-6, rtol=2e-6)",
         "smaller_microbatch_loss": smaller_loss,
+        "full_batch_update_parity": "passed (atol=2e-6, rtol=2e-6)",
+        "accumulation": "fused gradient computation and accumulator donation",
     }
 
 

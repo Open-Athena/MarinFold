@@ -1,0 +1,25 @@
+{
+  "complete": true,
+  "checkpoint": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/checkpoints/exp347-qwen35-4b-prompted-corpus235m-100bt/hf/step-151345",
+  "document_format": "prompted",
+  "n_units": 97,
+  "n_rollouts": 100,
+  "unfinished_rollouts": 0,
+  "r_precision": {
+    "all": 0.3115816271373164,
+    "short": 0.39690547359108,
+    "medium": 0.33806400169759,
+    "long": 0.2800474599815171
+  },
+  "valid_r_precision": {
+    "all": 97,
+    "short": 97,
+    "medium": 97,
+    "long": 97
+  },
+  "output": "s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/eval-val/exp347-qwen35-4b-prompted-corpus235m-100bt/step-151345",
+  "step": 151345,
+  "tokens": 7000047847,
+  "training_run": "exp347-qwen35-4b-prompted-corpus235m-100bt",
+  "final": false
+}

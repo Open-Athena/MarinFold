@@ -168,13 +168,29 @@ def main() -> None:
                         batch, args.format, MAX_LENGTH
                     ).items()
                 }
-                loss, gradient = gradient_fn(state["params"], rest, inputs, count)
+                if accumulated is None:
+                    loss, accumulated = gradient_fn(
+                        state["params"], rest, inputs, count
+                    )
+                else:
+                    loss, accumulated = accumulate_fn(
+                        state["params"], rest, inputs, count, accumulated
+                    )
                 total_loss += float(loss)
-                accumulated = (
-                    gradient
-                    if accumulated is None
-                    else accumulate_fn(accumulated, gradient)
-                )
+                jax.block_until_ready(accumulated)
+                if microbatch < 2:
+                    print(
+                        json.dumps(
+                            {
+                                "microbatch": microbatch + 1,
+                                "device_memory": {
+                                    str(device.id): device.memory_stats()
+                                    for device in jax.local_devices()
+                                },
+                            }
+                        ),
+                        flush=True,
+                    )
                 print(
                     f"Completed microbatch {microbatch + 1}/{len(batches)}", flush=True
                 )

@@ -512,6 +512,53 @@ Before admitting production forks, the remaining gates are:
 
 ## Results
 
+### GPU recoveries advanced; three new evaluations — November 13
+
+Both GPU recoveries have advanced beyond the November 12 resume checkpoints.
+At 17:40 UTC, contacts-v1 had reached **22,021,865,569 additional tokens / step
+139213**, and prompted **7,261,261,278 tokens / step 157384**. Complete local
+checkpoints at raw step 139213 and prompted step 157349 (**7,259,974,363 tokens**)
+were independently verified, with all 20 objects including eight optimizer
+shards and tokenizer files. Raw a09 is running; prompted a11 is automatically
+reacquiring capacity after a scheduler preemption. Neither has an application
+failure, and both retain their 100B targets and RNO2A checkpoint destinations.
+
+Both evaluators remain live and caught up. Three new milestones pass the complete
+97-protein, 100-terminated-rollout, timing and checkpoint-provenance checks:
+
+| Format | Additional tokens | Step | All-range R | Long-range R |
+| --- | ---: | ---: | ---: | ---: |
+| contacts-v1 | 21,000,098,154 | 133218 | 0.35716 | 0.32725 |
+| contacts-v1 | 22,000,068,018 | 139024 | **0.36121** | **0.33467** |
+| prompted | 7,000,047,847 | 151345 | **0.31158** | **0.28005** |
+
+Since the previous displayed endpoints, raw improves **0.01554 / 0.01347**
+all/long R from 20B to 22B, and prompted improves **0.01509 / 0.01674** from 6B
+to 7B. Raw 22B versus 21B is an all-range practical tie (difference 0.00405),
+with a 0.00741 long-range increase. Equal native-token counts still imply unequal
+protein exposure. Latest viral/nonviral all-range means are **0.28769 / 0.36606**
+for raw and **0.25644 / 0.31522** for prompted (6 / 91 proteins); corresponding
+long-range means are **0.28429 / 0.33799** and **0.22811 / 0.28347**.
+
+The dated [curve](plots/eval_val_progress.png), [SVG](plots/eval_val_progress.svg),
+and [CSV](data/eval_val_progress.csv) now contain **33 measured checkpoints**.
+Periodic evidence totals **29 milestones, 2,813 timing rows, 56,260 metric rows,
+and 244 worker provenance files**. The current-default registry was rechecked
+November 13 and remains exp277 1.5B step 266344; dotted all/long references remain
+**0.55375 / 0.53802**. Eval-test remains unread.
+
+TPU validation a05 passed full-state conversion and exact checkpoint comparison,
+then completed its first microbatch before exhausting HBM on the second gradient
+computation. No optimizer update completed. Gradient computation and accumulation
+are now fused in one JIT with accumulator donation, avoiding a separately returned
+second gradient tree. The CPU probe passes the PyTorch loss reference, full-batch
+Adam comparison, different microbatch sizes, and exact checkpoint/resumed-update
+checks at unchanged tolerances. Bounded validation
+`/timodonnell/exp347-tpu-contacts_v1-validate-a06` was accepted at **17:45:17 UTC**
+and was running at 17:48 UTC. It tests hardware memory feasibility with the same
+four-document microbatch, 32-document global update, 16K context and us-east5
+storage, on one v5p-8 with a two-hour limit. TPU production remains unvalidated.
+
 ### Storage failure, recovery queue, and unchanged evaluations — November 12
 
 Both GPU parents stopped around **02:00 UTC November 11 (9 p.m. EST November 10)**

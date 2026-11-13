@@ -80,3 +80,10 @@ October 30: all three periodic milestones (1B through3B) are complete. Latest st
 November 5: user explicitly authorized restarting the stopped evaluator. Replacement a06 was accepted at 18:55:05 UTC in RNO2A, retaining this W&B identity and the 1B-token schedule. It uses 12 independent single-H100 shards per checkpoint; combined evaluation/training reservations remain within the 48-H100 cap. The 97-protein, 100-rollout contract and checkpoint-local outputs are unchanged. Recovered results and timings are collected with `collect_periodic_evals.py`, checked against per-protein tables and worker checkpoint identities, and plotted by `plot_eval_progress.py`.
 
 November 5 refreshed result: step 131069 / 6,000,033,097 additional tokens; all-range R=0.29649409, long-range R=0.26330529. All 97 proteins completed 100 rollouts. Full per-protein metrics, timings, and 12 worker provenance records are committed for each new checkpoint.
+
+November 13: collected the completed 7B milestone, step 151345 /
+7,000,047,847 additional tokens. All-range R-precision is 0.3115816271373164;
+long-range is 0.2800474599815171. All 97 eval-val proteins completed 100 terminated
+rollouts with measured timings and 12 worker provenance records. Driver a06 is
+running and caught up. Canonical regional prefix:
+`s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/eval-val/exp347-qwen35-4b-prompted-corpus235m-100bt/step-151345`.

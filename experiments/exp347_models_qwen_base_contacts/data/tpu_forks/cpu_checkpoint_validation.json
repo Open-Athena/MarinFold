@@ -1,6 +1,6 @@
 {
   "status": "passed",
-  "completed_utc": "2026-11-12T19:20:44.728196+00:00",
+  "completed_utc": "2026-11-13T17:44:06.448043+00:00",
   "backend": "cpu",
   "devices": 1,
   "loss": 5.5598320960998535,
@@ -13,5 +13,7 @@
     1
   ],
   "microbatch_update_parity": "passed (atol=2e-6, rtol=2e-6)",
-  "smaller_microbatch_loss": 5.5598320960998535
+  "smaller_microbatch_loss": 5.5598320960998535,
+  "full_batch_update_parity": "passed (atol=2e-6, rtol=2e-6)",
+  "accumulation": "fused gradient computation and accumulator donation"
 }
