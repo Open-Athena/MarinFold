@@ -93,3 +93,5 @@ all-range and 0.3346670424390309 long-range R-precision. Both have all 97 eval-v
 proteins × 100 terminated rollouts, measured timings, and 12 worker provenance
 records. Driver a07 is running and caught up. Canonical regional prefix:
 `s3://marin-rno2a/MarinFold/exp347_qwen_base_contacts/eval-val/exp347-qwen35-4b-contacts_v1-corpus235m-100bt/step-139024`.
+
+November 16: collected 23B and 24B completed milestones. Latest step 151437 / 24,000,124,938 additional tokens scores 0.3754335277157598 all-range and 0.3513482476665041 long-range R-precision. Every checkpoint covers all 97 eval-val proteins × 100 terminated rollouts with measured timings and 12 worker provenance records. Driver remains running and caught up; canonical artifacts are in the regional RNO2A eval-val prefix and experiment data/eval_val_periodic/contacts_v1/.

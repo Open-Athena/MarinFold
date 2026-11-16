@@ -17,44 +17,44 @@ Exclude the same 5.11% of source rows when either complete document exceeds 16K.
 The pool has 4.493B raw tokens versus 1.290B prompted tokens.
 Equal token budgets imply different protein exposure.
 
-## Latest R-precision results — November 13
+## Latest R-precision results — November 16
 
-Three new evaluations: contacts-v1 at 21B and 22B; prompted at 7B additional native tokens.
+Three new evaluations: contacts-v1 at 23B and 24B; prompted at 8B additional native tokens.
 Same 97 eval-val proteins × 100 terminated rollouts; all result I/O stays in RNO2A.
-Latest raw +22B: all R=0.36121, long R=0.33467.
-Raw +21B: all R=0.35716, long R=0.32725.
-Raw improves 0.01554 / 0.01347 all/long R versus the previous 20B endpoint.
-Latest prompted +7B: all R=0.31158, long R=0.28005; gains 0.01509 / 0.01674 from 6B.
+Latest raw +24B: all R=0.37543, long R=0.35135; raw +23B: 0.36447 / 0.33915.
+Raw improves 0.01423 / 0.01668 all/long R versus the previous 22B endpoint.
+Latest prompted +8B: all R=0.31787, long R=0.28719; gains 0.00629 / 0.00714 from 7B.
 Equal native-token budgets imply different protein exposure; format causality is unresolved.
-Periodic record: 29 checkpoints, 2,813 timing rows, 56,260 metric rows, 244 provenance files.
-The curve plots 33 complete pilot/interim/periodic checkpoints, with CSV and SVG exports.
+Periodic record: 32 checkpoints, 3,104 timing rows, 62,080 metric rows, 280 provenance files.
+The curve plots 36 complete pilot/interim/periodic checkpoints, with CSV and SVG exports.
 Dotted reference: current default exp277 1.5B, step 266344; all R=0.55375, long R=0.53802.
-Reference uses the same 97 eval-val proteins; registry and score-table provenance are pinned.
+Reference uses the same 97 eval-val proteins; registry rechecked November 16.
 Eval-test remains untouched. An exact expanded-corpus sequence-KNN null is unavailable.
 
-## Execution and recovery — November 13
+## Execution and capacity — November 16
 
-Both November 12 GPU recoveries advanced and saved complete local checkpoints.
-Raw: 22.022B / step 139213. Prompted: 7.261B / step 157384.
-Verified all 20 checkpoint objects at raw 139213 and prompted 157349 / 7.260B.
-Raw a09 running; prompted a11 automatically reacquiring capacity after a scheduler preemption.
-Neither root has an application failure. Keep the same dispatches and original 100B schedules.
-Training and evaluation outputs stay in RNO2A; eight H100s per training arm.
-Both evaluators are live and caught up; next milestones are raw 23B and prompted 8B.
+Both GPU runs advanced since November 13; both now wait for capacity after preemptions.
+Raw: 24.084B / step 151746. Prompted: 8.036B / step 173832.
+Last W&B training metrics: 18:54 UTC raw, 16:48 UTC prompted, at the 19:37 UTC check.
+Verified all 20 checkpoint objects at raw step 151745 and prompted step 173832.
+Raw a09 has 23 preemptions; prompted a11 has 17. Neither has an application failure.
+Keep the same dispatches, original 100B schedules and eight-H100 training profiles.
+RNO2A snapshot: 24 free / 512 H100s; aggregate free does not ensure whole-node admission.
+Training and evaluation outputs stay in RNO2A. Both evaluators are running and caught up.
+Next evaluation milestones: raw 25B and prompted 9B additional tokens.
 
-## TPU forks — fused gradient accumulation under validation
+## TPU forks — validation interrupted by infrastructure
 
 Approved transfer complete: 9,668 objects / 579.87GB; all future TPU I/O stays in us-east5.
 Frozen parents: raw step 59319 / 9.122B; prompted step 87360 / 4.026B.
-After the earlier memory failure, microbatch remains four documents with eight accumulation steps.
-Validation a05 passed full-state conversion and exact converted-checkpoint comparison.
-First microbatch completed; second gradient computation exhausted HBM before an optimizer update.
-Fuse gradient computation and accumulation in one JIT, donating the previous accumulator.
-This avoids returning a full second gradient tree before accumulation can reuse buffers.
-Global batch 32, full 16K context, cursor order and token weighting remain unchanged.
-CPU full-batch Adam comparison, microbatch equivalence and exact resumed-update checks pass.
-Validation a06 accepted 17:45 UTC; running at 17:48 on one v5p-8, us-east5-a, two-hour limit.
-Neither production TPU fork is training yet. Full hardware recovery validation and
+Fused gradient computation/accumulation passes CPU full-batch Adam and recovery checks.
+Global batch 32, four-document microbatches, full 16K context and cursor order are unchanged.
+a06 had 11 preemptions, then failed fetching its source bundle (HTTP 500).
+No W&B run or optimizer update completed; hardware memory feasibility remains unproven.
+a07 rejected before creation by client-date gate; local BUILD_DATE corrected per skill.
+CPU canary accepted 19:40:16 UTC. Bounded validation a08 accepted 19:40:43 UTC.
+Same one v5p-8 in us-east5-a, two-hour limit; submission does not prove training progress.
+Neither production TPU fork is training. Hardware recovery, production continuation and
 regional periodic evaluation bridge remain unfinished; GPU parents stay independent.
 
 ## Pilot execution

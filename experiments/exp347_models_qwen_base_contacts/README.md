@@ -512,6 +512,53 @@ Before admitting production forks, the remaining gates are:
 
 ## Results
 
+### More GPU progress and evaluations; capacity waits — November 16
+
+Both GPU arms advanced since November 13. Contacts-v1 reached **24,083,896,081
+additional tokens / step 151746**, and prompted reached **8,035,831,376 / step
+173832**. Their last W&B training metrics at the 19:37 UTC check were at 18:54
+and 16:48 UTC, respectively. Both Iris roots remain live but their GPU tasks
+are scheduling-gated after preemptions (23 raw / 17 prompted), with zero
+application failures. Preserve the current dispatches for automatic recovery.
+The 19:38 UTC fleet snapshot shows 24 free H100s of 512; that aggregate does
+not guarantee admission of a whole eight-GPU node. Both retain their 100B-token
+targets and regional RNO2A outputs.
+
+Complete recovery checkpoints at raw **step 151745 / 24,083,632,620 tokens**
+and prompted **step 173832 / 8,035,831,376 tokens** were verified: each has all
+20 objects, including the indexed model weights, tokenizer and eight optimizer
+shards. Both evaluators are running and caught up. Three new measurements pass
+the full 97-protein, 100-terminated-rollout, timing and provenance checks:
+
+| Format | Additional tokens | Step | All-range R | Long-range R |
+| --- | ---: | ---: | ---: | ---: |
+| contacts-v1 | 23,000,080,554 | 146419 | 0.36447 | 0.33915 |
+| contacts-v1 | 24,000,124,938 | 151437 | **0.37543** | **0.35135** |
+| prompted | 8,000,027,115 | 172743 | **0.31787** | **0.28719** |
+
+Compared with the last displayed endpoints, raw gains **0.01423 / 0.01668**
+all/long R from 22B to 24B; prompted gains **0.00629 / 0.00714** from 7B to 8B.
+Latest viral/nonviral all-range means are **0.32940 / 0.37847** for raw and
+**0.27227 / 0.32087** for prompted (6 / 91 proteins); corresponding long-range
+means are **0.29575 / 0.35501** and **0.25632 / 0.28923**. Equal native-token
+counts imply different protein exposure. The current-default registry was
+rechecked and remains exp277 1.5B step 266344, scoring **0.55375 / 0.53802** on
+the same 97 eval-val proteins. The dated plot retains that dotted reference.
+There are now **36 measured checkpoints**, including **32 periodic milestones,
+3,104 timing rows, 62,080 metric rows and 280 worker provenance files**.
+Eval-test remains unread; the expanded-corpus sequence-KNN null is unavailable.
+
+TPU validation a06 failed after 11 preemptions: its final attempt received HTTP
+500 while fetching the source bundle. An earlier attempt reached optimizer
+conversion, but no W&B run or optimizer update completed. The fused accumulation
+change therefore remains unvalidated on hardware. Submission a07 was rejected
+before creation by the client-date gate. Following the execution skill, only
+the local Iris `BUILD_DATE` changed from October 19 to the required October 31;
+a CPU canary was accepted at 19:40:16 UTC. Bounded validation
+`/timodonnell/exp347-tpu-contacts_v1-validate-a08` was accepted at **19:40:43 UTC**
+with the unchanged one-v5p-8, us-east5-a, two-hour profile. TPU production is
+still not running. No training-code or objective change was made in this update.
+
 ### GPU recoveries advanced; three new evaluations — November 13
 
 Both GPU recoveries have advanced beyond the November 12 resume checkpoints.
