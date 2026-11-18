@@ -7,6 +7,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 from flax import nnx
+from jax.sharding import NamedSharding, PartitionSpec
 
 from tpu_checkpoint import as_nnx
 from tpu_model import summed_loss
@@ -32,6 +33,17 @@ def training_functions(
     graph: Any, template: nnx.State, rest: nnx.State, config: Any
 ) -> tuple[Callable, Callable, Callable]:
     """Compile microbatch gradients, accumulation, and the exact resumed AdamW step."""
+    parameter_shardings = jax.tree.map(
+        lambda array: array.sharding, template.to_pure_dict()
+    )
+    mesh = jax.tree.leaves(parameter_shardings)[0].mesh
+    replicated = NamedSharding(mesh, PartitionSpec())
+    state_shardings = {
+        "params": parameter_shardings,
+        "mu": parameter_shardings,
+        "nu": parameter_shardings,
+        "adam_step": replicated,
+    }
 
     def loss_fn(params: dict, rest: nnx.State, batch: dict, count: Any) -> Any:
         return (
@@ -48,9 +60,13 @@ def training_functions(
         )
 
     value_and_grad = jax.value_and_grad(loss_fn)
-    gradient = jax.jit(value_and_grad)
+    # FSDP all-gathers weights inside the loss. Without explicit output layouts,
+    # XLA leaves their gradients replicated, even though the input parameters are
+    # sharded. On four chips that made the retained 4B gradient 16.8 GB per chip
+    # instead of 4.2 GB, exhausting HBM when the next microbatch executable loaded.
+    gradient = jax.jit(value_and_grad, out_shardings=(replicated, parameter_shardings))
 
-    @jax.jit(donate_argnums=(4,))
+    @jax.jit(donate_argnums=(4,), out_shardings=(replicated, parameter_shardings))
     def accumulate(
         params: dict, rest: nnx.State, batch: dict, count: Any, accumulated: dict
     ) -> tuple[Any, dict]:
@@ -60,7 +76,7 @@ def training_functions(
         loss, current = value_and_grad(params, rest, batch, count)
         return loss, jax.tree.map(jnp.add, accumulated, current)
 
-    @jax.jit(donate_argnums=(0, 1))
+    @jax.jit(donate_argnums=(0, 1), out_shardings=(state_shardings, replicated))
     def update(state: dict, gradient: dict, lr: Any) -> tuple[dict, Any]:
         params, mu, nu, step, norm = adamw_update(
             state["params"], state["mu"], state["nu"], gradient, state["adam_step"], lr

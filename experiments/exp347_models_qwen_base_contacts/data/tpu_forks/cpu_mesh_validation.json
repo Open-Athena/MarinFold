@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "completed_utc": "2026-11-18T20:09:43.122446+00:00",
+  "devices": 4,
+  "backend": "cpu",
+  "tests": [
+    "test_four_device_checkpoint_and_adam_update",
+    "test_four_device_model_gradient_accumulation_sharding"
+  ],
+  "parameter_gradient_moment_shardings": "identical",
+  "full_batch_update_parity": "passed (atol=2e-6, rtol=2e-6)",
+  "unconstrained_gradient_layout": "replicated (reproduced before fix)",
+  "full_model_parameter_bytes": 16823005184,
+  "full_model_sharded_gradient_bytes_per_device": 4208635904
+}

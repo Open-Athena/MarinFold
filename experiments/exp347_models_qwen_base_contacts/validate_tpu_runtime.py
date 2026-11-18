@@ -179,10 +179,26 @@ def main() -> None:
                 total_loss += float(loss)
                 jax.block_until_ready(accumulated)
                 if microbatch < 2:
+                    # Keep this guard at the real model boundary: a reduced
+                    # model can prove layout semantics, but cannot prove HBM fit.
+                    for parameter, grad in zip(
+                        jax.tree.leaves(state["params"]),
+                        jax.tree.leaves(accumulated),
+                        strict=True,
+                    ):
+                        if not grad.sharding.is_equivalent_to(
+                            parameter.sharding, parameter.ndim
+                        ):
+                            raise ValueError("Gradient escaped its parameter sharding")
                     print(
                         json.dumps(
                             {
                                 "microbatch": microbatch + 1,
+                                "gradient_bytes_per_device": sum(
+                                    math.prod(array.sharding.shard_shape(array.shape))
+                                    * array.dtype.itemsize
+                                    for array in jax.tree.leaves(accumulated)
+                                ),
                                 "device_memory": {
                                     str(device.id): device.memory_stats()
                                     for device in jax.local_devices()
