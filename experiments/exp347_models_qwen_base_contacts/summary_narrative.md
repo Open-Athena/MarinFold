@@ -33,27 +33,24 @@ An exact expanded-corpus sequence-KNN null is unavailable.
 
 ## Execution and capacity — November 18
 
-Both GPU tasks are running again, with fresh training metrics at 19:10 UTC.
-Raw: 24.790B / step 156705. Prompted: 8.780B / step 189325.
-Since November 16: +0.706B raw and +0.745B prompted additional tokens.
+Both GPU parents continue advancing; refreshed at 20:17 UTC.
+Raw: 24.841B / step 157123. Prompted: 8.798B / step 189877.
 Verified all 20 checkpoint objects at raw step 156705 and prompted step 189290 / 8.779B.
 Raw a09 has 39 preemptions; prompted a11 has 24. Neither has an application failure.
 Keep the progressing dispatches, original 100B schedules and eight-H100 training profiles.
 RNO2A 19:14 UTC snapshot: 175 free / 512 H100s. All new checkpoint outputs stay in RNO2A.
 
-## TPU forks — fused accumulation still exceeds memory
+## TPU forks — gradient sharding fixed, hardware test queued
 
 Approved transfer complete: 9,668 objects / 579.87GB; all future TPU I/O stays in us-east5.
 Frozen parents: raw step 59319 / 9.122B; prompted step 87360 / 4.026B.
-Fused accumulation passes CPU full-batch Adam, microbatch and exact recovery checks.
-a08 ran November 17 without preemption: FP32/all-eight-Adam-shard conversion took 509.5s.
-Exact converted-state comparison passed and the first microbatch completed.
-Loading jit_accumulate for microbatch two required 70.05G, with 68.30G available.
-RuntimeProgramAllocationFailure occurred before any optimizer update.
-The fusion change did not resolve the hardware memory limit. Unchanged retries are paused.
-The four-chip profile needs memory/sharding diagnosis before another hardware test.
-Neither production TPU fork is training. Hardware recovery, production continuation and
-regional periodic evaluation bridge remain unfinished; GPU parents remain independent.
+a08 failed loading the second microbatch: 70.05G required, 68.30G available.
+Reproduced the defect: unconstrained JIT gradient outputs replicate across all four chips.
+Explicit output layouts reduce retained gradients from 16.823 to 4.209 GB/chip (calculated).
+Four-device layout/update parity, Torch loss and exact recovery tests pass unchanged.
+Corrected a09 accepted at 20:10 UTC November 18; still awaiting allocation at 20:20 UTC.
+No hardware optimizer update yet. Continuous trainer and HF export path now pass CPU tests.
+Neither production TPU fork is training; regional periodic evaluator remains unfinished.
 
 ## Pilot execution
 

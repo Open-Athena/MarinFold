@@ -512,6 +512,42 @@ Before admitting production forks, the remaining gates are:
 
 ## Results
 
+### TPU gradient sharding fixed; hardware test queued — November 18, 20:20 UTC
+
+The a08 memory failure was reproduced on four emulated CPU devices: JAX's
+unconstrained gradient outputs were replicated even though the input parameters
+were FSDP-sharded. `tpu_training.py` now explicitly gives the gradient,
+accumulator, parameters and Adam moments the original parameter layouts. For
+the full 4B model, the retained gradient falls from **16.823 GB to 4.209 GB per
+chip**, a **12.614 GB** reduction. This is a layout calculation, not a measured
+TPU memory result. The runtime now checks actual gradient layouts and logs
+their local byte count.
+
+Four-device gradient/accumulation/Adam tests, the full-batch update reference,
+PyTorch loss comparison, and exact checkpoint recovery pass at their original
+tolerances. The corrected bounded two-update test, source commit `7de81136`,
+was accepted as `/timodonnell/exp347-tpu-contacts_v1-validate-a09` at
+**20:10:14 UTC** on v5p-8 in us-east5-a. It is still pending allocation, with
+no registered W&B run or TPU optimizer update. Production remains gated on
+successful hardware updates and checkpoint recovery.
+
+`train_tpu.py` now implements the continuous 100B-token continuation after that
+gate. It restores full FP32 state directly from the latest complete regional
+checkpoint, preserves all eight logical cursors and the 32-document update,
+keeps two recovery generations, and emits regional BF16 HF exports and durable
+evaluation requests every 1B tokens. The production update matches an independent
+full-batch update on four emulated devices; abstract-state recovery is exact.
+Every inverse HF parameter mapping is exact before BF16 casting, and a real
+Transformers reload reproduces the exported tensors. The regional evaluation
+worker remains unfinished; published requests do not imply completed scores.
+The evidence is in `data/tpu_forks/cpu_mesh_validation.json` and
+`data/tpu_forks/cpu_production_validation.json`.
+
+Both GPU parents remain untouched and advancing. At the 20:17 UTC refresh,
+raw had **24,841,432,546 tokens / step 157123** and prompted had
+**8,797,865,646 / step 189877**. Latest completed eval-val measurements remain
+raw 24B and prompted 8B, as reported below.
+
 ### Both GPU runs training; no new evaluation milestone — November 18
 
 Both GPU tasks are running again. At the 19:13 UTC check, contacts-v1 had logged
@@ -545,7 +581,8 @@ any optimizer update. The fusion change did not resolve the hardware memory
 limit. Unchanged retries on this profile are paused pending memory/sharding
 diagnosis; neither TPU production fork is running. The failed W&B run is
 [a08](https://wandb.ai/open-athena/MarinFold/runs/debug-exp347-qwen35-4b-contacts_v1-corpus235m-tpu-east5-a08).
-No training-code, objective, placement or priority change was made today.
+No training-code, objective, placement or priority change was made during that
+earlier 19:13 UTC status check.
 
 ### More GPU progress and evaluations; capacity waits — November 16
 

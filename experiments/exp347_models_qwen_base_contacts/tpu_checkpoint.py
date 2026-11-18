@@ -174,6 +174,58 @@ def as_nnx(template: nnx.State, values: dict) -> nnx.State:
     return result
 
 
+def abstract_state(template: nnx.State, mesh: Mesh) -> dict:
+    """Describe a full optimizer restore without allocating another 50 GB state."""
+    params = template.to_pure_dict()
+    return {
+        "params": params,
+        "mu": params,
+        "nu": params,
+        "adam_step": jax.ShapeDtypeStruct(
+            (), np.int32, sharding=NamedSharding(mesh, PartitionSpec())
+        ),
+    }
+
+
+def validate_provenance(metadata: dict, snapshot: dict) -> None:
+    """Reject a resume from a different parent, objective, or logical data layout."""
+    expected = {
+        "source_snapshot": frozen_source(snapshot),
+        "source_run": snapshot["parent_run"],
+        "format": snapshot["format"],
+        "world": 8,
+        "target_tokens": 100_000_000_000,
+    }
+    if any(metadata[key] != value for key, value in expected.items()):
+        raise ValueError("Checkpoint provenance differs from the approved fork")
+    if (
+        metadata["step"] < snapshot["parent"]["step"]
+        or metadata["tokens"] < snapshot["parent"]["tokens"]
+    ):
+        raise ValueError("Checkpoint precedes its frozen parent")
+    cursors = metadata["cursors"]
+    if len(cursors) != 8 or any(
+        cursor["rank"] != rank or cursor["world"] != 8
+        for rank, cursor in enumerate(cursors)
+    ):
+        raise ValueError("Checkpoint does not contain all eight logical data ranks")
+
+
+def committed_checkpoints(fs: Any, root: str) -> list[str]:
+    """Find only committed direct child checkpoints, in ascending step order."""
+    if not root.startswith(ROOT + "/checkpoints/"):
+        raise ValueError("Checkpoint root is outside the regional experiment")
+    checkpoints = []
+    for path in fs.glob(root + "/step-*/complete.json"):
+        uri = path if path.startswith("gs://") else "gs://" + path
+        uri = uri.removesuffix("/complete.json")
+        step = int(uri.rsplit("/step-", 1)[1])
+        if read_json(fs, uri + "/complete.json")["step"] != step:
+            raise ValueError("Checkpoint step disagrees with its directory")
+        checkpoints.append((step, uri))
+    return [uri for _, uri in sorted(checkpoints)]
+
+
 def save_state(
     fs: Any, uri: str, state: dict, metadata: dict, tokenizer_source: str
 ) -> None:

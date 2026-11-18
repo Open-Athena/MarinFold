@@ -15,7 +15,12 @@ from flax import nnx
 from jax.sharding import Mesh, NamedSharding, PartitionSpec
 from transformers import Qwen3_5ForCausalLM, Qwen3_5TextConfig
 
-from tpu_checkpoint import replicated_adam_step, restore_arrays, save_arrays
+from tpu_checkpoint import (
+    abstract_state,
+    replicated_adam_step,
+    restore_arrays,
+    save_arrays,
+)
 from tpu_model import abstract_model, configuration, convert_parameters, initial_rest
 from tpu_optimizer import adamw_update
 from tpu_training import document_batch, training_functions
@@ -40,7 +45,14 @@ def test_four_device_checkpoint_and_adam_update(tmp_path: Path) -> None:
     }
     uri = str(tmp_path / "state")
     save_arrays(uri, state)
-    restored = restore_arrays(uri, state)
+    template = nnx.State(
+        {
+            "weight": nnx.Param(
+                jax.ShapeDtypeStruct(weight.shape, weight.dtype, sharding=sharding)
+            )
+        }
+    )
+    restored = restore_arrays(uri, abstract_state(template, mesh))
     verify_roundtrip(state, restored)
     assert restored["adam_step"].sharding.device_set == set(jax.devices())
     gradient = {"weight": jax.device_put(np.full((8, 4), 0.01, np.float32), sharding)}

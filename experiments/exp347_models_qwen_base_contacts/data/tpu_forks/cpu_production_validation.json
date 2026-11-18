@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "completed_utc": "2026-11-18T20:18:47.084909+00:00",
+  "tests": {
+    "abstract_full_state_restore": "exact on four emulated CPU devices",
+    "logical_32_document_update": "full-batch parity (atol=2e-6, rtol=2e-6), all eight cursors and native-token schedule preserved",
+    "checkpoint_selection": "committed numeric steps only; mismatched provenance rejected",
+    "hf_coordinate_roundtrip": "all FP32 coordinates exact",
+    "hf_export_reload": "Transformers BF16 reload exactly matches BF16-cast original; tokenizer included; idempotent request"
+  },
+  "production_hardware_status": "not yet validated"
+}
