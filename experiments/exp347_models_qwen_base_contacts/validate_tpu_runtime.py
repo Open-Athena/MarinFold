@@ -102,7 +102,10 @@ def main() -> None:
         entity="open-athena",
         id=name,
         name=name,
-        resume="never",
+        # Iris may preempt this same immutable validation dispatch. Its two
+        # updates always restart from the frozen parent; only a complete report
+        # permits the continuation stage to start.
+        resume="allow",
         group="exp347-tpu-validation",
         tags=["exp347", "tpu", "us-east5", "validation"],
         config={

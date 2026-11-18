@@ -1,4 +1,4 @@
-"""Submit one bounded, regional full-state TPU validation and persist its identity."""
+"""Submit a bounded TPU gate, optionally followed by its fixed continuation."""
 
 import argparse
 import json
@@ -16,23 +16,36 @@ ROOT = "gs://marin-us-east5/protein-structure/MarinFold/exp347_qwen_base_contact
 
 
 def main() -> None:
-    """Launch exactly the selected validation, without scheduling production jobs."""
+    """Launch one selected regional job and persist its immutable identity."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--format", choices=FORMATS, required=True)
     parser.add_argument("--attempt", type=int, required=True)
     parser.add_argument("--database", type=Path, required=True)
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--continue-training", action="store_true")
     args = parser.parse_args()
     if args.attempt < 1:
         raise ValueError("Attempt numbers must be positive")
     experiment = Path(__file__).resolve().parent
     receipts = experiment / "data/tpu_forks"
-    for filename in ("cpu_math_validation.json", "cpu_checkpoint_validation.json"):
+    required = [
+        "cpu_math_validation.json",
+        "cpu_checkpoint_validation.json",
+        "cpu_mesh_validation.json",
+    ]
+    if args.continue_training:
+        required.append("cpu_production_validation.json")
+    for filename in required:
         if json.loads((receipts / filename).read_text())["status"] != "passed":
             raise ValueError(f"Numerical validation has not passed: {filename}")
     snapshot = json.loads((receipts / f"{args.format}_parent.json").read_text())
-    name = f"debug-{snapshot['fork_run']}-a{args.attempt:02d}"
-    job = f"exp347-tpu-{args.format}-validate-a{args.attempt:02d}"
+    name = (
+        snapshot["fork_run"]
+        if args.continue_training
+        else f"debug-{snapshot['fork_run']}-a{args.attempt:02d}"
+    )
+    mode = "continue" if args.continue_training else "validate"
+    job = f"exp347-tpu-{args.format}-{mode}-a{args.attempt:02d}"
     job_id = f"/timodonnell/{job}"
     command = [
         "uv",
@@ -67,7 +80,7 @@ def main() -> None:
         "64GB",
         "--no-sync",
         "--timeout",
-        "7200",
+        "1209600" if args.continue_training else "7200",
         "--max-retries",
         "0",
         "-e",
@@ -91,7 +104,7 @@ def main() -> None:
         "--extra",
         "tpu",
         "python",
-        "validate_tpu_runtime.py",
+        "continue_tpu.py" if args.continue_training else "validate_tpu_runtime.py",
         "--format",
         args.format,
         "--attempt",
@@ -110,31 +123,57 @@ def main() -> None:
     database = args.database.resolve()
     with sqlite3.connect(database) as db:
         db.execute("PRAGMA foreign_keys=ON")
-        if db.execute("SELECT 1 FROM dispatches WHERE active=1").fetchone():
+        active = db.execute(
+            "SELECT regional_run_id FROM dispatches WHERE active=1"
+        ).fetchall()
+        if (
+            (not args.continue_training and active)
+            or len(active) >= 2
+            or (name,) in active
+        ):
             raise ValueError(
-                "The first-validation gate permits only one active TPU job"
+                "TPU job would exceed the slice limit or duplicate a live writer"
             )
-        if db.execute("SELECT 1 FROM trials WHERE trial_id=?", (name,)).fetchone():
+        if (
+            active
+            and db.execute(
+                "SELECT 1 FROM dispatches d JOIN runs r USING(regional_run_id) "
+                "WHERE d.active=1 AND r.high_water_progress<=0"
+            ).fetchone()
+        ):
+            raise ValueError(
+                "An existing TPU job has not yet proved production progress"
+            )
+        exists = db.execute("SELECT 1 FROM trials WHERE trial_id=?", (name,)).fetchone()
+        if exists and not args.continue_training:
             raise ValueError(
                 "Attempt already exists; inspect its result before retrying"
             )
-        db.execute(
-            "INSERT INTO trials(trial_id,env_json) VALUES(?,?)",
-            (
-                name,
-                json.dumps({"kind": "validation", "format": args.format, "steps": 2}),
-            ),
-        )
-        db.execute(
-            "INSERT INTO runs(regional_run_id,trial_id,region,wandb_run_id,checkpoint_root) VALUES(?,?,?,?,?)",
-            (name, name, "us-east5", name, f"{ROOT}/checkpoints/{name}"),
-        )
+        if db.execute(
+            "SELECT 1 FROM dispatches WHERE iris_job_id=?", (job_id,)
+        ).fetchone():
+            raise ValueError("Dispatch identity already exists")
+        if not exists:
+            db.execute(
+                "INSERT INTO trials(trial_id,env_json) VALUES(?,?)",
+                (
+                    name,
+                    json.dumps({"kind": mode, "format": args.format}),
+                ),
+            )
+        if not db.execute(
+            "SELECT 1 FROM runs WHERE regional_run_id=?", (name,)
+        ).fetchone():
+            db.execute(
+                "INSERT INTO runs(regional_run_id,trial_id,region,wandb_run_id,checkpoint_root) VALUES(?,?,?,?,?)",
+                (name, name, "us-east5", name, f"{ROOT}/checkpoints/{name}"),
+            )
         submitted = datetime.now(UTC).isoformat()
         db.execute(
             "INSERT INTO events(recorded_at,kind,regional_run_id,detail) VALUES(?,?,?,?)",
             (
                 submitted,
-                "validation_submission_requested",
+                f"{mode}_submission_requested",
                 name,
                 json.dumps({"job_id": job_id, "command": redacted}),
             ),
@@ -151,7 +190,7 @@ def main() -> None:
             "INSERT INTO events(recorded_at,kind,regional_run_id,detail) VALUES(?,?,?,?)",
             (
                 datetime.now(UTC).isoformat(),
-                "validation_submission_result",
+                f"{mode}_submission_result",
                 name,
                 json.dumps({"returncode": result.returncode, "output": output}),
             ),
