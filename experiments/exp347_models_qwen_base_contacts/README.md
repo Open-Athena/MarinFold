@@ -512,6 +512,41 @@ Before admitting production forks, the remaining gates are:
 
 ## Results
 
+### Both GPU runs training; no new evaluation milestone — November 18
+
+Both GPU tasks are running again. At the 19:13 UTC check, contacts-v1 had logged
+**24,789,547,553 additional tokens / step 156705**, and prompted
+**8,780,460,856 / step 189325**, with fresh metrics at 19:10 UTC. Since November
+16 these are gains of **0.706B** and **0.745B** tokens. Both retain their **100B**
+targets, eight H100s, original identities and RNO2A outputs. Scheduler preemption
+counts are now 39 raw / 24 prompted, but neither root has an application failure.
+The current 19:14 UTC fleet snapshot reports 175 free H100s; keep the progressing
+jobs in place.
+
+Complete regional recovery checkpoints were independently verified at raw
+**step 156705 / 24,789,547,553 tokens** and prompted **step 189290 /
+8,779,340,655 tokens**, including all 20 objects, indexed model weights,
+tokenizer files and eight optimizer shards.
+
+Both evaluators are running and caught up. **No new R-precision evaluation has
+completed since November 16**: the next milestones are raw 25B and prompted 9B.
+The latest scores remain raw **24B: 0.37543 all / 0.35135 long**, and prompted
+**8B: 0.31787 / 0.28719**, each on 97 eval-val proteins with 100 terminated
+rollouts. The dated plot explicitly states that no new measurements were added.
+The default registry was rechecked and remains exp277 1.5B step 266344,
+**0.55375 / 0.53802**; its dotted reference is unchanged.
+
+TPU validation a08 failed November 17 at 10:39 UTC, with zero preemptions.
+Full FP32 parameter/eight-shard Adam conversion completed in 509.5 seconds,
+exact converted-state comparison passed, and the first microbatch completed.
+Loading the fused `jit_accumulate` program for microbatch two required **70.05G**
+with **68.30G** available, producing `RuntimeProgramAllocationFailure` before
+any optimizer update. The fusion change did not resolve the hardware memory
+limit. Unchanged retries on this profile are paused pending memory/sharding
+diagnosis; neither TPU production fork is running. The failed W&B run is
+[a08](https://wandb.ai/open-athena/MarinFold/runs/debug-exp347-qwen35-4b-contacts_v1-corpus235m-tpu-east5-a08).
+No training-code, objective, placement or priority change was made today.
+
 ### More GPU progress and evaluations; capacity waits — November 16
 
 Both GPU arms advanced since November 13. Contacts-v1 reached **24,083,896,081
