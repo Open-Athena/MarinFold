@@ -48,7 +48,8 @@ a08 failed loading the second microbatch: 70.05G required, 68.30G available.
 Reproduced the defect: unconstrained JIT gradient outputs replicate across all four chips.
 Explicit output layouts reduce retained gradients from 16.823 to 4.209 GB/chip (calculated).
 Four-device layout/update parity, Torch loss and exact recovery tests pass unchanged.
-Corrected a09 accepted at 20:10 UTC November 18; still awaiting allocation at 20:20 UTC.
+a09 replaced while pending by a10, accepted at 20:25 UTC; still awaiting allocation.
+a10 runs the bounded gate, then continues training on the same slice only if it passes.
 No hardware optimizer update yet. Continuous trainer and HF export path now pass CPU tests.
 Neither production TPU fork is training; regional periodic evaluator remains unfinished.
 

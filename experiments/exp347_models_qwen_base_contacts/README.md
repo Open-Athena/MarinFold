@@ -512,7 +512,7 @@ Before admitting production forks, the remaining gates are:
 
 ## Results
 
-### TPU gradient sharding fixed; hardware test queued — November 18, 20:20 UTC
+### TPU gradient sharding fixed; gated continuation queued — November 18, 20:26 UTC
 
 The a08 memory failure was reproduced on four emulated CPU devices: JAX's
 unconstrained gradient outputs were replicated even though the input parameters
@@ -525,11 +525,16 @@ their local byte count.
 
 Four-device gradient/accumulation/Adam tests, the full-batch update reference,
 PyTorch loss comparison, and exact checkpoint recovery pass at their original
-tolerances. The corrected bounded two-update test, source commit `7de81136`,
-was accepted as `/timodonnell/exp347-tpu-contacts_v1-validate-a09` at
-**20:10:14 UTC** on v5p-8 in us-east5-a. It is still pending allocation, with
-no registered W&B run or TPU optimizer update. Production remains gated on
-successful hardware updates and checkpoint recovery.
+tolerances. The standalone a09 test was cancelled while still pending, before
+any allocation or W&B registration, to attach the continuation to its successful
+gate. Replacement `/timodonnell/exp347-tpu-contacts_v1-continue-a10`, source
+commit `dd20bb80`, was accepted at **20:25:36 UTC** on v5p-8 in us-east5-a.
+`continue_tpu.py` runs the two-update/checkpoint-recovery gate with a hard
+two-hour timeout, then starts production on the same slice only if it passes.
+It never dispatches another job or changes placement. After a later Iris
+preemption it reuses the successful report and restores the latest regional
+training checkpoint. The outer dispatch has the approved two-week lifetime.
+Allocation is still pending; no TPU optimizer update has yet been verified.
 
 `train_tpu.py` now implements the continuous 100B-token continuation after that
 gate. It restores full FP32 state directly from the latest complete regional
@@ -537,8 +542,9 @@ checkpoint, preserves all eight logical cursors and the 32-document update,
 keeps two recovery generations, and emits regional BF16 HF exports and durable
 evaluation requests every 1B tokens. The production update matches an independent
 full-batch update on four emulated devices; abstract-state recovery is exact.
-Every inverse HF parameter mapping is exact before BF16 casting, and a real
-Transformers reload reproduces the exported tensors. The regional evaluation
+In the reduced hybrid-model probe, every inverse HF parameter mapping is exact
+before BF16 casting, and a real Transformers reload reproduces the exported
+tensors. The regional evaluation
 worker remains unfinished; published requests do not imply completed scores.
 The evidence is in `data/tpu_forks/cpu_mesh_validation.json` and
 `data/tpu_forks/cpu_production_validation.json`.
