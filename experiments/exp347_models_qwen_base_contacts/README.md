@@ -512,6 +512,50 @@ Before admitting production forks, the remaining gates are:
 
 ## Results
 
+### Raw 25B evaluation completed; GPU training advancing — November 19
+
+At **14:10 UTC**, both GPU parents and both periodic evaluators were running.
+Raw had reached **25,270,096,093 tokens / step 160442**; prompted had reached
+**8,983,973,557 / step 195032**. These are **25.27% / 8.98%** of their respective
+100B additional-token targets. Since the November 18 20:17 UTC refresh they
+advanced by **428.66M / 186.11M tokens**. The existing raw a09 and prompted a11
+dispatches have **44 / 30 preemptions**, respectively, and no application
+failures; preserve those progressing dispatches and their local RNO2A outputs.
+At 14:14 UTC, complete recovery checkpoints were independently verified at raw
+**160442 / 25.270096093B** and prompted **195066 / 8.985432736B**: each has all
+20 objects, including indexed model weights, tokenizer and eight optimizer shards.
+
+| Format | Evaluated phase tokens | Step | All R-precision | Long R-precision |
+| --- | ---: | ---: | ---: | ---: |
+| contacts-v1 | 25,000,025,409 | 158417 | 0.37439 | 0.34490 |
+| Prompted | 8,000,027,115 | 172743 | 0.31787 | 0.28719 |
+| Current default: exp277 1.5B | — | 266344 | 0.55375 | 0.53802 |
+
+The raw 25B result is new. Its all-range change from 24B is **−0.00104**, below
+the evaluator's approximate 0.005 resolution; long-range changes by **−0.00644**.
+The prompted 8B result is unchanged; next milestones are raw **26B** and prompted
+**9B**. Every checkpoint uses the same 97 eval-val proteins and 100 terminated
+rollouts per protein. The collector recomputed all aggregates from their
+per-protein evidence and validated **33 periodic checkpoints, 3,201 timing rows,
+64,020 metric rows and 292 worker provenance files**. Latest raw viral/nonviral
+all-range means are **0.33189 / 0.37720** (6 / 91 proteins). Eval-test remains
+untouched, and an exact expanded-corpus sequence-KNN null remains unavailable.
+The updated curve contains 37 pilot/interim/periodic points and retains the
+default-model dotted reference, rechecked against the registry on November 19.
+
+The TPU continuation did receive hardware, but **a10 failed at 11:32:59 UTC**
+during its first microbatch, before any optimizer update. Loading `jit_loss_fn`
+required **81.17G with 80.05G available**. Explicit gradient-output sharding
+passed the CPU correctness checks but did not establish hardware memory fit.
+The validation gate correctly prevented production from starting; neither TPU
+fork is training. The terminal job has one application failure and one
+preemption. Do not repeat this configuration unchanged: compiler memory must
+be reduced and the same two-update/recovery gate passed before continuation.
+Evidence: [`validation_a10_failure.json`](data/tpu_forks/validation_a10_failure.json),
+source `dd20bb80`, and
+[validation W&B](https://wandb.ai/open-athena/MarinFold/runs/debug-exp347-qwen35-4b-contacts_v1-corpus235m-tpu-east5-a10).
+The regional TPU periodic evaluator also remains unfinished.
+
 ### TPU gradient sharding fixed; gated continuation queued — November 18, 20:26 UTC
 
 The a08 memory failure was reproduced on four emulated CPU devices: JAX's

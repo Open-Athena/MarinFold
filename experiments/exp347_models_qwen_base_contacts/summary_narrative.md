@@ -17,30 +17,31 @@ Exclude the same 5.11% of source rows when either complete document exceeds 16K.
 The pool has 4.493B raw tokens versus 1.290B prompted tokens.
 Equal token budgets imply different protein exposure.
 
-## Latest R-precision results — checked November 18
+## Latest R-precision results — checked November 19
 
-No new evaluations since November 16; both runs have advanced between 1B-token milestones.
-Latest raw +24B: all R=0.37543, long R=0.35135.
+New raw +25B: all R=0.37439, long R=0.34490.
+Raw all-range change from 24B is -0.00104 (effectively tied); long-range change is -0.00644.
 Latest prompted +8B: all R=0.31787, long R=0.28719.
-Both evaluators are running and caught up; next milestones are raw 25B and prompted 9B.
+Both evaluators are running and caught up; next milestones are raw 26B and prompted 9B.
 Same 97 eval-val proteins × 100 terminated rollouts; all result I/O stays in RNO2A.
-Periodic record: 32 checkpoints, 3,104 timing rows, 62,080 metric rows, 280 provenance files.
-The curve retains 36 complete pilot/interim/periodic checkpoints, with CSV and SVG exports.
+Periodic record: 33 checkpoints, 3,201 timing rows, 64,020 metric rows, 292 provenance files.
+The curve retains 37 complete pilot/interim/periodic checkpoints, with CSV and SVG exports.
 Dotted reference: current default exp277 1.5B, step 266344; all R=0.55375, long R=0.53802.
-Reference uses the same 97 eval-val proteins; registry rechecked November 18.
+Reference uses the same 97 eval-val proteins; registry rechecked November 19.
 Equal native tokens imply different protein exposure. Eval-test remains untouched.
 An exact expanded-corpus sequence-KNN null is unavailable.
 
-## Execution and capacity — November 18
+## Execution and capacity — November 19
 
-Both GPU parents continue advancing; refreshed at 20:17 UTC.
-Raw: 24.841B / step 157123. Prompted: 8.798B / step 189877.
-Verified all 20 checkpoint objects at raw step 156705 and prompted step 189290 / 8.779B.
-Raw a09 has 39 preemptions; prompted a11 has 24. Neither has an application failure.
+Both GPU parents continue advancing; refreshed at 14:10 UTC.
+Raw: 25.270B / step 160442. Prompted: 8.984B / step 195032.
+Since the November 18 20:17 UTC refresh, they advanced by 428.66M / 186.11M tokens.
+Raw a09 has 44 preemptions; prompted a11 has 30. Neither has an application failure.
+Verified complete 20-object checkpoints at raw step 160442 and prompted step 195066.
 Keep the progressing dispatches, original 100B schedules and eight-H100 training profiles.
-RNO2A 19:14 UTC snapshot: 175 free / 512 H100s. All new checkpoint outputs stay in RNO2A.
+All new checkpoint outputs stay in RNO2A; both periodic evaluators are running.
 
-## TPU forks — gradient sharding fixed, hardware test queued
+## TPU forks — a10 failed before production
 
 Approved transfer complete: 9,668 objects / 579.87GB; all future TPU I/O stays in us-east5.
 Frozen parents: raw step 59319 / 9.122B; prompted step 87360 / 4.026B.
@@ -48,9 +49,10 @@ a08 failed loading the second microbatch: 70.05G required, 68.30G available.
 Reproduced the defect: unconstrained JIT gradient outputs replicate across all four chips.
 Explicit output layouts reduce retained gradients from 16.823 to 4.209 GB/chip (calculated).
 Four-device layout/update parity, Torch loss and exact recovery tests pass unchanged.
-a09 replaced while pending by a10, accepted at 20:25 UTC; still awaiting allocation.
-a10 runs the bounded gate, then continues training on the same slice only if it passes.
-No hardware optimizer update yet. Continuous trainer and HF export path now pass CPU tests.
+a10 received hardware, then failed November 19 at 11:32:59 UTC on its first microbatch.
+Loading jit_loss_fn required 81.17G with 80.05G available; output sharding alone did not fit.
+The two-stage gate prevented production from starting. No hardware optimizer update exists.
+Do not retry the same configuration unchanged; compiler memory still needs reduction.
 Neither production TPU fork is training; regional periodic evaluator remains unfinished.
 
 ## Pilot execution
